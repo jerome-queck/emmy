@@ -133,7 +133,11 @@ export async function considerPullRequest(candidate, github) {
     return { ...candidate, outcome: receipt.merged ? 'unverified' : 'skipped', waiting: ['changed-after-request'] };
   }
   if (receipt.merged) {
-    return { ...candidate, outcome: 'merged', mergeCommit: receipt.mergeCommit?.oid };
+    const mergeCommit = receipt.mergeCommit?.oid;
+    if (typeof mergeCommit !== 'string' || !shaPattern.test(mergeCommit)) {
+      return { ...candidate, outcome: 'unverified', waiting: ['no-confirmed-merge-commit'] };
+    }
+    return { ...candidate, outcome: 'merged', mergeCommit };
   }
   if (receipt.isInMergeQueue) return { ...candidate, outcome: 'queued', observedOnly: true };
   if (receipt.autoMergeRequest) return { ...candidate, outcome: 'enabled', observedOnly: true };
