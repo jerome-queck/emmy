@@ -35,11 +35,11 @@ Boundary parsing and artifact byte reads are separate production boundaries exer
 
 ## Coverage and sync record
 
-The reviewed source commit is `fc7664044b3ab870ee4b8e502914922d5a7a1a09`. `verification/coverage.json` records exact file digests and the function-to-property mapping. It also pins boundary parsers and the verification runner so changes to the assumed inputs or checking method require review. The coordinator reviewed the mapping against the integrated source. Independent release review remains required.
+The reviewed source commit is `3c79e7387f5c40df8d12ebfc13cfbcd42c40e1c1`. `verification/coverage.json` records exact file digests and the function-to-property mapping. It also pins boundary parsers and the verification runner so changes to the assumed inputs or checking method require review. The coordinator reviewed the mapping against the integrated source. Independent release review remains required.
 
 | Covered file | SHA-256 |
 | --- | --- |
-| src/work.mjs | 5580aa22eb5e06ce990277e1932b483886d0e221bfc4faf63c2064df32899fd7 |
+| src/work.mjs | 12d65c393322b78c56717b4f4bff4c23ed1dd1afefa9438d6b41192dd799771e |
 | src/records.mjs | 6d1c64c44b657db9a339da18d169e75193f32ae4426980d1836020c36cc1f7bd |
 | src/metadata.mjs | 1223803a887fc3bbc0d7aac0d7e2ce31ec694b727088d5239dd3f52b92012ea3 |
 | verification/properties.mjs | d80551ac3d1b42c7fb7d17c60657d5f45d1fbc8c60eafe4dc841e3aa2895fc69 |
