@@ -17,6 +17,22 @@ process.stdout.write('Synthetic local verification passed\\n');
   'fail.mjs': `process.stderr.write('Synthetic verification failed\\n');
 process.exitCode = 7;
 `,
+  'dependency.mjs': `export const value = "pinned";
+`,
+  'mutate-dependency.mjs': `import { writeFileSync } from 'node:fs';
+writeFileSync('fixture-verifiers/dependency.mjs', 'export const value = "changed";\\n');
+`,
+  'read-dependency.mjs': `import { writeFileSync } from 'node:fs';
+import { value } from './dependency.mjs';
+writeFileSync(process.argv[2], value);
+console.log(value);
+`,
+  'hide-repository.mjs': `import { renameSync } from 'node:fs';
+renameSync('.git', '.local/source-boundary.git');
+`,
+  'delay.mjs': `await new Promise(resolve => setTimeout(resolve, 3000));
+console.log('delayed');
+`,
   'child.mjs': `import { spawn } from 'node:child_process';
 const code = "require('node:fs').writeFileSync(process.argv[1], String(process.pid)); setInterval(() => {}, 1000)";
 spawn(process.execPath, ['-e', code, process.argv[2]], { stdio: 'ignore' });

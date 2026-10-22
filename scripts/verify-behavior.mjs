@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { hostname, tmpdir } from 'node:os';
 import { basename, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -261,10 +261,10 @@ try {
     assert.equal(onlyOne.findings.find(item => item.id === exactFindings[0].id).status, 'resolved'); assert.equal(onlyOne.findings.find(item => item.id === exactFindings[1].id).status, 'open');
     scenario('evidence-boundaries', 'Distinct stale/future/partial/unavailable/foreign/revision refusals, reported-only imports, false-claim correction, self-certification refusal and old failure surviving weakened criteria.');
     const makeCheck = async (id, script, argv = [], timeoutMs = 5000) => ({ ...definition, id, criteria: [{ id: 'command', evidence: 'local-check', description: 'Run a pinned synthetic Node verifier.', check: { script: `fixture-verifiers/${script}`, sha256: digest(await readFile(join(root, 'fixture-verifiers', script))), argv, expectedExit: 0, timeoutMs, authorityRef: { reference: 'Synthetic local execution grant', action: 'run-local-check', resource: definition.resource, destination: definition.destination } } }] });
-    const checkBytes = async state => {
+    const checkBytes = async (state, criterionId = 'command', selectedHome = home) => {
       const ref = state.observations.filter(item => item.category === 'criteria' && item.assurance === 'observed-local').sort((left, right) => left.ageMs - right.ageMs)[0].hash;
-      const record = await readRecord(home, ref); const claim = record.claims.find(item => item.criterionId === 'command');
-      return { ref, check: JSON.parse(await readFile(join(home, 'records', ref, claim.evidenceRef), 'utf8')) };
+      const record = await readRecord(selectedHome, ref); const claim = record.claims.find(item => item.criterionId === criterionId);
+      return { ref, check: JSON.parse(await readFile(join(selectedHome, 'records', ref, claim.evidenceRef), 'utf8')) };
     };
     const marker = join(home, 'local-check-marker.txt'); const passCheck = await makeCheck('local-command-pass', 'pass.mjs', [marker]); const passAdoption = await adopt(passCheck);
     const observedPass = review(await reconcile(passCheck.id, 0, [tasks(passCheck.id)])); const passingCommand = await checkBytes(observedPass);
@@ -273,6 +273,31 @@ try {
     assert.ok(Date.parse(passingCommand.check.startedAt) <= Date.parse(passingCommand.check.completedAt)); assert.ok(Date.parse(passingCommand.check.completedAt) <= Date.parse(observedPass.asOf));
     const historicalRequest = '2026-01-01T00:00:00Z'; const liveStart = Date.now(); const historicalLive = review(await reconcile(passCheck.id, 0, null, home, historicalRequest)); const historicalCheck = await checkBytes(historicalLive); assert.equal(historicalLive.requestedAsOf, historicalRequest); assert.ok(Date.parse(historicalCheck.check.startedAt) >= liveStart); assert.ok(Date.parse(historicalLive.asOf) >= Date.parse(historicalCheck.check.completedAt));
     const expiredMarker = join(home, 'expired-execution.txt'); const expiredCheck = await makeCheck('local-command-expired', 'pass.mjs', [expiredMarker]); expiredCheck.criteria[0].check.authorityRef.expiresAt = new Date(Date.now() - 1000).toISOString(); await adopt(expiredCheck); const expiredState = review(await reconcile(expiredCheck.id, 3, [tasks(expiredCheck.id)])); assert.equal((await checkBytes(expiredState)).check.reason, 'check-authority-needed'); await assert.rejects(readFile(expiredMarker), { code: 'ENOENT' });
+
+    report.localCheckSourceBoundary = [];
+    for (const [mode, script] of [['unchanged', 'pass.mjs'], ['changed', 'mutate-dependency.mjs'], ['unavailable', 'hide-repository.mjs']]) {
+      const sourceMarker = join(home, `source-${mode}.txt`);
+      const value = await makeCheck(`local-source-${mode}`, script); value.criteria[0].id = 'first';
+      const reader = await makeCheck(value.id, 'read-dependency.mjs', [sourceMarker]); value.criteria.push({ ...reader.criteria[0], id: 'second' });
+      await adopt(value);
+      try {
+        const state = review(await reconcile(value.id, mode === 'unchanged' ? 0 : 3, [tasks(value.id)]));
+        const first = await checkBytes(state, 'first'); const second = await checkBytes(state, 'second');
+        const markerBytes = await readFile(sourceMarker, 'utf8').catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+        report.localCheckSourceBoundary.push({ mode, review: state.hash, first, second, markerBytes });
+        if (mode === 'unchanged') {
+          assert.equal(first.check.outcome, 'pass'); assert.equal(second.check.outcome, 'pass'); assert.equal(markerBytes, 'pinned');
+        } else {
+          assert.equal(first.check.outcome, 'fail'); assert.equal(first.check.reason, mode === 'changed' ? 'verifier-changed-source' : 'verifier-result-subject-unavailable');
+          assert.equal(markerBytes, null, `A later check must not execute after repository identity becomes ${mode}`);
+          assert.equal(second.check.outcome, 'unknown'); assert.equal(second.check.reason, mode === 'changed' ? 'current-subject-mismatch' : 'current-subject-unavailable'); assert.equal(second.check.exitCode, undefined);
+          assert.ok(state.findings.some(item => item.code === 'criterion-failed' && item.criterionIds.includes('first') && item.status === 'open'), 'The original failed check remains retained');
+        }
+      } finally {
+        if (mode === 'changed') await writeFile(join(root, 'fixture-verifiers/dependency.mjs'), fixtureScripts['dependency.mjs']);
+        if (mode === 'unavailable') await rename(join(home, 'source-boundary.git'), join(root, '.git'));
+      }
+    }
 
     await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, projects: { fixture: { ...bindings.projects.fixture, repository: 'https://example.invalid/intended-other-repository' } } }));
     const repoBlockedMarker = await readFile(marker, 'utf8'); const blockedRepoCheck = review(await reconcile(passCheck.id, 3)); assert.ok(blockedRepoCheck.route.reasons.includes('repository-binding-mismatch')); assert.equal(await readFile(marker, 'utf8'), repoBlockedMarker, 'Repository mismatch prevents executing a locally pinned verifier');
@@ -381,6 +406,12 @@ try {
     const restoreMarker = join(home, 'restored-check-marker.txt');
     const restoreCheck = await makeCheck('restored-current-authority', 'pass.mjs', [restoreMarker]);
     await adopt(restoreCheck);
+    const restoredLiveChecks = [];
+    for (const mode of ['expiring', 'current']) {
+      const value = await makeCheck(`restored-live-${mode}`, 'delay.mjs'); value.criteria[0].id = 'first';
+      const marker = join(home, `restored-live-${mode}.txt`); const second = await makeCheck(value.id, 'pass.mjs', [marker]); value.criteria.push({ ...second.criteria[0], id: 'second' });
+      await adopt(value); restoredLiveChecks.push({ mode, definition: value, marker });
+    }
     await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, projects: { fixture: { ...bindings.projects.fixture, cloudEnvironmentId: 'prepared-cloud' } } }));
     const archive = join(root, 'bin', 'archive-good'); const backup = await run(['backup', '--to', archive]); assert.ok(backup.manifest.files.length > 0); assert.equal((await run(['backup', '--to', archive])).replay, true);
     const restoredHome = join(root, 'bin', 'restored-home'); const restored = await run(['restore', '--from', archive, '--into', restoredHome]); assert.equal(restored.suspended, true); await run(['restore', '--from', archive, '--into', restoredHome], 2); await run(['doctor'], 3, restoredHome);
@@ -420,7 +451,27 @@ try {
     assert.equal(review(await reconcile(restoreCheck.id, 0, [renewedAuthority], restoredHome)).restore.suspended, false);
     assert.notEqual(await readFile(restoreMarker, 'utf8'), markerBeforeCorrection);
     report.restoredCurrentContext = { active: activeCheck.hash, corrected: correctedContext.hash, unavailable: unavailableContext.hash, markerBlockedOnCorrection: true };
-    scenario('restored-current-context', 'Explicit wrong-scope and unavailable authority supersession suspends before local-check execution; fresh exact renewal reactivates the restored home.');
+    report.restoredLiveAuthority = [];
+    for (const { mode, definition: value, marker } of restoredLiveChecks) {
+      assert.equal(review(await reconcile(value.id, 3, null, restoredHome)).restore.suspended, true);
+      const observedAt = now(); const expiresAt = mode === 'expiring' ? new Date(Date.now() + 2000).toISOString() : null;
+      const refresh = ['authority', 'tasks', 'schedule'].map(category => observed(value.id, { category, observedAt, homeEpoch: freshEpoch, ...(category === 'authority' ? { authority: { ...value.authorityRef, ...(expiresAt ? { expiresAt } : {}) } } : category === 'tasks' ? { tasks: [] } : { schedules: [] }) }));
+      const state = review(await reconcile(value.id, mode === 'expiring' ? 3 : 0, refresh, restoredHome, observedAt));
+      const first = await checkBytes(state, 'first', restoredHome); const second = await checkBytes(state, 'second', restoredHome);
+      const markerBytes = await readFile(marker, 'utf8').catch(error => { if (error.code === 'ENOENT') return null; throw error; });
+      report.restoredLiveAuthority.push({ mode, expiresAt, review: state.hash, restore: state.restore, first, second, markerBytes });
+      await cp(restoredHome, join(evidenceDir, 'restored-home'), { recursive: true });
+      assert.equal(first.check.outcome, 'pass'); assert.equal(first.check.stdout, 'delayed\n');
+      if (mode === 'expiring') {
+        assert.ok(Date.parse(first.check.startedAt) < Date.parse(expiresAt)); assert.ok(Date.parse(first.check.completedAt) > Date.parse(expiresAt));
+        assert.equal(markerBytes, null, 'Restored authority must remain current before each later local check');
+        assert.equal(second.check.outcome, 'unknown'); assert.equal(second.check.reason, 'restore-suspended'); assert.equal(second.check.exitCode, undefined);
+        assert.deepEqual(state.restore.needed, ['authority']); assert.deepEqual(state.proposals, []);
+      } else {
+        assert.equal(second.check.outcome, 'pass'); assert.equal(markerBytes, 'ran\n'); assert.equal(state.restore.suspended, false);
+      }
+    }
+    scenario('restored-current-context', 'Explicit wrong-scope and unavailable authority supersession suspends before execution; authority expiring during an earlier delayed check blocks the next command; current authority and fresh exact renewal permit execution.');
     const restoredMarkerBefore = await readFile(marker, 'utf8'); const suspendedChecks = review(await reconcile(failCheck.id, 3, null, restoredHome)); assert.equal((await (async () => { const obs = suspendedChecks.observations.filter(item => item.category === 'criteria' && item.assurance === 'observed-local').sort((a, b) => a.ageMs - b.ageMs)[0]; const rec = await readRecord(restoredHome, obs.hash); return JSON.parse(await readFile(join(restoredHome, 'records', obs.hash, rec.claims[0].evidenceRef), 'utf8')); })()).reason, 'restore-suspended'); assert.equal(await readFile(marker, 'utf8'), restoredMarkerBefore);
     const corruptArchive = join(root, 'bin', 'archive-corrupt'); await cp(archive, corruptArchive, { recursive: true }); const archiveRecord = backup.manifest.files.find(file => file.path.startsWith('records/') && !file.path.endsWith('/record.json')); assert.ok(archiveRecord); await writeFile(join(corruptArchive, archiveRecord.path), 'Corrupted archived evidence');
     await run(['restore', '--from', corruptArchive, '--into', join(root, 'bin', 'restore-corrupt')], 2);
