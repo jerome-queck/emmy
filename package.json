@@ -8,6 +8,6 @@
     "agent": "node scripts/agent.mjs",
     "check": "node scripts/check.mjs",
     "verify:behavior": "node scripts/verify-behavior.mjs",
-    "verify:formal": "node scripts/verify-formal.mjs"
+    "verify:formal": "node scripts/verify-formal.mjs && node verification/merge-policy.mjs"
   }
 }
