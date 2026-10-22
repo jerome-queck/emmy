@@ -16,11 +16,11 @@ export const readJson = async path => JSON.parse(await readFile(path, 'utf8'));
 const requireValue = (condition, message) => { if (!condition) throw new Error(message); };
 const text = (value, name) => requireValue(typeof value === 'string' && value.trim().length > 0, `${name} must be nonempty text`);
 const object = (value, name) => requireValue(value && typeof value === 'object' && !Array.isArray(value), `${name} must be an object`);
-const hash = (value, name) => requireValue(/^[a-f0-9]{64}$/.test(value ?? ''), `${name} must be a SHA-256 digest`);
+const hash = (value, name) => requireValue(typeof value === 'string' && /^[a-f0-9]{64}$/.test(value), `${name} must be a SHA-256 digest`);
 const array = (value, name) => requireValue(Array.isArray(value), `${name} must be an array`);
 const texts = (value, name) => { array(value, name); value.forEach(item => text(item, name)); };
 const hashes = (value, name) => { array(value, name); value.forEach(item => hash(item, name)); requireValue(new Set(value).size === value.length, `${name} contains duplicates`); };
-const id = (value, name) => requireValue(/^[a-z][a-z0-9-]*$/.test(value ?? ''), `Invalid ${name}`);
+const id = (value, name) => requireValue(typeof value === 'string' && /^[a-z][a-z0-9-]*$/.test(value), `Invalid ${name}`);
 const choice = (value, values, name) => requireValue(values.includes(value), `Unknown ${name}`);
 
 export function timestamp(value, name = 'timestamp') {
@@ -59,13 +59,14 @@ function subject(value) {
     requireValue(/^[a-f0-9]{40}([a-f0-9]{24})?$/.test(value.revision), 'Local revision must be a full commit SHA');
     hash(value.dirtyDigest, 'subject.dirtyDigest');
   }
-  if (value.nativeId !== undefined) text(value.nativeId, 'subject.nativeId');
+  if (value.nativeId !== undefined && value.nativeId !== null) text(value.nativeId, 'subject.nativeId');
 }
 
 function authority(value, name = 'authorityRef') {
   object(value, name);
   for (const field of ['reference', 'action', 'resource', 'destination']) text(value[field], `${name}.${field}`);
   if (value.expiresAt !== undefined) timestamp(value.expiresAt, `${name}.expiresAt`);
+  if (value.cloud !== undefined) requireValue(typeof value.cloud === 'boolean', `${name}.cloud must be boolean`);
 }
 
 function criterion(value) {
@@ -89,6 +90,8 @@ function criterion(value) {
 export function parseDefinition(input) {
   object(input, 'definition');
   id(input.id, 'responsibility ID'); hashes(input.parents, 'parents');
+  if (input.workClass !== undefined) choice(input.workClass, ['code', 'academic', 'research', 'coordination'], 'workClass');
+  if (input.cloudReason !== undefined) text(input.cloudReason, 'cloudReason');
   for (const name of ['goal', 'context', 'action', 'resource', 'destination']) text(input[name], name);
   const target = { ...input.target, executor: input.target?.executor ?? 'local-codex' };
   subject(target); authority(input.authorityRef);
@@ -101,6 +104,7 @@ export function parseDefinition(input) {
   timestamp(input.reviewAt, 'reviewAt');
   object(input.feature, 'feature'); id(input.feature.id, 'feature.id'); text(input.feature.method, 'feature.method'); text(input.feature.intendedEffect, 'feature.intendedEffect'); timestamp(input.feature.reviewAt, 'feature.reviewAt');
   object(input.lifecycle, 'lifecycle'); choice(input.lifecycle.status, ['active', 'retired', 'merged'], 'lifecycle');
+  requireValue(input.lifecycle.status !== 'active' || input.criteria.length > 0, 'Active responsibility requires at least one finish criterion');
   if (input.lifecycle.status === 'merged') id(input.lifecycle.replacementId, 'replacementId');
   if (input.lifecycle.transferFindingIds !== undefined) { hashes(input.lifecycle.transferFindingIds, 'transferFindingIds'); id(input.lifecycle.replacementId, 'replacementId'); }
   if (input.trigger !== undefined) {
@@ -224,7 +228,7 @@ export async function readRecord(home, reference) {
   hash(reference, 'record reference');
   const directory = join(home, 'records', reference);
   requireValue((await lstat(directory)).isDirectory() && !(await lstat(directory)).isSymbolicLink(), 'Record is not an ordinary directory');
-  const record = await readJson(join(directory, 'record.json'));
+  const record = JSON.parse(await ordinaryFile(join(directory, 'record.json')));
   const { hash: storedHash, ...body } = record;
   requireValue(storedHash === reference && digest(body) === reference && recordTypes.includes(record.type), 'Immutable record digest mismatch');
   const files = record.fileDigests ?? {};

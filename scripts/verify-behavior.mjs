@@ -37,6 +37,7 @@ const git = args => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8
 const review = data => data.responsibilities[0].record;
 const reconcile = async (id, expected = 0, imports = null, selectedHome = home, asOf = now()) => run(['reconcile', '--id', id, '--as-of', asOf, ...(imports ? ['--import', await fixture(`import-${randomUUID()}.json`, { schemaVersion: 1, records: imports })] : [])], expected, selectedHome);
 try {
+  assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && process.argv[3] === 'self-check-repair', 'Use no arguments or --focus self-check-repair');
   for (const path of ['registry', 'docs', '.agents', 'src', 'scripts']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
   await mkdir(home, { recursive: true }); await mkdir(join(root, 'bin'));
   for (const name of ['gh', 'codex', 'curl', 'ssh']) await writeFile(join(root, 'bin', name), `#!/bin/sh\necho invoked >> '${join(home, 'executor-invoked')}'\nexit 99\n`, { mode: 0o755 });
@@ -99,10 +100,35 @@ try {
   const finalRef = finalRecheck.observations.filter(item => item.category === 'criteria').sort((left, right) => left.ageMs - right.ageMs)[0].hash;
   const finalCorrection = review(await reconcile(definition.id, 0, [{ ...repair, changeRef: 'Restored bytes after the later regression.', recheckRefs: [finalRef], observedAt: now() }]));
   assert.equal(finalCorrection.findings.find(item => item.id === finding.id).status, 'resolved');
+  const completionArtifact = join(home, 'completed-artifact.txt'); await writeFile(completionArtifact, original);
+  const completionDefinition = { ...definition, id: 'completed-continuation', criteria: [{ ...definition.criteria[0], path: completionArtifact }] };
+  await run(['responsibility', '--file', await fixture('completed-definition.json', completionDefinition)]);
+  const beforeCompletion = review(await reconcile(completionDefinition.id, 0, [{ ...nativeReport, responsibilityId: completionDefinition.id }]));
+  const completionKey = beforeCompletion.proposals[0].effectKey;
+  const completedNative = { ...nativeReport, responsibilityId: completionDefinition.id, category: 'effect', observedAt: now(), effects: [{ key: completionKey, status: 'completed' }] };
+  const completed = review(await reconcile(completionDefinition.id, 0, [completedNative])); assert.deepEqual(completed.proposals, []);
+  await writeFile(completionArtifact, 'Damage after native completion\n');
+  const completionFailure = review(await reconcile(completionDefinition.id, 3)); const completionFinding = completionFailure.findings.find(item => item.code === 'criterion-failed'); assert.ok(completionFinding);
+  assert.equal(completionFailure.proposals[0]?.type, 'observe-or-decide'); assert.equal(completionFailure.proposals[0]?.nativeRediscoveryRequired, true);
+  const completionRepair = { ...repair, responsibilityId: completionDefinition.id, findingId: completionFinding.id, failureRefs: completionFinding.failureRefs, recheckRefs: completionFinding.failureRefs, observedAt: now(), changeRef: 'Failed repair after reported native completion.' };
+  await reconcile(completionDefinition.id, 3, [completionRepair]);
+  const completionDiagnosis = review(await reconcile(completionDefinition.id, 3, [{ ...completionRepair, observedAt: now(), changeRef: 'Second failed repair after reported native completion.' }]));
+  assert.equal(completionDiagnosis.proposals[0]?.type, 'diagnose', 'Earlier native completion cannot suppress diagnosis of later repeated failure'); assert.equal(completionDiagnosis.proposals[0]?.effectKey, completionKey); assert.equal(completionDiagnosis.proposals[0]?.nativeRediscoveryRequired, true);
+  const pendingNative = { ...completedNative, observedAt: now(), effects: [{ key: completionKey, status: 'pending' }] };
+  const stillPending = review(await reconcile(completionDefinition.id, 3, [pendingNative])); assert.equal(stillPending.proposals[0]?.type, 'rediscover', 'Pending native work keeps rediscovery-only priority even beside an earlier completion');
+  const rediscoveredNative = { ...completedNative, observedAt: now(), supersedes: { hash: recordPayload(parseObservation(pendingNative)).hash, reason: 'Fresh attributed native readback replaces the pending state.' } };
+  assert.equal(review(await reconcile(completionDefinition.id, 3, [rediscoveredNative])).proposals[0]?.type, 'diagnose');
+  await writeFile(completionArtifact, original); const completionRecheck = review(await reconcile(completionDefinition.id, 3));
+  const completionRef = completionRecheck.observations.filter(item => item.category === 'criteria').sort((left, right) => left.ageMs - right.ageMs)[0].hash;
+  const completionClosed = review(await reconcile(completionDefinition.id, 0, [{ ...completionRepair, recheckRefs: [completionRef], observedAt: now(), changeRef: 'Restored expected bytes after the later completed-effect failure.' }]));
+  assert.equal(completionClosed.findings.find(item => item.id === completionFinding.id).status, 'resolved'); assert.deepEqual(completionClosed.proposals, [], 'Exact closure does not propose duplicate green work after completion');
+  const completionRestart = review(await reconcile(completionDefinition.id)); assert.deepEqual(completionRestart.proposals, []);
+  report.completedContinuation = { beforeCompletion: beforeCompletion.hash, completed: completed.hash, failure: completionFailure.hash, diagnosis: completionDiagnosis.hash, closed: completionClosed.hash, restarted: completionRestart.hash, effectKey: completionKey };
   report.selfCheck = { adopted: adopted.hash, firstReview: first.hash, detectedReview: detected.hash, finding, failedRepairReview: failed.hash, diagnosisReview: repeated.hash, correctedReview: corrected.hash, recoveredReview: recovered.hash, regressedReview: regressed.hash, unreadableReview: unreadable.hash, finalCorrection: finalCorrection.hash, actualArtifact: await readFile(artifact, 'utf8') };
-  scenario('self-check-repair', 'Actual corruption discovered without supplied failure; two failed repairs survive restart and trigger diagnosis; matching current recheck closes exact retained finding.');
+  scenario('self-check-repair', 'Actual corruption and recurrence survive restart; two failed repairs require diagnosis even after earlier native completion; pending effects require rediscovery; exact closure suppresses duplicate completed green work.');
   if (report.focus !== 'self-check-repair') {
     const adopt = async value => run(['responsibility', '--file', await fixture(`definition-${randomUUID()}.json`, value)]);
+    await run(['responsibility', '--file', await fixture('active-empty-criteria.json', { ...definition, id: 'invalid-empty', criteria: [] })], 2);
     const observed = (responsibilityId, change = {}) => ({ type: 'observation', responsibilityId, subject: target, observedAt: now(), observer: 'Synthetic attributed source', category: 'criteria', availability: 'available', coverage: { complete: true, gaps: [] }, claims: [], evidenceRefs: [], ...change });
     const tasks = responsibilityId => observed(responsibilityId, { category: 'tasks', tasks: [] });
     const manifest = await readStore(home);
@@ -110,6 +136,11 @@ try {
     const storedProjection = Object.fromEntries(Object.keys(replayed).map(key => [key, finalCorrection[key]]));
     assert.deepEqual(replayed, storedProjection, 'Every decision input is recoverable from the pinned manifest/context');
     assert.ok(finalCorrection.inputHashes.includes(recovered.hash), 'Prior reviews are pinned inputs');
+    await run(['responsibility', '--file', await fixture('invalid-id-type.json', { ...definition, id: ['invalid-array-id'] })], 2);
+    await run(['responsibility', '--file', await fixture('invalid-digest-type.json', { ...definition, id: 'invalid-array-digest', criteria: [{ ...definition.criteria[0], sha256: [definition.criteria[0].sha256] }] })], 2);
+    await run(['responsibility', '--file', await fixture('invalid-cloud-reason.json', { ...definition, id: 'invalid-cloud-reason', cloudReason: {} })], 2);
+    await run(['responsibility', '--file', await fixture('invalid-work-class.json', { ...definition, id: 'invalid-work-class', workClass: 'coed' })], 2);
+    const dueDefinition = { ...definition, id: 'review-due', reviewAt: new Date(Date.now() - 1000).toISOString() }; await adopt(dueDefinition); const dueReview = review(await reconcile(dueDefinition.id, 3, [tasks(dueDefinition.id)])); assert.ok(dueReview.findings.some(item => item.code === 'responsibility-review-due'));
     const unknownDefinition = { ...definition, id: 'unknown-project', target: { ...target, projectId: 'constructor' } };
     await adopt(unknownDefinition);
     const unknown = review(await reconcile(unknownDefinition.id, 3));
@@ -179,6 +210,11 @@ try {
     await writeFile(artifact, 'Wrong bytes for weakened expectation\n'); const weakFailure = review(await reconcile(weakenedDefinition.id, 3)); const retainedFailureId = weakFailure.findings.find(item => item.code === 'criterion-failed').id;
     await adopt({ ...weakenedDefinition, parents: [weakBase.hash], criteria: [{ ...definition.criteria[0], sha256: digest(await readFile(artifact)) }] });
     assert.equal(review(await reconcile(weakenedDefinition.id, 3)).findings.find(item => item.id === retainedFailureId).status, 'open'); await writeFile(artifact, original);
+    const twoDefinition = { ...definition, id: 'two-criteria', criteria: [definition.criteria[0], { ...definition.criteria[0], id: 'artifact-second' }] }; await adopt(twoDefinition); await reconcile(twoDefinition.id, 0, [tasks(twoDefinition.id)]);
+    await writeFile(artifact, 'Two failing criteria share damaged bytes\n'); const twoFailures = review(await reconcile(twoDefinition.id, 3)); const exactFindings = twoFailures.findings.filter(item => item.code === 'criterion-failed'); assert.equal(exactFindings.length, 2);
+    await writeFile(artifact, original); const twoRechecked = review(await reconcile(twoDefinition.id, 3)); const bothRef = twoRechecked.observations.filter(item => item.category === 'criteria').sort((left, right) => left.ageMs - right.ageMs)[0].hash;
+    const onlyOne = review(await reconcile(twoDefinition.id, 3, [{ type: 'repair', responsibilityId: twoDefinition.id, findingId: exactFindings[0].id, failureRefs: exactFindings[0].failureRefs, author: 'Synthetic repair author', changeRef: 'Corrected bytes and linked only the first exact finding.', expectedSubject: target, recheckRefs: [bothRef], observedAt: now() }]));
+    assert.equal(onlyOne.findings.find(item => item.id === exactFindings[0].id).status, 'resolved'); assert.equal(onlyOne.findings.find(item => item.id === exactFindings[1].id).status, 'open');
     scenario('evidence-boundaries', 'Distinct stale/future/partial/unavailable/foreign/revision refusals, reported-only imports, false-claim correction, self-certification refusal and old failure surviving weakened criteria.');
     const makeCheck = async (id, script, argv = [], timeoutMs = 5000) => ({ ...definition, id, criteria: [{ id: 'command', evidence: 'local-check', description: 'Run a pinned synthetic Node verifier.', check: { script: `fixture-verifiers/${script}`, sha256: digest(await readFile(join(root, 'fixture-verifiers', script))), argv, expectedExit: 0, timeoutMs, authorityRef: { reference: 'Synthetic local execution grant', action: 'run-local-check', resource: definition.resource, destination: definition.destination } } }] });
     const checkBytes = async state => {
@@ -190,6 +226,10 @@ try {
     const observedPass = review(await reconcile(passCheck.id, 0, [tasks(passCheck.id)])); const passingCommand = await checkBytes(observedPass);
     assert.equal(passingCommand.check.exitCode, 0); assert.equal(passingCommand.check.node, process.version); assert.equal(passingCommand.check.outputLimitBytes, 1024 * 1024); assert.match(passingCommand.check.stdout, /Synthetic local verification passed/);
     assert.equal(observedPass.criterionResults[0].assurance, 'observed-local');
+    assert.ok(Date.parse(passingCommand.check.startedAt) <= Date.parse(passingCommand.check.completedAt)); assert.ok(Date.parse(passingCommand.check.completedAt) <= Date.parse(observedPass.asOf));
+    const historicalRequest = '2026-01-01T00:00:00Z'; const liveStart = Date.now(); const historicalLive = review(await reconcile(passCheck.id, 0, null, home, historicalRequest)); const historicalCheck = await checkBytes(historicalLive); assert.equal(historicalLive.requestedAsOf, historicalRequest); assert.ok(Date.parse(historicalCheck.check.startedAt) >= liveStart); assert.ok(Date.parse(historicalLive.asOf) >= Date.parse(historicalCheck.check.completedAt));
+    const expiredMarker = join(home, 'expired-execution.txt'); const expiredCheck = await makeCheck('local-command-expired', 'pass.mjs', [expiredMarker]); expiredCheck.criteria[0].check.authorityRef.expiresAt = new Date(Date.now() - 1000).toISOString(); await adopt(expiredCheck); const expiredState = review(await reconcile(expiredCheck.id, 3, [tasks(expiredCheck.id)])); assert.equal((await checkBytes(expiredState)).check.reason, 'check-authority-needed'); await assert.rejects(readFile(expiredMarker), { code: 'ENOENT' });
+
     await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, projects: { fixture: { ...bindings.projects.fixture, repository: 'https://example.invalid/intended-other-repository' } } }));
     const repoBlockedMarker = await readFile(marker, 'utf8'); const blockedRepoCheck = review(await reconcile(passCheck.id, 3)); assert.ok(blockedRepoCheck.route.reasons.includes('repository-binding-mismatch')); assert.equal(await readFile(marker, 'utf8'), repoBlockedMarker, 'Repository mismatch prevents executing a locally pinned verifier');
     await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
@@ -239,7 +279,7 @@ try {
     await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
     scenario('local-check', 'Pinned Node script/argv/authority and actual output/exit; timeout/output/cancellation clean owned child groups; retired removed scripts do not run; synthetic E002 CLI failure survives repair and corrected-revision replay still cannot authenticate independence.');
     const trigger = { nativeId: 'synthetic-schedule', promptDigest: digest('Synthetic schedule prompt'), timezone: 'UTC', destination: definition.destination, nextWindow: { start: new Date(Date.now() - 3000).toISOString(), due: new Date(Date.now() - 2000).toISOString(), graceMs: 0 } };
-    const triggerDefinition = { ...definition, id: 'trigger-case', criteria: [], trigger, feature: { ...definition.feature, reviewAt: new Date(Date.now() - 86400000).toISOString() } }; const triggerAdoption = await adopt(triggerDefinition);
+    const triggerDefinition = { ...definition, id: 'trigger-case', criteria: definition.criteria, trigger, feature: { ...definition.feature, reviewAt: new Date(Date.now() - 86400000).toISOString() } }; const triggerAdoption = await adopt(triggerDefinition);
     const schedule = { nativeId: trigger.nativeId, status: 'enabled', promptDigest: trigger.promptDigest, timezone: trigger.timezone, destination: trigger.destination };
     const partialSchedule = observed(triggerDefinition.id, { category: 'schedule', observer: 'Synthetic partial schedule', coverage: { complete: false, gaps: ['Missing native run page'] }, schedule, runs: [] });
     const utility = { type: 'feature-review', responsibilityId: triggerDefinition.id, featureId: definition.feature.id, observedAt: now(), reviewAt: '2099-01-01T00:00:00Z', recommendation: 'retain', usefulOutcomes: [], falseAlarms: [], repairEffortMinutes: 0, motivatingFailures: ['Observe a known missing window.'], reason: 'Quiet monitoring remains useful. Zero actions alone does not justify retirement.' };
@@ -252,7 +292,7 @@ try {
     const completeHash = (await readStore(home)).records.find(record => record.observer === completeSchedule.observer).hash;
     const noOp = observed(triggerDefinition.id, { category: 'schedule', observer: 'Synthetic no-op run', schedule, runs: [{ nativeId: trigger.nativeId, windowStart: trigger.nextWindow.start, outcomeRefs: [], deliveryRefs: [] }], supersedes: { hash: completeHash, reason: 'Native run is visible but its promised outcome and delivery are absent.' } });
     const noOpWindow = review(await reconcile(triggerDefinition.id, 3, [noOp])); assert.ok(noOpWindow.findings.some(item => item.code === 'run-no-evidence')); assert.ok(noOpWindow.findings.some(item => item.code === 'delivery-unverified'));
-    const pendingDefinition = { ...definition, id: 'pending-effect', criteria: [] }; const pendingAdoption = await adopt(pendingDefinition); const initialPending = review(await reconcile(pendingDefinition.id, 0, [tasks(pendingDefinition.id)])); const pendingKey = initialPending.proposals[0].effectKey;
+    const pendingDefinition = { ...definition, id: 'pending-effect', criteria: definition.criteria }; const pendingAdoption = await adopt(pendingDefinition); const initialPending = review(await reconcile(pendingDefinition.id, 0, [tasks(pendingDefinition.id)])); const pendingKey = initialPending.proposals[0].effectKey;
     const pendingObservation = observed(pendingDefinition.id, { category: 'effect', observer: 'Synthetic uncertain effect', effects: [{ key: pendingKey, status: 'uncertain' }] });
     const pending = review(await reconcile(pendingDefinition.id, 0, [pendingObservation])); assert.equal(pending.proposals[0].type, 'rediscover');
     const pendingHash = (await readStore(home)).records.find(record => record.observer === pendingObservation.observer).hash;
@@ -262,7 +302,7 @@ try {
     const noAbsence = review(await reconcile(pendingDefinition.id, 0, [absentPartial])); assert.equal(noAbsence.proposals[0].type, 'rediscover');
     const partialAbsenceHash = (await readStore(home)).records.find(record => record.observer === absentPartial.observer).hash;
     const rediscovered = review(await reconcile(pendingDefinition.id, 0, [observed(pendingDefinition.id, { category: 'effect', observer: 'Synthetic complete absence', effects: [{ key: pendingKey, status: 'absent' }], supersedes: { hash: partialAbsenceHash, reason: 'Fresh complete native discovery replaces the partial chain.' } })])); assert.equal(rediscovered.proposals[0].type, 'work');
-    const replacementDefinition = { ...definition, id: 'replacement-method', criteria: [] }; await adopt(replacementDefinition); await reconcile(replacementDefinition.id, 0, [tasks(replacementDefinition.id)]);
+    const replacementDefinition = { ...definition, id: 'replacement-method', criteria: definition.criteria }; await adopt(replacementDefinition); await reconcile(replacementDefinition.id, 0, [tasks(replacementDefinition.id)]);
     const retiredAdoption = await adopt({ ...triggerDefinition, parents: [triggerAdoption.hash], lifecycle: { status: 'retired', replacementId: replacementDefinition.id, transferFindingIds: [missedFinding.id] } });
     const retirementPending = review(await reconcile(triggerDefinition.id, 3)); assert.deepEqual(retirementPending.proposals, []); assert.equal(retirementPending.retirement.status, 'pending-native-disablement'); assert.ok(retirementPending.findings.some(item => item.id === missedFinding.id && item.status === 'open' && item.transferredTo === replacementDefinition.id));
     const noOpHash = (await readStore(home)).records.find(record => record.observer === noOp.observer).hash;
@@ -288,6 +328,9 @@ try {
     const traversalArchive = join(root, 'bin', 'archive-traversal'); await cp(archive, traversalArchive, { recursive: true }); const manifestBody = JSON.parse(await readFile(join(traversalArchive, 'manifest.json'), 'utf8')); delete manifestBody.hash; manifestBody.files[0].path = '../escape'; manifestBody.files.sort((left, right) => left.path.localeCompare(right.path)); await writeFile(join(traversalArchive, 'manifest.json'), JSON.stringify({ ...manifestBody, hash: digest(manifestBody) })); const traversal = await run(['restore', '--from', traversalArchive, '--into', join(root, 'bin', 'restore-traversal')], 2); assert.match(traversal.error, /Unsafe archive path/);
     const missingArchive = join(root, 'bin', 'archive-missing'); await cp(archive, missingArchive, { recursive: true }); await rm(join(missingArchive, archiveRecord.path)); await run(['restore', '--from', missingArchive, '--into', join(root, 'bin', 'restore-missing')], 2);
     const symlinkArchive = join(root, 'bin', 'archive-symlink'); await cp(archive, symlinkArchive, { recursive: true }); await rm(join(symlinkArchive, archiveRecord.path)); await (await import('node:fs/promises')).symlink(join(archive, archiveRecord.path), join(symlinkArchive, archiveRecord.path)); await run(['restore', '--from', symlinkArchive, '--into', join(root, 'bin', 'restore-symlink')], 2);
+    const liveRecordPath = join(probes.path, 'record.json'); const liveRecordBytes = await readFile(liveRecordPath); await writeFile(liveRecordPath, '{}'); await run(['doctor'], 2); await run(['backup', '--to', join(root, 'bin', 'archive-live-corruption')], 2); await writeFile(liveRecordPath, liveRecordBytes);
+    const livePacketPath = join(probes.path, 'packet.md'); const livePacketBytes = await readFile(livePacketPath); await writeFile(livePacketPath, 'Changed immutable packet'); await run(['doctor'], 2); await writeFile(livePacketPath, livePacketBytes);
+    const externalRecord = join(home, 'external-record.json'); await writeFile(externalRecord, liveRecordBytes); await rm(liveRecordPath); await (await import('node:fs/promises')).symlink(externalRecord, liveRecordPath); await run(['doctor'], 2); await rm(liveRecordPath); await writeFile(liveRecordPath, liveRecordBytes); await run(['doctor']);
     report.archive = { manifestHash: backup.manifest.hash, files: backup.manifest.files.length, restoredEpoch: restored.epoch, freshEffectKey: refreshed.proposals[0].effectKey, hardwareLossRecovery: 'unverified' };
     scenario('archive-recovery', 'Pinned archive bytes/references and bindings restore only into a new suspended home; fresh epoch observations recover proposals and preserve keys/failures; corrupt/missing/traversal/symlink archives and existing destinations refuse.');
     report.interruptions = [];
@@ -320,9 +363,6 @@ try {
     await writeFile(join(root, 'docs/cli.md'), 'Stale generated reference'); assert.equal((await run(['maintain', '--check'], 3)).status, 'drift'); await run(['maintain', '--write']); await run(['maintain', '--check']); assert.deepEqual((await run(['maintain', '--write'])).changed, []);
     const publicBefore = await readFile(join(root, 'docs/catalog.md')); await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, privateSentinel: 'synthetic-private-never-public' })); await run(['maintain', '--write']); assert.deepEqual(await readFile(join(root, 'docs/catalog.md')), publicBefore); assert.equal((await readFile(join(root, 'docs/catalog.md'), 'utf8')).includes('synthetic-private-never-public'), false); assert.deepEqual(await readFile(formalPath), formalBefore); assert.deepEqual(await readFile(join(root, 'registry/catalog.json')), catalogBefore);
     scenario('derived-boundaries', 'Generated drift fails then regenerates idempotently; private state never enters public references; catalog review dates and formal pins stay unchanged.');
-
-
-
   }
   assert.equal((await readdir(home)).includes('executor-invoked'), false);
   await cp(join(home, 'records'), join(evidenceDir, 'records'), { recursive: true });
