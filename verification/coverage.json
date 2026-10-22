@@ -1,20 +1,20 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "224cb2bdff4cc05d2aebd11a16ce1a67ec0977d4",
-  "reviewBasis": "Implementation owner reviewed the covered migration from prior pin 3c79e7387f5c40df8d12ebfc13cfbcd42c40e1c1 through this source commit, including new owners and verifier/fixture code. The accepted architecture replaces request/snapshot/receipt APIs with responsibility replay. The old reviewed-source gate failed before this sync; its report remains retained. Finite products and explicit temporal traces call actual production functions: 5,244 predicates and 31 paired source mutants, followed by a restored baseline. Actual CLI coverage separately exercises IO, live processes, source advances, and named SIGSTOP/SIGKILL publication checkpoints. Recurrence, interrupted forward imports, repository intent, retirement conflicts, failure after completion, and source-advance history regressions remain as controls. This is implementation-owner source maintenance; coordinator source waves, live driving, and independent release review remain required.",
+  "sourceCommit": "fdb927098a967e9c59c7214964765d6771532934",
+  "reviewBasis": "Implementation owner reviewed every covered diff from source pin 224cb2bdff4cc05d2aebd11a16ce1a67ec0977d4 through this source commit, including live cutoff wiring, restored current supersession, reported cloud target recovery, native task effect correlation, denied process-group cleanup, fixtures, metadata, properties and mutation anchors. Unchanged covered owners match the prior reviewed bytes. The old normal source gate refused before this update; drift reports remain retained. All prior controls remain: 6,913 finite predicates across 17 properties and 37 paired actual-source mutants, followed by the restored baseline. Six new mutants target live completion omission, cloud target origin, raw restore history, unavailable supersession, uncorrelated native tasks and denied-group uncertainty. The actual CLI drive separately exercised 220 calls, 17 mapped scenarios and ten named publication cancellations. First and persistent injected EPERM retained explicit product cleanup uncertainty; separate fixture teardown does not prove denied product cleanup. The original observed EPERM cause remains unresolved. This is owner source maintenance; coordinator independent source reading, live driving, release review and native/provider acceptance remain separate.",
   "files": {
     "src/catalog.mjs": "d2c333d10851197c893a96eed024d3163473306189c8dce220ba9cfc5c14c27e",
     "src/maintenance.mjs": "0aded5eff8d0715b83d906571b51b71da40774f436741e0505f2dfdf9796bb86",
-    "src/metadata.mjs": "95b9f9b8f595856bb83b77f61661c3f04a1da20c2b018e29b130fb7b03dc208c",
+    "src/metadata.mjs": "7a2003b633eb1454407cd7f4a2e6965076586a1d646908ffee32690e1864aaba",
     "src/records.mjs": "88ec4d1c92eef4ffd79fc60093f20b8338b6626a5d9ab4cf3dcc2a45064cb596",
-    "src/work.mjs": "4554b18074557ef18b00a71712d7b2efde05a1d69bcefbe07b98ba59a09b1e9e",
-    "src/responsibilities.mjs": "1d0152f270e763b6df7583ed2a6f0c73e5846c48ac34abc9e7c0403f4baa0897",
+    "src/work.mjs": "283daf5686a7c46df7daae56ed9395d7d49f0268c42558f032189e4a1bc8b3e0",
+    "src/responsibilities.mjs": "6ebf11147500d7a9f76f4f84bb62538fa0ed1eebba14f2a5dc23d8a259233a22",
     "scripts/agent.mjs": "2ef39a3748dc6b42c1d82f74c064df4cfbcc2f04994b6f4881a5bd5f21887b84",
-    "scripts/verify-behavior.mjs": "94785dee7e563c59b080cce08387c60e3615fe0cde2bd1bbdf8c24cc7f9af0d8",
+    "scripts/verify-behavior.mjs": "c7ed0b836f3baa6c99853c24eddc874c0bd8faf0dea02825247525103b32ad6c",
     "scripts/verify-formal.mjs": "b89549617b88178b94ddef772ae3d183ec879fbe51d76449f7dec283240a5a78",
-    "verification/fixtures.mjs": "19b34258ff9ccd176d91d39c59a5d56b8b37b6ecfc931de22f3a40b7dcc74519",
-    "verification/properties.mjs": "b0d51c7099f1d29098392ef39a281fc9f624cefe151ae34fdc263ba0b147745f",
-    "verification/mutations.mjs": "776149aa376f4257ba58872deced8c605d10ef92e8e33b83ce4d7ff54457e747"
+    "verification/fixtures.mjs": "62f266f1e04b0db5ffc21a73f5cd9652a227fc96c06e13a5562db872e7fcb1b0",
+    "verification/properties.mjs": "6e0f157f73a3f1972a00f7405c38995549d43b52dad422b0c596bd6264e2246d",
+    "verification/mutations.mjs": "1477489f94b957eff4d2f8ab0f28e5ac7b8b103ce8566be0c17b5125c06b7683"
   },
   "mapping": [
     {
@@ -95,7 +95,8 @@
         "observation-gates",
         "native-uncertainty",
         "trigger-coverage",
-        "retirement-closure"
+        "retirement-closure",
+        "restore-suspension"
       ]
     },
     {
@@ -140,7 +141,8 @@
         "native-uncertainty",
         "trigger-coverage",
         "retirement-closure",
-        "restore-suspension"
+        "restore-suspension",
+        "live-cutoff"
       ]
     },
     {
@@ -148,6 +150,20 @@
       "source": "src/responsibilities.mjs",
       "properties": [
         "deterministic-replay"
+      ]
+    },
+    {
+      "function": "reviewAsOf",
+      "source": "src/work.mjs",
+      "properties": [
+        "live-cutoff"
+      ]
+    },
+    {
+      "function": "terminateOwnedProcessGroup",
+      "source": "src/responsibilities.mjs",
+      "properties": [
+        "process-group-cleanup"
       ]
     }
   ],
@@ -168,9 +184,14 @@
         "self-check-repair",
         "binding-boundaries",
         "evidence-boundaries",
+        "live-cutoff",
+        "native-effect-correlation",
         "local-check",
+        "local-check-cleanup",
         "trigger-evolution",
-        "archive-recovery"
+        "archive-recovery",
+        "cloud-recovery",
+        "restored-current-context"
       ]
     },
     {
@@ -220,6 +241,7 @@
     "Malicious code or detached-process containment",
     "Provider identity, authenticated native authority, and non-author review",
     "Native dispatch, native at-most-once execution, total dormancy and account permissions",
-    "Actual schedules, delivery, merges, deployments and hardware-loss recovery"
+    "Actual schedules, delivery, merges, deployments and hardware-loss recovery",
+    "Pure cutoff and signal-result checks do not establish actual clock acquisition, OS signal delivery or asynchronous callback cleanup; these require the CLI driver."
   ]
 }
