@@ -297,6 +297,24 @@ try {
       try { await waitForFile(cancelPid); child.kill('SIGTERM'); } catch (error) { child.kill('SIGKILL'); reject(error); }
     });
     report.commands.push(cancelled); assert.equal(cancelled.code, 2); assert.match(cancelled.stdout, /owned process-group cleanup/); await gone(Number(await readFile(cancelPid, 'utf8')));
+    report.cleanupFaultInjection = [];
+    for (const mode of ['once', 'always']) {
+      const deniedPid = join(home, `denied-${mode}-child.pid`); const deniedGroups = join(home, `denied-${mode}-groups.txt`);
+      const deniedCheck = await makeCheck(`local-command-denied-${mode}`, 'output.mjs', [deniedPid]); await adopt(deniedCheck);
+      try {
+        const data = await run(['reconcile', '--id', deniedCheck.id, '--as-of', now(), '--import', await fixture(`denied-${mode}-tasks.json`, { schemaVersion: 1, records: [tasks(deniedCheck.id)] })], 3, home, { NODE_OPTIONS: `--import=${join(root, 'fixture-verifiers/deny-group-kill.mjs')}`, EMMY_VERIFY_DENIED_GROUP_FILE: deniedGroups, EMMY_VERIFY_DENIED_GROUP_MODE: mode });
+        const result = (await checkBytes(review(data))).check;
+        assert.equal(result.outcome, 'fail'); assert.equal(result.reason, 'process-group-cleanup-failed'); assert.equal(result.terminationReason, 'output-limit');
+        assert.equal(result.cleanup.status, 'unverified'); assert.ok(result.cleanup.errors.includes('EPERM')); assert.equal(result.cleanup.processGroup, Number((await waitForFile(deniedGroups)).trim().split('\n')[0]));
+        assert.match(result.childTree, /cleanup unverified/); assert.doesNotMatch(result.childTree, /group terminated/);
+        report.cleanupFaultInjection.push({ mode, reason: result.reason, cleanup: result.cleanup, productCleanup: 'unverified', harnessCleanup: 'separate actual owned-group SIGKILL' });
+      } finally {
+        try { for (const group of new Set((await readFile(deniedGroups, 'utf8')).trim().split('\n').map(Number))) { try { process.kill(-group, 'SIGKILL'); } catch (error) { if (error.code !== 'ESRCH') throw error; } } }
+        catch (error) { if (error.code !== 'ENOENT') throw error; }
+        await gone(Number(await waitForFile(deniedPid)));
+      }
+    }
+    scenario('local-check-cleanup', 'Actual first and persistent group-kill EPERM stay structured, retain group identity and cleanup uncertainty, and cannot claim success. Harness cleanup is separate from the denied product cleanup.');
     const markerBeforeRetire = await readFile(marker, 'utf8'); await adopt({ ...passCheck, parents: [passAdoption.hash], lifecycle: { status: 'retired' } });
     await rm(join(root, 'fixture-verifiers/pass.mjs')); const retiredCheck = review(await reconcile(passCheck.id)); assert.deepEqual(retiredCheck.proposals, []); assert.equal(await readFile(marker, 'utf8'), markerBeforeRetire); await writeFile(join(root, 'fixture-verifiers/pass.mjs'), fixtureScripts['pass.mjs']);
     const errorRepo = join(home, 'e002-repository'); await mkdir(errorRepo);

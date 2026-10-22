@@ -1,4 +1,15 @@
 export const fixtureScripts = {
+  'deny-group-kill.mjs': `import { appendFileSync } from 'node:fs';
+const actual = process.kill.bind(process); let denied = false;
+process.kill = (pid, signal) => {
+  if (pid < 0 && signal === 'SIGKILL' && process.env.EMMY_VERIFY_DENIED_GROUP_FILE && (!denied || process.env.EMMY_VERIFY_DENIED_GROUP_MODE === 'always')) {
+    denied = true;
+    appendFileSync(process.env.EMMY_VERIFY_DENIED_GROUP_FILE, String(-pid) + '\\n');
+    throw Object.assign(new Error('Synthetic owned-group EPERM control'), { code: 'EPERM' });
+  }
+  return actual(pid, signal);
+};
+`,
   'pass.mjs': `import { appendFileSync } from 'node:fs';
 if (process.argv[2]) appendFileSync(process.argv[2], 'ran\\n');
 process.stdout.write('Synthetic local verification passed\\n');

@@ -14,7 +14,7 @@ export const verification = {
   features: [
     { id: 'orientation', title: 'Orientation and private integrity', commands: ['help', 'doctor', 'catalog'], scenarios: ['orientation'], properties: [] },
     { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'native-effect-correlation', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope', 'native-uncertainty'] },
-    { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile'], scenarios: ['self-check-repair', 'evidence-boundaries', 'live-cutoff', 'local-check', 'trigger-evolution'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay', 'current-evidence', 'trigger-coverage', 'retirement-closure'] },
+    { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile'], scenarios: ['self-check-repair', 'evidence-boundaries', 'live-cutoff', 'local-check', 'local-check-cleanup', 'trigger-evolution'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay', 'current-evidence', 'trigger-coverage', 'retirement-closure'] },
     { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore'], scenarios: ['archive-recovery', 'cloud-recovery', 'restored-current-context', 'publication-interruption', 'derived-boundaries'], properties: ['restore-suspension', 'import-prefix'] }
   ],
   properties: [

@@ -149,6 +149,7 @@
         "evidence-boundaries",
         "live-cutoff",
         "local-check",
+        "local-check-cleanup",
         "trigger-evolution"
       ],
       "properties": [
