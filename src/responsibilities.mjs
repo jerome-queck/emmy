@@ -4,7 +4,7 @@ import { readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative } from 'node:path';
 import { promisify } from 'node:util';
 import { canonical, canonicalRepository, digest, parseDefinition, publishRecord, readBindings, readStore, retainImport, validateReferences, recordPayload } from './records.mjs';
-import { authorityStatus, criterionHash, currentObservations, definitionHeads, effectKey, observationStatus, repairStatus, restoredState, retirementStatus, routeTarget, sameSubject, subjectKey, triggerStatus } from './work.mjs';
+import { authorityStatus, criterionHash, currentObservations, definitionHeads, effectKey, observationStatus, repairStatus, restoredState, retirementStatus, reviewAsOf, routeTarget, sameSubject, subjectKey, triggerStatus } from './work.mjs';
 
 const exec = promisify(execFile);
 export const ruleVersion = 'responsibility-v1';
@@ -246,13 +246,13 @@ export async function reconcile(home, { id, imports, asOf, catalog }) {
     const featureReviews = relevant.filter(record => record.type === 'feature-review');
     const previousCriteria = reviews.flatMap(review => review.findings.filter(finding => finding.durable).flatMap(finding => finding.criteria));
     const criteria = [...new Map([...definition.criteria, ...previousCriteria].map(criterion => [criterionHash(criterion), criterion])).values()];
-    const liveStart = new Date(Math.max(Date.parse(asOf), Date.now())).toISOString();
+    const liveStart = reviewAsOf(asOf, new Date().toISOString());
     const suspended = restoredState(epoch, observations, definition, liveStart).suspended;
     const local = heads.length === 1 ? await inspectLocal(definition, { bindings, catalog, machine, asOf: liveStart, epoch, suspended, criteria: definition.lifecycle.status === 'active' ? criteria : [] }) : [];
     for (const item of local) { const published = await publishRecord(home, item.payload, item.files); if (!observations.some(record => record.hash === published.hash)) observations.push(published.record); if (!records.some(record => record.hash === published.hash)) records.push(published.record); }
     const relatedDefinitions = records.filter(record => record.type === 'definition' && record.id !== responsibilityId);
     const relatedReviews = records.filter(record => record.type === 'review' && record.responsibilityId !== responsibilityId);
-    const effectiveAsOf = new Date(Math.max(Date.parse(asOf), ...local.map(item => Date.parse(item.payload.observedAt)))).toISOString();
+    const effectiveAsOf = reviewAsOf(asOf, new Date().toISOString());
     const state = { ...reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews, relatedDefinitions, relatedReviews, epoch, bindings, catalog, machine, asOf: effectiveAsOf }), requestedAsOf: asOf };
     const inputHashes = [...new Set([...definitions, ...observations, ...repairs, ...reviews, ...featureReviews, ...relatedDefinitions, ...relatedReviews, ...(epoch ? [epoch] : [])].map(record => record.hash))].sort();
     const ruleDigest = digest(await Promise.all(['records.mjs', 'work.mjs', 'responsibilities.mjs'].map(name => readFile(new URL(name, import.meta.url), 'utf8'))));
