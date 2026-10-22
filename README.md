@@ -18,7 +18,7 @@ A responsibility retains its goal, context, exact repository/host/path/revision,
 
 Use `--home <private-state>` to select one private register. The default is this checkout's ignored `.local/`. `backup` verifies a pinned record/evidence manifest and bindings. `restore` requires a new destination and suspends work until fresh observations name its new epoch. This does not establish hardware-loss recovery.
 
-The [CLI reference](docs/cli.md), [architecture](docs/architecture.md), and [public catalog](docs/catalog.md) define the contracts. Missing or partial native observations remain visible. The public catalog is a starting inventory; exact private bindings can add projects. A cloud route requires a prepared environment, a reason, and explicit cloud authority.
+The [CLI reference](docs/cli.md), [architecture](docs/architecture.md), and [public catalog](docs/catalog.md) define the contracts. Missing or partial native observations remain visible. The public catalog is a starting inventory; exact private bindings can add projects. Nonlocal coding requires a reason and explicit cloud authority. Codex Cloud also requires a prepared environment.
 
 Run `maintain --check` at session start. After metadata changes, run `maintain --write` and inspect the diff. The [behavioral skill](.agents/skills/verify/SKILL.md) drives real isolated CLI journeys. The [coordination contract](.agents/skills/coordination-contract/SKILL.md) checks bounded production functions and paired source mutants. The aggregate check also retains the existing merge tests and merge-policy verifier.
 
