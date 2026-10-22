@@ -107,4 +107,3 @@ Recommended evidence fields are `probe_id`, `nonce`, `observed_at`, `product`, `
 ISSUES. Documentation supports the coordinator design, local-first coding, independent cloud work, and saved schedules. Emmy account access and the probes remain unverified. No repository files, accounts, tasks, schedules, or Dot settings changed.
 
 The how investigation, technical-writing, and unslop skills shaped this report. No pstack leaf principle is claimed because none was applied as a separate loaded workflow.
-
