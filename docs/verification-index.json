@@ -126,6 +126,7 @@
       "scenarios": [
         "persistent-context",
         "binding-boundaries",
+        "native-effect-correlation",
         "probe-packet",
         "definition-concurrency"
       ],
@@ -146,6 +147,7 @@
       "scenarios": [
         "self-check-repair",
         "evidence-boundaries",
+        "live-cutoff",
         "local-check",
         "trigger-evolution"
       ],
@@ -170,6 +172,8 @@
       ],
       "scenarios": [
         "archive-recovery",
+        "cloud-recovery",
+        "restored-current-context",
         "publication-interruption",
         "derived-boundaries"
       ],
