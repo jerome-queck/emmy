@@ -25,7 +25,7 @@ Full and failed runs retain `.local/verification/behavior-*/report.json` plus im
 
 The full drive includes ten observed checkpoint cancellations. A child stops at named record/archive/restore publication boundaries or the first dependency-complete import publication, then the driver sends SIGKILL and replays. This is evidence at those boundaries. It is not all-instruction crash durability or filesystem flush proof.
 
-Local-check timeout, output limit, normal completion, and handled cancellation terminate the owned POSIX process group. The driver proves a real child is gone. Detached descendants and hostile-code containment remain outside the contract. The driver cleans only its own temporary state and processes, then retains evidence under this checkout's ignored home.
+Local-check timeout, output limit, normal completion, and handled cancellation terminate the owned POSIX process group when signalling succeeds. The driver proves a real child is gone. Injected first and persistent EPERM controls retain failed evidence, process-group identity, and explicit unverified cleanup. Their later harness group cleanup proves only teardown of those fixtures, not product cleanup under denied signals. Detached descendants and hostile-code containment remain outside the contract. The driver cleans only its own temporary state and processes, then retains evidence under this checkout's ignored home.
 
 ## Scope
 

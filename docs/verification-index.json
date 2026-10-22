@@ -159,6 +159,8 @@
         "repair-closure",
         "deterministic-replay",
         "current-evidence",
+        "live-cutoff",
+        "process-group-cleanup",
         "trigger-coverage",
         "retirement-closure"
       ]
@@ -226,6 +228,22 @@
       "statement": "Foreign, future, stale, partial or unavailable observations remain ineligible."
     },
     {
+      "id": "live-cutoff",
+      "source": "src/work.mjs",
+      "functions": [
+        "reviewAsOf"
+      ],
+      "statement": "Live review cutoffs include requested time and actual completion while fixed historical replay keeps its supplied time."
+    },
+    {
+      "id": "process-group-cleanup",
+      "source": "src/responsibilities.mjs",
+      "functions": [
+        "terminateOwnedProcessGroup"
+      ],
+      "statement": "Owned-group signalling distinguishes absent groups, denied cleanup and unexpected errors without claiming unknown cleanup succeeded."
+    },
+    {
       "id": "reported-assurance",
       "source": "src/responsibilities.mjs",
       "functions": [
@@ -272,7 +290,7 @@
       "functions": [
         "reconcileState"
       ],
-      "statement": "Known pending/uncertain effects permit rediscovery only; partial inventories cannot prove absence."
+      "statement": "Known pending, uncertain or uncorrelated native tasks require rediscovery; partial inventories cannot prove absence and unkeyed completion cannot prove an intended effect."
     },
     {
       "id": "trigger-coverage",
@@ -303,9 +321,10 @@
       "id": "restore-suspension",
       "source": "src/work.mjs",
       "functions": [
-        "restoredState"
+        "restoredState",
+        "currentObservations"
       ],
-      "statement": "Restored homes require fresh target, authority, task and schedule observations in their new epoch."
+      "statement": "Restored homes require current fresh exact target, authority, task and schedule observations in their new epoch; cloud targets remain reported and local targets require inspection."
     }
   ]
 }

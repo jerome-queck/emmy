@@ -34,6 +34,13 @@ export const bounds = {
   coverage: ['complete', 'partial'],
   agesMs: [-1, 0, 86400000, 86400001],
   heads: [1, 2],
+  liveCutoffOffsetsMs: [-172800000, -1, 0, 1, 172800000],
+  liveObservationCounts: [0, 1, 2],
+  nativeTaskCorrelation: { statuses: ['pending', 'running', 'unknown', 'completed'], keys: ['missing', 'old-effect', 'current-effect'], agesMs: [0, 86400001], coverage: ['complete', 'partial'], maximumObservations: { target: 1, tasks: 2, criteria: 1 } },
+  restoredExecutors: ['local-codex', 'dot-cloud', 'codex-cloud'],
+  restoredReplacements: ['wrong-scope', 'unavailable', 'denied', 'unknown', 'partial', 'future', 'without-supersession', 'renewed'],
+  restoreTemporalMaximum: { observations: 5, target: 1, authority: 2, tasks: 1, schedule: 1, epochs: 1 },
+  processGroupCleanup: { syntheticPids: [17, 18], errorTraces: [[null, 'ESRCH'], ['ESRCH', 'ESRCH'], ['EPERM', 'ESRCH'], ['EPERM', 'EPERM']], unexpectedError: 'EIO', realSignals: false },
   triggerStates: ['missing', 'partial', 'unavailable', 'enabled-no-run', 'enabled-no-outcome', 'enabled-no-delivery', 'enabled-complete', 'disabled', 'conflicting-enabled-disabled', 'superseded-enabled'],
   temporalTraces: ['green-unknown', 'fail-pass-repair-fail', 'fail-pass-repair-fail-pass-repair', 'recurrence-before-source-advance', 'weakened-definition', 'two-failed-repairs', 'completed-fail-failed-repair-failed-repair'],
   temporalMaximum: { criteria: 2, criterionObservations: 4, targetObservations: 2, taskObservations: 1, effectObservations: 2, repairs: 2, priorReviews: 3 },
@@ -108,6 +115,38 @@ export function verifyProperties({ work, responsibilities, records }, selected =
     }
     check('authority-scope', { case: 'absent' }, !work.authorityStatus({ ...def, authorityRef: null }, asOf).eligible, 'Absent authority cannot authorize work.');
   });
+
+  if (enabled('live-cutoff')) {
+    for (const requestOffset of bounds.liveCutoffOffsetsMs) for (const completionOffset of bounds.liveCutoffOffsetsMs) for (const observationCount of bounds.liveObservationCounts) {
+      const requested = clock(requestOffset); const completed = clock(completionOffset);
+      const observationTimes = [clock(-1), clock(1)].slice(0, observationCount);
+      const result = work.reviewAsOf(requested, completed, observationTimes); const inputs = [requested, completed, ...observationTimes];
+      check('live-cutoff', { requested, completed, observationTimes, result }, inputs.every(value => Date.parse(result) >= Date.parse(value)) && inputs.includes(result), 'Every live review includes requested time, actual completion and any local observation times, including an empty local inspection result.');
+    }
+    eachSubject(def => {
+      const historical = clock(-172800000);
+      const expired = { ...def, authorityRef: { ...def.authorityRef, expiresAt: clock(-169200000) } };
+      const inputs = { observations: [localTarget(expired, { observedAt: historical }), tasks(expired, { observedAt: historical }), evidence(expired, 'pass', { observedAt: historical })], asOf: historical };
+      const replay = state(expired, inputs);
+      const live = state(expired, { ...inputs, asOf: work.reviewAsOf(historical, asOf) });
+      check('live-cutoff', { trace: 'historical-replay-live-review', replay, live }, replay.authority.eligible && replay.proposals[0]?.type === 'work' && !live.authority.eligible && live.proposals[0]?.type === 'observe-or-decide' && live.observations.every(item => item.reasons.includes('stale-observation')), 'Fixed historical replay remains valid while live completion expires the same old authority and evidence.');
+    });
+  }
+
+  if (enabled('process-group-cleanup')) {
+    for (const pid of bounds.processGroupCleanup.syntheticPids) for (const codes of bounds.processGroupCleanup.errorTraces) {
+      const calls = []; let index = 0;
+      const kill = (target, signal) => { calls.push({ target, signal }); const code = codes[index++]; if (code) throw Object.assign(new Error(code), { code }); };
+      const first = responsibilities.terminateOwnedProcessGroup(pid, kill); const second = responsibilities.terminateOwnedProcessGroup(pid, kill);
+      const expected = codes.map(code => code === 'EPERM' ? 'unverified' : code === 'ESRCH' ? 'absent' : 'signalled');
+      check('process-group-cleanup', { pid, codes, calls, first, second }, first.status === expected[0] && second.status === expected[1] && [first, second].every((result, position) => codes[position] !== 'EPERM' || result.error === 'EPERM') && calls.length === 2 && calls.every(call => call.target === -pid && call.signal === 'SIGKILL'), 'Owned-group signal errors distinguish absent groups from explicit cleanup uncertainty, including repeated cleanup.');
+    }
+    let called = false; const notStarted = responsibilities.terminateOwnedProcessGroup(undefined, () => { called = true; });
+    check('process-group-cleanup', { case: 'not-started', notStarted, called }, notStarted.status === 'not-started' && !called, 'An execution that never acquired a PID sends no signal.');
+    const unexpected = Object.assign(new Error('Bounded unexpected syscall error.'), { code: bounds.processGroupCleanup.unexpectedError }); let propagated = false;
+    try { responsibilities.terminateOwnedProcessGroup(17, () => { throw unexpected; }); } catch (error) { propagated = error === unexpected; }
+    check('process-group-cleanup', { case: 'unexpected-error', propagated }, propagated, 'Unexpected errors propagate rather than becoming a cleanup success.');
+  }
 
   if (enabled('effect-stability')) eachSubject(def => {
     const key = work.effectKey(def);
@@ -261,6 +300,18 @@ export function verifyProperties({ work, responsibilities, records }, selected =
       const partial = state(revised, { observations: [localTarget(revised), tasks(revised), evidence(revised), pending, absent] });
       check('native-uncertainty', { result: partial }, partial.proposals[0].type === 'rediscover', 'A partial inventory never establishes absence of a pending effect.');
     }
+    const revised = { ...def, feature: { ...def.feature, intendedEffect: 'A different bounded intended outcome.' } };
+    const revisedKey = work.effectKey(revised);
+    for (const status of bounds.nativeTaskCorrelation.statuses) for (const association of bounds.nativeTaskCorrelation.keys) for (const age of bounds.nativeTaskCorrelation.agesMs) for (const complete of [false, true]) {
+      const task = { nativeId: 'bounded-native-task', status, ...(association === 'missing' ? {} : { effectKey: association === 'old-effect' ? key : revisedKey }) };
+      const inventory = tasks(revised, { tasks: [task], observedAt: clock(-age), coverage: { complete, gaps: complete ? [] : ['bounded page'] } });
+      const result = state(revised, { observations: [localTarget(revised), tasks(revised), evidence(revised), inventory] });
+      const expected = association === 'missing' || association === 'current-effect' && status !== 'completed' ? 'rediscover' : association === 'old-effect' ? 'work' : null;
+      check('native-uncertainty', { trace: 'task-effect-correlation', status, association, age, complete, result }, result.proposals[0]?.type === (expected ?? undefined) && (association !== 'missing' || result.proposals[0]?.uncorrelatedTaskIds?.includes(task.nativeId)), 'Unkeyed tasks keep visible rediscovery uncertainty; only an explicit current effect completion can suppress green work.');
+    }
+    const uncorrelated = tasks(revised, { tasks: [{ nativeId: 'bounded-uncorrelated-completion', status: 'completed' }] });
+    const failed = state(revised, { observations: [localTarget(revised), uncorrelated, evidence(revised, 'fail')] });
+    check('native-uncertainty', { trace: 'uncorrelated-completion-failure', failed }, failed.proposals[0]?.type === 'rediscover' && failed.findings.some(item => item.code === 'criterion-failed' && item.status === 'open'), 'Uncorrelated completion cannot erase a retained failure while native rediscovery remains required.');
   });
 
   if (enabled('trigger-coverage') || enabled('retirement-closure')) eachSubject(def => {
@@ -295,11 +346,33 @@ export function verifyProperties({ work, responsibilities, records }, selected =
       const chosen = fresh.filter((_, index) => mask & (1 << index)); const result = work.restoredState(epoch, chosen, def, asOf);
       check('restore-suspension', { mask, result }, result.suspended === (mask !== 15), 'All four fresh categories in the new epoch are required.');
     }
-    for (const category of categories) for (const mode of ['old-epoch', 'pre-restore', 'partial', 'unavailable', 'reported-target', 'expired-authority']) {
-      const changed = fresh.map(item => item.category !== category ? item : { ...item, ...(mode === 'old-epoch' ? { homeEpoch: 'f'.repeat(64) } : mode === 'pre-restore' ? { observedAt: clock(-600) } : mode === 'partial' ? { coverage: { complete: false, gaps: ['bounded page'] } } : mode === 'unavailable' ? { availability: 'unavailable' } : mode === 'reported-target' ? { origin: 'reported' } : { authority: { ...def.authorityRef, expiresAt: clock(-1) } }) });
-      const applicable = !['reported-target', 'expired-authority'].includes(mode) || mode === 'reported-target' && category === 'target' || mode === 'expired-authority' && category === 'authority';
+    for (const category of categories) for (const mode of ['old-epoch', 'pre-restore', 'partial', 'unavailable', 'foreign', 'future', 'stale', 'reported-target', 'expired-authority', 'wrong-scope']) {
+      const changed = fresh.map(item => item.category !== category ? item : { ...item, ...(mode === 'old-epoch' ? { homeEpoch: 'f'.repeat(64) } : mode === 'pre-restore' ? { observedAt: clock(-600) } : mode === 'partial' ? { coverage: { complete: false, gaps: ['bounded page'] } } : mode === 'unavailable' ? { availability: 'unavailable' } : mode === 'foreign' ? { subject: { ...def.target, hostId: 'foreign-host' } } : mode === 'future' ? { observedAt: clock(1) } : mode === 'stale' ? { observedAt: clock(-86400001) } : mode === 'reported-target' ? { origin: 'reported' } : mode === 'wrong-scope' ? { authority: { ...def.authorityRef, action: 'foreign-action' } } : { authority: { ...def.authorityRef, expiresAt: clock(-1) } }) });
+      const applicable = !['reported-target', 'expired-authority', 'wrong-scope'].includes(mode) || mode === 'reported-target' && category === 'target' || ['expired-authority', 'wrong-scope'].includes(mode) && category === 'authority';
       if (!applicable) continue;
       const result = work.restoredState(epoch, changed, def, asOf); check('restore-suspension', { category, mode, result }, result.suspended, 'Old, partial, unavailable, unauthenticated local-target or expired authority context cannot activate a restored home.');
+    }
+    for (const executor of bounds.restoredExecutors) {
+      const value = { ...def, target: { ...def.target, executor } };
+      const readbacks = categories.map(category => observation(value, { category, origin: category === 'target' && executor.startsWith('local-') ? 'observed-local' : 'reported', homeEpoch: epoch.hash, observedAt: clock(-100), ...(category === 'authority' ? { authority: value.authorityRef } : category === 'tasks' ? { tasks: [] } : category === 'schedule' ? { schedules: [] } : {}) }));
+      const complete = work.restoredState(epoch, readbacks, value, asOf);
+      check('restore-suspension', { executor, complete }, !complete.suspended && readbacks.every(item => executor.startsWith('local-') || item.origin === 'reported'), 'Cloud exact epoch readbacks can recover with reported assurance; local targets still require actual inspection.');
+      for (const category of categories) for (const mode of ['old-epoch', 'pre-restore', 'foreign', 'partial', 'future', 'unavailable', 'missing']) {
+        const changed = readbacks.flatMap(item => item.category !== category ? [item] : mode === 'missing' ? [] : [{ ...item, ...(mode === 'old-epoch' ? { homeEpoch: 'f'.repeat(64) } : mode === 'pre-restore' ? { observedAt: clock(-600) } : mode === 'foreign' ? { subject: { ...value.target, hostId: 'foreign-host' } } : mode === 'partial' ? { coverage: { complete: false, gaps: ['bounded gap'] } } : mode === 'future' ? { observedAt: clock(1) } : { availability: 'unavailable' }) }]);
+        const refused = work.restoredState(epoch, changed, value, asOf);
+        check('restore-suspension', { executor, category, mode, refused }, refused.suspended && refused.needed.includes(category), 'Every executor needs all four exact fresh available complete categories in the new epoch.');
+      }
+      const original = readbacks.find(item => item.category === 'authority');
+      const originalPayload = Object.fromEntries(Object.entries(original).filter(([key]) => key !== 'hash'));
+      for (const mode of bounds.restoredReplacements) {
+        const replacement = observation(value, { ...originalPayload, observedAt: mode === 'future' ? clock(1) : clock(-50), ...(mode === 'wrong-scope' || mode === 'without-supersession' ? { authority: { ...value.authorityRef, action: 'foreign-scope' } } : ['unavailable', 'denied', 'unknown'].includes(mode) ? { availability: mode } : mode === 'partial' ? { coverage: { complete: false, gaps: ['bounded page'] } } : {}), ...(mode === 'without-supersession' ? {} : { supersedes: { hash: original.hash, reason: 'Bounded current authority correction.' } }) });
+        const observations = [...readbacks, replacement];
+        const result = work.restoredState(epoch, observations, value, asOf);
+        const expected = ['wrong-scope', 'unavailable', 'denied', 'unknown'].includes(mode);
+        check('restore-suspension', { executor, mode, result }, result.suspended === expected && (!expected || result.needed.includes('authority')), 'Restore follows canonical explicit supersession, including unavailable corrections, without timestamp last-write-wins.');
+        const current = work.currentObservations(value, observations, asOf);
+        check('restore-suspension', { executor, mode, order: 'reverse', result }, canonical(work.restoredState(epoch, [...observations].reverse(), value, asOf)) === canonical(result) && current.some(item => item.hash === original.hash) === !['wrong-scope', 'unavailable', 'denied', 'unknown', 'renewed'].includes(mode), 'Restored activation and supersession are independent of input order.');
+      }
     }
   });
 

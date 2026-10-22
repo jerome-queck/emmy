@@ -6,11 +6,11 @@ Run `maintain --check` at session start. After public metadata changes, run `mai
 
 Use `backup --to <archive>` to pin and validate immutable records, referenced evidence bytes, historical records, and private bindings. Use `restore --from <archive> --into <new-home>`. Existing destinations, unsafe paths, symlinks, missing files, corrupt bytes, and invalid references are refused.
 
-A restored home has a new epoch. Fresh target, authority, task, and schedule observations must name it. Byte inspection is available during suspension; local-check execution and work proposals wait. Original failures and stable effect keys survive. Unrelated inbox files, verification output, and repository checkouts are outside the archive.
+A restored home has a new epoch. Fresh exact target, authority, task, and schedule observations must name it and remain current under explicit scoped supersession. A wrong-scope or unavailable authority correction can suspend an active restored home before its next local check. Local targets require actual local inspection. Dot-cloud and prepared Codex Cloud targets can refresh through exact reported readbacks, whose assurance stays reported. Byte inspection is available during suspension; local-check execution and work proposals wait. Original failures and stable effect keys survive. Unrelated inbox files, verification output, and repository checkouts are outside the archive.
 
 ## Source and drive
 
-`records.mjs` owns immutable publication, dependency-first import order, archive manifests, and restore. `maintenance.mjs` derives public references. Scenarios `archive-recovery`, `publication-interruption`, and `derived-boundaries` exercise actual bytes, corruption/traversal/symlink controls, fresh restore, ten observed publication checkpoints, forward-reference retry, drift repair, and public/private separation.
+`records.mjs` owns immutable publication, dependency-first import order, archive manifests, and restore. `work.mjs` owns current epoch eligibility. `maintenance.mjs` derives public references. Scenarios `archive-recovery`, `cloud-recovery`, `restored-current-context`, `publication-interruption`, and `derived-boundaries` exercise actual bytes, corruption/traversal/symlink controls, local and cloud restore, superseded authority with a real execution marker, ten observed publication checkpoints, forward-reference retry, drift repair, and public/private separation.
 
 ## Boundaries
 

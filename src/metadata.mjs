@@ -14,7 +14,7 @@ export const verification = {
   features: [
     { id: 'orientation', title: 'Orientation and private integrity', commands: ['help', 'doctor', 'catalog'], scenarios: ['orientation'], properties: [] },
     { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'native-effect-correlation', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope', 'native-uncertainty'] },
-    { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile'], scenarios: ['self-check-repair', 'evidence-boundaries', 'live-cutoff', 'local-check', 'local-check-cleanup', 'trigger-evolution'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay', 'current-evidence', 'trigger-coverage', 'retirement-closure'] },
+    { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile'], scenarios: ['self-check-repair', 'evidence-boundaries', 'live-cutoff', 'local-check', 'local-check-cleanup', 'trigger-evolution'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay', 'current-evidence', 'live-cutoff', 'process-group-cleanup', 'trigger-coverage', 'retirement-closure'] },
     { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore'], scenarios: ['archive-recovery', 'cloud-recovery', 'restored-current-context', 'publication-interruption', 'derived-boundaries'], properties: ['restore-suspension', 'import-prefix'] }
   ],
   properties: [
@@ -23,15 +23,17 @@ export const verification = {
     { id: 'effect-stability', source: 'src/work.mjs', functions: ['effectKey'], statement: 'Same responsibility, target, effect and occurrence retain the same effect key across review time and definition edits.' },
     { id: 'authority-scope', source: 'src/work.mjs', functions: ['authorityStatus'], statement: 'Absent, wrong-scope or expired authority cannot authorize work proposals.' },
     { id: 'observation-gates', source: 'src/work.mjs', functions: ['observationStatus'], statement: 'Foreign, future, stale, partial or unavailable observations remain ineligible.' },
+    { id: 'live-cutoff', source: 'src/work.mjs', functions: ['reviewAsOf'], statement: 'Live review cutoffs include requested time and actual completion while fixed historical replay keeps its supplied time.' },
+    { id: 'process-group-cleanup', source: 'src/responsibilities.mjs', functions: ['terminateOwnedProcessGroup'], statement: 'Owned-group signalling distinguishes absent groups, denied cleanup and unexpected errors without claiming unknown cleanup succeeded.' },
     { id: 'reported-assurance', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Imported reports cannot satisfy observed-local criteria or authenticate independent review.' },
     { id: 'failure-preservation', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'A later pass, weaker definition or earlier native completion cannot erase a retained failure or silence required attention.' },
     { id: 'repair-closure', source: 'src/work.mjs', functions: ['repairStatus'], statement: 'Closure requires the exact finding/failure, current expected subject and every original criterion recheck.' },
     { id: 'deterministic-replay', source: 'src/responsibilities.mjs', functions: ['reconcileState', 'replayReview'], statement: 'Identical sorted evidence manifests/time/rules produce identical reconciliation results under permutation.' },
     { id: 'current-evidence', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Newest actual local identity/bytes cannot borrow an older green result.' },
-    { id: 'native-uncertainty', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Known pending/uncertain effects permit rediscovery only; partial inventories cannot prove absence.' },
+    { id: 'native-uncertainty', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Known pending, uncertain or uncorrelated native tasks require rediscovery; partial inventories cannot prove absence and unkeyed completion cannot prove an intended effect.' },
     { id: 'trigger-coverage', source: 'src/work.mjs', functions: ['triggerStatus'], statement: 'Missed runs require fresh complete post-window coverage; no-op and delivery gaps remain distinct.' },
     { id: 'retirement-closure', source: 'src/work.mjs', functions: ['retirementStatus'], statement: 'Unsuperseded enabled readbacks keep native disablement pending and retirement stops proposals.' },
     { id: 'import-prefix', source: 'src/records.mjs', functions: ['importOrder', 'validateReferences'], statement: 'Every imported publication prefix is dependency-complete and supersession stays within scope.' },
-    { id: 'restore-suspension', source: 'src/work.mjs', functions: ['restoredState'], statement: 'Restored homes require fresh target, authority, task and schedule observations in their new epoch.' }
+    { id: 'restore-suspension', source: 'src/work.mjs', functions: ['restoredState', 'currentObservations'], statement: 'Restored homes require current fresh exact target, authority, task and schedule observations in their new epoch; cloud targets remain reported and local targets require inspection.' }
   ]
 };
