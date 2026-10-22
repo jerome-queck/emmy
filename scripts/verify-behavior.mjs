@@ -102,7 +102,7 @@ try {
   assert.equal(finalCorrection.findings.find(item => item.id === finding.id).status, 'resolved');
   const completionArtifact = join(home, 'completed-artifact.txt'); await writeFile(completionArtifact, original);
   const completionDefinition = { ...definition, id: 'completed-continuation', criteria: [{ ...definition.criteria[0], path: completionArtifact }] };
-  await run(['responsibility', '--file', await fixture('completed-definition.json', completionDefinition)]);
+  const completionAdoption = await run(['responsibility', '--file', await fixture('completed-definition.json', completionDefinition)]);
   const beforeCompletion = review(await reconcile(completionDefinition.id, 0, [{ ...nativeReport, responsibilityId: completionDefinition.id }]));
   const completionKey = beforeCompletion.proposals[0].effectKey;
   const completedNative = { ...nativeReport, responsibilityId: completionDefinition.id, category: 'effect', observedAt: now(), effects: [{ key: completionKey, status: 'completed' }] };
@@ -363,6 +363,12 @@ try {
     await writeFile(join(root, 'docs/cli.md'), 'Stale generated reference'); assert.equal((await run(['maintain', '--check'], 3)).status, 'drift'); await run(['maintain', '--write']); await run(['maintain', '--check']); assert.deepEqual((await run(['maintain', '--write'])).changed, []);
     const publicBefore = await readFile(join(root, 'docs/catalog.md')); await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, privateSentinel: 'synthetic-private-never-public' })); await run(['maintain', '--write']); assert.deepEqual(await readFile(join(root, 'docs/catalog.md')), publicBefore); assert.equal((await readFile(join(root, 'docs/catalog.md'), 'utf8')).includes('synthetic-private-never-public'), false); assert.deepEqual(await readFile(formalPath), formalBefore); assert.deepEqual(await readFile(join(root, 'registry/catalog.json')), catalogBefore);
     scenario('derived-boundaries', 'Generated drift fails then regenerates idempotently; private state never enters public references; catalog review dates and formal pins stay unchanged.');
+    await writeFile(completionArtifact, 'Later damage before legitimate source advance\n');
+    const beforeSourceAdvance = review(await reconcile(completionDefinition.id, 3)); const oldFinding = beforeSourceAdvance.findings.find(item => item.id === completionFinding.id); assert.equal(oldFinding.status, 'open');
+    await writeFile(join(root, '.gitignore'), '.local/\nbin/\n# Synthetic legitimate source advance\n'); git(['add', '.gitignore']); git(['commit', '-qm', 'Synthetic source advance after retained recurrence']); const advancedTarget = { ...target, ...await inspectRepository(root) };
+    await adopt({ ...completionDefinition, parents: [completionAdoption.hash], target: advancedTarget }); const afterSourceAdvance = review(await reconcile(completionDefinition.id, 3)); const advancedFinding = afterSourceAdvance.findings.find(item => item.id === completionFinding.id);
+    assert.ok(oldFinding.evidenceHistoryRefs.every(reference => advancedFinding.evidenceHistoryRefs.includes(reference)), 'A source advance must preserve every previously retained failure occurrence'); assert.deepEqual(advancedFinding.failureRefs, completionFinding.failureRefs); assert.equal(advancedFinding.status, 'open');
+    report.sourceAdvance = { from: target.revision, to: advancedTarget.revision, originalFailureRefs: advancedFinding.failureRefs, retainedOccurrences: advancedFinding.evidenceHistoryRefs.length };
   }
   assert.equal((await readdir(home)).includes('executor-invoked'), false);
   await cp(join(home, 'records'), join(evidenceDir, 'records'), { recursive: true });

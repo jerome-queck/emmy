@@ -125,7 +125,10 @@ export function reconcileState(definition, { definitions, observations, repairs,
     }
   }
   const prior = new Map();
-  for (const review of [...reviews].sort((left, right) => left.asOf.localeCompare(right.asOf) || left.hash.localeCompare(right.hash))) for (const finding of review.findings) if (finding.durable && !prior.has(finding.id)) prior.set(finding.id, finding);
+  for (const review of [...reviews].sort((left, right) => left.asOf.localeCompare(right.asOf) || left.hash.localeCompare(right.hash))) for (const finding of review.findings) if (finding.durable) {
+    const original = prior.get(finding.id);
+    prior.set(finding.id, original ? { ...original, evidenceHistoryRefs: [...new Set([...(original.evidenceHistoryRefs ?? original.failureRefs), ...(finding.evidenceHistoryRefs ?? finding.failureRefs)])].sort() } : finding);
+  }
   const findings = new Map(prior);
   const add = (code, criteria = [], failureRefs = [], detail = '', durable = false, subject = definition.target, occurrence = null) => {
     const signature = digest({ responsibilityId: definition.id, code, criteria: criteria.map(criterionHash), subject: subjectKey(subject), occurrence });
