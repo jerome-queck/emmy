@@ -27,6 +27,16 @@ export async function inspectRepository(path) {
   return { path: actualPath, repository, revision, dirtyDigest: digest({ status, diff, untracked: untrackedBytes }) };
 }
 
+export function terminateOwnedProcessGroup(pid, kill = process.kill) {
+  if (pid === undefined) return { status: 'not-started' };
+  try { kill(-pid, 'SIGKILL'); return { status: 'signalled' }; }
+  catch (error) {
+    if (error.code === 'ESRCH') return { status: 'absent' };
+    if (error.code === 'EPERM') return { status: 'unverified', error: error.code };
+    throw error;
+  }
+}
+
 async function runLocalCheck(criterion, definition, currentSubject, asOf, suspended) {
   const check = criterion.check;
   const startedAt = new Date().toISOString();
@@ -42,12 +52,31 @@ async function runLocalCheck(criterion, definition, currentSubject, asOf, suspen
   if (process.platform === 'win32') return { outcome: 'unknown', reason: 'local-check-process-groups-unsupported' };
   const execution = await new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [path, ...check.argv], { cwd: currentSubject.path, detached: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, EMMY_VERIFY_BOUNDARY: '', EMMY_VERIFY_BOUNDARY_FILE: '' } });
-    let stdout = Buffer.alloc(0); let stderr = Buffer.alloc(0); let reason = null; let cancelled = false;
-    const terminate = () => { try { process.kill(-child.pid, 'SIGKILL'); } catch (error) { if (error.code !== 'ESRCH') throw error; } };
+    let stdout = Buffer.alloc(0); let stderr = Buffer.alloc(0); let reason = null; let cancelled = false; let settled = false;
+    const cleanupAttempts = [];
+    const stopWaiting = () => { clearTimeout(timer); process.removeListener('SIGTERM', cancel); process.removeListener('SIGINT', cancel); };
+    const release = () => { child.stdout.destroy(); child.stderr.destroy(); child.unref(); };
+    const finish = (exitCode, signal) => {
+      if (settled) return;
+      settled = true; stopWaiting();
+      const errors = [...new Set(cleanupAttempts.flatMap(attempt => attempt.error ? [attempt.error] : []))];
+      const cleanup = { status: errors.length ? 'unverified' : cleanupAttempts.some(attempt => ['signalled', 'absent'].includes(attempt.status)) ? 'terminated' : 'not-started', processGroup: child.pid ?? null, errors, attempts: cleanupAttempts };
+      if (cancelled) reject(new Error(cleanup.status === 'unverified' ? `Local check cancelled; owned process-group cleanup unverified for ${child.pid}: ${errors.join(', ')}` : 'Local check cancelled after owned process-group cleanup'));
+      else resolve({ stdout: stdout.toString('utf8'), stderr: stderr.toString('utf8'), exitCode, signal, reason: errors.length ? 'process-group-cleanup-failed' : reason, terminationReason: reason, cleanup });
+    };
+    const terminate = () => {
+      if (settled) return;
+      let attempt;
+      try { attempt = terminateOwnedProcessGroup(child.pid); }
+      catch (error) { settled = true; stopWaiting(); release(); reject(new Error(`Owned process-group cleanup unverified for ${child.pid}: ${error.code ?? error.message}`, { cause: error })); return; }
+      cleanupAttempts.push(attempt);
+      if (attempt.status === 'unverified') { release(); finish(child.exitCode, child.signalCode); }
+    };
     const timer = setTimeout(() => { reason = 'timeout'; terminate(); }, check.timeoutMs);
     const cancel = () => { cancelled = true; reason = 'cancelled'; terminate(); };
     process.once('SIGTERM', cancel); process.once('SIGINT', cancel);
     const collect = (kind, bytes) => {
+      if (settled) return;
       const remaining = Math.max(0, 1024 * 1024 - stdout.length - stderr.length);
       if (kind === 'stdout') stdout = Buffer.concat([stdout, bytes.subarray(0, remaining)]);
       else stderr = Buffer.concat([stderr, bytes.subarray(0, remaining)]);
@@ -56,11 +85,7 @@ async function runLocalCheck(criterion, definition, currentSubject, asOf, suspen
     child.stdout.on('data', bytes => collect('stdout', bytes)); child.stderr.on('data', bytes => collect('stderr', bytes));
     child.once('exit', terminate);
     child.once('error', error => { reason = error.code ?? 'execution-error'; });
-    child.once('close', (exitCode, signal) => {
-      clearTimeout(timer); process.removeListener('SIGTERM', cancel); process.removeListener('SIGINT', cancel); terminate();
-      if (cancelled) reject(new Error('Local check cancelled after owned process-group cleanup'));
-      else resolve({ stdout: stdout.toString('utf8'), stderr: stderr.toString('utf8'), exitCode, signal, reason, processGroup: child.pid });
-    });
+    child.once('close', (exitCode, signal) => { terminate(); finish(exitCode, signal); });
   });
   const { stdout, stderr, exitCode, signal } = execution;
   let reason = execution.reason;
@@ -68,7 +93,7 @@ async function runLocalCheck(criterion, definition, currentSubject, asOf, suspen
   try { after = await inspectRepository(currentSubject.path); }
   catch (error) { reason = 'verifier-result-subject-unavailable'; subjectError = error.code ?? error.message; }
   if (after && (after.path !== currentSubject.path || after.repository !== currentSubject.repository || after.revision !== currentSubject.revision || after.dirtyDigest !== currentSubject.dirtyDigest)) reason = 'verifier-changed-source';
-  return { outcome: !reason && exitCode === check.expectedExit ? 'pass' : 'fail', verifierId, sourceBase64: source.toString('base64'), startedAt, completedAt: new Date().toISOString(), resultingSubject: after, subjectError, script: check.script, sha256: check.sha256, argv: check.argv, expectedExit: check.expectedExit, exitCode, signal, reason, stdout, stderr, timeoutMs: check.timeoutMs, outputLimitBytes: 1024 * 1024, node: process.version, childTree: 'owned POSIX process group terminated; detached descendants excluded' };
+  return { outcome: !reason && exitCode === check.expectedExit ? 'pass' : 'fail', verifierId, sourceBase64: source.toString('base64'), startedAt, completedAt: new Date().toISOString(), resultingSubject: after, subjectError, script: check.script, sha256: check.sha256, argv: check.argv, expectedExit: check.expectedExit, exitCode, signal, reason, stdout, stderr, terminationReason: execution.terminationReason, cleanup: execution.cleanup, timeoutMs: check.timeoutMs, outputLimitBytes: 1024 * 1024, node: process.version, childTree: execution.cleanup.status === 'unverified' ? 'owned POSIX process-group cleanup unverified; detached descendants excluded' : execution.cleanup.status === 'not-started' ? 'local verifier process did not start' : 'owned POSIX process group terminated; detached descendants excluded' };
 }
 
 export async function inspectLocal(definition, { bindings, catalog, machine, asOf, epoch, suspended, criteria }) {
