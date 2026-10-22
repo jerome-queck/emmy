@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "hosts": {
+    "designated-mac": { "label": "Replace with the native host label" }
+  },
+  "projects": {
+    "emmy": {
+      "label": "Emmy",
+      "hostId": "designated-mac",
+      "nativeProjectId": "replace-with-native-project-id",
+      "path": "/replace/with/actual/checkout",
+      "cloudEnvironmentId": "replace-only-if-prepared"
+    }
+  }
+}
