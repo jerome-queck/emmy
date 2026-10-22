@@ -26,6 +26,8 @@ Proposals record the request, source context, authority, base revision, catalog 
 
 Publication writes a complete temporary directory, then renames it to the content ID. Concurrent identical publication converges on the same bytes. Existing corrupt records fail. An interruption can leave a recognizable `.pending-*` directory, which readers never treat as a record. Replay does not depend on the temporary directory. There is no promise of durable recovery after storage hardware failure.
 
+The behavioral interruption case kills a process at startup and then replays the command. It does not enumerate every filesystem interruption point. Local Linux, macOS, and Windows behavior requires the corresponding CI run. This session's direct observations are macOS runs on Node 24.19.0 and Node 26.10.0.
+
 Normal code work selects local Codex on the project's designated Mac. Other local dependencies select an appropriate local executor. An explicit justified cloud route can use a prepared environment. A missing or offline designated host stays visible. It does not silently select another Mac.
 
 The Dot cloud computer, cloud Work, Codex Cloud, and each local Mac are separate environments. Current documentation supports only one personal-computer connection for Dot. Native Codex's remote-host inventory must be tested separately before Emmy relies on it. See the [capability matrix](research/dot-capabilities.md#capability-matrix).

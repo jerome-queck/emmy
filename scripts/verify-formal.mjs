@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { digest, readJson } from '../src/records.mjs';
 import { bounds, verifyProperties } from '../verification/properties.mjs';
 import { mutations } from '../verification/mutations.mjs';
+import { verification } from '../src/metadata.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const evidenceDir = join(root, '.local/verification', `formal-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 8)}`);
@@ -30,6 +31,8 @@ try {
   report.coverage = { ...coverage, observedFiles: sources };
   const work = await import(pathToFileURL(join(root, 'src/work.mjs')));
   report.baseline = verifyProperties(work);
+  assert.deepEqual(Object.keys(report.baseline.counts).sort(), verification.properties.map(value => value.id).sort(), 'Every metadata property must execute');
+  assert.deepEqual([...new Set(coverage.mapping.flatMap(value => value.properties))].sort(), verification.properties.map(value => value.id).sort(), 'Coverage mapping must include every property');
   const original = await readFile(join(root, 'src/work.mjs'), 'utf8');
   for (const mutation of mutations) {
     let changed = original;
