@@ -1,54 +1,225 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "3c79e7387f5c40df8d12ebfc13cfbcd42c40e1c1",
-  "reviewBasis": "Coordinator reviewed fc76640..3c79e7387f5c40df8d12ebfc13cfbcd42c40e1c1 covered diffs. Two inherited dictionary lookups now require own keys; intended binding and readiness promise unchanged. Actual CLI regression failed before and passed after. Finite alpha/beta domains do not cover inherited identifiers; behavioral regression does. Independent release review remains required.",
+  "sourceCommit": "224cb2bdff4cc05d2aebd11a16ce1a67ec0977d4",
+  "reviewBasis": "Implementation owner reviewed the covered migration from prior pin 3c79e7387f5c40df8d12ebfc13cfbcd42c40e1c1 through this source commit, including new owners and verifier/fixture code. The accepted architecture replaces request/snapshot/receipt APIs with responsibility replay. The old reviewed-source gate failed before this sync; its report remains retained. Finite products and explicit temporal traces call actual production functions: 5,244 predicates and 31 paired source mutants, followed by a restored baseline. Actual CLI coverage separately exercises IO, live processes, source advances, and named SIGSTOP/SIGKILL publication checkpoints. Recurrence, interrupted forward imports, repository intent, retirement conflicts, failure after completion, and source-advance history regressions remain as controls. This is implementation-owner source maintenance; coordinator source waves, live driving, and independent release review remain required.",
   "files": {
-    "src/work.mjs": "12d65c393322b78c56717b4f4bff4c23ed1dd1afefa9438d6b41192dd799771e",
-    "src/records.mjs": "6d1c64c44b657db9a339da18d169e75193f32ae4426980d1836020c36cc1f7bd",
-    "src/metadata.mjs": "1223803a887fc3bbc0d7aac0d7e2ce31ec694b727088d5239dd3f52b92012ea3",
-    "verification/properties.mjs": "d80551ac3d1b42c7fb7d17c60657d5f45d1fbc8c60eafe4dc841e3aa2895fc69",
-    "verification/mutations.mjs": "bf7dd8a7a9e9146eaa123f94db9952e0167b2f27e1f96d71a6da4e67bdac255e",
-    "scripts/verify-formal.mjs": "670da1154c5bc7a9c7ecb9df83bf481a592669017337c7a5fa05f4f5f78d15bc"
+    "src/catalog.mjs": "d2c333d10851197c893a96eed024d3163473306189c8dce220ba9cfc5c14c27e",
+    "src/maintenance.mjs": "0aded5eff8d0715b83d906571b51b71da40774f436741e0505f2dfdf9796bb86",
+    "src/metadata.mjs": "95b9f9b8f595856bb83b77f61661c3f04a1da20c2b018e29b130fb7b03dc208c",
+    "src/records.mjs": "88ec4d1c92eef4ffd79fc60093f20b8338b6626a5d9ab4cf3dcc2a45064cb596",
+    "src/work.mjs": "4554b18074557ef18b00a71712d7b2efde05a1d69bcefbe07b98ba59a09b1e9e",
+    "src/responsibilities.mjs": "1d0152f270e763b6df7583ed2a6f0c73e5846c48ac34abc9e7c0403f4baa0897",
+    "scripts/agent.mjs": "2ef39a3748dc6b42c1d82f74c064df4cfbcc2f04994b6f4881a5bd5f21887b84",
+    "scripts/verify-behavior.mjs": "94785dee7e563c59b080cce08387c60e3615fe0cde2bd1bbdf8c24cc7f9af0d8",
+    "scripts/verify-formal.mjs": "b89549617b88178b94ddef772ae3d183ec879fbe51d76449f7dec283240a5a78",
+    "verification/fixtures.mjs": "19b34258ff9ccd176d91d39c59a5d56b8b37b6ecfc931de22f3a40b7dcc74519",
+    "verification/properties.mjs": "b0d51c7099f1d29098392ef39a281fc9f624cefe151ae34fdc263ba0b147745f",
+    "verification/mutations.mjs": "776149aa376f4257ba58872deced8c605d10ef92e8e33b83ce4d7ff54457e747"
   },
   "mapping": [
     {
-      "function": "planTask",
-      "source": "src/work.mjs",
+      "function": "parseDefinition",
+      "source": "src/records.mjs",
       "properties": [
-        "local-first",
-        "exact-binding",
-        "scope-freshness",
-        "proposal-only"
+        "exact-binding"
       ]
     },
     {
-      "function": "snapshotStatus",
-      "source": "src/work.mjs",
+      "function": "parseObservation",
+      "source": "src/records.mjs",
       "properties": [
-        "scope-freshness"
-      ]
-    },
-    {
-      "function": "assessOutcome",
-      "source": "src/work.mjs",
-      "properties": [
-        "identity",
-        "revision",
-        "evidence-required",
-        "contradictions",
         "reported-assurance"
+      ]
+    },
+    {
+      "function": "parseRepair",
+      "source": "src/records.mjs",
+      "properties": [
+        "repair-closure"
+      ]
+    },
+    {
+      "function": "importOrder",
+      "source": "src/records.mjs",
+      "properties": [
+        "import-prefix"
+      ]
+    },
+    {
+      "function": "validateReferences",
+      "source": "src/records.mjs",
+      "properties": [
+        "import-prefix"
+      ]
+    },
+    {
+      "function": "routeTarget",
+      "source": "src/work.mjs",
+      "properties": [
+        "exact-binding"
+      ]
+    },
+    {
+      "function": "observationStatus",
+      "source": "src/work.mjs",
+      "properties": [
+        "observation-gates"
+      ]
+    },
+    {
+      "function": "authorityStatus",
+      "source": "src/work.mjs",
+      "properties": [
+        "authority-scope"
+      ]
+    },
+    {
+      "function": "effectKey",
+      "source": "src/work.mjs",
+      "properties": [
+        "effect-stability",
+        "native-uncertainty"
+      ]
+    },
+    {
+      "function": "definitionHeads",
+      "source": "src/work.mjs",
+      "properties": [
+        "branch-blocking"
+      ]
+    },
+    {
+      "function": "currentObservations",
+      "source": "src/work.mjs",
+      "properties": [
+        "observation-gates",
+        "native-uncertainty",
+        "trigger-coverage",
+        "retirement-closure"
+      ]
+    },
+    {
+      "function": "restoredState",
+      "source": "src/work.mjs",
+      "properties": [
+        "restore-suspension"
+      ]
+    },
+    {
+      "function": "repairStatus",
+      "source": "src/work.mjs",
+      "properties": [
+        "repair-closure",
+        "failure-preservation"
+      ]
+    },
+    {
+      "function": "triggerStatus",
+      "source": "src/work.mjs",
+      "properties": [
+        "trigger-coverage"
+      ]
+    },
+    {
+      "function": "retirementStatus",
+      "source": "src/work.mjs",
+      "properties": [
+        "retirement-closure"
+      ]
+    },
+    {
+      "function": "reconcileState",
+      "source": "src/responsibilities.mjs",
+      "properties": [
+        "branch-blocking",
+        "deterministic-replay",
+        "reported-assurance",
+        "failure-preservation",
+        "repair-closure",
+        "current-evidence",
+        "native-uncertainty",
+        "trigger-coverage",
+        "retirement-closure",
+        "restore-suspension"
+      ]
+    },
+    {
+      "function": "replayReview",
+      "source": "src/responsibilities.mjs",
+      "properties": [
+        "deterministic-replay"
       ]
     }
   ],
   "boundsSource": "verification/properties.mjs#bounds",
+  "behavioralBoundaries": [
+    {
+      "source": "src/responsibilities.mjs",
+      "functions": [
+        "inspectRepository",
+        "inspectLocal",
+        "runLocalCheck",
+        "adoptResponsibility",
+        "reconcile",
+        "inspectHome"
+      ],
+      "scenarios": [
+        "persistent-context",
+        "self-check-repair",
+        "binding-boundaries",
+        "evidence-boundaries",
+        "local-check",
+        "trigger-evolution",
+        "archive-recovery"
+      ]
+    },
+    {
+      "source": "src/records.mjs",
+      "functions": [
+        "publishRecord",
+        "readRecord",
+        "readStore",
+        "retainImport",
+        "historicalFiles",
+        "backupHome",
+        "restoreHome"
+      ],
+      "scenarios": [
+        "definition-concurrency",
+        "evidence-boundaries",
+        "archive-recovery",
+        "publication-interruption"
+      ]
+    },
+    {
+      "source": "scripts/agent.mjs",
+      "functions": [
+        "CLI option boundary and command dispatch"
+      ],
+      "scenarios": [
+        "orientation",
+        "probe-packet",
+        "derived-boundaries"
+      ]
+    },
+    {
+      "source": "src/maintenance.mjs",
+      "functions": [
+        "generatedFiles",
+        "maintain"
+      ],
+      "scenarios": [
+        "derived-boundaries"
+      ]
+    }
+  ],
   "excluded": [
-    "Boundary parser correctness beyond behavioral examples",
-    "Filesystem atomicity and durability",
-    "Provider identity and authentication",
-    "Native dispatch and task completion",
-    "Account permissions",
-    "Schedules",
-    "Merges and deployments",
-    "Arbitrary unbounded input domains"
+    "Arbitrary-size inputs or a full Cartesian product of every field",
+    "Boundary parser correctness beyond the named bounded and CLI controls",
+    "Filesystem flush, arbitrary instruction crash points, and power-loss durability",
+    "Malicious code or detached-process containment",
+    "Provider identity, authenticated native authority, and non-author review",
+    "Native dispatch, native at-most-once execution, total dormancy and account permissions",
+    "Actual schedules, delivery, merges, deployments and hardware-loss recovery"
   ]
 }
