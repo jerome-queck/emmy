@@ -57,9 +57,20 @@ export function repairStatus(repair, finding, observations, definition, asOf) {
   if (repair.findingId !== finding.id || !finding.failureRefs.every(ref => repair.failureRefs.includes(ref))) reasons.push('failure-link-mismatch');
   if (!sameSubject(repair.expectedSubject, definition.target)) reasons.push('repair-subject-mismatch');
   if (Date.parse(repair.observedAt) > Date.parse(asOf)) reasons.push('future-repair');
-  const failureTime = Math.max(...observations.filter(observation => finding.failureRefs.includes(observation.hash)).map(observation => Date.parse(observation.observedAt)));
+  const failureTime = Math.max(...observations.filter(observation => (finding.evidenceHistoryRefs ?? finding.failureRefs).includes(observation.hash)).map(observation => Date.parse(observation.observedAt)));
+  const triggerFinding = ['missed-run', 'run-no-evidence', 'delivery-unverified'].includes(finding.code);
+  if (!finding.criteria.length && !triggerFinding) reasons.push('finding-specific-recheck-needed');
   const rechecks = observations.filter(observation => repair.recheckRefs.includes(observation.hash));
   if (rechecks.length !== repair.recheckRefs.length) reasons.push('missing-recheck');
+  if (definition.target.executor.startsWith('local-')) {
+    const targetChecks = observations.filter(observation => observation.category === 'target' && observation.origin === 'observed-local' && Date.parse(observation.observedAt) <= Date.parse(asOf));
+    const latestTime = Math.max(...targetChecks.map(observation => Date.parse(observation.observedAt)));
+    if (!targetChecks.length || targetChecks.filter(observation => Date.parse(observation.observedAt) === latestTime).some(observation => !observationStatus(observation, repair.expectedSubject, asOf, definition.freshness.maxAgeMs).eligible)) reasons.push('current-local-subject-unverified');
+  }
+  if (triggerFinding) {
+    const verified = rechecks.some(observation => observation.category === 'schedule' && observationStatus(observation, repair.expectedSubject, asOf, definition.freshness.maxAgeMs).eligible && Date.parse(observation.observedAt) > failureTime && Date.parse(observation.observedAt) <= Date.parse(repair.observedAt) && observation.runs?.some(run => run.nativeId === finding.occurrence.nativeId && run.windowStart === finding.occurrence.windowStart && run.outcomeRefs.length && run.deliveryRefs.length));
+    if (!verified) reasons.push('trigger-recheck-needed');
+  }
   for (const criterion of finding.criteria) {
     if (criterion.independentReview) { reasons.push('external-review-needed'); continue; }
     const relevant = rechecks.filter(observation => Date.parse(observation.observedAt) > failureTime && Date.parse(observation.observedAt) <= Date.parse(repair.observedAt) && sameSubject(observation.subject, repair.expectedSubject) && observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible);
@@ -67,5 +78,36 @@ export function repairStatus(repair, finding, observations, definition, asOf) {
     const passing = claims.some(({ claim, observation }) => claim.outcome === 'pass' && (criterion.evidence === 'reported-check' || observation.origin === 'observed-local'));
     if (!passing || claims.some(({ claim }) => claim.outcome !== 'pass')) reasons.push(`recheck-failed:${criterion.id}`);
   }
-  return { repairHash: repair.hash, valid: reasons.length === 0, reasons: [...new Set(reasons)].sort() };
+  const repeatedFailure = rechecks.some(observation => observation.claims.some(claim => claim.outcome === 'fail' && finding.criteria.some(criterion => claim.criterionId === criterion.id && claim.specHash === criterionHash(criterion))));
+  return { repairHash: repair.hash, valid: reasons.length === 0, outcome: reasons.length === 0 ? 'supported' : repeatedFailure ? 'failed' : 'unsupported', reasons: [...new Set(reasons)].sort() };
+}
+
+export function triggerStatus(definition, observations, asOf) {
+  const trigger = definition.trigger;
+  if (!trigger) return { status: 'none', findings: [], occurrence: null };
+  const occurrence = { nativeId: trigger.nativeId, windowStart: trigger.nextWindow.start, due: trigger.nextWindow.due, graceMs: trigger.nextWindow.graceMs };
+  const current = observations.filter(observation => observation.category === 'schedule' && observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible && observation.schedule?.nativeId === trigger.nativeId);
+  const findings = [];
+  const add = (code, refs = []) => findings.push({ code, refs, occurrence });
+  if (!current.length) add('schedule-observation-needed');
+  for (const observation of current) {
+    if (observation.schedule.status !== 'enabled') { add(`schedule-${observation.schedule.status}`, [observation.hash]); continue; }
+    if (observation.schedule.promptDigest !== trigger.promptDigest || observation.schedule.timezone !== trigger.timezone || observation.schedule.destination !== trigger.destination) { add('schedule-definition-mismatch', [observation.hash]); continue; }
+    if (Date.parse(asOf) <= Date.parse(trigger.nextWindow.due) + trigger.nextWindow.graceMs) continue;
+    if (Date.parse(observation.observedAt) < Date.parse(trigger.nextWindow.due) + trigger.nextWindow.graceMs) { add('schedule-observation-needed', [observation.hash]); continue; }
+    const runs = (observation.runs ?? []).filter(run => run.nativeId === trigger.nativeId && run.windowStart === trigger.nextWindow.start);
+    if (!runs.length) add('missed-run', [observation.hash]);
+    for (const run of runs) {
+      if (!run.outcomeRefs.length) add('run-no-evidence', [observation.hash]);
+      if (!run.deliveryRefs.length) add('delivery-unverified', [observation.hash]);
+    }
+  }
+  return { status: findings.length ? 'needs-observation' : 'reported-current', findings, occurrence, assurance: 'reported', laterWindows: 'Fresh native discovery required. No recurrence or catch-up execution is inferred.' };
+}
+
+export function retirementStatus(definition, definitions, observations, asOf) {
+  if (definition.lifecycle.status === 'active') return { status: 'active', pendingTriggers: [] };
+  const triggerIds = [...new Set(definitions.filter(item => item.trigger).map(item => item.trigger.nativeId))].sort();
+  const pendingTriggers = triggerIds.filter(nativeId => !observations.some(observation => observation.category === 'schedule' && observation.schedule?.nativeId === nativeId && ['disabled', 'missing'].includes(observation.schedule.status) && observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible));
+  return { status: pendingTriggers.length ? 'pending-native-disablement' : 'disablement-readback-reported', pendingTriggers, assurance: 'reported', replacementId: definition.lifecycle.replacementId ?? null, transferredFindingIds: definition.lifecycle.transferFindingIds ?? [] };
 }

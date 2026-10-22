@@ -4,7 +4,7 @@ import { readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative } from 'node:path';
 import { promisify } from 'node:util';
 import { canonical, digest, parseDefinition, publishRecord, readBindings, readStore, retainImport, validateReferences, recordPayload } from './records.mjs';
-import { authorityStatus, criterionHash, definitionHeads, effectKey, observationStatus, repairStatus, restoredState, routeTarget, sameSubject, subjectKey } from './work.mjs';
+import { authorityStatus, criterionHash, definitionHeads, effectKey, observationStatus, repairStatus, restoredState, retirementStatus, routeTarget, sameSubject, subjectKey, triggerStatus } from './work.mjs';
 
 const exec = promisify(execFile);
 export const ruleVersion = 'responsibility-v1';
@@ -65,7 +65,7 @@ async function runLocalCheck(criterion, definition, currentSubject, asOf, suspen
   let reason = execution.reason;
   const after = await inspectRepository(currentSubject.path);
   if (after.revision !== currentSubject.revision || after.dirtyDigest !== currentSubject.dirtyDigest) reason = 'verifier-changed-source';
-  return { outcome: !reason && exitCode === check.expectedExit ? 'pass' : 'fail', verifierId, script: check.script, sha256: check.sha256, argv: check.argv, expectedExit: check.expectedExit, exitCode, signal, reason, stdout, stderr, timeoutMs: check.timeoutMs, outputLimitBytes: 1024 * 1024, node: process.version, childTree: 'owned POSIX process group terminated; detached descendants excluded' };
+  return { outcome: !reason && exitCode === check.expectedExit ? 'pass' : 'fail', verifierId, sourceBase64: source.toString('base64'), script: check.script, sha256: check.sha256, argv: check.argv, expectedExit: check.expectedExit, exitCode, signal, reason, stdout, stderr, timeoutMs: check.timeoutMs, outputLimitBytes: 1024 * 1024, node: process.version, childTree: 'owned POSIX process group terminated; detached descendants excluded' };
 }
 
 export async function inspectLocal(definition, { bindings, catalog, machine, asOf, epoch, suspended, criteria }) {
@@ -87,7 +87,7 @@ export async function inspectLocal(definition, { bindings, catalog, machine, asO
     const name = `check-${specHash}.json`;
     let check;
     if (criterion.evidence === 'local-digest') {
-      try { const bytes = await readFile(criterion.path); check = { outcome: digest(bytes) === criterion.sha256 ? 'pass' : 'fail', expectedSha256: criterion.sha256, actualSha256: digest(bytes), path: criterion.path }; }
+      try { const bytes = await readFile(criterion.path); const artifactEvidence = `artifact-${specHash}.bin`; files[artifactEvidence] = bytes; check = { outcome: digest(bytes) === criterion.sha256 ? 'pass' : 'fail', expectedSha256: criterion.sha256, actualSha256: digest(bytes), path: criterion.path, artifactEvidence }; }
       catch (error) { check = { outcome: 'unknown', path: criterion.path, reason: error.code ?? error.message }; }
     } else {
       check = await runLocalCheck(criterion, definition, currentSubject, asOf, suspended);
@@ -109,17 +109,22 @@ export function reconcileState(definition, { definitions, observations, repairs,
   const prior = new Map();
   for (const review of [...reviews].sort((left, right) => left.asOf.localeCompare(right.asOf) || left.hash.localeCompare(right.hash))) for (const finding of review.findings) if (finding.durable && !prior.has(finding.id)) prior.set(finding.id, finding);
   const findings = new Map(prior);
-  const add = (code, criteria = [], failureRefs = [], detail = '', durable = false, subject = definition.target) => {
-    const signature = digest({ responsibilityId: definition.id, code, criteria: criteria.map(criterionHash), subject: subjectKey(subject) });
-    const finding = { id: signature, code, signature, responsibilityId: definition.id, criteria, criterionIds: criteria.map(item => item.id), subject: subjectKey(subject), failureRefs: [...new Set(failureRefs)].sort(), detectedAsOf: asOf, detail, durable };
+  const add = (code, criteria = [], failureRefs = [], detail = '', durable = false, subject = definition.target, occurrence = null) => {
+    const signature = digest({ responsibilityId: definition.id, code, criteria: criteria.map(criterionHash), subject: subjectKey(subject), occurrence });
+    const finding = { id: signature, code, signature, responsibilityId: definition.id, criteria, criterionIds: criteria.map(item => item.id), subject: subjectKey(subject), failureRefs: [...new Set(failureRefs)].sort(), detectedAsOf: asOf, detail, durable, occurrence, evidenceHistoryRefs: [...new Set(failureRefs)].sort() };
     if (!findings.has(signature)) findings.set(signature, finding);
+    else findings.set(signature, { ...findings.get(signature), evidenceHistoryRefs: [...new Set([...(findings.get(signature).evidenceHistoryRefs ?? findings.get(signature).failureRefs), ...failureRefs])].sort() });
     return findings.get(signature);
   };
   if (heads.length !== 1) add('definition-conflict', [], heads.map(head => head.hash), 'Every concurrent head must be named by the resolving definition.');
   for (const reason of route.reasons) add(reason);
   if (!authority.eligible) add(authority.reason);
   if (restore.suspended) add('restore-suspended', [], [epoch.hash], restore.needed.join(', '));
-  const targetObservations = eligible.filter(observation => observation.category === 'target' && (!definition.target.executor.startsWith('local-') || observation.origin === 'observed-local'));
+  const localTargets = observations.filter(observation => observation.category === 'target' && observation.origin === 'observed-local' && Date.parse(observation.observedAt) <= Date.parse(asOf));
+  const latestTargetTime = Math.max(...localTargets.map(observation => Date.parse(observation.observedAt)));
+  const currentLocalTargets = localTargets.filter(observation => Date.parse(observation.observedAt) === latestTargetTime);
+  const targetObservations = definition.target.executor.startsWith('local-') ? currentLocalTargets.filter(observation => observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible) : eligible.filter(observation => observation.category === 'target');
+  if (definition.target.executor.startsWith('local-') && currentLocalTargets.some(observation => !observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible)) add('current-local-target-mismatch');
   if (!targetObservations.length) {
     const refused = diagnostics.filter(status => status.category === 'target');
     const reasons = [...new Set(refused.flatMap(status => status.reasons))];
@@ -129,11 +134,21 @@ export function reconcileState(definition, { definitions, observations, repairs,
     const age = Date.parse(asOf) - Date.parse(source.observedAt);
     if (age < 0 || age > definition.freshness.maxAgeMs) add(age < 0 ? 'source-future' : 'source-stale', [], [], source.reference);
   }
+  if (!eligible.some(observation => observation.category === 'tasks')) add('native-discovery-needed');
+  const trigger = triggerStatus(definition, observations, asOf);
+  for (const issue of trigger.findings) add(issue.code, [], issue.refs, 'Observe the exact native window; no catch-up is dispatched.', ['missed-run', 'run-no-evidence', 'delivery-unverified'].includes(issue.code), definition.target, issue.occurrence);
+  const retirement = retirementStatus(definition, definitions, observations, asOf);
+  if (retirement.pendingTriggers.length) add('retirement-disablement-needed', [], [], retirement.pendingTriggers.join(', '));
+  if (Date.parse(definition.feature.reviewAt) <= Date.parse(asOf) && !featureReviews.some(review => review.featureId === definition.feature.id && Date.parse(review.observedAt) <= Date.parse(asOf) && Date.parse(review.reviewAt) > Date.parse(asOf))) add('feature-review-due');
   const criterionResults = [];
   for (const criterion of definition.criteria) {
     const matching = eligible.filter(observation => observation.category === 'criteria').flatMap(observation => observation.claims.filter(claim => claim.criterionId === criterion.id && claim.kind === criterion.evidence && claim.specHash === criterionHash(criterion)).map(claim => ({ observation, claim })));
-    for (const { observation, claim } of matching.filter(item => item.claim.outcome === 'fail')) add('criterion-failed', [criterion], [observation.hash], claim.reason ?? 'Retained failing criterion.', true, observation.subject);
-    const pass = matching.some(({ observation, claim }) => claim.outcome === 'pass' && (criterion.evidence === 'reported-check' || observation.origin === 'observed-local'));
+    const historicalFailures = observations.filter(observation => observation.category === 'criteria' && Date.parse(observation.observedAt) <= Date.parse(asOf) && sameSubject(observation.subject, definition.target)).flatMap(observation => observation.claims.filter(claim => claim.criterionId === criterion.id && claim.kind === criterion.evidence && claim.specHash === criterionHash(criterion) && claim.outcome === 'fail').map(claim => ({ observation, claim })));
+    for (const { observation, claim } of historicalFailures) add('criterion-failed', [criterion], [observation.hash], claim.reason ?? 'Retained failing criterion.', true, observation.subject);
+    const localChecks = observations.filter(observation => observation.category === 'criteria' && observation.origin === 'observed-local' && Date.parse(observation.observedAt) <= Date.parse(asOf) && observation.claims.some(claim => claim.criterionId === criterion.id && claim.specHash === criterionHash(criterion)));
+    const latestCheckTime = Math.max(...localChecks.map(observation => Date.parse(observation.observedAt)));
+    const current = criterion.evidence === 'reported-check' ? matching : matching.filter(({ observation }) => observation.origin === 'observed-local' && Date.parse(observation.observedAt) === latestCheckTime);
+    const pass = current.some(({ claim }) => claim.outcome === 'pass') && !current.some(({ claim }) => claim.outcome !== 'pass');
     if (!pass) add('criterion-evidence-needed', [criterion]);
     if (criterion.independentReview) add('external-review-needed', [criterion], matching.map(item => item.observation.hash), 'This local register cannot authenticate non-author review.', true);
     criterionResults.push({ criterionId: criterion.id, supported: pass && !criterion.independentReview, assurance: pass ? criterion.evidence === 'reported-check' ? 'reported' : 'observed-local' : 'unverified' });
@@ -143,31 +158,33 @@ export function reconcileState(definition, { definitions, observations, repairs,
     const attempts = repairs.filter(repair => repair.findingId === finding.id).map(repair => repairStatus(repair, finding, observations, definition, asOf));
     repairResults.push(...attempts);
     const closed = finding.durable && finding.code !== 'external-review-needed' && attempts.some(attempt => attempt.valid);
-    return { ...finding, status: closed ? 'resolved' : 'open', repairHashes: attempts.map(attempt => attempt.repairHash).sort(), failedRepairs: attempts.filter(attempt => !attempt.valid).length };
+    return { ...finding, status: closed ? 'resolved' : 'open', repairHashes: attempts.map(attempt => attempt.repairHash).sort(), failedRepairs: attempts.filter(attempt => attempt.outcome === 'failed').length };
   });
   const corrections = [];
   for (const finding of retainedFindings.filter(item => item.durable)) {
-    const earlier = [...reviews].sort((left, right) => left.asOf.localeCompare(right.asOf) || left.hash.localeCompare(right.hash)).find(review => review.criterionResults.some(result => finding.criterionIds.includes(result.criterionId) && result.supported) && !review.findings.some(item => item.id === finding.id));
+    const failureObservations = observations.filter(observation => (finding.evidenceHistoryRefs ?? finding.failureRefs).includes(observation.hash));
+    const latestFailure = failureObservations.sort((left, right) => right.observedAt.localeCompare(left.observedAt) || left.hash.localeCompare(right.hash))[0];
+    if (!latestFailure) continue;
+    const earlier = [...reviews].sort((left, right) => right.asOf.localeCompare(left.asOf) || left.hash.localeCompare(right.hash)).find(review => review.criterionResults.some(result => finding.criterionIds.includes(result.criterionId) && result.supported));
     if (!earlier) continue;
-    const failureTimes = observations.filter(observation => finding.failureRefs.includes(observation.hash)).map(observation => Date.parse(observation.observedAt));
-    corrections.push({ kind: failureTimes.some(time => time <= Date.parse(earlier.asOf)) ? 'correction' : 'regression', priorReviewHash: earlier.hash, findingId: finding.id, evidenceRefs: finding.failureRefs });
+    corrections.push({ kind: Date.parse(latestFailure.observedAt) <= Date.parse(earlier.asOf) ? 'correction' : 'regression', priorReviewHash: earlier.hash, findingId: finding.id, evidenceRefs: [latestFailure.hash] });
   }
   const open = retainedFindings.filter(finding => finding.status === 'open');
   for (const result of criterionResults) if (open.some(finding => finding.durable && finding.criterionIds.includes(result.criterionId))) result.supported = false;
   const key = effectKey(definition);
-  const effectObservations = eligible.filter(observation => observation.category === 'effect');
-  const replaced = new Set(effectObservations.filter(observation => observation.supersedes).map(observation => observation.supersedes.hash));
+  const effectObservations = observations.filter(observation => observation.category === 'effect' && Date.parse(observation.observedAt) <= Date.parse(asOf) && digest({ ...subjectKey(observation.subject), revision: null, dirtyDigest: null }) === digest({ ...subjectKey(definition.target), revision: null, dirtyDigest: null }));
+  const replaced = new Set(effectObservations.filter(observation => observation.supersedes && observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible).map(observation => observation.supersedes.hash));
   const effects = effectObservations.filter(observation => !replaced.has(observation.hash)).flatMap(observation => observation.effects ?? []).filter(effect => effect.key === key);
   const proposals = [];
   if (definition.lifecycle.status === 'active' && heads.length === 1 && !restore.suspended) {
     if (effects.some(effect => ['pending', 'uncertain'].includes(effect.status))) proposals.push({ type: 'rediscover', effectKey: key, reason: 'Native effect is pending or uncertain. Read its actual state before another execution.', execution: 'proposal-only' });
     else if (!effects.some(effect => effect.status === 'completed')) {
       const repeated = open.find(finding => finding.failedRepairs >= 2);
-      const type = repeated ? 'diagnose' : open.length ? 'observe-or-decide' : 'work';
+      const type = trigger.findings.length ? 'rediscover' : repeated ? 'diagnose' : open.length ? 'observe-or-decide' : 'work';
       if (authority.eligible || type === 'observe-or-decide') proposals.push({ type, effectKey: key, definitionHash: definition.hash, target: subjectKey(definition.target), reason: repeated ? repeated.id : open.map(finding => finding.code).join(', '), execution: 'proposal-only' });
     }
   }
-  return { schemaVersion: 1, type: 'review', responsibilityId: definition.id, definitionHash: definition.hash, ruleVersion, asOf, goal: definition.goal, context: definition.context, target: definition.target, route, authority, restore, heads: heads.map(head => head.hash), observations: diagnostics, criterionResults, findings: retainedFindings.sort((left, right) => left.id.localeCompare(right.id)), repairs: repairResults.sort((left, right) => left.repairHash.localeCompare(right.repairHash)), corrections, proposals, featureReviews: ordered(featureReviews).map(review => ({ hash: review.hash, recommendation: review.recommendation, assurance: 'reported' })), lifecycle: definition.lifecycle, reviewAt: definition.reviewAt, limits: ['Proposals are not native execution, permissions, delivery, or authenticated review.', 'Local evidence proves the inspected bytes or bounded command result, not native state.', 'No local process can detect total dormancy without an external wakeup.'] };
+  return { schemaVersion: 1, type: 'review', responsibilityId: definition.id, definitionHash: definition.hash, ruleVersion, asOf, goal: definition.goal, context: definition.context, target: definition.target, route, authority, restore, heads: heads.map(head => head.hash), observations: diagnostics, criterionResults, findings: retainedFindings.sort((left, right) => left.id.localeCompare(right.id)), repairs: repairResults.sort((left, right) => left.repairHash.localeCompare(right.repairHash)), corrections, proposals, featureReviews: ordered(featureReviews).map(review => ({ ...review, assurance: 'reported' })), trigger, retirement, lifecycle: definition.lifecycle, reviewAt: definition.reviewAt, limits: ['Proposals are not native execution, permissions, delivery, or authenticated review.', 'Local evidence proves the inspected bytes or bounded command result, not native state.', 'No local process can detect total dormancy without an external wakeup.'] };
 }
 
 export async function adoptResponsibility(home, input) {

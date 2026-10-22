@@ -101,6 +101,7 @@ export function parseDefinition(input) {
   object(input.feature, 'feature'); id(input.feature.id, 'feature.id'); text(input.feature.method, 'feature.method'); text(input.feature.intendedEffect, 'feature.intendedEffect'); timestamp(input.feature.reviewAt, 'feature.reviewAt');
   object(input.lifecycle, 'lifecycle'); choice(input.lifecycle.status, ['active', 'retired', 'merged'], 'lifecycle');
   if (input.lifecycle.status === 'merged') id(input.lifecycle.replacementId, 'replacementId');
+  if (input.lifecycle.transferFindingIds !== undefined) { hashes(input.lifecycle.transferFindingIds, 'transferFindingIds'); id(input.lifecycle.replacementId, 'replacementId'); }
   if (input.trigger !== undefined) {
     const trigger = input.trigger;
     for (const name of ['nativeId', 'timezone', 'destination']) text(trigger[name], `trigger.${name}`);
