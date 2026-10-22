@@ -280,7 +280,7 @@ export async function reconcile(home, { id, imports, asOf, catalog }) {
     for (const item of local) { const published = await publishRecord(home, item.payload, item.files); if (!observations.some(record => record.hash === published.hash)) observations.push(published.record); if (!records.some(record => record.hash === published.hash)) records.push(published.record); }
     const relatedDefinitions = records.filter(record => record.type === 'definition' && record.id !== responsibilityId);
     const relatedReviews = records.filter(record => record.type === 'review' && record.responsibilityId !== responsibilityId);
-    const effectiveAsOf = reviewAsOf(asOf, new Date().toISOString());
+    const effectiveAsOf = reviewAsOf(asOf, new Date().toISOString(), local.map(item => item.payload.observedAt));
     const state = { ...reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews, relatedDefinitions, relatedReviews, epoch, bindings, catalog, machine, asOf: effectiveAsOf }), requestedAsOf: asOf };
     const inputHashes = [...new Set([...definitions, ...observations, ...repairs, ...reviews, ...featureReviews, ...relatedDefinitions, ...relatedReviews, ...(epoch ? [epoch] : [])].map(record => record.hash))].sort();
     const ruleDigest = digest(await Promise.all(['records.mjs', 'work.mjs', 'responsibilities.mjs'].map(name => readFile(new URL(name, import.meta.url), 'utf8'))));

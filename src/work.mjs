@@ -4,7 +4,7 @@ export const subjectFields = ['projectId', 'repository', 'executor', 'hostId', '
 export const subjectKey = subject => Object.fromEntries(subjectFields.map(field => [field, subject[field] ?? null]));
 export const sameSubject = (left, right) => canonical(subjectKey(left)) === canonical(subjectKey(right));
 export const criterionHash = criterion => digest(criterion);
-export const reviewAsOf = (requestedAsOf, completedAt) => new Date(Math.max(Date.parse(requestedAsOf), Date.parse(completedAt))).toISOString();
+export const reviewAsOf = (requestedAsOf, completedAt, observationTimes = []) => new Date(Math.max(Date.parse(requestedAsOf), Date.parse(completedAt), ...observationTimes.map(value => Date.parse(value)))).toISOString();
 
 export function observationStatus(observation, target, asOf, maxAgeMs) {
   const reasons = [];
