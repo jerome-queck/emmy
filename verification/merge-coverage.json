@@ -1,0 +1,25 @@
+{
+  "sourceCommit": "e84d3f4ea935f5edaccbf676607eefd805fd14a0",
+  "files": {
+    "scripts/github-auto-merge.mjs": "7d24434c615f4da8dc558d43495e1666ffb347ed4b606c30b5563b9011957a5f"
+  },
+  "mapping": [
+    {
+      "file": "scripts/github-auto-merge.mjs",
+      "symbol": "evaluateEligibility",
+      "property": "Eligibility requires every configured identity, revision, protection, CI and review gate.",
+      "mutations": ["head", "base", "ci", "independentReview"]
+    }
+  ],
+  "bounds": {
+    "binaryDimensions": 10,
+    "ciStates": ["success", "failure", "pending", "skipped", "neutral", "absent"],
+    "reviewStates": ["success", "failure", "error", "pending", "absent"],
+    "cases": 30720
+  },
+  "assumptions": [
+    "GitHub metadata has its documented types and repository commits use SHA-1 IDs.",
+    "Publisher, protection presence, required contexts and metadata normalization have focused tests beyond the finite enumeration.",
+    "The verifier does not execute a GitHub merge or prove actual reviewer independence or provider race freedom."
+  ]
+}

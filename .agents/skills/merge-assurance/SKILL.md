@@ -20,9 +20,7 @@ Both commands must exit zero. The bounded command writes `.local/verification/me
 
 ## Covered code and reviewed revision
 
-The bounded check imports the production `evaluateEligibility` function from `scripts/github-auto-merge.mjs`. The GitHub adapter and `considerPullRequest` are exercised by provider-boundary tests, not by the exhaustive eligibility proof. The reviewed source revision is `e9903fe215b054cc9720bb8bc74c4a2bf814a328`.
-
-The eligibility source SHA-256 at that revision is `5f96134e672bc38eb4bc7ecccfe719b991155d80b27b47d8b4620a6705da1e13`. The verifier SHA-256 is `f0fa99f04ddb57565b414f9023f6bf71e8e223527b002ea2b4637caae9c0b0cc`.
+The bounded check imports the production `evaluateEligibility` function from `scripts/github-auto-merge.mjs`. The GitHub adapter and `considerPullRequest` are exercised by provider-boundary tests, not by the exhaustive eligibility proof. Read `verification/merge-coverage.json` for the canonical reviewed commit, source hashes, property mapping, bounds, and assumptions. The verifier checks those hashes against the checkout and the recorded commit. It also checks the case count and mutation mapping.
 
 Before relying on these checks after a change, read every diff from the reviewed revision for the source, verifier, test, and merge workflow. Confirm that the fields read by `evaluateEligibility` still describe the adapter's normalized GitHub records. A source hash or a passing check cannot replace that review.
 

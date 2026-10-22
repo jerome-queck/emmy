@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { MERGE_POLICY, evaluateEligibility } from '../scripts/github-auto-merge.mjs';
 
 const head = 'a'.repeat(40);
@@ -36,6 +38,15 @@ function specimen(bits = 0, ci = 'success', review = 'success') {
 }
 
 export async function verifyMergePolicy() {
+  const coverage = JSON.parse(await readFile(new URL('merge-coverage.json', import.meta.url), 'utf8'));
+  assert.match(coverage.sourceCommit, /^[a-f0-9]{40}$/);
+  const root = fileURLToPath(new URL('../', import.meta.url));
+  for (const [path, expected] of Object.entries(coverage.files)) {
+    const actual = createHash('sha256').update(await readFile(new URL(`../${path}`, import.meta.url))).digest('hex');
+    assert.equal(actual, expected, `${path} changed after formal review`);
+    const reviewed = execFileSync('git', ['show', `${coverage.sourceCommit}:${path}`], { cwd: root });
+    assert.equal(createHash('sha256').update(reviewed).digest('hex'), expected, `${path} differs from reviewed commit`);
+  }
   const ciStates = ['success', 'failure', 'pending', 'skipped', 'neutral', 'absent'];
   const reviewStates = ['success', 'failure', 'error', 'pending', 'absent'];
   let checked = 0;
@@ -72,8 +83,11 @@ export async function verifyMergePolicy() {
     assert.equal(mutated.eligible, true, `${gate} removal must permit the forbidden merge`);
     mutations.push({ gate, counterexample, original: original.waiting, mutantEligible: mutated.eligible, killed: true });
   }
+  assert.equal(checked, coverage.bounds.cases, 'Review the coverage bounds after changing the enumerator');
+  assert.deepEqual(mutations.map(value => value.gate), coverage.mapping[0].mutations, 'Coverage must name every mutation');
   const result = {
     kind: 'bounded-exhaustive-merge-policy', checked,
+    sourceCommit: coverage.sourceCommit,
     domain: { binaryDimensions: 10, ciStates, reviewStates },
     mutations,
     limits: ['Finite metadata domain only.', 'No GitHub execution, token permissions, branch-rule enforcement, or actual reviewer independence proof.'],
