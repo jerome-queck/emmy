@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "fdb927098a967e9c59c7214964765d6771532934",
-  "reviewBasis": "Implementation owner reviewed every covered diff from source pin 224cb2bdff4cc05d2aebd11a16ce1a67ec0977d4 through this source commit, including live cutoff wiring, restored current supersession, reported cloud target recovery, native task effect correlation, denied process-group cleanup, fixtures, metadata, properties and mutation anchors. Unchanged covered owners match the prior reviewed bytes. The old normal source gate refused before this update; drift reports remain retained. All prior controls remain: 6,913 finite predicates across 17 properties and 37 paired actual-source mutants, followed by the restored baseline. Six new mutants target live completion omission, cloud target origin, raw restore history, unavailable supersession, uncorrelated native tasks and denied-group uncertainty. The actual CLI drive separately exercised 220 calls, 17 mapped scenarios and ten named publication cancellations. First and persistent injected EPERM retained explicit product cleanup uncertainty; separate fixture teardown does not prove denied product cleanup. The original observed EPERM cause remains unresolved. This is owner source maintenance; coordinator independent source reading, live driving, release review and native/provider acceptance remain separate.",
+  "sourceCommit": "ff6aeb3b8d4a1dad9a4ee81e7ffcfce791a8e4d9",
+  "reviewBasis": "Owner reviewed every covered diff from fdb927098a967e9c59c7214964765d6771532934 through this source commit. Only responsibilities, the actual CLI driver and its fixtures changed; nine other covered owners match the prior reviewed bytes. Each executable check reacquires canonical source. After all acquisition reads, a fresh live cutoff checks canonical restored eligibility and separate command authority immediately before synchronous launch. Original E014 and E015 CLI counterexamples and corrected replays remain retained. Existing local-check and restored-current-context scenarios now require changed-dependency and unavailable-git refusals, an unchanged two-check positive control, delayed restored-authority expiry refusal and a current-authority positive control. The normal source gate refused before this pin update. A diagnostic current-source replay retained all 6,913 predicates, 17 properties, 37 paired actual-source mutants and the restored baseline; its disabled source gate is not acceptance. Pure mappings, bounds, properties and mutation expressions remain unchanged. Filesystem acquisition and live-clock wiring remain actual CLI boundaries. The original EPERM cause remains unresolved and denied product cleanup remains explicit uncertainty. This is owner source maintenance; fresh non-author correction review, the normal source-gated aggregate, hosted CI and native/provider acceptance remain separate.",
   "files": {
     "src/catalog.mjs": "d2c333d10851197c893a96eed024d3163473306189c8dce220ba9cfc5c14c27e",
     "src/maintenance.mjs": "0aded5eff8d0715b83d906571b51b71da40774f436741e0505f2dfdf9796bb86",
     "src/metadata.mjs": "7a2003b633eb1454407cd7f4a2e6965076586a1d646908ffee32690e1864aaba",
     "src/records.mjs": "88ec4d1c92eef4ffd79fc60093f20b8338b6626a5d9ab4cf3dcc2a45064cb596",
     "src/work.mjs": "283daf5686a7c46df7daae56ed9395d7d49f0268c42558f032189e4a1bc8b3e0",
-    "src/responsibilities.mjs": "6ebf11147500d7a9f76f4f84bb62538fa0ed1eebba14f2a5dc23d8a259233a22",
+    "src/responsibilities.mjs": "c71e574971d9bee09c65525147573c6c0386483c08b80b3519e6e73baffb6076",
     "scripts/agent.mjs": "2ef39a3748dc6b42c1d82f74c064df4cfbcc2f04994b6f4881a5bd5f21887b84",
-    "scripts/verify-behavior.mjs": "c7ed0b836f3baa6c99853c24eddc874c0bd8faf0dea02825247525103b32ad6c",
+    "scripts/verify-behavior.mjs": "969c6c761f74c3aa63fe5c03df2df22bbf28ec4d5fee4df07610e0c531f56b39",
     "scripts/verify-formal.mjs": "b89549617b88178b94ddef772ae3d183ec879fbe51d76449f7dec283240a5a78",
-    "verification/fixtures.mjs": "62f266f1e04b0db5ffc21a73f5cd9652a227fc96c06e13a5562db872e7fcb1b0",
+    "verification/fixtures.mjs": "06ebba5fb13423435c7bbbf637f2465eace092f1cd62350d97fed4a74c784d14",
     "verification/properties.mjs": "6e0f157f73a3f1972a00f7405c38995549d43b52dad422b0c596bd6264e2246d",
     "verification/mutations.mjs": "1477489f94b957eff4d2f8ab0f28e5ac7b8b103ce8566be0c17b5125c06b7683"
   },
@@ -242,6 +242,7 @@
     "Provider identity, authenticated native authority, and non-author review",
     "Native dispatch, native at-most-once execution, total dormancy and account permissions",
     "Actual schedules, delivery, merges, deployments and hardware-loss recovery",
-    "Pure cutoff and signal-result checks do not establish actual clock acquisition, OS signal delivery or asynchronous callback cleanup; these require the CLI driver."
+    "Pure cutoff and signal-result checks do not establish actual clock acquisition, OS signal delivery or asynchronous callback cleanup; these require the CLI driver.",
+    "Pre-execution filesystem acquisition and live restored eligibility require actual CLI driving; finite restoredState checks assume their supplied epoch, observations and evaluation time."
   ]
 }
