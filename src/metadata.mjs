@@ -13,9 +13,9 @@ export const commands = [
 export const verification = {
   features: [
     { id: 'orientation', title: 'Orientation and private integrity', commands: ['help', 'doctor', 'catalog'], scenarios: ['orientation'], properties: [] },
-    { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope'] },
-    { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile'], scenarios: ['self-check-repair', 'evidence-boundaries', 'local-check', 'trigger-evolution'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay'] },
-    { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore'], scenarios: ['archive-recovery', 'publication-interruption', 'derived-boundaries'], properties: ['restore-suspension'] }
+    { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope', 'native-uncertainty'] },
+    { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile'], scenarios: ['self-check-repair', 'evidence-boundaries', 'local-check', 'trigger-evolution'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay', 'current-evidence', 'trigger-coverage', 'retirement-closure'] },
+    { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore'], scenarios: ['archive-recovery', 'publication-interruption', 'derived-boundaries'], properties: ['restore-suspension', 'import-prefix'] }
   ],
   properties: [
     { id: 'exact-binding', source: 'src/work.mjs', functions: ['routeTarget'], statement: 'Only own project/host bindings with exact target identity establish a local route.' },
@@ -24,9 +24,14 @@ export const verification = {
     { id: 'authority-scope', source: 'src/work.mjs', functions: ['authorityStatus'], statement: 'Absent, wrong-scope or expired authority cannot authorize work proposals.' },
     { id: 'observation-gates', source: 'src/work.mjs', functions: ['observationStatus'], statement: 'Foreign, future, stale, partial or unavailable observations remain ineligible.' },
     { id: 'reported-assurance', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Imported reports cannot satisfy observed-local criteria or authenticate independent review.' },
-    { id: 'failure-preservation', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'A later pass or weaker definition cannot erase a retained failure.' },
+    { id: 'failure-preservation', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'A later pass, weaker definition or earlier native completion cannot erase a retained failure or silence required attention.' },
     { id: 'repair-closure', source: 'src/work.mjs', functions: ['repairStatus'], statement: 'Closure requires the exact finding/failure, current expected subject and every original criterion recheck.' },
-    { id: 'deterministic-replay', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Identical sorted evidence manifests/time/rules produce identical reconciliation results under permutation.' },
+    { id: 'deterministic-replay', source: 'src/responsibilities.mjs', functions: ['reconcileState', 'replayReview'], statement: 'Identical sorted evidence manifests/time/rules produce identical reconciliation results under permutation.' },
+    { id: 'current-evidence', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Newest actual local identity/bytes cannot borrow an older green result.' },
+    { id: 'native-uncertainty', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Known pending/uncertain effects permit rediscovery only; partial inventories cannot prove absence.' },
+    { id: 'trigger-coverage', source: 'src/work.mjs', functions: ['triggerStatus'], statement: 'Missed runs require fresh complete post-window coverage; no-op and delivery gaps remain distinct.' },
+    { id: 'retirement-closure', source: 'src/work.mjs', functions: ['retirementStatus'], statement: 'Unsuperseded enabled readbacks keep native disablement pending and retirement stops proposals.' },
+    { id: 'import-prefix', source: 'src/records.mjs', functions: ['importOrder', 'validateReferences'], statement: 'Every imported publication prefix is dependency-complete and supersession stays within scope.' },
     { id: 'restore-suspension', source: 'src/work.mjs', functions: ['restoredState'], statement: 'Restored homes require fresh target, authority, task and schedule observations in their new epoch.' }
   ]
 };

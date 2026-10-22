@@ -1,17 +1,19 @@
-# Upkeep and public boundaries
+# Upkeep and recovery
 
-## Sub-features
+## User route
 
-One command metadata table. One verification metadata source. Deterministic CLI reference, catalog, feature index, and machine-readable mapping. Drift checks preserve research dates and formal review records.
+Run `maintain --check` at session start. After public metadata changes, run `maintain --write`, inspect derived files, and run the aggregate check. Metadata owns commands, feature map, scenario names, and property IDs. Maintenance preserves research dates and formal sync records.
 
-## How to get to it (user POV)
+Use `backup --to <archive>` to pin and validate immutable records, referenced evidence bytes, historical records, and private bindings. Use `restore --from <archive> --into <new-home>`. Existing destinations, unsafe paths, symlinks, missing files, corrupt bytes, and invalid references are refused.
 
-Run `npm run agent -- maintain --check` at session start. After an authorized source change, run `maintain --write`, inspect the generated diff, update feature instructions, and run `npm run check`. Apply both installed pstack maintenance workflows after covered changes.
+A restored home has a new epoch. Fresh target, authority, task, and schedule observations must name it. Byte inspection is available during suspension; local-check execution and work proposals wait. Original failures and stable effect keys survive. Unrelated inbox files, verification output, and repository checkouts are outside the archive.
 
-## Driving it with the CLI driver
+## Source and drive
 
-Run `npm run verify:behavior`. Scenarios `derived-drift`, `public-isolation`, and `review-record-stable` introduce a stale generated reference, check exit 3, regenerate it, and check deterministic replay. Private snapshots and bindings change without altering generated public bytes. Catalog research dates and the formal coverage record must remain byte-identical.
+`records.mjs` owns immutable publication, dependency-first import order, archive manifests, and restore. `maintenance.mjs` derives public references. Scenarios `archive-recovery`, `publication-interruption`, and `derived-boundaries` exercise actual bytes, corruption/traversal/symlink controls, fresh restore, ten observed publication checkpoints, forward-reference retry, drift repair, and public/private separation.
 
-## Gotchas
+## Boundaries
 
-Maintenance is a generator and drift detector. It cannot replace independent source reading, native driving, or formal assumption review. Never advance `sourceCommit` or covered hashes just to pass. Keep private paths and native identities under ignored `.local/`. Public metadata must be intentionally sanitized. A formal source change needs reviewed mapping and replayed mutants before its sync record moves.
+Only complete content-addressed directories are final records. Pending directories remain visible and ignored by replay. A multi-record import is planned before publication so every prefix has its references. A published restored destination is refused on replay rather than overwritten. Atomic visibility at named checkpoints does not establish power-loss durability or external hardware recovery.
+
+Run both installed pstack maintenance workflows after covered changes. Source readers and the coordinator's live pass remain independent requirements. Review the covered diff and intended counterexamples before moving formal hashes; a generator cannot approve that move.

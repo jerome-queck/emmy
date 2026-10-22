@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "records": [
+    {
+      "type": "observation",
+      "responsibilityId": "scratch-watch",
+      "subject": {
+        "projectId": "scratch",
+        "repository": "https://example.invalid/scratch",
+        "executor": "local-codex",
+        "hostId": "designated-mac",
+        "nativeProjectId": "replace-with-native-project-id",
+        "path": "/replace/with/scratch-repository",
+        "revision": "0000000000000000000000000000000000000000",
+        "dirtyDigest": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "observedAt": "2026-10-22T12:00:00Z",
+      "observer": "Replace with native tool and retained source reference.",
+      "category": "tasks",
+      "availability": "available",
+      "coverage": {
+        "complete": false,
+        "gaps": [
+          "Replace with exact pagination and scope limits."
+        ]
+      },
+      "tasks": [],
+      "claims": [],
+      "evidenceRefs": []
+    }
+  ]
+}

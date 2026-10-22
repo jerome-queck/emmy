@@ -29,21 +29,23 @@ Observed Grok roles do not prove useful specialization. Keep one Emmy. Fold brie
 ## Shape and ownership
 
 ```ts
-Definition = {id, parents, goal, context, target, authorityRef,
+Definition = {id, parents, goal, context, target, action, resource, destination, authorityRef,
   criteria, freshness, reviewAt, trigger?, feature, lifecycle}
 Observation = {subject, observedAt, coverage, availability,
   claims, evidenceRefs, supersedes?}
 Repair = {findingId, failureRefs, changeRef, expectedSubject, recheckRefs}
-Review = {definitionHash, inputHashes, ruleVersion, asOf,
+Review = {definitionHash, inputHashes, inputContext, ruleVersion, ruleDigest, requestedAsOf, asOf,
   findings, corrections, proposals, limits}
 AuthorityRef = {reference, action, resource, destination, expiresAt?}
 ```
+
+Active definitions require at least one finish criterion. Retired or merged definitions may retain none. Omitted executor defaults to local Codex. Optional workClass is code, academic, research, or coordination. A supplied cloud rationale is nonempty text. Adoption and review output expose criterion specHash values for imports.
 
 The exact subject includes project, canonical repository, executor, host, native identity when applicable, path, revision, and dirty-worktree digest for code. Criteria declare evidence kind and any independent-review requirement.
 
 `responsibilities.mjs` owns these operations and reconciliation policy. `records.mjs` owns boundary parsing, hashes, retained evidence bytes, immutable publication, and archives. Keep pure routing/evidence helpers in `work.mjs` behind that operation. CLI parses/renders. `metadata.mjs` remains the command/property registry. Maintenance derives references. Four operations hide replay and recovery without exposing storage stages.
 
-Validate complete import bundles before publication. Interrupted multi-record imports replay idempotently. Missing references prevent review. Store content-addressed records under ignored `.local/`. Keep public procedures in Git. Native products own tasks, schedules, and delivery. This register owns commitments and evidence about them. Imported text cannot authenticate native success or human authority. Only actual local inspection earns observed-local assurance. A digest verifies bytes, not semantic correctness.
+Validate complete import bundles and retained evidence bytes before publication. Plan dependency-first publication before writing any record, including forward references. Every completed prefix has its dependencies; cycles or missing dependencies refuse before publication. Interrupted multi-record imports replay idempotently. Missing references prevent review. Store content-addressed records under ignored `.local/`. Keep public procedures in Git. Native products own tasks, schedules, and delivery. This register owns commitments and evidence about them. Imported text cannot authenticate native success or human authority. Only actual local inspection earns observed-local assurance. A digest verifies bytes, not semantic correctness.
 
 ## Reconciliation rules
 
@@ -60,17 +62,19 @@ Store only the next explicit UTC due window supplied by the native schedule read
 
 Identical publications converge. Distinct concurrent observations survive. Definitions name parent hashes. Concurrent revisions create two heads, preserved as a conflict that blocks new action proposals until an explicit definition references every head. No mutable head file or last-writer-wins rule.
 
-Reviews pin a sorted input manifest. New concurrent records require another review. Determinism applies to the same manifest/time/rules, not an imaginary globally atomic native snapshot.
+Reviews pin a sorted input manifest including prior reviews and incoming-transfer sources. They retain the bindings, catalog, machine context, and rule digest needed to replay the decision. New concurrent records require another review. Determinism applies to the same manifest/time/rules, not an imaginary globally atomic native snapshot.
 
 Proposal effect keys bind responsibility, target, intended effect, and due occurrence. Packets separately pin definition/revision. A definition edit alone does not create a new effect. Repeated review returns the same key. Known pending/uncertain native effects yield rediscovery proposals only. Include the key in native task context where supported.
 
+Earlier completion suppresses duplicate initial green work. Later open findings, trigger gaps, or incoming obligations still propose bounded observation, diagnosis, or rediscovery under that same key. Such continuation explicitly requires fresh native rediscovery before continuing known work or deciding on another execution. Missing or expired scope falls back to observation/decision; pending or uncertain state retains rediscovery-only priority. Exact closure returns completed green work to quiet suppression.
+
 Reject A's exclusive dispatch reservation. A proposal-only CLI cannot promise native-independent at-most-once dispatch, even if one process receives a packet. It cannot see a crash between native action and readback or prevent somebody dispatching outside it. Require current native discovery before execution. Unknown coverage never proves absence. Defer execution reservation semantics until a demonstrated native idempotency/reconciliation API exists.
 
-Backup fixes a manifest, copies every referenced record/evidence byte and private bindings, verifies hashes/references, and publishes the archive atomically. Restore refuses corruption and existing destinations. A valid restore creates a new home epoch, preserves all failures, and suspends action proposals until fresh target, authority, task, and schedule observations. Keep stable effect keys for rediscovery. No hardware-loss guarantee without a verified external backup.
+Backup fixes a manifest, copies every referenced record/evidence byte and private bindings, verifies hashes/references, and publishes the archive atomically. Restore refuses corruption and existing destinations. The archive covers selected records, their retained evidence, historical records, and bindings. It excludes unrelated inbox files, verification output, and source checkouts. A valid restore creates a new home epoch, preserves all failures, and suspends action proposals until fresh target, authority, task, and schedule observations. Keep stable effect keys for rediscovery. No hardware-loss guarantee without a verified external backup.
 
 ## Evolution and migration
 
-Feature reviews record useful outcomes, false alarms, repair effort, motivating failures, and review dates. Recommend retain/change/merge/retire. Zero actions alone does not discredit monitoring. Retirement immediately stops new work proposals. It remains pending until every linked trigger has attributable native disablement readback, with imported assurance still reported. Preserve unresolved findings or explicitly transfer them to a replacement. Merged IDs redirect without rewriting history.
+Feature reviews record useful outcomes, false alarms, repair effort, motivating failures, and review dates. Recommend retain/change/merge/retire. Zero actions alone does not discredit monitoring. Retirement immediately stops new work proposals. It remains pending until every linked trigger has attributable native disablement readback, with imported assurance still reported. Preserve unresolved findings or explicitly transfer them to a replacement. Merged IDs redirect without rewriting history. The replacement review exposes incoming unresolved transfers. An unsuperseded current enabled readback keeps native disablement pending even beside a disabled report. Scope-safe explicit supersession can report ordinary enabled-to-disabled evolution.
 
 Replace `snapshot`, `brief`, `plan`, `receipt`, and `assess` with `responsibility` and `reconcile`. Retain `help`, `doctor`, `catalog`, `probe`, `maintain`. Add `backup` and `restore`. Nine commands total. `doctor` checks private-store integrity and suspension, without native probes. Exit 0 completes the local operation, 2 rejects invalid/corrupt input, 3 reports actionable findings/conflict. No exit code asserts native execution.
 
@@ -86,7 +90,7 @@ Serial real CLI acceptance must cover:
 4. Exercise missed window, no-op run, retirement without disablement, restore requiring refresh, and corrupted archive refusal.
 5. Interrupt each record/archive publication boundary. Replay converges or clearly refuses corruption. Concurrent observations survive; forked definitions block proposals.
 
-Bounded production-function properties enumerate two responsibilities/targets/revisions, zero-to-two observations/criteria/repairs, all evidence statuses, exact freshness boundaries, two definition heads, and trigger states. Check deterministic replay/permutation, identity/assurance, authority scope/expiry, failure preservation, repair closure, branch blocking, proposal-key stability, and restore suspension. Mutants force foreign identity to match, drop age/coverage gates, promote reports, accept absent/expired authority, ignore failed rechecks, forget failures, choose one fork, change effect keys with time, infer absence from partial inventory, or activate restored state. Each must fail its paired property with a designated counterexample, never syntax/import errors. Filesystem and process claims require the CLI driver.
+Bounded production-function properties enumerate two responsibilities/targets/revisions, zero-to-two observations/criteria/repairs, all evidence statuses, exact freshness boundaries, two definition heads, and trigger states. Targeted temporal traces extend to four criterion observations, two repairs, and three prior reviews, including recurrence across source advances and failure after native completion. Check deterministic replay/permutation, identity/assurance, authority scope/expiry, failure preservation, repair closure, branch blocking, proposal-key stability, and restore suspension. Mutants force foreign identity to match, drop age/coverage gates, promote reports, accept absent/expired authority, ignore failed rechecks, forget failures, choose one fork, change effect keys with time, infer absence from partial inventory, activate restored state, omit prior review replay, or silence failure after completion. Each must fail its paired property with a designated counterexample, never syntax/import errors. Filesystem and process claims require the CLI driver.
 
 Model the Domain chose responsibility records. Boundary Discipline kept imported assurance separate. Make Operations Idempotent chose immutable publication. Migrate Callers Then Delete Legacy APIs removed five public workflows. Subtract Before You Add removed permanent roles and reservations.
 

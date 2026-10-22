@@ -1,23 +1,25 @@
 # Emmy
 
-Emmy is Jerome's ChatGPT Dot. This repository supplies its chief-of-staff operating brief, public project catalog, local task planner, evidence assessment, and verification tools.
+Emmy is Jerome's ChatGPT Dot. This repository gives one chief of staff durable responsibility context, current evidence checks, retained failures and repairs, and bounded next proposals.
 
-Use Node 24 or later. There are no external dependencies or API keys.
+Use Node 24 or later. No dependency install, database, server, or API key is required.
 
 ```sh
 npm run agent -- doctor
 npm run agent -- help --json
-npm run agent -- catalog
-npm run agent -- probe --nonce fresh-owner-value
+npm run agent -- responsibility --file .local/responsibility.json
+npm run agent -- reconcile --id scratch-watch --as-of <UTC>
 npm run check
 ```
 
-Read [the onboarding procedure](docs/onboarding.md) to create private machine bindings, import a scoped native inventory, prepare a task proposal, and assess its returned evidence. Read [the operating brief](docs/operating-brief.md) with Emmy in the actual Dot. Generated packets are proposals. No command dispatches tasks, installs instructions, schedules work, or merges changes.
+Read [onboarding](docs/onboarding.md) to bind a designated Mac, adopt a responsibility, and recover it from a fresh process. Read [the operating brief](docs/operating-brief.md) with Emmy in the actual Dot. The nine commands retain local commitments and evidence. Native products still own execution, permissions, schedules, and delivery.
 
-Normal coding selects local Codex on the designated Mac. Missing, unavailable, stale, or partial observations stay visible. Explicit Codex Cloud selection needs a prepared environment, a reason, and cloud authority. Other projects can be added through private bindings.
+A responsibility retains its goal, context, exact repository/host/path/revision, authority reference, finish criteria, source age, next review, feature, and lifecycle. `reconcile` imports optional evidence and reads actual local bytes and git identity. It preserves contradictions, failed repairs, and original reviews. Imported text stays reported. Required independent review stays an external gate.
 
-The [public catalog](docs/catalog.md), [CLI reference](docs/cli.md), [architecture](docs/architecture.md), and [research](docs/research/dot-capabilities.md) record the current contracts. All Dot account capabilities remain unverified until native probes establish them. Private paths, chat identities, raw inventories, and task state stay under ignored `.local/`.
+Use `--home <private-state>` to select one private register. The default is this checkout's ignored `.local/`. `backup` verifies a pinned record/evidence manifest and bindings. `restore` requires a new destination and suspends work until fresh observations name its new epoch. This does not establish hardware-loss recovery.
 
-Run `npm run agent -- maintain --check` at session start. Run `maintain --write` after public metadata changes, then inspect the diff. The [behavioral skill](.agents/skills/verify/SKILL.md) drives actual CLI journeys. The [coordination-contract skill](.agents/skills/coordination-contract/SKILL.md) checks bounded routing and evidence properties against production functions and source mutations. Both retain local evidence after cleanup.
+The [CLI reference](docs/cli.md), [architecture](docs/architecture.md), and [public catalog](docs/catalog.md) define the contracts. Missing or partial native observations remain visible. The public catalog is a starting inventory; exact private bindings can add projects. A cloud route requires a prepared environment, a reason, and explicit cloud authority.
 
-Use the installed `pstack:maintain-verification-skill` and `pstack:maintain-formal-verification-skill` workflows after relevant changes. The local generator refreshes derived references. It does not independently review behavior, advance source review dates, or approve a formal sync record.
+Run `maintain --check` at session start. After metadata changes, run `maintain --write` and inspect the diff. The [behavioral skill](.agents/skills/verify/SKILL.md) drives real isolated CLI journeys. The [coordination contract](.agents/skills/coordination-contract/SKILL.md) checks bounded production functions and paired source mutants. The aggregate check also retains the existing merge tests and merge-policy verifier.
+
+Use the installed pstack verification maintenance workflows after covered changes. Generated references do not replace independent source reading, a live pass, or review of formal assumptions. Actual Dot installation and capabilities remain unverified until the [native probes](docs/dot-verification.md) succeed.

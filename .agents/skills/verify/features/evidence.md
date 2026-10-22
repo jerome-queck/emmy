@@ -1,17 +1,17 @@
-# Evidence and receipts
+# Reconciliation and correction
 
-## Sub-features
+## User route
 
-Immutable attributed receipts. Exact task, project, executor, criterion, and current revision comparison. Real local artifact digests. Missing evidence and contradictions. Assurance labels per criterion.
+Run `reconcile --id <id> --import <bundle> --as-of <UTC>`, or omit `--id` to review all responsibilities. Imports are optional. Actual local inspection supplies current git identity and artifact bytes. Review output includes context, effective cutoff, observation refusals, criterion support/assurance, open findings, exact repairs, corrections/regressions, and proposals.
 
-## How to get to it (user POV)
+Live completion time can advance requested `asOf`. Imported future, stale, partial, unavailable, or foreign records remain diagnostics. New eligible coverage does not erase a retained failure. Rechecks must follow the latest failure, name the exact finding/original failure, bind the current expected subject, and satisfy every original affected criterion. Weaker criteria cannot close old failures. Two repeated actual failed repairs propose diagnosis even after native completion. That continuation requires fresh native rediscovery; pending/uncertain effects keep rediscovery-only priority, and expired scope yields observation/decision. Exact closure suppresses duplicate completed green work.
 
-Use `examples/receipt.json` after reading the actual native result. Run `npm run agent -- receipt --task <id> --import <file>`. Run `assess --task <id> --receipt <id> --revision <actual-result-revision> --as-of <UTC>`. Inspect `artifactChecks`, conflicts, missing criteria, and assurance.
+A local-check pins a repository-relative Node script, digest, arguments, expected exit, finite timeout, and separate `run-local-check` authority. Its source/output/exit/runtime are retained. Reported imports cannot acquire local assurance. Required independent review remains externally blocked.
 
-## Driving it with the CLI driver
+## Source and drive
 
-Run `npm run verify:behavior`. Scenarios `local-digest`, `reported-check`, `identity-conflict`, `revision-conflict`, `contradiction`, and `missing-evidence` exercise a complete actual CLI journey. The driver changes artifact bytes after receipt import, tests unreadable paths and missing claims, introduces failed claims and wrong identities, and checks the emitted status and exit 3. It verifies that reported success stays reported.
+`responsibilities.mjs` performs live inspection and pure reconciliation; `work.mjs` decides evidence/repair/trigger policy; `records.mjs` parses and retains inputs. Scenarios `self-check-repair`, `evidence-boundaries`, `local-check`, and `trigger-evolution` cover actual corruption, later recurrence, unreadable-after-green, two-criterion exact closure, false-claim correction, wrong identities/ages/coverage, bounded child cleanup, E002 analogue, missed/no-op/delivery gaps, retirement conflicts, native uncertainty, and merged obligations.
 
-## Gotchas
+## Boundaries
 
-Passing a SHA-256 string is not verification. Assessment must read actual bytes. Local bytes prove only that digest criterion. A native task or provider claim remains reported. The current revision is supplied by the caller and must come from a separate native observation. Assessment handles one receipt per run. Retain and inspect all conflicting receipts. The kit never marks a native task complete.
+An earlier passing repair stays in its immutable review when later deterioration makes that attempt currently insufficient. A native run, useful outcome, and delivered notification require separate evidence. Only a known explicit due window is evaluated; later windows need native discovery. Retired methods stop their local-check execution, preserve failures, and expose pending native disablement. Imported enabled/disabled contradictions need explicit scope-safe supersession.

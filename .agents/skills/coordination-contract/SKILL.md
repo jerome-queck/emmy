@@ -1,57 +1,46 @@
 ---
 name: coordination-contract
-description: Check Emmy's bounded production routing and evidence contract after changing planTask, snapshotStatus, assessOutcome, their properties, mutation targets, or verification metadata.
+description: Check Emmy's bounded responsibility routing, replay, observation, repair, trigger, lifecycle, import-order, and restore properties after changing their production source, parsers, or verifier.
 ---
 
-# Coordination contract
+# Persistent responsibility contract
 
 ## Run and interpret
 
-Run `npm run verify:formal` with Node 24 or later. No package installation or solver is required. The checker enumerates finite input domains and calls the actual exported production functions. JavaScript has no suitable built-in proof assistant here. Exhaustive execution of the real functions gives a cheap reproducible bound without a second routing model.
+Run `npm run verify:formal` with Node 24 or later. It runs the responsibility checker and the existing independent merge-policy verifier. No package install, solver, service, or account is required.
 
-A pass covers the domains below and the stated assumptions. It is not universal proof. Failure retains the actual input and result in `.local/verification/formal-*/report.json`. Read that counterexample in the code's terms. Do not weaken a property to accept a defect. A legitimate intended contract change needs an independently reviewed mapping and new mutations.
+The responsibility checker calls actual functions in `src/work.mjs`, `src/responsibilities.mjs`, and `src/records.mjs`. It checks 5,244 predicates across fifteen named properties, then kills thirty-one paired mutations of those actual source files, then reruns unchanged production. These are finite checks, not a universal proof.
 
-## Properties and harm
+Read each failed counterexample under `.local/verification/formal-*/`. A mutant counts only if it imports successfully and its designated property rejects the intended behavioral disagreement. Syntax/import errors, ambiguous edit anchors, unrelated exceptions, and surviving mutants fail verification. Failed attempts remain retained.
 
-| Property | Production function | Required behavior and harm prevented |
-| --- | --- | --- |
-| local-first | planTask | Normal coding selects designated local Codex. Cloud substitution sends work to the wrong environment. |
-| exact-binding | planTask | Host, native project, and path match the designated private binding. Another Mac or checkout may expose the wrong files. |
-| scope-freshness | snapshotStatus, planTask | Only exact, complete, available, current scope can make a route ready. Partial or old observations conceal unavailable execution. |
-| proposal-only | planTask | A packet always remains a proposal. A ready route must not falsely claim dispatch. |
-| identity | assessOutcome | Receipt task, project, executor, and criterion match. Another task's evidence cannot close this result. |
-| revision | assessOutcome | Receipt and claim revisions match the supplied current revision. Old green checks cannot validate newer code. |
-| evidence-required | assessOutcome | Every criterion has passing evidence of its declared kind. Missing bytes or checks cannot become success. |
-| contradictions | assessOutcome | Wrong identity, revision, future observations, failed claims, foreign criteria, or byte mismatches prevent support. Last-writer-wins would hide a known failure. |
-| reported-assurance | assessOutcome | Hand-entered check success remains reported. A transcript cannot become an authenticated observation. |
+## Production mapping
+
+`src/metadata.mjs` owns property IDs and feature mapping. `verification/coverage.json` owns the reviewed source commit, exact digests, and function-to-property mapping. Read that record before interpreting a pass. The runner validates both working bytes and the bytes at the recorded commit.
+
+The mapping covers exact own bindings and canonical repository intent; observation identity/age/coverage/availability; authority scope/expiry; stable effect keys; concurrent heads; reported assurance; retained failures; exact all-criterion repair closure; current local evidence; native uncertainty; trigger coverage; retirement conflicts; restored suspension; dependency-complete import order; and deterministic replay from a pinned manifest/context.
+
+`reconcileState` is the production policy. `replayReview` reconstructs its inputs from the stored manifest and decision context. Boundary parsers force imports to reported origin. Actual local inspections are separate filesystem/process boundaries exercised by the behavioral driver.
 
 ## Bounds and assumptions
 
-`verification/properties.mjs` exports every domain. Routing enumerates 524,544 inputs over two projects, two designated Macs, four executor choices including default, four binding states, cloud reason and authority bits, scoped observation products and host identities, exact or absent or wrong project observations, complete or partial coverage, four availability states, absent snapshots, and ages of negative one millisecond, zero, exactly 24 hours, or one millisecond beyond.
+`verification/properties.mjs` exports the exact domains. They use two responsibility IDs, two targets, two revisions, zero-to-two structure sizes, all three claim outcomes, four availability states, complete/partial coverage, ages of minus one millisecond, zero, exactly 24 hours, and one millisecond beyond, one/two definition heads, and explicit trigger states. Active zero-criterion definitions are rejected by the actual parser; zero criteria cover retired/merged definitions.
 
-Assessment enumerates 36,864 inputs over two projects, two hosts, local or reported or both criteria, task/project/executor identity bits, receipt and claim revision bits, absent/pass/fail/pass-and-fail/unknown/foreign criterion claims, matching or wrong evidence kinds, four artifact-check results, and present or future receipt times. Each assessment takes one receipt, at most two criteria, and at most two claims per criterion. Reports retain counts per property. These counts describe generated combinations, not real accounts or independent user journeys.
+Targeted temporal traces exceed the small structure product. They include green-then-unknown, failure/pass/repair/later failure, a later exact repair, retained recurrence across a source advance, weaker definitions, and two failed repairs after native completion. The longest recurrence trace has four criterion observations, with up to two target observations, one task observation, two effect observations, two repairs, and three prior reviews. Completed green work stays suppressed; later failures retain attention, require native rediscovery, and fall back to observation/decision when scope expires. Two-criterion closure enumerates absent/pass/fail/unknown rechecks for both original criteria. The products and traces are separate partitions, not a giant Cartesian product or a claim that every synthetic tuple is a reachable CLI state.
 
-Boundary parsing and artifact byte reads are separate production boundaries exercised by the behavioral driver. The caller must supply the actual current revision and honest scope. The checker varies possible local byte-check results. It does not prove provider authentication, filesystem atomicity, crash durability, arbitrary native execution, account access, scheduling, merges, deployment, or all-size behavior.
+Import-order checks call the actual dependency planner over both orderings of two content-addressed observations and inspect every prefix. A separate abstract cycle must refuse. Scope validation rejects replacing a different native schedule. Trigger checks distinguish missing/partial/unavailable coverage, missed run, missing outcome, delivery gap, disabled state, contradictory enabled/disabled readbacks, and explicit supersession.
 
-## Coverage and sync record
+The pure checks assume honest production local-inspection results. A caller-supplied observed label cannot supply one; the actual parser controls that boundary. Local bytes prove a digest match. Local command output proves its bounded result. Neither authenticates native provider state, native authority, independent authorship, or semantic correctness.
 
-The reviewed source commit is `3c79e7387f5c40df8d12ebfc13cfbcd42c40e1c1`. `verification/coverage.json` records exact file digests and the function-to-property mapping. It also pins boundary parsers and the verification runner so changes to the assumed inputs or checking method require review. The coordinator reviewed the mapping against the integrated source. Independent release review remains required.
+Filesystem bytes/references, actual git identity, local execution, child cleanup, publication interruption, archive traversal/symlinks/corruption, and restore are verified by `npm run verify:behavior`. No formal claim covers arbitrary-size inputs, power-loss durability, hostile detached processes, native at-most-once execution, total dormancy, account access, schedules, delivery, deployment, or hardware-loss recovery.
 
-| Covered file | SHA-256 |
-| --- | --- |
-| src/work.mjs | 12d65c393322b78c56717b4f4bff4c23ed1dd1afefa9438d6b41192dd799771e |
-| src/records.mjs | 6d1c64c44b657db9a339da18d169e75193f32ae4426980d1836020c36cc1f7bd |
-| src/metadata.mjs | 1223803a887fc3bbc0d7aac0d7e2ce31ec694b727088d5239dd3f52b92012ea3 |
-| verification/properties.mjs | d80551ac3d1b42c7fb7d17c60657d5f45d1fbc8c60eafe4dc841e3aa2895fc69 |
-| verification/mutations.mjs | bf7dd8a7a9e9146eaa123f94db9952e0167b2f27e1f96d71a6da4e67bdac255e |
-| scripts/verify-formal.mjs | 670da1154c5bc7a9c7ecb9df83bf481a592669017337c7a5fa05f4f5f78d15bc |
+## Review source before moving pins
 
-The runner checks the working bytes and those bytes at the sync commit. After a covered change, inspect `git diff <sourceCommit> -- src/work.mjs src/records.mjs src/metadata.mjs verification/properties.mjs verification/mutations.mjs scripts/verify-formal.mjs`. Read the production functions and assumptions. Update both the properties and source mutants when the intended behavior changes. Commit the reviewed source. Only then update the coverage hashes and sync commit, plus this skill's record. Never advance them just to make a drift check pass. `maintain --write` cannot move this record.
+Run the existing gate before updating it and retain any drift failure. Diff every file listed in `verification/coverage.json` from its source commit. Read moved/new owners as well. Classify intentional contract migration, verification drift, and product bugs separately. Do not weaken a property to accept a bug.
 
-## Demonstrate failure and restore
+For this migration, the accepted architecture replaces the legacy single-request/single-receipt functions with responsibility replay. Old routing and assessment domains no longer describe production. The replacement finite partitions cover the new actual functions; temporal recurrence and import-prefix controls address demonstrated defects. The merge source, tests, policy, and coverage remain unchanged.
 
-The runner applies sixteen mutations to isolated copies of the actual `src/work.mjs` bytes. Each mutant must import successfully, then fail its named property with a retained counterexample. Syntax, import, or unrelated exceptions fail the run and never count as a killed mutant. `verification/mutations.mjs` gives the exact expressions and replacement bytes for replay.
+Commit final product/verifier source first. Review the full covered diff and mapping, replay every intended mutant, and retain the restored baseline result. Then update coverage hashes and source commit in a separate verification commit. Follow this skill again with the default reviewed-source gate enabled. The local `maintain` generator cannot move this record.
 
-For example, `ignore-executor-identity` changes the receipt executor comparison to true. A receipt for a foreign host then becomes supported in the mutant. The `identity` property rejects that result. `claim-dispatch` labels a proposed packet dispatched, and `proposal-only` rejects that result. Each counterexample JSON retains the task, receipt or request, observed result, and expected property.
+`node scripts/verify-formal.mjs --development` can exercise new source before review. Its report explicitly disables the reviewed-source gate. It cannot satisfy the aggregate check or release acceptance.
 
-After all mutants, the runner removes its scratch directory and re-enumerates the unchanged production module. Both baseline passes must agree. Evidence and failed attempts survive cleanup under `.local/verification/`. Use the installed `pstack:maintain-formal-verification-skill` workflow after relevant changes. Independent reviewers must confirm the bounds and source mapping before this check supports a release.
+The implementation owner's review is source maintenance. The coordinator's source wave, live pass, and independent release review remain separate requirements. Use the installed pstack formal maintenance workflow for that pass. Keep native and protected repository acceptance outside this local proof.

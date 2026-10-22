@@ -1,19 +1,19 @@
-# Routing and proposals
+# Responsibilities and proposals
 
-## Sub-features
+## User route
 
-Local Codex default for coding. Exact designated host and project binding. Explicit Codex Cloud environment and authority. Immutable task packets. Proposed onboarding with eight Dot probes.
+Fill private bindings and a definition from [onboarding](../../../../docs/onboarding.md). Run `responsibility --file <definition>`, then `reconcile --id <id> --as-of <UTC>`. Adoption returns criterion `specHash` values for ready-to-use imports. The retained goal/context survives fresh processes.
 
-## How to get to it (user POV)
+Active definitions require finish criteria. Exact subject includes project, intended canonical repository, executor, designated host/native project, path, full revision, and dirty digest. Omitted executor defaults to local Codex. Supplied work class and cloud rationale are validated. Cloud coding requires a prepared environment, reason, and explicit scoped cloud authority.
 
-Fill `.local/bindings.json` from `examples/bindings.json`. Prepare a current request and snapshot. Run `npm run agent -- plan --request <file> --snapshot <id> --as-of <UTC>`. Read the returned `packet.md`. Run `probe --nonce <fresh-value>` for onboarding or add `--id <probe>` for one prompt.
+Definitions name parent hashes. Concurrent heads block proposals until one definition references every head. Native pending/uncertain effects yield rediscovery only across time and revision changes. Effect keys bind responsibility, stable target identity, intended effect, and occurrence. They do not enforce native at-most-once execution.
 
-## Driving it with the CLI driver
+## Source and drive
 
-Run `npm run verify:behavior`. Scenarios `local-proposal`, `unavailable-host`, `explicit-cloud`, `immutable-publication`, and `probe-packet` verify exact identity, ready and unavailable routes, long-tail private projects, own-key project and host registration, cloud authority, proposal headings, idempotent replay, concurrent publication, interruption recovery, altered packet-byte and record corruption rejection, and probe content. Read actual files alongside JSON output. Sentinels must show no executor commands ran.
+`responsibilities.mjs` adopts and reconciles. `work.mjs` owns exact routing, authority, heads, and effect identity. Scenarios `persistent-context`, `binding-boundaries`, `definition-concurrency`, and `probe-packet` exercise restart/replay, inherited keys, invalid rationale/work class, repository mismatch, cloud scope, concurrent observations, explicit fork resolution, and actual onboarding packet bytes.
 
-## Gotchas
+`probe --nonce <fresh-value>` retains all eight proposed native capability prompts. It does not install instructions or run them.
 
-Missing bindings or partial, foreign, future, or stale observations cannot make a route ready. A missing Mac never silently selects another Mac or cloud. Ready means ready to propose native dispatch. Every packet is `proposal-only`. Cloud coding needs a reason and explicit cloud authority. Probe packets do not install instructions or run probes.
+## Boundaries
 
-Inherited object keys do not register projects or hosts. Explicitly registered `constructor` project and host IDs remain valid. The driver reads and replays their retained task records.
+Bindings remain local input, not authenticated native permission. A repository mismatch prevents local-check execution and work. Current native discovery remains required before actual execution. Partial inventory cannot prove absence. New concurrent input requires another pinned review.

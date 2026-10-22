@@ -133,7 +133,8 @@
         "exact-binding",
         "branch-blocking",
         "effect-stability",
-        "authority-scope"
+        "authority-scope",
+        "native-uncertainty"
       ]
     },
     {
@@ -153,7 +154,10 @@
         "reported-assurance",
         "failure-preservation",
         "repair-closure",
-        "deterministic-replay"
+        "deterministic-replay",
+        "current-evidence",
+        "trigger-coverage",
+        "retirement-closure"
       ]
     },
     {
@@ -170,7 +174,8 @@
         "derived-boundaries"
       ],
       "properties": [
-        "restore-suspension"
+        "restore-suspension",
+        "import-prefix"
       ]
     }
   ],
@@ -229,7 +234,7 @@
       "functions": [
         "reconcileState"
       ],
-      "statement": "A later pass or weaker definition cannot erase a retained failure."
+      "statement": "A later pass, weaker definition or earlier native completion cannot erase a retained failure or silence required attention."
     },
     {
       "id": "repair-closure",
@@ -243,9 +248,51 @@
       "id": "deterministic-replay",
       "source": "src/responsibilities.mjs",
       "functions": [
-        "reconcileState"
+        "reconcileState",
+        "replayReview"
       ],
       "statement": "Identical sorted evidence manifests/time/rules produce identical reconciliation results under permutation."
+    },
+    {
+      "id": "current-evidence",
+      "source": "src/responsibilities.mjs",
+      "functions": [
+        "reconcileState"
+      ],
+      "statement": "Newest actual local identity/bytes cannot borrow an older green result."
+    },
+    {
+      "id": "native-uncertainty",
+      "source": "src/responsibilities.mjs",
+      "functions": [
+        "reconcileState"
+      ],
+      "statement": "Known pending/uncertain effects permit rediscovery only; partial inventories cannot prove absence."
+    },
+    {
+      "id": "trigger-coverage",
+      "source": "src/work.mjs",
+      "functions": [
+        "triggerStatus"
+      ],
+      "statement": "Missed runs require fresh complete post-window coverage; no-op and delivery gaps remain distinct."
+    },
+    {
+      "id": "retirement-closure",
+      "source": "src/work.mjs",
+      "functions": [
+        "retirementStatus"
+      ],
+      "statement": "Unsuperseded enabled readbacks keep native disablement pending and retirement stops proposals."
+    },
+    {
+      "id": "import-prefix",
+      "source": "src/records.mjs",
+      "functions": [
+        "importOrder",
+        "validateReferences"
+      ],
+      "statement": "Every imported publication prefix is dependency-complete and supersession stays within scope."
     },
     {
       "id": "restore-suspension",

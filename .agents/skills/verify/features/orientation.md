@@ -1,17 +1,15 @@
-# Orientation and inventory
+# Orientation and private integrity
 
-## Sub-features
+## User route
 
-Public catalog and JSON help. Read-only doctor. Scoped normalized and native Codex inventory imports. Timestamped briefs preserve gaps, observer, and reported basis.
+Run `help --json`, `catalog`, and `doctor`. Global `--root` selects public source; `--home` selects private state. Default home is the root's ignored `.local/`. Help lists exactly nine commands and actual option/exit contracts.
 
-## How to get to it (user POV)
+Doctor validates bindings, immutable hashes, referenced records/evidence, retained historical records, generated references, and per-responsibility restore suspension. Missing bindings remain an empty local inventory. Native access and global inventory completeness remain unverified.
 
-Run `npm run agent -- doctor`, `help --json`, or `catalog`. Import `examples/snapshot.json` or a combined native result shaped like `examples/native-codex.json` using `snapshot --import <file>`. Read it with `brief --snapshot <id> --as-of <UTC>`.
+## Source and drive
 
-## Driving it with the CLI driver
+`scripts/agent.mjs`, `src/records.mjs`, `src/responsibilities.mjs`, and `src/metadata.mjs` own this route. Full scenario `orientation` drives actual help, doctor in an isolated repository, catalog, removed command rejection, and unknown options. Other scenarios test corruption and restored doctor state.
 
-Run `npm run verify:behavior`. Scenarios `orientation` and `scoped-inventory` exercise actual JSON parsing, help coverage, current references, private bindings, normalized and native imports, stale briefs, malformed timestamps, and immutable record readback. Evidence includes commands, exit codes, returned scope, gaps, observation age, and the retained record.
+## Boundaries
 
-## Gotchas
-
-Examples are incomplete on purpose. A recent thread listing excludes older or archived chats. Preserve missing pages and unavailable hosts. An imported report is not authenticated provider output. Doctor cannot prove a machine is online. A brief remains scoped even when it names several projects.
+A public catalog entry does not bind a host/path or establish access. Own private project and host keys matter; inherited object keys are not registration. Historical old records retain reported assurance and never become live state automatically. Public generation reads catalog and metadata only.

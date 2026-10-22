@@ -1,15 +1,19 @@
 {
   "schemaVersion": 1,
+  "localHostId": "designated-mac",
   "hosts": {
-    "designated-mac": { "label": "Replace with the native host label" }
+    "designated-mac": {
+      "label": "Replace with designated native host label.",
+      "machine": "replace-with-actual-hostname"
+    }
   },
   "projects": {
-    "emmy": {
-      "label": "Emmy",
+    "scratch": {
+      "label": "Scratch",
       "hostId": "designated-mac",
       "nativeProjectId": "replace-with-native-project-id",
-      "path": "/replace/with/actual/checkout",
-      "cloudEnvironmentId": "replace-only-if-prepared"
+      "path": "/replace/with/scratch-repository",
+      "repository": "https://example.invalid/scratch"
     }
   }
 }

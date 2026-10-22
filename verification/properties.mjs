@@ -1,145 +1,322 @@
-import assert from 'node:assert/strict';
-import { parseReceipt, parseRequest, parseSnapshot } from '../src/records.mjs';
+import { canonical, digest, parseDefinition, parseObservation, recordPayload } from '../src/records.mjs';
 
-const asOf = '2026-10-22T12:00:00Z';
-const baseRevision = 'a'.repeat(40);
-const currentRevision = 'b'.repeat(40);
-const oldRevision = 'c'.repeat(40);
-const bindings = {
-  hosts: { studio: { label: 'Studio' }, mini: { label: 'Mini' } },
-  projects: {
-    alpha: { label: 'Alpha', hostId: 'studio', nativeProjectId: 'native-alpha', path: '/fixture/alpha', cloudEnvironmentId: 'cloud-alpha' },
-    beta: { label: 'Beta', hostId: 'mini', nativeProjectId: 'native-beta', path: '/fixture/beta', cloudEnvironmentId: 'cloud-beta' }
-  }
-};
-const catalog = { projects: [{ id: 'alpha', repository: 'https://example.com/alpha' }, { id: 'beta', repository: 'https://example.com/beta' }] };
-const criterion = (id, evidence) => ({ id, evidence, description: id });
-const baseRequest = projectId => ({ requestId: 'bounded', projectId, goal: 'Bounded proposal', workClass: 'code', revision: baseRevision, authority: { reference: 'Bounded owner request' }, sources: [], finish: [criterion('artifact', 'local-digest')] });
-
-function* product(domains, values = []) {
-  if (!domains.length) { yield values; return; }
-  for (const value of domains[0]) yield* product(domains.slice(1), [...values, value]);
-}
+const asOf = '2026-10-22T12:00:00.000Z';
+const clock = milliseconds => new Date(Date.parse(asOf) + milliseconds).toISOString();
+const firstRevision = 'a'.repeat(40);
+const secondRevision = 'b'.repeat(40);
+const machine = 'fixture-machine';
+const criterion = (id = 'artifact', evidence = 'local-digest') => ({ id, description: `Bounded ${id} evidence.`, evidence, ...(evidence === 'local-digest' ? { path: `/fixture/${id}`, sha256: '0'.repeat(64) } : {}) });
+const subjects = [
+  { projectId: 'alpha', repository: 'https://example.invalid/alpha', executor: 'local-codex', hostId: 'host-alpha', nativeProjectId: 'native-alpha', path: '/fixture/alpha', revision: firstRevision, dirtyDigest: '1'.repeat(64) },
+  { projectId: 'beta', repository: 'https://example.invalid/beta', executor: 'local-codex', hostId: 'host-beta', nativeProjectId: 'native-beta', path: '/fixture/beta', revision: firstRevision, dirtyDigest: '2'.repeat(64) }
+];
+const bindings = { schemaVersion: 1, localHostId: 'host-alpha', hosts: { 'host-alpha': { label: 'Alpha host', machine }, 'host-beta': { label: 'Beta host', machine } }, projects: Object.fromEntries(subjects.map(target => [target.projectId, { label: target.projectId, repository: target.repository, hostId: target.hostId, nativeProjectId: target.nativeProjectId, path: target.path }])) };
+const catalog = { projects: subjects.map(target => ({ id: target.projectId, label: target.projectId, repository: target.repository })) };
+const definition = (id = 'watch-alpha', target = subjects[0], criteria = [criterion()]) => recordPayload(parseDefinition({ id, parents: [], goal: 'Retain a bounded outcome.', context: 'Bounded synthetic source context.', target, action: 'verify', resource: target.projectId, destination: 'local-evidence', authorityRef: { reference: 'Bounded owner request', action: 'verify', resource: target.projectId, destination: 'local-evidence' }, criteria, freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: clock(3600000), feature: { id: 'bounded-method', method: 'Inspect bounded evidence.', intendedEffect: 'Maintain expected outcome.', reviewAt: clock(3600000) }, lifecycle: { status: criteria.length ? 'active' : 'retired' } }));
+const observation = (def, change = {}) => recordPayload({ ...parseObservation({ responsibilityId: def.id, subject: def.target, observedAt: clock(-100), observer: 'Bounded source', category: 'criteria', availability: 'available', coverage: { complete: true, gaps: [] }, claims: [], evidenceRefs: [], ...change }), origin: change.origin ?? 'reported' });
+const claim = (def, item = def.criteria[0], outcome = 'pass') => ({ criterionId: item.id, revision: def.target.revision, kind: item.evidence, specHash: digest(item), outcome, evidenceRef: 'Bounded retained output.' });
+const localTarget = (def, change = {}) => observation(def, { category: 'target', origin: 'observed-local', ...change });
+const tasks = (def, change = {}) => observation(def, { category: 'tasks', tasks: [], ...change });
+const evidence = (def, outcome = 'pass', change = {}) => observation(def, { origin: 'observed-local', claims: def.criteria.map(item => claim(def, item, outcome)), ...change });
+const context = (def, changes = {}) => ({ definitions: [def], observations: [localTarget(def), tasks(def), evidence(def)], repairs: [], reviews: [], featureReviews: [], bindings: { ...bindings, localHostId: def.target.hostId }, catalog, machine, asOf, ...changes });
+const reviewed = (state, inputs) => recordPayload({ ...state, inputHashes: inputs.map(item => item.hash).sort() });
+const permutations = values => values.length < 2 ? [values] : values.flatMap((value, index) => permutations(values.filter((_, candidate) => candidate !== index)).map(rest => [value, ...rest]));
 
 export const bounds = {
-  routing: {
-    projects: ['alpha', 'beta'],
-    workClasses: ['code', 'research'],
-    executors: [null, 'local-work', 'codex-cloud', 'dot-cloud'],
-    bindings: ['complete', 'missing-project', 'missing-host', 'missing-path'],
-    authorityCloud: [false, true],
-    cloudReason: [false, true],
-    snapshotProducts: ['codex', 'work', 'codex-cloud', 'dot-cloud'],
-    snapshotHosts: ['studio', 'mini', 'cloud-alpha', 'dot-cloud'],
-    coverage: ['complete', 'partial'],
-    projectObservations: ['exact', 'absent', 'wrong-path', 'wrong-host'],
-    availability: ['online', 'offline', 'denied', 'unknown'],
-    agesMs: [-1, 0, 86400000, 86400001],
-    includesAbsentSnapshot: true
-  },
-  evidence: {
-    projects: ['alpha', 'beta'],
-    hosts: ['studio', 'mini'],
-    criteria: ['local-digest', 'reported-check', 'both'],
-    taskMatch: [true, false],
-    projectMatch: [true, false],
-    executorMatch: [true, false],
-    receiptRevisionMatch: [true, false],
-    claimRevisionMatch: [true, false],
-    claimModes: ['absent', 'pass', 'fail', 'pass-and-fail', 'unknown', 'foreign-criterion'],
-    kindMatch: [true, false],
-    artifactStatuses: ['match', 'mismatch', 'unreadable', 'absent'],
-    futureReceipt: [false, true],
-    maxCriteria: 2,
-    maxClaimsPerCriterion: 2,
-    receiptsPerAssessment: 1
-  },
+  responsibilities: ['watch-alpha', 'watch-beta'],
+  targets: subjects,
+  revisions: [firstRevision, secondRevision],
+  criterionCounts: [0, 1, 2],
+  observationCounts: [0, 1, 2],
+  repairCounts: [0, 1, 2],
+  evidenceOutcomes: ['pass', 'fail', 'unknown'],
+  availability: ['available', 'unavailable', 'denied', 'unknown'],
+  coverage: ['complete', 'partial'],
+  agesMs: [-1, 0, 86400000, 86400001],
+  heads: [1, 2],
+  triggerStates: ['missing', 'partial', 'unavailable', 'enabled-no-run', 'enabled-no-outcome', 'enabled-no-delivery', 'enabled-complete', 'disabled', 'conflicting-enabled-disabled', 'superseded-enabled'],
+  temporalTraces: ['green-unknown', 'fail-pass-repair-fail', 'fail-pass-repair-fail-pass-repair', 'recurrence-before-source-advance', 'weakened-definition', 'two-failed-repairs', 'completed-fail-failed-repair-failed-repair'],
+  temporalMaximum: { criteria: 2, criterionObservations: 4, targetObservations: 2, taskObservations: 1, effectObservations: 2, repairs: 2, priorReviews: 3 },
+  importGraph: { records: 2, orderings: 2, testedPrefixes: [0, 1, 2], explicitAbstractCycle: true },
   assumptions: [
-    'Inputs satisfy production boundary parsers. External JSON parsing is exercised by the behavioral driver.',
-    'The caller supplies the current result revision and honest scope. Imported reports are not authenticated.',
-    'Artifact-check results come from the production byte-reading boundary. The finite domain varies its possible results.',
-    'No concurrency, filesystem atomicity, provider authentication, native execution, schedules, or all-size theorem is proved.'
+    'These are finite products and targeted temporal traces, not one full Cartesian product of every field.',
+    'Active zero-criterion definitions are rejected by the actual boundary parser. Zero criteria cover retired/merged states.',
+    'Observed-local observations model only trusted production inspection output; parser-forced reported imports are tested separately.',
+    'Local filesystem, actual git identity, command execution, child cleanup, archive bytes and process interruption require the CLI driver.',
+    'No provider authentication, native authority, non-author review, native at-most-once execution, hardware-loss recovery or arbitrary-size theorem is proved.'
   ]
 };
 
-export function verifyProperties(work, selected = null) {
+export function verifyProperties({ work, responsibilities, records }, selected = null) {
   const counts = {};
-  const check = (property, input, predicate, expectation) => {
+  const check = (property, input, condition, expectation) => {
     if (selected && selected !== property) return;
     counts[property] = (counts[property] ?? 0) + 1;
-    if (!predicate) {
-      const error = new Error(`${property} violated. ${expectation}`);
-      error.property = property;
-      error.counterexample = input;
-      throw error;
-    }
+    if (!condition) { const error = new Error(`${property} violated. ${expectation}`); error.property = property; error.counterexample = input; throw error; }
   };
-  let routingCases = 0;
-  let evidenceCases = 0;
-  if (!selected || ['local-first', 'exact-binding', 'scope-freshness', 'proposal-only'].includes(selected)) {
-    const snapshots = [null];
-    for (const [productName, hostId, coverage, availability, age, projectObservation] of product([bounds.routing.snapshotProducts, bounds.routing.snapshotHosts, bounds.routing.coverage, bounds.routing.availability, bounds.routing.agesMs, bounds.routing.projectObservations])) {
-      const projects = projectObservation === 'absent' ? [] : Object.values(bindings.projects).map(binding => ({ id: binding.nativeProjectId, path: projectObservation === 'wrong-path' ? '/wrong/path' : binding.path, hostId: projectObservation === 'wrong-host' ? 'foreign-host' : binding.hostId }));
-      snapshots.push({ ...parseSnapshot({ scope: { product: productName, hostId }, observedAt: new Date(Date.parse(asOf) - age).toISOString(), observer: 'Bounded native report', coverage: { complete: coverage === 'complete', gaps: coverage === 'complete' ? [] : ['missing page'] }, availability, projects, chats: [], limits: [] }), id: '4'.repeat(64) });
-    }
-    for (const [projectId, workClass, executor, bindingMode, authorityCloud, cloudReason, snapshot] of product([bounds.routing.projects, bounds.routing.workClasses, bounds.routing.executors, bounds.routing.bindings, bounds.routing.authorityCloud, bounds.routing.cloudReason, snapshots])) {
-      const activeBindings = structuredClone(bindings);
-      if (bindingMode === 'missing-project') delete activeBindings.projects[projectId];
-      if (bindingMode === 'missing-host') delete activeBindings.hosts[bindings.projects[projectId].hostId];
-      if (bindingMode === 'missing-path') delete activeBindings.projects[projectId].path;
-      const request = parseRequest({ ...baseRequest(projectId), workClass, ...(executor ? { executor } : {}), authority: { reference: 'Owner', cloud: authorityCloud }, ...(cloudReason ? { cloudReason: 'Prepared environment benefit' } : {}) });
-      const context = { catalog, bindings: activeBindings, snapshot, asOf };
-      const task = work.planTask(request, context);
-      routingCases++;
-      const input = { request, bindingMode, snapshot, result: task };
-      const expectedKind = executor ?? (workClass === 'code' ? 'local-codex' : 'dot-cloud');
-      check('local-first', input, task.executor.kind === expectedKind, `Expected executor ${expectedKind}.`);
-      const local = ['local-codex', 'local-work'].includes(expectedKind);
-      const expectedHost = local ? activeBindings.projects[projectId]?.hostId ?? null : expectedKind === 'codex-cloud' ? activeBindings.projects[projectId]?.cloudEnvironmentId ?? null : 'dot-cloud';
-      check('exact-binding', input, task.executor.hostId === expectedHost, `Expected designated host ${expectedHost}.`);
-      if (local) check('exact-binding', input, task.executor.path === (activeBindings.projects[projectId]?.path ?? null) && task.executor.projectId === (activeBindings.projects[projectId]?.nativeProjectId ?? null), 'Local native project identity and absolute path must match the designated binding.');
-      check('proposal-only', input, task.execution === 'proposal-only', 'Planning must never label execution dispatched.');
-      const expectedProduct = expectedKind === 'local-codex' ? 'codex' : expectedKind === 'local-work' ? 'work' : expectedKind;
-      const snapshotUsable = snapshot && snapshot.scope.product === expectedProduct && snapshot.scope.hostId === expectedHost && snapshot.coverage.complete && !snapshot.coverage.gaps.length && snapshot.availability === 'online' && Date.parse(asOf) - Date.parse(snapshot.observedAt) >= 0 && Date.parse(asOf) - Date.parse(snapshot.observedAt) <= 86400000;
-      const bound = activeBindings.projects[projectId];
-      const localUsable = !local || Boolean(bound?.path && bound.nativeProjectId && activeBindings.hosts[bound.hostId] && snapshot?.projects.some(project => project.id === bound.nativeProjectId && project.path === bound.path && project.hostId === bound.hostId));
-      const cloudUsable = expectedKind !== 'codex-cloud' || Boolean(bound?.cloudEnvironmentId && authorityCloud && cloudReason);
-      const authorityUsable = workClass !== 'code' || local || (authorityCloud && cloudReason);
-      const expectedReady = Boolean(snapshotUsable && localUsable && cloudUsable && authorityUsable);
-      check('scope-freshness', input, (task.route.status === 'ready') === expectedReady, `Expected ready=${expectedReady} from exact scope, complete coverage, availability, age, binding and authority.`);
-      if (snapshot && (snapshot.scope.product !== expectedProduct || snapshot.scope.hostId !== expectedHost)) check('scope-freshness', input, work.snapshotStatus(snapshot, task.executor, asOf).status !== 'unavailable', 'A foreign observation cannot declare the designated executor unavailable.');
-    }
+  const enabled = property => !selected || selected === property;
+  const state = (def, changes = {}) => responsibilities.reconcileState(def, context(def, changes));
+  const eachSubject = callback => { for (const id of bounds.responsibilities) for (const base of subjects) for (const revision of bounds.revisions) callback(definition(id, { ...base, revision })); };
+
+  if (enabled('exact-binding')) {
+    eachSubject(def => {
+      for (const mode of ['exact', 'missing-project', 'missing-host', 'missing-path', 'wrong-path', 'wrong-native', 'wrong-host', 'wrong-repository', 'wrong-machine', 'foreign-local-host', 'public-repository-mismatch']) {
+        const privateBindings = structuredClone(bindings); privateBindings.localHostId = def.target.hostId;
+        const activeCatalog = structuredClone(catalog); const binding = privateBindings.projects[def.target.projectId];
+        if (mode === 'missing-project') delete privateBindings.projects[def.target.projectId];
+        if (mode === 'missing-host') delete privateBindings.hosts[def.target.hostId];
+        if (mode === 'missing-path') delete binding.path;
+        if (mode === 'wrong-path') binding.path = '/foreign/path';
+        if (mode === 'wrong-native') binding.nativeProjectId = 'foreign-native';
+        if (mode === 'wrong-host') binding.hostId = 'foreign-host';
+        if (mode === 'wrong-repository') binding.repository = 'https://example.invalid/foreign';
+        if (mode === 'wrong-machine') privateBindings.hosts[def.target.hostId].machine = 'foreign-machine';
+        if (mode === 'foreign-local-host') privateBindings.localHostId = 'foreign-host';
+        if (mode === 'public-repository-mismatch') { delete binding.repository; activeCatalog.projects.find(item => item.id === def.target.projectId).repository = 'https://example.invalid/foreign'; }
+        const result = work.routeTarget(def, { bindings: privateBindings, catalog: activeCatalog, machine });
+        check('exact-binding', { mode, def, privateBindings, activeCatalog, result }, (result.status === 'bound') === (mode === 'exact'), 'Only exact own bindings and the intended canonical repository may establish a route.');
+      }
+    });
+    const explicit = definition(); const rawDefault = Object.fromEntries(Object.entries(explicit).filter(([key]) => key !== 'hash')); const omitted = { ...rawDefault, target: { ...rawDefault.target } }; delete omitted.target.executor;
+    check('exact-binding', { case: 'local-default', parsed: records.parseDefinition(omitted) }, records.parseDefinition(omitted).target.executor === 'local-codex', 'Omitted coding executor defaults to local Codex.');
+    let activeEmptyRejected = false; try { records.parseDefinition({ ...rawDefault, criteria: [] }); } catch { activeEmptyRejected = true; }
+    check('exact-binding', { case: 'active-empty-criteria' }, activeEmptyRejected, 'An active responsibility requires declared finish evidence.');
+    const unknown = definition('inherited-project', { ...subjects[0], projectId: 'constructor' });
+    const unknownResult = work.routeTarget(unknown, { bindings: { hosts: {}, projects: {} }, catalog: { projects: [] }, machine });
+    check('exact-binding', { case: 'inherited-project', unknownResult }, unknownResult.project === null && unknownResult.status !== 'bound', 'Inherited constructor is not a registered project.');
+    const hostDefinition = definition('inherited-host', { ...subjects[0], projectId: 'constructor', hostId: 'constructor' });
+    const ownProject = { label: 'Explicit constructor', path: hostDefinition.target.path, hostId: 'constructor', nativeProjectId: hostDefinition.target.nativeProjectId, repository: hostDefinition.target.repository };
+    const inheritedHost = work.routeTarget(hostDefinition, { bindings: { localHostId: 'constructor', projects: { constructor: ownProject }, hosts: {} }, catalog: { projects: [] }, machine });
+    check('exact-binding', { case: 'inherited-host', inheritedHost }, inheritedHost.reasons.includes('exact-binding-missing'), 'Inherited constructor is not an own host binding.');
   }
-  if (!selected || ['identity', 'revision', 'evidence-required', 'contradictions', 'reported-assurance'].includes(selected)) {
-    const domains = bounds.evidence;
-    for (const [projectId, hostId, criteriaMode, taskMatch, projectMatch, executorMatch, receiptRevisionMatch, claimRevisionMatch, claimMode, kindMatch, artifactStatus, futureReceipt] of product([domains.projects, domains.hosts, domains.criteria, domains.taskMatch, domains.projectMatch, domains.executorMatch, domains.receiptRevisionMatch, domains.claimRevisionMatch, domains.claimModes, domains.kindMatch, domains.artifactStatuses, domains.futureReceipt])) {
-      const finish = criteriaMode === 'both' ? [criterion('bytes', 'local-digest'), criterion('checks', 'reported-check')] : [criterion('result', criteriaMode)];
-      const executor = { kind: 'local-codex', product: 'codex', hostId, projectId: `native-${projectId}`, path: `/fixture/${projectId}`, repository: `https://example.com/${projectId}` };
-      const task = { id: '1'.repeat(64), request: parseRequest({ ...baseRequest(projectId), finish }), executor };
-      const claims = finish.flatMap(item => {
-        if (claimMode === 'absent') return [];
-        const kind = kindMatch ? item.evidence : item.evidence === 'local-digest' ? 'reported-check' : 'local-digest';
-        const base = { criterionId: claimMode === 'foreign-criterion' ? 'foreign' : item.id, revision: claimRevisionMatch ? currentRevision : oldRevision, kind, evidenceId: `${item.id}-pass`, path: `/fixture/${item.id}`, sha256: '0'.repeat(64), evidenceRef: 'Reported native output' };
-        return claimMode === 'pass-and-fail' ? [{ ...base, outcome: 'pass' }, { ...base, evidenceId: `${item.id}-fail`, outcome: 'fail' }] : [{ ...base, outcome: claimMode === 'foreign-criterion' ? 'pass' : claimMode }];
-      });
-      const receipt = { ...parseReceipt({ taskId: taskMatch ? task.id : '2'.repeat(64), projectId: projectMatch ? projectId : 'foreign-project', producer: 'Bounded native report', executor: executorMatch ? executor : { ...executor, hostId: 'foreign-host' }, resultRevision: receiptRevisionMatch ? currentRevision : oldRevision, observedAt: futureReceipt ? '2026-10-22T12:00:01Z' : '2026-10-22T11:00:00Z', claims, limits: [] }), id: '3'.repeat(64) };
-      const artifactChecks = artifactStatus === 'absent' ? [] : claims.filter(claim => claim.kind === 'local-digest').map(claim => ({ evidenceId: claim.evidenceId, status: artifactStatus }));
-      const assessment = work.assessOutcome(task, receipt, artifactChecks, currentRevision, asOf);
-      evidenceCases++;
-      const input = { task, receipt, artifactChecks, revision: currentRevision, asOf, result: assessment };
-      const matchingIdentity = taskMatch && projectMatch && executorMatch;
-      check('identity', input, matchingIdentity || assessment.status !== 'supported', 'Wrong task, project or executor cannot be supported.');
-      const matchingRevision = receiptRevisionMatch && (claimRevisionMatch || !claims.length);
-      check('revision', input, matchingRevision || assessment.status !== 'supported', 'Wrong current revision cannot be supported.');
-      const expectedEvidence = finish.every(item => claims.some(claim => claim.criterionId === item.id && claim.kind === item.evidence && claim.outcome === 'pass' && matchingIdentity && receiptRevisionMatch && claimRevisionMatch && (item.evidence === 'reported-check' || artifactStatus === 'match')));
-      check('evidence-required', input, expectedEvidence || assessment.status !== 'supported', 'Missing or wrong-kind passing evidence cannot be supported.');
-      const expectedConflict = !matchingIdentity || !receiptRevisionMatch || futureReceipt || claims.some(claim => claim.revision !== currentRevision || claim.criterionId === 'foreign') || (matchingIdentity && receiptRevisionMatch && claimRevisionMatch && claims.some(claim => claim.outcome === 'fail')) || artifactChecks.some(value => value.status === 'mismatch');
-      check('contradictions', input, !expectedConflict || assessment.status === 'conflict', 'Any identity, revision, future timestamp, failed claim, foreign criterion or byte contradiction is a conflict.');
-      const expectedStatus = expectedConflict ? 'conflict' : !expectedEvidence || artifactChecks.some(value => value.status === 'unreadable') ? 'needs-evidence' : 'supported';
-      check('evidence-required', input, assessment.status === expectedStatus, `Expected status ${expectedStatus}.`);
-      check('reported-assurance', input, assessment.assuranceByClaim.every(value => !finish.some(item => item.id === value.criterionId && item.evidence === 'reported-check') || value.assurance !== 'observed-local-bytes'), 'A reported check must not become observed local bytes.');
+
+  if (enabled('observation-gates')) eachSubject(def => {
+    for (const age of bounds.agesMs) for (const complete of [false, true]) for (const availability of bounds.availability) for (const field of ['exact', ...work.subjectFields]) {
+      const observedSubject = { ...def.target }; if (field !== 'exact') observedSubject[field] = field === 'revision' ? (def.target.revision === firstRevision ? secondRevision : firstRevision) : field === 'dirtyDigest' ? 'f'.repeat(64) : field === 'path' ? '/foreign/path' : `foreign-${field}`;
+      const item = { ...observation(def), subject: observedSubject, observedAt: clock(-age), availability, coverage: { complete, gaps: complete ? [] : ['bounded gap'] } };
+      const result = work.observationStatus(item, def.target, asOf, 86400000);
+      const expected = field === 'exact' && age >= 0 && age <= 86400000 && complete && availability === 'available';
+      check('observation-gates', { def, item, result, expected }, result.eligible === expected, 'Only exact, current, complete and available observations are eligible; 24 hours is inclusive.');
     }
+  });
+
+  if (enabled('authority-scope')) eachSubject(def => {
+    for (const reference of [false, true]) for (const action of [false, true]) for (const resource of [false, true]) for (const destination of [false, true]) for (const expiry of [null, -1, 0, 1]) {
+      const authorityRef = { reference: reference ? 'Bounded owner' : '', action: action ? def.action : 'foreign', resource: resource ? def.resource : 'foreign', destination: destination ? def.destination : 'foreign', ...(expiry === null ? {} : { expiresAt: clock(expiry) }) };
+      const result = work.authorityStatus({ ...def, authorityRef }, asOf); const expected = reference && action && resource && destination && (expiry === null || expiry >= 0);
+      check('authority-scope', { authorityRef, result, expected }, result.eligible === expected, 'Authority must name the exact action, resource and destination and remain unexpired.');
+    }
+    check('authority-scope', { case: 'absent' }, !work.authorityStatus({ ...def, authorityRef: null }, asOf).eligible, 'Absent authority cannot authorize work.');
+  });
+
+  if (enabled('effect-stability')) eachSubject(def => {
+    const key = work.effectKey(def);
+    for (const revision of bounds.revisions) for (const reviewAt of [clock(0), clock(1)]) {
+      const changed = { ...def, goal: 'Edited goal text.', context: 'Edited context.', hash: 'f'.repeat(64), reviewAt, target: { ...def.target, revision, dirtyDigest: 'f'.repeat(64) } };
+      check('effect-stability', { def, changed, key, changedKey: work.effectKey(changed) }, work.effectKey(changed) === key, 'Time, definition hash, revision and dirty bytes alone do not create a new effect.');
+    }
+    const laterOccurrence = { ...def, trigger: { nextWindow: { start: clock(0) } } };
+    check('effect-stability', { def, laterOccurrence }, work.effectKey(laterOccurrence) !== key && work.effectKey({ ...laterOccurrence, trigger: { nextWindow: { start: clock(1) } } }) !== work.effectKey(laterOccurrence), 'Different due occurrences bind different effect keys.');
+  });
+
+  if (enabled('branch-blocking') || enabled('deterministic-replay')) eachSubject(def => {
+    for (const criteriaCount of bounds.criterionCounts) for (const observationCount of bounds.observationCounts) for (const repairCount of bounds.repairCounts) for (const headCount of bounds.heads) {
+      const shaped = definition(def.id, def.target, Array.from({ length: criteriaCount }, (_, index) => criterion(`criterion-${index}`)));
+      const secondHead = recordPayload({ ...Object.fromEntries(Object.entries(shaped).filter(([key]) => key !== 'hash')), context: 'Conflicting concurrent context.' });
+      const observations = [localTarget(shaped), tasks(shaped)].slice(0, observationCount);
+      const definitions = headCount === 1 ? [shaped] : [shaped, secondHead];
+      const repairs = Array.from({ length: repairCount }, (_, index) => ({ hash: String(index + 3).repeat(64), findingId: '0'.repeat(64) }));
+      const result = state(shaped, { definitions, observations, repairs });
+      check('branch-blocking', { shaped, headCount, observationCount, repairCount, result }, result.heads.length === headCount && (headCount !== 2 || result.proposals.length === 0), 'All definition heads survive and forks block proposals.');
+      for (const order of permutations(observations)) {
+        const permuted = state(shaped, { definitions: [...definitions].reverse(), observations: order, repairs: [...repairs].reverse() });
+        check('deterministic-replay', { shaped, definitions, observations, repairs, result, permuted }, canonical(result) === canonical(permuted), 'Permuting the same manifest does not change the review.');
+      }
+    }
+  });
+
+  if (enabled('deterministic-replay')) eachSubject(def => {
+    const inputs = context(def); const actual = responsibilities.reconcileState(def, inputs);
+    const manifestRecords = [def, ...inputs.observations];
+    const pinned = recordPayload({ ...actual, inputHashes: manifestRecords.map(record => record.hash).sort(), inputContext: { bindings: inputs.bindings, catalog, machine }, requestedAsOf: asOf, ruleDigest: '0'.repeat(64) });
+    const replayed = responsibilities.replayReview(pinned, [...manifestRecords].reverse());
+    check('deterministic-replay', { pinned, replayed }, canonical(actual) === canonical(replayed), 'The stored manifest/context reconstructs every input to the actual reconciliation function.');
+  });
+
+  if (enabled('reported-assurance')) eachSubject(def => {
+    for (const origin of ['reported', 'observed-local']) for (const outcome of bounds.evidenceOutcomes) {
+      const raw = { responsibilityId: def.id, subject: def.target, observedAt: clock(-10), observer: 'Claimed reviewer', category: 'criteria', availability: 'available', coverage: { complete: true, gaps: [] }, claims: [claim(def, def.criteria[0], outcome)], evidenceRefs: [], origin };
+      const parsed = records.parseObservation(raw);
+      check('reported-assurance', { raw, parsed }, parsed.origin === 'reported', 'An import cannot grant itself observed-local origin.');
+      const item = recordPayload(parsed); const result = state(def, { observations: [localTarget(def), tasks(def), item] });
+      check('reported-assurance', { raw, result }, !result.criterionResults[0].supported && result.criterionResults[0].assurance === 'unverified', 'Imported local success cannot satisfy an observed-local criterion.');
+    }
+    const independent = definition(def.id, def.target, [{ ...def.criteria[0], independentReview: true }]); const result = state(independent);
+    check('reported-assurance', { independent, result }, !result.criterionResults[0].supported && result.findings.some(finding => finding.code === 'external-review-needed'), 'A local process cannot authenticate non-author review.');
+    const reported = definition(def.id, def.target, [criterion('report', 'reported-check')]); const report = evidence(reported, 'pass', { origin: 'reported' }); const reportedResult = state(reported, { observations: [localTarget(reported), tasks(reported), report] });
+    check('reported-assurance', { reportedResult }, reportedResult.criterionResults[0].supported && reportedResult.criterionResults[0].assurance === 'reported', 'Declared attributed criteria may be supported only with reported assurance.');
+  });
+
+  if (enabled('current-evidence') || enabled('failure-preservation') || enabled('repair-closure') || enabled('deterministic-replay')) eachSubject(def => {
+    const target = localTarget(def, { observedAt: clock(-900) }); const inventory = tasks(def, { observedAt: clock(-900) });
+    const fail = evidence(def, 'fail', { observedAt: clock(-800) }); const pass = evidence(def, 'pass', { observedAt: clock(-600) });
+    const first = state(def, { observations: [target, inventory, fail], asOf: clock(-700) }); const finding = first.findings.find(item => item.code === 'criterion-failed');
+    const firstReview = reviewed(first, [def, target, inventory, fail]);
+    const repaired = { type: 'repair', schemaVersion: 1, hash: '3'.repeat(64), responsibilityId: def.id, findingId: finding.id, failureRefs: finding.failureRefs, author: 'Bounded repair author', changeRef: 'Bounded identified correction.', expectedSubject: def.target, recheckRefs: [pass.hash], observedAt: clock(-500) };
+    const repairedState = state(def, { observations: [target, inventory, fail, pass], reviews: [firstReview], repairs: [repaired], asOf: clock(-400) });
+    check('repair-closure', { def, finding, repaired, repairedState }, repairedState.findings.find(item => item.id === finding.id).status === 'resolved', 'A matching later actual recheck closes the exact ordinary finding.');
+    const repairedReview = reviewed(repairedState, [def, target, inventory, fail, pass, repaired, firstReview]);
+    const failAgain = evidence(def, 'fail', { observedAt: clock(-300) });
+    const recurrent = state(def, { observations: [target, inventory, fail, pass, failAgain], reviews: [firstReview, repairedReview], repairs: [repaired] });
+    check('failure-preservation', { trace: 'fail-pass-repair-fail', recurrent }, recurrent.findings.find(item => item.id === finding.id).status === 'open' && recurrent.findings.find(item => item.id === finding.id).failedRepairs === 0, 'Later same-signature failure reopens; the old valid attempt is currently unsupported, not relabeled originally failed.');
+    const recurrentReview = reviewed(recurrent, [def, target, inventory, fail, pass, failAgain, repaired, firstReview, repairedReview]);
+    const advanced = { ...def, target: { ...def.target, revision: def.target.revision === firstRevision ? secondRevision : firstRevision } };
+    const advancedHistory = state(advanced, { observations: [target, inventory, fail, pass, failAgain], reviews: [firstReview, repairedReview, recurrentReview] });
+    check('failure-preservation', { trace: 'recurrence-before-source-advance', advancedHistory, failAgain }, advancedHistory.findings.find(item => item.id === finding.id)?.evidenceHistoryRefs.includes(failAgain.hash), 'A descendant target preserves later failure occurrences already retained by prior reviews.');
+    const finalPass = evidence(def, 'pass', { observedAt: clock(-200) }); const finalRepair = { ...repaired, hash: '4'.repeat(64), recheckRefs: [finalPass.hash], observedAt: clock(-100), changeRef: 'Bounded later correction.' };
+    const finalState = state(def, { observations: [target, inventory, fail, pass, failAgain, finalPass], reviews: [firstReview, repairedReview], repairs: [repaired, finalRepair] });
+    check('repair-closure', { trace: 'later-exact-repair', finalState }, finalState.findings.find(item => item.id === finding.id).status === 'resolved', 'A later exact repair can close the reopened finding.');
+    const unknown = evidence(def, 'unknown', { observedAt: clock(-100) }); const unknownState = state(def, { observations: [target, inventory, pass, unknown] });
+    check('current-evidence', { trace: 'green-unknown', unknownState }, !unknownState.criterionResults[0].supported && unknownState.findings.some(item => item.code === 'criterion-evidence-needed'), 'Current unreadable or unknown bytes cannot borrow an older green pass.');
+    const wrongCurrentTarget = localTarget(def, { subject: { ...def.target, revision: secondRevision === def.target.revision ? firstRevision : secondRevision }, observedAt: clock(-50) });
+    const wrongTargetState = state(def, { observations: [target, inventory, pass, wrongCurrentTarget] });
+    check('current-evidence', { wrongTargetState }, !wrongTargetState.criterionResults[0].supported && wrongTargetState.findings.some(item => item.code === 'current-local-target-mismatch') && !wrongTargetState.proposals.some(item => item.type === 'work'), 'The newest actual repository identity cannot borrow an earlier matching target.');
+    const weaker = { ...def, criteria: [{ ...def.criteria[0], sha256: 'f'.repeat(64) }] }; const weakerPass = evidence(weaker, 'pass', { observedAt: clock(-100) });
+    const weakened = state(weaker, { observations: [target, inventory, fail, weakerPass], reviews: [firstReview] });
+    check('failure-preservation', { trace: 'weakened-definition', weakened }, weakened.findings.some(item => item.id === finding.id && item.status === 'open'), 'A changed criterion cannot silently erase its original failure.');
+    const descendant = recordPayload({ ...Object.fromEntries(Object.entries(weaker).filter(([key]) => key !== 'hash')), parents: [def.hash] });
+    const manifestInputs = context(descendant, { definitions: [def, descendant], observations: [target, inventory, fail, weakerPass], reviews: [firstReview] });
+    const manifestState = responsibilities.reconcileState(descendant, manifestInputs);
+    const manifestRecords = [def, descendant, ...manifestInputs.observations, firstReview];
+    const pinnedReview = recordPayload({ ...manifestState, inputHashes: manifestRecords.map(record => record.hash).sort(), inputContext: { bindings: manifestInputs.bindings, catalog, machine }, requestedAsOf: asOf, ruleDigest: '0'.repeat(64) });
+    const replayedReview = responsibilities.replayReview(pinnedReview, [...manifestRecords].reverse());
+    check('deterministic-replay', { trace: 'manifest-with-prior-review', pinnedReview, replayedReview }, canonical(manifestState) === canonical(replayedReview) && replayedReview.findings.some(item => item.id === finding.id && item.status === 'open'), 'Replay must consume pinned prior reviews that retain original failures across descendant criteria.');
+    const twoBadRepairs = [0, 1].map(index => ({ ...repaired, hash: String(index + 5).repeat(64), recheckRefs: [fail.hash], observedAt: clock(-500 + index) }));
+    const diagnosed = state(def, { observations: [target, inventory, fail], reviews: [firstReview], repairs: twoBadRepairs });
+    check('failure-preservation', { trace: 'two-failed-repairs', diagnosed }, diagnosed.proposals[0].type === 'diagnose', 'Two actual repeated failing repairs require diagnosis.');
+    const completedNative = observation(def, { category: 'effect', observedAt: clock(-850), effects: [{ key: work.effectKey(def), status: 'completed' }] });
+    const continuationInputs = { observations: [target, inventory, completedNative, fail], reviews: [firstReview], repairs: twoBadRepairs };
+    const continuation = state(def, continuationInputs);
+    check('failure-preservation', { trace: 'completed-fail-failed-repair-failed-repair', continuation }, continuation.proposals[0]?.type === 'diagnose' && continuation.proposals[0].nativeRediscoveryRequired === true && continuation.proposals[0].effectKey === work.effectKey(def), 'A completed earlier effect cannot silence later diagnosis; continuing known native work requires fresh rediscovery.');
+    const expiredContinuation = state({ ...def, authorityRef: { ...def.authorityRef, expiresAt: clock(-1) } }, continuationInputs);
+    check('failure-preservation', { trace: 'completed-failure-expired-authority', expiredContinuation }, expiredContinuation.proposals[0]?.type === 'observe-or-decide', 'Expired authority retains bounded observation/decision attention without authorizing diagnosis execution.');
+    const closedContinuation = state(def, { observations: [target, inventory, completedNative, fail, pass], reviews: [firstReview], repairs: [repaired] });
+    check('failure-preservation', { trace: 'completed-exact-closure', closedContinuation }, closedContinuation.proposals.length === 0 && closedContinuation.findings.find(item => item.id === finding.id).status === 'resolved', 'Exact closure suppresses duplicate initial green work after completed native work.');
+    for (const status of ['pending', 'uncertain']) {
+      const unresolvedNative = observation(def, { category: 'effect', effects: [{ key: work.effectKey(def), status }] });
+      const pendingContinuation = state(def, { ...continuationInputs, observations: [...continuationInputs.observations, unresolvedNative] });
+      check('failure-preservation', { trace: 'completed-failure-pending', status, pendingContinuation }, pendingContinuation.proposals.length === 1 && pendingContinuation.proposals[0].type === 'rediscover', 'Pending or uncertain native state retains rediscovery-only priority.');
+    }
+    for (const mode of ['matching', 'wrong-finding', 'wrong-failure', 'wrong-subject', 'no-change', 'missing-recheck', 'before-failure', 'stale', 'future', 'partial', 'reported', 'failed', 'pass-and-fail', 'wrong-criterion', 'wrong-kind', 'wrong-verifier', 'wrong-revision', 'current-target-mismatch', 'independent']) {
+      const candidate = { ...repaired, recheckRefs: [pass.hash] }; let linked = pass; let affected = finding;
+      if (mode === 'wrong-finding') candidate.findingId = 'f'.repeat(64);
+      if (mode === 'wrong-failure') candidate.failureRefs = ['f'.repeat(64)];
+      if (mode === 'wrong-subject') candidate.expectedSubject = { ...def.target, hostId: 'foreign-host' };
+      if (mode === 'no-change') {
+        let rejected = false; try { records.parseRepair({ ...candidate, changeRef: '' }); } catch { rejected = true; }
+        check('repair-closure', { mode }, rejected, 'Boundary parsing requires an identified correction.'); continue;
+      }
+      if (mode === 'missing-recheck') candidate.recheckRefs = [];
+      if (mode === 'before-failure') linked = evidence(def, 'pass', { observedAt: clock(-900) });
+      if (mode === 'stale') linked = evidence(def, 'pass', { observedAt: clock(-86400001) });
+      if (mode === 'future') linked = evidence(def, 'pass', { observedAt: clock(1) });
+      if (mode === 'partial') linked = evidence(def, 'pass', { coverage: { complete: false, gaps: ['bounded gap'] } });
+      if (mode === 'reported') linked = evidence(def, 'pass', { origin: 'reported' });
+      if (mode === 'failed') linked = evidence(def, 'fail');
+      if (mode === 'pass-and-fail') linked = evidence(def, 'pass', { claims: [claim(def), claim(def, def.criteria[0], 'fail')] });
+      if (mode === 'wrong-criterion') linked = evidence(def, 'pass', { claims: [{ ...claim(def), criterionId: 'foreign' }] });
+      if (mode === 'wrong-kind') linked = evidence(def, 'pass', { claims: [{ ...claim(def), kind: 'reported-check' }] });
+      if (mode === 'wrong-revision') linked = evidence(def, 'pass', { claims: [{ ...claim(def), revision: def.target.revision === firstRevision ? secondRevision : firstRevision }] });
+      if (mode === 'wrong-verifier') linked = evidence(def, 'pass', { claims: [{ ...claim(def), specHash: 'f'.repeat(64) }] });
+      if (mode === 'independent') affected = { ...finding, criteria: [{ ...def.criteria[0], independentReview: true }] };
+      if (mode !== 'missing-recheck') candidate.recheckRefs = [linked.hash];
+      candidate.observedAt = clock(0);
+      const currentTarget = mode === 'current-target-mismatch' ? localTarget(def, { subject: { ...def.target, hostId: 'foreign-host' }, observedAt: clock(-10) }) : target;
+      const result = work.repairStatus(candidate, affected, [target, currentTarget, fail, linked], def, asOf);
+      check('repair-closure', { mode, candidate, affected, linked, result }, result.valid === (mode === 'matching'), 'Every exact failure/change/current subject/original criterion and later eligible local recheck is required.');
+    }
+  });
+
+  if (enabled('repair-closure')) eachSubject(def => {
+    const items = [def.criteria[0], criterion('second', 'reported-check')]; const two = definition(def.id, def.target, items);
+    const failed = evidence(two, 'fail', { observedAt: clock(-500) });
+    const finding = { id: 'd'.repeat(64), code: 'criterion-failed', criteria: items, failureRefs: [failed.hash], evidenceHistoryRefs: [failed.hash] };
+    for (const first of ['absent', ...bounds.evidenceOutcomes]) for (const second of ['absent', ...bounds.evidenceOutcomes]) {
+      const outcomes = [first, second]; const claims = items.flatMap((item, index) => outcomes[index] === 'absent' ? [] : [claim(two, item, outcomes[index])]);
+      const rechecked = evidence(two, 'pass', { observedAt: clock(-100), claims });
+      const repair = { hash: 'f'.repeat(64), findingId: finding.id, failureRefs: finding.failureRefs, changeRef: 'Bounded two-criterion correction.', expectedSubject: two.target, recheckRefs: [rechecked.hash], observedAt: asOf };
+      const result = work.repairStatus(repair, finding, [localTarget(two), failed, rechecked], two, asOf);
+      check('repair-closure', { first, second, result }, result.valid === (first === 'pass' && second === 'pass'), 'Every original affected criterion needs its own matching passing recheck.');
+    }
+  });
+
+  if (enabled('native-uncertainty')) eachSubject(def => {
+    const key = work.effectKey(def);
+    for (const status of ['pending', 'uncertain']) for (const age of [0, 86400001]) for (const complete of [false, true]) {
+      const pending = observation(def, { category: 'effect', effects: [{ key, status }], observedAt: clock(-age), coverage: { complete, gaps: complete ? [] : ['bounded gap'] } });
+      const revised = { ...def, target: { ...def.target, revision: def.target.revision === firstRevision ? secondRevision : firstRevision } };
+      const result = state(revised, { observations: [localTarget(revised), tasks(revised), evidence(revised), pending] });
+      check('native-uncertainty', { status, age, complete, result }, result.proposals.length === 1 && result.proposals[0].type === 'rediscover' && result.proposals[0].effectKey === key, 'Known uncertain/pending native effects survive age, coverage and revision edits.');
+      const absent = observation(revised, { category: 'effect', effects: [{ key, status: 'absent' }], supersedes: { hash: pending.hash, reason: 'Bounded fresh discovery.' }, coverage: { complete: false, gaps: ['bounded missing page'] } });
+      const partial = state(revised, { observations: [localTarget(revised), tasks(revised), evidence(revised), pending, absent] });
+      check('native-uncertainty', { result: partial }, partial.proposals[0].type === 'rediscover', 'A partial inventory never establishes absence of a pending effect.');
+    }
+  });
+
+  if (enabled('trigger-coverage') || enabled('retirement-closure')) eachSubject(def => {
+    const trigger = { nativeId: 'bounded-schedule', promptDigest: '0'.repeat(64), timezone: 'UTC', destination: def.destination, nextWindow: { start: clock(-1000), due: clock(-500), graceMs: 0 } };
+    const watching = { ...def, trigger };
+    const schedule = { nativeId: trigger.nativeId, status: 'enabled', promptDigest: trigger.promptDigest, timezone: trigger.timezone, destination: trigger.destination };
+    for (const mode of ['missing', 'partial', 'unavailable', 'enabled-no-run', 'enabled-no-outcome', 'enabled-no-delivery', 'enabled-complete', 'disabled']) {
+      const item = observation(watching, { category: 'schedule', observedAt: clock(-100), schedule: mode === 'disabled' ? { nativeId: trigger.nativeId, status: 'disabled' } : schedule, coverage: { complete: mode !== 'partial', gaps: mode === 'partial' ? ['bounded page'] : [] }, availability: mode === 'unavailable' ? 'unavailable' : 'available', runs: mode === 'enabled-no-run' || mode === 'partial' || mode === 'unavailable' ? [] : [{ nativeId: trigger.nativeId, windowStart: trigger.nextWindow.start, outcomeRefs: mode === 'enabled-no-outcome' ? [] : ['bounded outcome'], deliveryRefs: mode === 'enabled-no-delivery' ? [] : ['bounded delivery'] }] });
+      const result = work.triggerStatus(watching, mode === 'missing' ? [] : [item], asOf); const codes = result.findings.map(finding => finding.code);
+      const expected = ['missing', 'partial', 'unavailable'].includes(mode) ? 'schedule-observation-needed' : mode === 'enabled-no-run' ? 'missed-run' : mode === 'enabled-no-outcome' ? 'run-no-evidence' : mode === 'enabled-no-delivery' ? 'delivery-unverified' : mode === 'disabled' ? 'schedule-disabled' : null;
+      check('trigger-coverage', { mode, item, result }, expected ? codes.includes(expected) : codes.length === 0, 'Only fresh complete post-window native coverage can support its explicit reported state.');
+      if (mode === 'partial') check('trigger-coverage', { mode, result }, !codes.includes('missed-run'), 'Partial coverage cannot prove a missing run.');
+    }
+    const enabledSchedule = observation(watching, { category: 'schedule', observedAt: clock(-200), schedule, runs: [] });
+    const disabledSchedule = observation(watching, { category: 'schedule', observedAt: clock(-100), schedule: { nativeId: trigger.nativeId, status: 'disabled' }, runs: [] });
+    const retired = { ...watching, lifecycle: { status: 'retired' } };
+    const conflicting = work.retirementStatus(retired, [watching, retired], [enabledSchedule, disabledSchedule], asOf);
+    check('retirement-closure', { enabledSchedule, disabledSchedule, conflicting }, conflicting.status === 'pending-native-disablement' && conflicting.pendingTriggers.includes(trigger.nativeId), 'An unsuperseded enabled readback prevents claimed shutdown.');
+    const replacement = { ...disabledSchedule, supersedes: { hash: enabledSchedule.hash, reason: 'Bounded attributable native disablement.' } };
+    const stopped = work.retirementStatus(retired, [watching, retired], [enabledSchedule, replacement], asOf);
+    check('retirement-closure', { stopped }, stopped.status === 'disablement-readback-reported' && stopped.assurance === 'reported', 'Explicit complete supersession reports disablement without authenticating native state.');
+    check('retirement-closure', { result: state(retired, { definitions: [retired] }) }, state(retired, { definitions: [retired] }).proposals.length === 0, 'Retirement immediately stops work proposals.');
+    const expiredTrigger = state({ ...watching, authorityRef: { ...def.authorityRef, expiresAt: clock(-1) } }, { observations: [localTarget(watching), tasks(watching), evidence(watching), enabledSchedule] });
+    check('trigger-coverage', { expiredTrigger }, expiredTrigger.proposals[0]?.type === 'observe-or-decide', 'A trigger gap without current scope still proposes bounded observation or decision.');
+  });
+
+  if (enabled('restore-suspension')) eachSubject(def => {
+    const epoch = { hash: 'e'.repeat(64), restoredAt: clock(-500), priorHashes: [] };
+    const categories = ['target', 'authority', 'tasks', 'schedule'];
+    const fresh = categories.map(category => observation(def, { category, origin: category === 'target' ? 'observed-local' : 'reported', homeEpoch: epoch.hash, observedAt: clock(-100), ...(category === 'authority' ? { authority: def.authorityRef } : category === 'tasks' ? { tasks: [] } : category === 'schedule' ? { schedules: [] } : {}) }));
+    for (let mask = 0; mask < 16; mask++) {
+      const chosen = fresh.filter((_, index) => mask & (1 << index)); const result = work.restoredState(epoch, chosen, def, asOf);
+      check('restore-suspension', { mask, result }, result.suspended === (mask !== 15), 'All four fresh categories in the new epoch are required.');
+    }
+    for (const category of categories) for (const mode of ['old-epoch', 'pre-restore', 'partial', 'unavailable', 'reported-target', 'expired-authority']) {
+      const changed = fresh.map(item => item.category !== category ? item : { ...item, ...(mode === 'old-epoch' ? { homeEpoch: 'f'.repeat(64) } : mode === 'pre-restore' ? { observedAt: clock(-600) } : mode === 'partial' ? { coverage: { complete: false, gaps: ['bounded page'] } } : mode === 'unavailable' ? { availability: 'unavailable' } : mode === 'reported-target' ? { origin: 'reported' } : { authority: { ...def.authorityRef, expiresAt: clock(-1) } }) });
+      const applicable = !['reported-target', 'expired-authority'].includes(mode) || mode === 'reported-target' && category === 'target' || mode === 'expired-authority' && category === 'authority';
+      if (!applicable) continue;
+      const result = work.restoredState(epoch, changed, def, asOf); check('restore-suspension', { category, mode, result }, result.suspended, 'Old, partial, unavailable, unauthenticated local-target or expired authority context cannot activate a restored home.');
+    }
+  });
+
+  if (enabled('import-prefix')) {
+    const def = definition(); const predecessor = observation(def, { category: 'effect', effects: [] }); const successor = observation(def, { category: 'effect', effects: [], observedAt: clock(-50), supersedes: { hash: predecessor.hash, reason: 'Bounded predecessor reference.' } });
+    for (const incoming of [[predecessor, successor], [successor, predecessor]]) {
+      const order = records.importOrder([def], incoming); const known = new Set([def.hash]);
+      for (const hash of order) { const record = incoming.find(item => item.hash === hash); check('import-prefix', { incoming, order, prefix: [...known], next: record }, records.references(record).every(reference => known.has(reference)), 'Every published prefix is reference-complete.'); known.add(hash); }
+      check('import-prefix', { incoming, order }, order[0] === predecessor.hash && new Set(order).size === 2, 'Forward input order never publishes a successor first.');
+    }
+    const schedule = observation(def, { category: 'schedule', schedule: { nativeId: 'schedule-one', status: 'disabled' }, runs: [] });
+    const foreignSchedule = observation(def, { category: 'schedule', schedule: { nativeId: 'schedule-two', status: 'disabled' }, runs: [], supersedes: { hash: schedule.hash, reason: 'Invalid cross-schedule replacement.' } });
+    let scopeRefused = false; try { records.validateReferences([def, schedule, foreignSchedule]); } catch (error) { scopeRefused = /another native schedule/.test(error.message); }
+    check('import-prefix', { case: 'foreign-native-supersession' }, scopeRefused, 'A schedule readback cannot supersede a different native schedule.');
+    let refused = false;
+    try { records.importOrder([], [{ hash: 'a'.repeat(64), type: 'definition', parents: ['b'.repeat(64)] }, { hash: 'b'.repeat(64), type: 'definition', parents: ['a'.repeat(64)] }]); } catch (error) { refused = /cycle/.test(error.message); }
+    check('import-prefix', { case: 'abstract-cycle' }, refused, 'An abstract dependency cycle refuses before publication.');
   }
-  assert.ok(Object.values(counts).every(count => count > 0), 'Properties exercised nonempty domains');
-  return { routingCases, evidenceCases, counts };
+  return { counts, checks: Object.values(counts).reduce((sum, count) => sum + count, 0) };
 }
