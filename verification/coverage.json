@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "a8b91385f6f8bef0f0e5b39e31b44fd1b8c8ee7a",
+  "reviewBasis": "Implementation owner read the production functions, boundary assumptions, finite domains, independent expected predicates, and source mutation targets. Parent independent review remains required before integration.",
+  "files": {
+    "src/work.mjs": "5580aa22eb5e06ce990277e1932b483886d0e221bfc4faf63c2064df32899fd7",
+    "src/records.mjs": "6d1c64c44b657db9a339da18d169e75193f32ae4426980d1836020c36cc1f7bd",
+    "src/metadata.mjs": "1223803a887fc3bbc0d7aac0d7e2ce31ec694b727088d5239dd3f52b92012ea3",
+    "verification/properties.mjs": "d80551ac3d1b42c7fb7d17c60657d5f45d1fbc8c60eafe4dc841e3aa2895fc69",
+    "verification/mutations.mjs": "bf7dd8a7a9e9146eaa123f94db9952e0167b2f27e1f96d71a6da4e67bdac255e",
+    "scripts/verify-formal.mjs": "670da1154c5bc7a9c7ecb9df83bf481a592669017337c7a5fa05f4f5f78d15bc"
+  },
+  "mapping": [
+    { "function": "planTask", "source": "src/work.mjs", "properties": ["local-first", "exact-binding", "scope-freshness", "proposal-only"] },
+    { "function": "snapshotStatus", "source": "src/work.mjs", "properties": ["scope-freshness"] },
+    { "function": "assessOutcome", "source": "src/work.mjs", "properties": ["identity", "revision", "evidence-required", "contradictions", "reported-assurance"] }
+  ],
+  "boundsSource": "verification/properties.mjs#bounds",
+  "excluded": ["Boundary parser correctness beyond behavioral examples", "Filesystem atomicity and durability", "Provider identity and authentication", "Native dispatch and task completion", "Account permissions", "Schedules", "Merges and deployments", "Arbitrary unbounded input domains"]
+}
