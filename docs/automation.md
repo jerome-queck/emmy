@@ -6,6 +6,8 @@ This document describes repository behavior for `jerome-queck/emmy`, the canonic
 
 `Emmy checks` publishes one required job named `emmy-check`. It uses Node 24.19.0 and runs `npm run check` without third-party package installation. The job checks the PR head for pull requests and the event SHA for other events. It records the actual checkout SHA before running the command.
 
+`npm run check` checks generated references, drives CLI behavior, runs the GitHub adapter tests, and runs both bounded verifiers. `npm run verify:formal` runs coordination and merge policy verification.
+
 The workflow runs on these events:
 
 | Event | Checked revision |
