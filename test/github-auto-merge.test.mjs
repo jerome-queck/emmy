@@ -205,6 +205,17 @@ test('merge receipts distinguish enabled, queued, merged, failed and changed sta
   }
 });
 
+test('merged receipt requires a valid full merge commit OID', async () => {
+  for (const mergeCommit of [
+    undefined, null, {}, { oid: null }, { oid: '' },
+    { oid: other.slice(0, 39) }, { oid: 'g'.repeat(40) }, { oid: [other] },
+  ]) {
+    const github = fakeGitHub({ receipt: { merged: true, mergeCommit } });
+    const result = await considerPullRequest({ number: 7, expectedHead: head }, github);
+    assert.equal(result.outcome, 'unverified', JSON.stringify(mergeCommit));
+  }
+});
+
 test('GitHub adapter paginates status history and checks every run at the exact head', async () => {
   const urls = [];
   const first = Array.from({ length: 100 }, (_, id) => ({ id, context: 'other', state: 'pending' }));
