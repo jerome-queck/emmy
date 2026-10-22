@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
+import { parseReceipt, parseRequest, parseSnapshot } from '../src/records.mjs';
 
 const asOf = '2026-10-22T12:00:00Z';
+const baseRevision = 'a'.repeat(40);
+const currentRevision = 'b'.repeat(40);
+const oldRevision = 'c'.repeat(40);
 const bindings = {
   hosts: { studio: { label: 'Studio' }, mini: { label: 'Mini' } },
   projects: {
@@ -10,7 +14,7 @@ const bindings = {
 };
 const catalog = { projects: [{ id: 'alpha', repository: 'https://example.com/alpha' }, { id: 'beta', repository: 'https://example.com/beta' }] };
 const criterion = (id, evidence) => ({ id, evidence, description: id });
-const baseRequest = projectId => ({ requestId: 'bounded', projectId, goal: 'Bounded proposal', workClass: 'code', revision: 'base', authority: { reference: 'Bounded owner request' }, sources: [], finish: [criterion('artifact', 'local-digest')] });
+const baseRequest = projectId => ({ requestId: 'bounded', projectId, goal: 'Bounded proposal', workClass: 'code', revision: baseRevision, authority: { reference: 'Bounded owner request' }, sources: [], finish: [criterion('artifact', 'local-digest')] });
 
 function* product(domains, values = []) {
   if (!domains.length) { yield values; return; }
@@ -76,14 +80,14 @@ export function verifyProperties(work, selected = null) {
     const snapshots = [null];
     for (const [productName, hostId, coverage, availability, age, projectObservation] of product([bounds.routing.snapshotProducts, bounds.routing.snapshotHosts, bounds.routing.coverage, bounds.routing.availability, bounds.routing.agesMs, bounds.routing.projectObservations])) {
       const projects = projectObservation === 'absent' ? [] : Object.values(bindings.projects).map(binding => ({ id: binding.nativeProjectId, path: projectObservation === 'wrong-path' ? '/wrong/path' : binding.path, hostId: projectObservation === 'wrong-host' ? 'foreign-host' : binding.hostId }));
-      snapshots.push({ id: 'snapshot', scope: { product: productName, hostId }, observedAt: new Date(Date.parse(asOf) - age).toISOString(), coverage: { complete: coverage === 'complete', gaps: coverage === 'complete' ? [] : ['missing page'] }, availability, projects });
+      snapshots.push({ ...parseSnapshot({ scope: { product: productName, hostId }, observedAt: new Date(Date.parse(asOf) - age).toISOString(), observer: 'Bounded native report', coverage: { complete: coverage === 'complete', gaps: coverage === 'complete' ? [] : ['missing page'] }, availability, projects, chats: [], limits: [] }), id: '4'.repeat(64) });
     }
     for (const [projectId, workClass, executor, bindingMode, authorityCloud, cloudReason, snapshot] of product([bounds.routing.projects, bounds.routing.workClasses, bounds.routing.executors, bounds.routing.bindings, bounds.routing.authorityCloud, bounds.routing.cloudReason, snapshots])) {
       const activeBindings = structuredClone(bindings);
       if (bindingMode === 'missing-project') delete activeBindings.projects[projectId];
       if (bindingMode === 'missing-host') delete activeBindings.hosts[bindings.projects[projectId].hostId];
       if (bindingMode === 'missing-path') delete activeBindings.projects[projectId].path;
-      const request = { ...baseRequest(projectId), workClass, ...(executor ? { executor } : {}), authority: { reference: 'Owner', cloud: authorityCloud }, ...(cloudReason ? { cloudReason: 'Prepared environment benefit' } : {}) };
+      const request = parseRequest({ ...baseRequest(projectId), workClass, ...(executor ? { executor } : {}), authority: { reference: 'Owner', cloud: authorityCloud }, ...(cloudReason ? { cloudReason: 'Prepared environment benefit' } : {}) });
       const context = { catalog, bindings: activeBindings, snapshot, asOf };
       const task = work.planTask(request, context);
       routingCases++;
@@ -110,25 +114,25 @@ export function verifyProperties(work, selected = null) {
     for (const [projectId, hostId, criteriaMode, taskMatch, projectMatch, executorMatch, receiptRevisionMatch, claimRevisionMatch, claimMode, kindMatch, artifactStatus, futureReceipt] of product([domains.projects, domains.hosts, domains.criteria, domains.taskMatch, domains.projectMatch, domains.executorMatch, domains.receiptRevisionMatch, domains.claimRevisionMatch, domains.claimModes, domains.kindMatch, domains.artifactStatuses, domains.futureReceipt])) {
       const finish = criteriaMode === 'both' ? [criterion('bytes', 'local-digest'), criterion('checks', 'reported-check')] : [criterion('result', criteriaMode)];
       const executor = { kind: 'local-codex', product: 'codex', hostId, projectId: `native-${projectId}`, path: `/fixture/${projectId}`, repository: `https://example.com/${projectId}` };
-      const task = { id: 'task', request: { ...baseRequest(projectId), finish }, executor };
+      const task = { id: '1'.repeat(64), request: parseRequest({ ...baseRequest(projectId), finish }), executor };
       const claims = finish.flatMap(item => {
         if (claimMode === 'absent') return [];
         const kind = kindMatch ? item.evidence : item.evidence === 'local-digest' ? 'reported-check' : 'local-digest';
-        const base = { criterionId: claimMode === 'foreign-criterion' ? 'foreign' : item.id, revision: claimRevisionMatch ? 'current' : 'old', kind, evidenceId: `${item.id}-pass`, path: `/fixture/${item.id}`, sha256: '0'.repeat(64), evidenceRef: 'Reported native output' };
+        const base = { criterionId: claimMode === 'foreign-criterion' ? 'foreign' : item.id, revision: claimRevisionMatch ? currentRevision : oldRevision, kind, evidenceId: `${item.id}-pass`, path: `/fixture/${item.id}`, sha256: '0'.repeat(64), evidenceRef: 'Reported native output' };
         return claimMode === 'pass-and-fail' ? [{ ...base, outcome: 'pass' }, { ...base, evidenceId: `${item.id}-fail`, outcome: 'fail' }] : [{ ...base, outcome: claimMode === 'foreign-criterion' ? 'pass' : claimMode }];
       });
-      const receipt = { id: 'receipt', taskId: taskMatch ? task.id : 'other-task', projectId: projectMatch ? projectId : 'foreign-project', executor: executorMatch ? executor : { ...executor, hostId: 'foreign-host' }, resultRevision: receiptRevisionMatch ? 'current' : 'old', observedAt: futureReceipt ? '2026-10-22T12:00:01Z' : '2026-10-22T11:00:00Z', claims, limits: [] };
+      const receipt = { ...parseReceipt({ taskId: taskMatch ? task.id : '2'.repeat(64), projectId: projectMatch ? projectId : 'foreign-project', producer: 'Bounded native report', executor: executorMatch ? executor : { ...executor, hostId: 'foreign-host' }, resultRevision: receiptRevisionMatch ? currentRevision : oldRevision, observedAt: futureReceipt ? '2026-10-22T12:00:01Z' : '2026-10-22T11:00:00Z', claims, limits: [] }), id: '3'.repeat(64) };
       const artifactChecks = artifactStatus === 'absent' ? [] : claims.filter(claim => claim.kind === 'local-digest').map(claim => ({ evidenceId: claim.evidenceId, status: artifactStatus }));
-      const assessment = work.assessOutcome(task, receipt, artifactChecks, 'current', asOf);
+      const assessment = work.assessOutcome(task, receipt, artifactChecks, currentRevision, asOf);
       evidenceCases++;
-      const input = { task, receipt, artifactChecks, revision: 'current', asOf, result: assessment };
+      const input = { task, receipt, artifactChecks, revision: currentRevision, asOf, result: assessment };
       const matchingIdentity = taskMatch && projectMatch && executorMatch;
       check('identity', input, matchingIdentity || assessment.status !== 'supported', 'Wrong task, project or executor cannot be supported.');
       const matchingRevision = receiptRevisionMatch && (claimRevisionMatch || !claims.length);
       check('revision', input, matchingRevision || assessment.status !== 'supported', 'Wrong current revision cannot be supported.');
       const expectedEvidence = finish.every(item => claims.some(claim => claim.criterionId === item.id && claim.kind === item.evidence && claim.outcome === 'pass' && matchingIdentity && receiptRevisionMatch && claimRevisionMatch && (item.evidence === 'reported-check' || artifactStatus === 'match')));
       check('evidence-required', input, expectedEvidence || assessment.status !== 'supported', 'Missing or wrong-kind passing evidence cannot be supported.');
-      const expectedConflict = !matchingIdentity || !receiptRevisionMatch || futureReceipt || claims.some(claim => claim.revision !== 'current' || claim.criterionId === 'foreign') || (matchingIdentity && receiptRevisionMatch && claimRevisionMatch && claims.some(claim => claim.outcome === 'fail')) || artifactChecks.some(value => value.status === 'mismatch');
+      const expectedConflict = !matchingIdentity || !receiptRevisionMatch || futureReceipt || claims.some(claim => claim.revision !== currentRevision || claim.criterionId === 'foreign') || (matchingIdentity && receiptRevisionMatch && claimRevisionMatch && claims.some(claim => claim.outcome === 'fail')) || artifactChecks.some(value => value.status === 'mismatch');
       check('contradictions', input, !expectedConflict || assessment.status === 'conflict', 'Any identity, revision, future timestamp, failed claim, foreign criterion or byte contradiction is a conflict.');
       const expectedStatus = expectedConflict ? 'conflict' : !expectedEvidence || artifactChecks.some(value => value.status === 'unreadable') ? 'needs-evidence' : 'supported';
       check('evidence-required', input, assessment.status === expectedStatus, `Expected status ${expectedStatus}.`);

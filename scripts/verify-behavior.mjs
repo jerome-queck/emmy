@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
+import { basename, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { digest } from '../src/records.mjs';
@@ -193,7 +193,7 @@ try {
 } finally {
   for (const child of children) child.kill('SIGKILL');
   await rm(root, { recursive: true, force: true });
-  report.cleaned = !await readdir(tmpdir()).then(names => names.includes(root.split('/').at(-1)));
+  report.cleaned = !await readdir(tmpdir()).then(names => names.includes(basename(root)));
   await writeFile(join(evidenceDir, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
   assert.ok((await readFile(join(evidenceDir, 'report.json'))).length > 0, 'Evidence survives cleanup');
   process.stdout.write(`${JSON.stringify({ status: report.status, scenarios: report.scenarios.length, commands: report.commands.length, cleaned: report.cleaned, evidence: join(evidenceDir, 'report.json'), error: report.error?.message })}\n`);
