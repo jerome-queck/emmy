@@ -120,6 +120,8 @@ export function parseSnapshot(input) {
     chats = [...(threadResult.pinnedThreads ?? []), ...(threadResult.threads ?? [])];
   }
   requireValue(Array.isArray(projects) && Array.isArray(chats), 'Snapshot projects and chats must be arrays');
+  texts(input.limits ?? [], 'snapshot.limits');
+  requireValue(Array.isArray(input.capabilities ?? []), 'Snapshot capabilities must be an array');
   projects = projects.map(project => {
     const id = project.id ?? project.projectId;
     text(id, 'native project ID');
@@ -183,8 +185,12 @@ const recordKinds = ['snapshots', 'tasks', 'receipts', 'assessments', 'probes'];
 
 export async function publishRecord(root, kind, payload, extraFiles = {}) {
   requireValue(recordKinds.includes(kind), 'Unknown record kind');
-  const id = digest(payload);
-  const record = { ...payload, id };
+  requireValue(!Object.hasOwn(payload, 'id') && !Object.hasOwn(payload, 'fileDigests'), 'Payload uses reserved record metadata');
+  requireValue(!Object.hasOwn(extraFiles, 'record.json'), 'record.json is reserved');
+  const fileDigests = Object.fromEntries(Object.entries(extraFiles).map(([name, bytes]) => [name, digest(bytes)]));
+  const storedPayload = Object.keys(fileDigests).length ? { ...payload, fileDigests } : payload;
+  const id = digest(storedPayload);
+  const record = { ...storedPayload, id };
   const files = { 'record.json': `${canonical(record)}\n`, ...extraFiles };
   for (const name of Object.keys(files)) requireValue(/^[a-z][a-z0-9.-]*$/.test(name), 'Invalid record filename');
   const base = join(root, '.local', kind);
@@ -212,5 +218,13 @@ export async function readRecord(root, kind, id) {
   const record = await readJson(join(root, '.local', kind, id, 'record.json'));
   const { id: storedId, ...payload } = record;
   requireValue(storedId === id && digest(payload) === id, 'Immutable record digest mismatch');
+  const fileDigests = record.fileDigests ?? {};
+  object(fileDigests, 'fileDigests');
+  const directory = join(root, '.local', kind, id);
+  requireValue(canonical((await readdir(directory)).sort()) === canonical(['record.json', ...Object.keys(fileDigests)].sort()), 'Immutable record contains unexpected or missing files');
+  for (const [name, expected] of Object.entries(fileDigests)) {
+    requireValue(/^[a-z][a-z0-9.-]*$/.test(name) && name !== 'record.json', 'Invalid record filename');
+    requireValue(digest(await readFile(join(directory, name))) === expected, 'Immutable record file digest mismatch');
+  }
   return record;
 }

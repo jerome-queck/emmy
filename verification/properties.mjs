@@ -107,6 +107,7 @@ export function verifyProperties(work, selected = null) {
       const authorityUsable = workClass !== 'code' || local || (authorityCloud && cloudReason);
       const expectedReady = Boolean(snapshotUsable && localUsable && cloudUsable && authorityUsable);
       check('scope-freshness', input, (task.route.status === 'ready') === expectedReady, `Expected ready=${expectedReady} from exact scope, complete coverage, availability, age, binding and authority.`);
+      if (snapshot && (snapshot.scope.product !== expectedProduct || snapshot.scope.hostId !== expectedHost)) check('scope-freshness', input, work.snapshotStatus(snapshot, task.executor, asOf).status !== 'unavailable', 'A foreign observation cannot declare the designated executor unavailable.');
     }
   }
   if (!selected || ['identity', 'revision', 'evidence-required', 'contradictions', 'reported-assurance'].includes(selected)) {

@@ -1,7 +1,7 @@
 export const mutations = [
   { id: 'cloud-default', property: 'local-first', edits: [["request.workClass === 'code' ? 'local-codex' : 'dot-cloud'", "request.workClass === 'code' ? 'codex-cloud' : 'dot-cloud'"]] },
   { id: 'substitute-host', property: 'exact-binding', edits: [["local ? binding?.hostId ?? null", "local ? 'substitute-mac'"]] },
-  { id: 'accept-foreign-scope', property: 'scope-freshness', edits: [["snapshot.scope.product !== target.product || snapshot.scope.hostId !== target.hostId", 'false']] },
+  { id: 'accept-foreign-scope', property: 'scope-freshness', edits: [["snapshot.scope.product === target.product && snapshot.scope.hostId === target.hostId", 'true']] },
   { id: 'accept-partial-scope', property: 'scope-freshness', edits: [['!snapshot.coverage.complete || snapshot.coverage.gaps.length', 'false']] },
   { id: 'accept-stale-scope', property: 'scope-freshness', edits: [['ageMs < 0 || ageMs > maximumSnapshotAgeMs', 'false']] },
   { id: 'accept-offline-host', property: 'scope-freshness', edits: [["snapshot.availability !== 'online'", 'false']] },

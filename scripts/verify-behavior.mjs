@@ -86,6 +86,7 @@ try {
   assert.equal(task.record.executor.path, join(root, 'algebra'));
   assert.equal(task.record.execution, 'proposal-only');
   assert.match(await readFile(join(task.path, 'packet.md'), 'utf8'), /^# PROPOSAL\. NOT DISPATCHED\./);
+  assert.match(await readFile(join(task.path, 'packet.md'), 'utf8'), /Repository https:\/\/github.com\/Jerome-Group\/algebra/);
   const unbound = await run(['plan', '--request', await fixture('unbound.json', { ...request, projectId: 'unknown' }), '--as-of', asOf], 3);
   assert.equal(unbound.record.route.status, 'needs-observation');
   const otherSnapshot = await run(['snapshot', '--import', await fixture('other.json', { ...snapshotInput, scope: { product: 'codex', hostId: 'mini' }, projects: [{ id: 'native-other', path: join(root, 'other') }] })]);
@@ -99,6 +100,9 @@ try {
     assert.equal(unavailable.record.executor.hostId, 'studio');
     if (label === 'offline') assert.equal(unavailable.record.route.status, 'unavailable');
   }
+  const foreignOffline = await run(['snapshot', '--import', await fixture('foreign-offline.json', { ...snapshotInput, scope: { product: 'codex', hostId: 'mini' }, availability: 'offline' })]);
+  const foreignPlan = await run(['plan', '--request', requestPath, '--snapshot', foreignOffline.id, '--as-of', asOf], 3);
+  assert.equal(foreignPlan.record.route.status, 'needs-observation');
   scenario('unavailable-host', 'Offline, partial, foreign, stale and future snapshots cannot select a fallback.');
   const cloudSnapshot = await run(['snapshot', '--import', await fixture('cloud.json', { ...snapshotInput, scope: { product: 'codex-cloud', hostId: 'prepared-cloud' } })]);
   const cloudRequest = { ...request, executor: 'codex-cloud', cloudReason: 'Isolated read-only fixture', authority: { reference: 'Fixture cloud request', cloud: true } };
@@ -114,11 +118,17 @@ try {
   const killedResult = await new Promise(resolve => { killed.on('close', (code, signal) => { children.delete(killed); resolve({ code, signal }); }); killed.kill('SIGKILL'); });
   report.interruption = killedResult;
   assert.equal((await run(planArgs)).id, task.id);
+  const originalPacket = await readFile(join(task.path, 'packet.md'));
+  await writeFile(join(task.path, 'packet.md'), 'altered task instructions');
+  const tamperReceipt = await fixture('tamper-receipt.json', { taskId: task.id, projectId: request.projectId, producer: 'Fixture', executor: task.record.executor, observedAt: asOf, resultRevision, claims: [], limits: [] });
+  const tamperResult = await run(['receipt', '--task', task.id, '--import', tamperReceipt], 2);
+  assert.match(tamperResult.error, /file digest mismatch/);
+  await writeFile(join(task.path, 'packet.md'), originalPacket);
   await writeFile(join(task.path, 'record.json'), '{}');
   await run(planArgs, 2);
   await rm(task.path, { recursive: true });
   assert.equal((await run(planArgs)).id, task.id);
-  scenario('immutable-publication', 'Concurrent identical publication, interruption replay and corrupt-record rejection. Interruption tests process-start cancellation, not every filesystem instruction.');
+  scenario('immutable-publication', 'Concurrent identical publication, interruption replay, altered packet-byte rejection, and corrupt-record rejection. Interruption tests process-start cancellation, not every filesystem instruction.');
   const probes = await run(['probe', '--nonce', 'fixture-nonce']);
   assert.equal(probes.record.probes.length, 8);
   assert.equal(probes.record.accountStatus, 'unverified');
