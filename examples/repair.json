@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "records": [
+    {
+      "type": "repair",
+      "responsibilityId": "scratch-watch",
+      "findingId": "0000000000000000000000000000000000000000000000000000000000000000",
+      "failureRefs": [
+        "0000000000000000000000000000000000000000000000000000000000000000"
+      ],
+      "author": "Replace with actual repair attribution.",
+      "changeRef": "Replace with exact correction reference.",
+      "expectedSubject": {
+        "projectId": "scratch",
+        "repository": "https://example.invalid/scratch",
+        "executor": "local-codex",
+        "hostId": "designated-mac",
+        "nativeProjectId": "replace-with-native-project-id",
+        "path": "/replace/with/scratch-repository",
+        "revision": "0000000000000000000000000000000000000000",
+        "dirtyDigest": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "recheckRefs": [
+        "0000000000000000000000000000000000000000000000000000000000000000"
+      ],
+      "observedAt": "2026-10-22T12:00:00Z"
+    }
+  ]
+}

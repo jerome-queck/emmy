@@ -1,0 +1,64 @@
+name: Emmy checks
+
+on:
+  pull_request:
+  push:
+  merge_group:
+    types: [checks_requested]
+  schedule:
+    - cron: '17 1 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emmy-check-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: emmy-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout checked revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.19.0
+      - name: Check repository
+        env:
+          EMMY_TESTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .local/verification
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          import { writeFileSync } from 'node:fs';
+          const tested = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+          if (tested !== process.env.EMMY_TESTED_SHA) throw new Error('Checkout differs from tested revision');
+          writeFileSync('.local/verification/ci-revision.json', JSON.stringify({
+            repository: process.env.GITHUB_REPOSITORY,
+            sha: tested,
+            event: process.env.GITHUB_EVENT_NAME,
+            run: process.env.GITHUB_RUN_ID,
+            attempt: process.env.GITHUB_RUN_ATTEMPT,
+          }, null, 2));
+          NODE
+          npm run check 2>&1 | tee .local/verification/ci-output.log
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: emmy-check-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .local/verification/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,21 @@
+# Upkeep and recovery
+
+## User route
+
+Run `maintain --check` at session start. After public metadata changes, run `maintain --write`, inspect derived files, and run the aggregate check. Metadata owns commands, feature map, scenario names, and property IDs. Maintenance preserves research dates and formal sync records.
+
+Use `backup --to <archive>` to pin and validate immutable records, referenced evidence bytes, historical records, and private bindings. Use `restore --from <archive> --into <new-home>`. Existing destinations, unsafe paths, symlinks, missing files, corrupt bytes, and invalid references are refused.
+
+A restored home has a new epoch. Fresh exact target, authority, task, and schedule observations must name it and remain current under explicit scoped supersession. A wrong-scope or unavailable authority correction can suspend an active restored home before its next local check. Local targets require actual local inspection. Dot-cloud and prepared Codex Cloud targets can refresh through exact reported readbacks, whose assurance stays reported. Byte inspection is available during suspension; local-check execution and work proposals wait. Original failures and stable effect keys survive. Unrelated inbox files, verification output, and repository checkouts are outside the archive.
+
+Every executable criterion reevaluates that epoch's retained observations after acquisition reads and immediately before launch. Authority expiring during an earlier check suspends the next command. The driver retains a three-second expiry counterexample and a current-authority positive control.
+
+## Source and drive
+
+`records.mjs` owns immutable publication, dependency-first import order, archive manifests, and restore. `work.mjs` owns current epoch eligibility. `maintenance.mjs` derives public references. Scenarios `archive-recovery`, `cloud-recovery`, `restored-current-context`, `publication-interruption`, and `derived-boundaries` exercise actual bytes, corruption/traversal/symlink controls, local and cloud restore, superseded authority with a real execution marker, ten observed publication checkpoints, forward-reference retry, drift repair, and public/private separation.
+
+## Boundaries
+
+Only complete content-addressed directories are final records. Pending directories remain visible and ignored by replay. A multi-record import is planned before publication so every prefix has its references. A published restored destination is refused on replay rather than overwritten. Atomic visibility at named checkpoints does not establish power-loss durability or external hardware recovery.
+
+Run both installed pstack maintenance workflows after covered changes. Source readers and the coordinator's live pass remain independent requirements. Review the covered diff and intended counterexamples before moving formal hashes; a generator cannot approve that move.

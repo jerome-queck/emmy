@@ -1,0 +1,48 @@
+{
+  "id": "scratch-watch",
+  "parents": [],
+  "goal": "Keep the scratch artifact equal to its approved bytes.",
+  "context": "Synthetic example. Replace goal and source context before adopting.",
+  "target": {
+    "projectId": "scratch",
+    "repository": "https://example.invalid/scratch",
+    "executor": "local-codex",
+    "hostId": "designated-mac",
+    "nativeProjectId": "replace-with-native-project-id",
+    "path": "/replace/with/scratch-repository",
+    "revision": "0000000000000000000000000000000000000000",
+    "dirtyDigest": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "action": "verify",
+  "resource": "scratch",
+  "destination": "local-evidence",
+  "authorityRef": {
+    "reference": "Replace with owner instruction reference.",
+    "action": "verify",
+    "resource": "scratch",
+    "destination": "local-evidence"
+  },
+  "criteria": [
+    {
+      "id": "artifact",
+      "description": "Current bytes match the approved scratch artifact.",
+      "evidence": "local-digest",
+      "path": "/replace/with/scratch-artifact.txt",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "freshness": {
+    "maxAgeMs": 86400000,
+    "sources": []
+  },
+  "reviewAt": "2099-01-01T00:00:00Z",
+  "feature": {
+    "id": "artifact-watch",
+    "method": "Inspect approved local bytes.",
+    "intendedEffect": "Maintain approved scratch artifact bytes.",
+    "reviewAt": "2099-01-01T00:00:00Z"
+  },
+  "lifecycle": {
+    "status": "active"
+  }
+}
