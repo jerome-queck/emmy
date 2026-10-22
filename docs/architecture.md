@@ -94,4 +94,12 @@ Build one full self-check/failed-repair journey first. The coordinator owns inte
 
 ## Implementation reconciliation
 
-No implementation deviation has been accepted yet. Record accepted changes here and update affected contracts before handing them to another owner. Source hashes and formal sync records can move only after covered-diff review and intended failing controls.
+The coordinator accepted these clarifications during implementation. Ineligible stale, future, partial, or unavailable history remains visible in observation diagnostics. A separate current eligible observation can establish coverage. Retained failures and contradictions still require an exact repair; timestamp order cannot erase them.
+
+`reconcile` is a live operation. It records `requestedAsOf`, uses actual UTC completion times for local observations, and sets each review's effective `asOf` to the later of that request and live completion. Local execution authority is checked against at least the actual current clock. An invocation cannot backdate a command result. Determinism applies to the same input manifest, effective time, and rules.
+
+An optional `local-check` criterion executes a pinned repository-relative `.mjs` script through the current Node executable, with an argument array and no shell. Separate `run-local-check` authority binds resource and destination. The script must match its declared digest and the current repository identity. A check has a finite timeout of at most 60 seconds and a combined output limit of 1 MiB. Records retain its source, arguments, exit, output, runtime, and resulting subject. Timeout, output limit, and handled cancellation terminate the owned POSIX process group. Detached descendants and arbitrary malicious code containment are outside this contract. Windows reports local-check execution unsupported.
+
+The local verifier identity is a digest of the pinned script and arguments. It proves which command ran. It cannot establish that a reviewer was independent of the repair author. Imported review names or artifacts remain reported. Any criterion already requiring independence emits `external-review-needed` and remains unable to close through this CLI. Native coordination and repository review gates establish acceptance outside this register. Local execution assumes trusted definitions and trusted repository code; a reference is not authenticated native authority.
+
+Restored suspension permits local byte inspection but prevents local-check execution and work proposals until fresh target, authority, task, and schedule observations name the new home epoch. Source hashes and formal sync records move only after covered-diff review and intended failing controls.

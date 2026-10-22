@@ -1,32 +1,32 @@
 export const commands = [
   { name: 'help', description: 'List commands and JSON contracts.', options: [], feature: 'orientation' },
-  { name: 'doctor', description: 'Check runtime, public registry, bindings, and generated references.', options: [], feature: 'orientation' },
+  { name: 'doctor', description: 'Check runtime, public references, bindings, private integrity, and restored suspension.', options: [], feature: 'orientation' },
   { name: 'catalog', description: 'Read public projects, source claims, capabilities, tools, and probes.', options: [], feature: 'orientation' },
-  { name: 'snapshot', description: 'Import a scoped, timestamped inventory into private storage.', options: [{ name: 'import', required: true }], feature: 'orientation' },
-  { name: 'brief', description: 'Read one retained snapshot with its age and coverage gaps.', options: [{ name: 'snapshot', required: true }, { name: 'as-of', required: true }], feature: 'orientation' },
-  { name: 'plan', description: 'Publish an immutable task proposal. Native products dispatch it.', options: [{ name: 'request', required: true }, { name: 'snapshot' }, { name: 'as-of', required: true }], feature: 'routing' },
-  { name: 'receipt', description: 'Import an attributed result for one task.', options: [{ name: 'task', required: true }, { name: 'import', required: true }], feature: 'evidence' },
-  { name: 'assess', description: 'Assess exact identity, contradictions, and local artifact bytes.', options: [{ name: 'task', required: true }, { name: 'receipt', required: true }, { name: 'revision', required: true }, { name: 'as-of', required: true }], feature: 'evidence' },
+  { name: 'responsibility', description: 'Retain an immutable goal, context, exact target, criteria, authority, feature, and lifecycle definition.', options: [{ name: 'file', required: true }], feature: 'routing' },
+  { name: 'reconcile', description: 'Import evidence, inspect current local state, retain findings/repairs, and propose bounded next work.', options: [{ name: 'id' }, { name: 'import' }, { name: 'as-of', required: true }], feature: 'evidence' },
   { name: 'probe', description: 'Publish a proposed Dot onboarding packet with eight probes.', options: [{ name: 'id' }, { name: 'nonce', required: true }], feature: 'routing' },
-  { name: 'maintain', description: 'Compare or regenerate public references without changing review records.', options: [{ name: 'check', flag: true }, { name: 'write', flag: true }], feature: 'upkeep' }
+  { name: 'maintain', description: 'Compare or regenerate public references without changing review records.', options: [{ name: 'check', flag: true }, { name: 'write', flag: true }], feature: 'upkeep' },
+  { name: 'backup', description: 'Verify and atomically archive a pinned private record/evidence manifest and bindings.', options: [{ name: 'to', required: true }], feature: 'upkeep' },
+  { name: 'restore', description: 'Verify an archive and restore into a new suspended private home.', options: [{ name: 'from', required: true }, { name: 'into', required: true }], feature: 'upkeep' }
 ];
 
 export const verification = {
   features: [
-    { id: 'orientation', title: 'Orientation and inventory', commands: ['help', 'doctor', 'catalog', 'snapshot', 'brief'], scenarios: ['orientation', 'scoped-inventory'], properties: ['scope-freshness'] },
-    { id: 'routing', title: 'Routing and proposals', commands: ['plan', 'probe'], scenarios: ['local-proposal', 'unavailable-host', 'explicit-cloud', 'immutable-publication', 'probe-packet'], properties: ['local-first', 'exact-binding', 'scope-freshness', 'proposal-only'] },
-    { id: 'evidence', title: 'Evidence and receipts', commands: ['receipt', 'assess'], scenarios: ['local-digest', 'reported-check', 'identity-conflict', 'revision-conflict', 'contradiction', 'missing-evidence'], properties: ['identity', 'revision', 'evidence-required', 'contradictions', 'reported-assurance'] },
-    { id: 'upkeep', title: 'Upkeep and public boundaries', commands: ['maintain'], scenarios: ['derived-drift', 'public-isolation', 'review-record-stable'], properties: [] }
+    { id: 'orientation', title: 'Orientation and private integrity', commands: ['help', 'doctor', 'catalog'], scenarios: ['orientation'], properties: [] },
+    { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope'] },
+    { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile'], scenarios: ['self-check-repair', 'evidence-boundaries', 'local-check', 'trigger-evolution'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay'] },
+    { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore'], scenarios: ['archive-recovery', 'publication-interruption', 'derived-boundaries'], properties: ['restore-suspension'] }
   ],
   properties: [
-    { id: 'local-first', source: 'src/work.mjs', functions: ['planTask'], statement: 'Normal coding selects the designated local Codex executor.' },
-    { id: 'exact-binding', source: 'src/work.mjs', functions: ['planTask'], statement: 'An unavailable designated host never substitutes another host or cloud.' },
-    { id: 'scope-freshness', source: 'src/work.mjs', functions: ['snapshotStatus', 'planTask'], statement: 'Partial, foreign, stale, future, or unavailable observations cannot make a route ready.' },
-    { id: 'proposal-only', source: 'src/work.mjs', functions: ['planTask'], statement: 'Every task remains a proposal even when the route is ready.' },
-    { id: 'identity', source: 'src/work.mjs', functions: ['assessOutcome'], statement: 'Only evidence matching task, project, executor, and criterion supports a claim.' },
-    { id: 'revision', source: 'src/work.mjs', functions: ['assessOutcome'], statement: 'Receipt and claim revisions must match the current requested result revision.' },
-    { id: 'evidence-required', source: 'src/work.mjs', functions: ['assessOutcome'], statement: 'Every finish criterion needs passing evidence of its declared kind.' },
-    { id: 'contradictions', source: 'src/work.mjs', functions: ['assessOutcome'], statement: 'Any matching failed claim prevents a supported assessment.' },
-    { id: 'reported-assurance', source: 'src/work.mjs', functions: ['assessOutcome'], statement: 'Hand-entered success stays reported unless local bytes are actually checked.' }
+    { id: 'exact-binding', source: 'src/work.mjs', functions: ['routeTarget'], statement: 'Only own project/host bindings with exact target identity establish a local route.' },
+    { id: 'branch-blocking', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Concurrent definition heads survive and block action proposals.' },
+    { id: 'effect-stability', source: 'src/work.mjs', functions: ['effectKey'], statement: 'Same responsibility, target, effect and occurrence retain the same effect key across review time and definition edits.' },
+    { id: 'authority-scope', source: 'src/work.mjs', functions: ['authorityStatus'], statement: 'Absent, wrong-scope or expired authority cannot authorize work proposals.' },
+    { id: 'observation-gates', source: 'src/work.mjs', functions: ['observationStatus'], statement: 'Foreign, future, stale, partial or unavailable observations remain ineligible.' },
+    { id: 'reported-assurance', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Imported reports cannot satisfy observed-local criteria or authenticate independent review.' },
+    { id: 'failure-preservation', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'A later pass or weaker definition cannot erase a retained failure.' },
+    { id: 'repair-closure', source: 'src/work.mjs', functions: ['repairStatus'], statement: 'Closure requires the exact finding/failure, current expected subject and every original criterion recheck.' },
+    { id: 'deterministic-replay', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Identical sorted evidence manifests/time/rules produce identical reconciliation results under permutation.' },
+    { id: 'restore-suspension', source: 'src/work.mjs', functions: ['restoredState'], statement: 'Restored homes require fresh target, authority, task and schedule observations in their new epoch.' }
   ]
 };

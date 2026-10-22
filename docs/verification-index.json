@@ -8,7 +8,7 @@
     },
     {
       "name": "doctor",
-      "description": "Check runtime, public registry, bindings, and generated references.",
+      "description": "Check runtime, public references, bindings, private integrity, and restored suspension.",
       "options": [],
       "feature": "orientation"
     },
@@ -19,79 +19,25 @@
       "feature": "orientation"
     },
     {
-      "name": "snapshot",
-      "description": "Import a scoped, timestamped inventory into private storage.",
+      "name": "responsibility",
+      "description": "Retain an immutable goal, context, exact target, criteria, authority, feature, and lifecycle definition.",
       "options": [
         {
-          "name": "import",
-          "required": true
-        }
-      ],
-      "feature": "orientation"
-    },
-    {
-      "name": "brief",
-      "description": "Read one retained snapshot with its age and coverage gaps.",
-      "options": [
-        {
-          "name": "snapshot",
-          "required": true
-        },
-        {
-          "name": "as-of",
-          "required": true
-        }
-      ],
-      "feature": "orientation"
-    },
-    {
-      "name": "plan",
-      "description": "Publish an immutable task proposal. Native products dispatch it.",
-      "options": [
-        {
-          "name": "request",
-          "required": true
-        },
-        {
-          "name": "snapshot"
-        },
-        {
-          "name": "as-of",
+          "name": "file",
           "required": true
         }
       ],
       "feature": "routing"
     },
     {
-      "name": "receipt",
-      "description": "Import an attributed result for one task.",
+      "name": "reconcile",
+      "description": "Import evidence, inspect current local state, retain findings/repairs, and propose bounded next work.",
       "options": [
         {
-          "name": "task",
-          "required": true
+          "name": "id"
         },
         {
-          "name": "import",
-          "required": true
-        }
-      ],
-      "feature": "evidence"
-    },
-    {
-      "name": "assess",
-      "description": "Assess exact identity, contradictions, and local artifact bytes.",
-      "options": [
-        {
-          "name": "task",
-          "required": true
-        },
-        {
-          "name": "receipt",
-          "required": true
-        },
-        {
-          "name": "revision",
-          "required": true
+          "name": "import"
         },
         {
           "name": "as-of",
@@ -128,158 +74,186 @@
         }
       ],
       "feature": "upkeep"
+    },
+    {
+      "name": "backup",
+      "description": "Verify and atomically archive a pinned private record/evidence manifest and bindings.",
+      "options": [
+        {
+          "name": "to",
+          "required": true
+        }
+      ],
+      "feature": "upkeep"
+    },
+    {
+      "name": "restore",
+      "description": "Verify an archive and restore into a new suspended private home.",
+      "options": [
+        {
+          "name": "from",
+          "required": true
+        },
+        {
+          "name": "into",
+          "required": true
+        }
+      ],
+      "feature": "upkeep"
     }
   ],
   "features": [
     {
       "id": "orientation",
-      "title": "Orientation and inventory",
+      "title": "Orientation and private integrity",
       "commands": [
         "help",
         "doctor",
-        "catalog",
-        "snapshot",
-        "brief"
+        "catalog"
       ],
       "scenarios": [
-        "orientation",
-        "scoped-inventory"
+        "orientation"
       ],
-      "properties": [
-        "scope-freshness"
-      ]
+      "properties": []
     },
     {
       "id": "routing",
-      "title": "Routing and proposals",
+      "title": "Responsibilities and proposals",
       "commands": [
-        "plan",
+        "responsibility",
         "probe"
       ],
       "scenarios": [
-        "local-proposal",
-        "unavailable-host",
-        "explicit-cloud",
-        "immutable-publication",
-        "probe-packet"
+        "persistent-context",
+        "binding-boundaries",
+        "probe-packet",
+        "definition-concurrency"
       ],
       "properties": [
-        "local-first",
         "exact-binding",
-        "scope-freshness",
-        "proposal-only"
+        "branch-blocking",
+        "effect-stability",
+        "authority-scope"
       ]
     },
     {
       "id": "evidence",
-      "title": "Evidence and receipts",
+      "title": "Reconciliation and correction",
       "commands": [
-        "receipt",
-        "assess"
+        "reconcile"
       ],
       "scenarios": [
-        "local-digest",
-        "reported-check",
-        "identity-conflict",
-        "revision-conflict",
-        "contradiction",
-        "missing-evidence"
+        "self-check-repair",
+        "evidence-boundaries",
+        "local-check",
+        "trigger-evolution"
       ],
       "properties": [
-        "identity",
-        "revision",
-        "evidence-required",
-        "contradictions",
-        "reported-assurance"
+        "observation-gates",
+        "reported-assurance",
+        "failure-preservation",
+        "repair-closure",
+        "deterministic-replay"
       ]
     },
     {
       "id": "upkeep",
-      "title": "Upkeep and public boundaries",
+      "title": "Upkeep and recovery",
       "commands": [
-        "maintain"
+        "maintain",
+        "backup",
+        "restore"
       ],
       "scenarios": [
-        "derived-drift",
-        "public-isolation",
-        "review-record-stable"
+        "archive-recovery",
+        "publication-interruption",
+        "derived-boundaries"
       ],
-      "properties": []
+      "properties": [
+        "restore-suspension"
+      ]
     }
   ],
   "properties": [
     {
-      "id": "local-first",
-      "source": "src/work.mjs",
-      "functions": [
-        "planTask"
-      ],
-      "statement": "Normal coding selects the designated local Codex executor."
-    },
-    {
       "id": "exact-binding",
       "source": "src/work.mjs",
       "functions": [
-        "planTask"
+        "routeTarget"
       ],
-      "statement": "An unavailable designated host never substitutes another host or cloud."
+      "statement": "Only own project/host bindings with exact target identity establish a local route."
     },
     {
-      "id": "scope-freshness",
-      "source": "src/work.mjs",
+      "id": "branch-blocking",
+      "source": "src/responsibilities.mjs",
       "functions": [
-        "snapshotStatus",
-        "planTask"
+        "reconcileState"
       ],
-      "statement": "Partial, foreign, stale, future, or unavailable observations cannot make a route ready."
+      "statement": "Concurrent definition heads survive and block action proposals."
     },
     {
-      "id": "proposal-only",
+      "id": "effect-stability",
       "source": "src/work.mjs",
       "functions": [
-        "planTask"
+        "effectKey"
       ],
-      "statement": "Every task remains a proposal even when the route is ready."
+      "statement": "Same responsibility, target, effect and occurrence retain the same effect key across review time and definition edits."
     },
     {
-      "id": "identity",
+      "id": "authority-scope",
       "source": "src/work.mjs",
       "functions": [
-        "assessOutcome"
+        "authorityStatus"
       ],
-      "statement": "Only evidence matching task, project, executor, and criterion supports a claim."
+      "statement": "Absent, wrong-scope or expired authority cannot authorize work proposals."
     },
     {
-      "id": "revision",
+      "id": "observation-gates",
       "source": "src/work.mjs",
       "functions": [
-        "assessOutcome"
+        "observationStatus"
       ],
-      "statement": "Receipt and claim revisions must match the current requested result revision."
-    },
-    {
-      "id": "evidence-required",
-      "source": "src/work.mjs",
-      "functions": [
-        "assessOutcome"
-      ],
-      "statement": "Every finish criterion needs passing evidence of its declared kind."
-    },
-    {
-      "id": "contradictions",
-      "source": "src/work.mjs",
-      "functions": [
-        "assessOutcome"
-      ],
-      "statement": "Any matching failed claim prevents a supported assessment."
+      "statement": "Foreign, future, stale, partial or unavailable observations remain ineligible."
     },
     {
       "id": "reported-assurance",
+      "source": "src/responsibilities.mjs",
+      "functions": [
+        "reconcileState"
+      ],
+      "statement": "Imported reports cannot satisfy observed-local criteria or authenticate independent review."
+    },
+    {
+      "id": "failure-preservation",
+      "source": "src/responsibilities.mjs",
+      "functions": [
+        "reconcileState"
+      ],
+      "statement": "A later pass or weaker definition cannot erase a retained failure."
+    },
+    {
+      "id": "repair-closure",
       "source": "src/work.mjs",
       "functions": [
-        "assessOutcome"
+        "repairStatus"
       ],
-      "statement": "Hand-entered success stays reported unless local bytes are actually checked."
+      "statement": "Closure requires the exact finding/failure, current expected subject and every original criterion recheck."
+    },
+    {
+      "id": "deterministic-replay",
+      "source": "src/responsibilities.mjs",
+      "functions": [
+        "reconcileState"
+      ],
+      "statement": "Identical sorted evidence manifests/time/rules produce identical reconciliation results under permutation."
+    },
+    {
+      "id": "restore-suspension",
+      "source": "src/work.mjs",
+      "functions": [
+        "restoredState"
+      ],
+      "statement": "Restored homes require fresh target, authority, task and schedule observations in their new epoch."
     }
   ]
 }

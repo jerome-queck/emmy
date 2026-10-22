@@ -1,92 +1,71 @@
-export const maximumSnapshotAgeMs = 24 * 60 * 60 * 1000;
+import { canonical, digest } from './records.mjs';
 
-export function snapshotStatus(snapshot, target, asOf) {
-  if (!snapshot) return { status: 'needs-observation', reasons: ['No snapshot for the designated executor.'] };
+export const subjectFields = ['projectId', 'repository', 'executor', 'hostId', 'nativeProjectId', 'nativeId', 'path', 'revision', 'dirtyDigest'];
+export const subjectKey = subject => Object.fromEntries(subjectFields.map(field => [field, subject[field] ?? null]));
+export const sameSubject = (left, right) => canonical(subjectKey(left)) === canonical(subjectKey(right));
+export const criterionHash = criterion => digest(criterion);
+
+export function observationStatus(observation, target, asOf, maxAgeMs) {
   const reasons = [];
-  const ageMs = Date.parse(asOf) - Date.parse(snapshot.observedAt);
-  const scopeMatches = snapshot.scope.product === target.product && snapshot.scope.hostId === target.hostId;
-  if (!scopeMatches) reasons.push('Snapshot belongs to a different executor scope.');
-  if (!snapshot.coverage.complete || snapshot.coverage.gaps.length) reasons.push('Snapshot coverage is partial.');
-  if (ageMs < 0 || ageMs > maximumSnapshotAgeMs) reasons.push('Snapshot is future-dated or stale.');
-  if (snapshot.availability !== 'online') reasons.push(`${scopeMatches ? 'Designated' : 'Snapshot'} executor is ${snapshot.availability}.`);
-  return { status: reasons.length ? (scopeMatches && (snapshot.availability === 'offline' || snapshot.availability === 'denied') ? 'unavailable' : 'needs-observation') : 'ready', reasons, ageMs };
+  const ageMs = Date.parse(asOf) - Date.parse(observation.observedAt);
+  if (!sameSubject(observation.subject, target)) reasons.push('foreign-subject');
+  if (ageMs < 0) reasons.push('future-observation');
+  if (ageMs > maxAgeMs) reasons.push('stale-observation');
+  if (!observation.coverage.complete || observation.coverage.gaps.length) reasons.push('partial-observation');
+  if (observation.availability !== 'available') reasons.push('unavailable-observation');
+  return { hash: observation.hash, eligible: reasons.length === 0, reasons, ageMs, assurance: observation.origin === 'observed-local' ? 'observed-local' : 'reported' };
 }
 
-export function planTask(request, { catalog, bindings, snapshot, asOf }) {
-  const binding = Object.hasOwn(bindings.projects, request.projectId) ? bindings.projects[request.projectId] : null;
-  const project = catalog.projects.find(value => value.id === request.projectId) ?? (binding ? { id: request.projectId, label: binding.label, repository: binding.repository ?? null, basis: 'reported' } : null);
-  const kind = request.executor ?? (request.workClass === 'code' ? 'local-codex' : 'dot-cloud');
-  const local = kind === 'local-codex' || kind === 'local-work';
-  const cloud = kind === 'codex-cloud';
-  const target = {
-    kind,
-    product: kind === 'local-codex' ? 'codex' : kind === 'local-work' ? 'work' : kind,
-    hostId: local ? binding?.hostId ?? null : cloud ? binding?.cloudEnvironmentId ?? null : 'dot-cloud',
-    projectId: local ? binding?.nativeProjectId ?? null : cloud ? binding?.cloudEnvironmentId ?? null : request.projectId,
-    path: local ? binding?.path ?? null : null,
-    repository: project?.repository ?? null
-  };
+export function routeTarget(definition, { bindings, catalog, machine }) {
+  const target = definition.target;
+  const binding = Object.hasOwn(bindings.projects, target.projectId) ? bindings.projects[target.projectId] : null;
+  const project = catalog.projects.find(item => item.id === target.projectId) ?? (binding ? { id: target.projectId, label: binding.label, repository: binding.repository ?? null, basis: 'reported' } : null);
   const reasons = [];
-  if (!project) reasons.push('Unknown project. Add public metadata or a private project binding.');
-  if (local && (!binding?.path || !binding?.nativeProjectId || !Object.hasOwn(bindings.hosts, binding?.hostId))) reasons.push('Exact local project and host binding is missing.');
-  if (cloud && (!binding?.cloudEnvironmentId || !request.cloudReason || !request.authority.cloud)) reasons.push('Codex Cloud requires a prepared environment, reason, and explicit cloud authority.');
-  if (request.workClass === 'code' && !local && (!request.cloudReason || !request.authority.cloud)) reasons.push('Cloud coding requires an explicit reason and cloud authority.');
-  const observation = snapshotStatus(snapshot, target, asOf);
-  if (snapshot && local && !snapshot.projects.some(value => value.id === target.projectId && value.path === target.path && value.hostId === target.hostId)) reasons.push('Snapshot does not contain the exact designated project host, path, and identity.');
-  return {
-    schemaVersion: 1,
-    request,
-    project,
-    executor: target,
-    asOf,
-    route: { status: reasons.length ? 'needs-observation' : observation.status, reasons: [...reasons, ...observation.reasons] },
-    snapshotId: snapshot?.id ?? null,
-    observationBasis: snapshot ? 'reported' : 'unverified',
-    execution: 'proposal-only',
-    limits: ['No task was dispatched. Native task identity and actual execution require readback.', 'Imported inventories are attributed reports, not authenticated access.']
-  };
+  if (!project) reasons.push('unknown-project');
+  if (target.executor.startsWith('local-')) {
+    if (!binding || !Object.hasOwn(bindings.hosts, target.hostId) || binding.hostId !== target.hostId || binding.path !== target.path || binding.nativeProjectId !== target.nativeProjectId) reasons.push('exact-binding-missing');
+    if (bindings.localHostId !== target.hostId || !Object.hasOwn(bindings.hosts, target.hostId) || bindings.hosts[target.hostId].machine !== machine) reasons.push('local-host-unverified');
+  } else if (target.executor === 'codex-cloud' && (!binding?.cloudEnvironmentId || binding.cloudEnvironmentId !== target.hostId || !definition.cloudReason)) reasons.push('prepared-cloud-needed');
+  return { project, executor: target.executor, target: subjectKey(target), reasons, status: reasons.length ? 'needs-observation' : 'bound', execution: 'proposal-only' };
 }
 
-export function assessOutcome(task, receipt, artifactChecks, revision, asOf) {
-  const conflicts = [];
-  const missing = [];
-  const assuranceByClaim = [];
-  const sameExecutor = JSON.stringify(Object.entries(receipt.executor).sort()) === JSON.stringify(Object.entries(task.executor).sort());
-  if (receipt.taskId !== task.id || receipt.projectId !== task.request.projectId || !sameExecutor) conflicts.push('Receipt task, project, or executor does not match the proposal.');
-  if (receipt.resultRevision !== revision) conflicts.push('Receipt revision does not match the current result revision.');
-  if (Date.parse(receipt.observedAt) > Date.parse(asOf)) conflicts.push('Receipt is future-dated.');
-  const identityMatches = receipt.taskId === task.id && receipt.projectId === task.request.projectId && sameExecutor;
-  for (const criterion of task.request.finish) {
-    const claims = receipt.claims.filter(claim => claim.criterionId === criterion.id);
-    const matched = claims.filter(claim => identityMatches && receipt.resultRevision === revision && claim.revision === revision);
-    if (claims.some(claim => claim.revision !== revision)) conflicts.push(`Claim ${criterion.id} has a different revision.`);
-    if (matched.some(claim => claim.outcome === 'fail')) conflicts.push(`Criterion ${criterion.id} has a failed claim.`);
-    const passing = matched.filter(claim => claim.outcome === 'pass');
-    const checked = passing.some(claim => claim.kind === 'local-digest' && artifactChecks.some(check => check.evidenceId === claim.evidenceId && check.status === 'match'));
-    const reported = passing.some(claim => claim.kind === 'reported-check' && claim.evidenceRef?.trim());
-    const supported = criterion.evidence === 'local-digest' ? checked : reported;
-    if (!supported) missing.push(`Criterion ${criterion.id} needs passing ${criterion.evidence} evidence.`);
-    assuranceByClaim.push({ criterionId: criterion.id, assurance: supported ? (criterion.evidence === 'local-digest' ? 'observed-local-bytes' : 'reported') : 'unverified' });
-  }
-  for (const check of artifactChecks) {
-    if (check.status === 'mismatch') conflicts.push(`Local digest ${check.evidenceId} mismatched actual bytes.`);
-    if (check.status === 'unreadable') missing.push(`Local artifact ${check.evidenceId} was unreadable.`);
-  }
-  if (receipt.claims.some(claim => !task.request.finish.some(criterion => criterion.id === claim.criterionId))) conflicts.push('Receipt names an unknown criterion.');
-  return {
-    schemaVersion: 1,
-    taskId: task.id,
-    receiptId: receipt.id,
-    revision,
-    asOf,
-    status: conflicts.length ? 'conflict' : missing.length ? 'needs-evidence' : 'supported',
-    assuranceByClaim,
-    missing,
-    conflicts,
-    limits: [...receipt.limits, 'Supported means these criteria and evidence kinds matched. Reports do not authenticate native execution or provider state.']
-  };
+export function authorityStatus(definition, asOf) {
+  const authority = definition.authorityRef;
+  const scoped = Boolean(authority && authority.reference && authority.action === definition.action && authority.resource === definition.resource && authority.destination === definition.destination);
+  const current = !authority?.expiresAt || Date.parse(authority.expiresAt) >= Date.parse(asOf);
+  return { eligible: scoped && current, reason: !scoped ? 'authority-scope-needed' : !current ? 'authority-expired' : null, assurance: 'reported-reference' };
 }
 
-export function taskPacket(task) {
-  return `# PROPOSAL. NOT DISPATCHED.\n\n${task.request.goal}\n\nProject ${task.request.projectId}. Revision ${task.request.revision}.\nRepository ${task.executor.repository ?? 'unverified'}.\nExecutor ${task.executor.kind}. Host or environment ${task.executor.hostId ?? 'unbound'}.\nNative project ${task.executor.projectId ?? 'unbound'}. Path ${task.executor.path ?? 'none'}.\nAuthority ${task.request.authority.reference}.\nRoute ${task.route.status}.\nObservation ${task.snapshotId ?? 'none'} as of ${task.asOf}. Basis ${task.observationBasis}.\n\n## Sources\n\n${task.request.sources.map(value => `- ${value}`).join('\n')}\n\n## Finish criteria\n\n${task.request.finish.map(value => `- ${value.id}. ${value.description} Require ${value.evidence}.`).join('\n')}\n\n## Missing observations and limits\n\n${[...task.route.reasons, ...task.limits].map(value => `- ${value}`).join('\n')}\n`;
+export function effectKey(definition) {
+  const { revision, dirtyDigest, ...target } = subjectKey(definition.target);
+  return digest({ responsibilityId: definition.id, target, intendedEffect: definition.feature.intendedEffect, occurrence: definition.trigger?.nextWindow.start ?? 'ongoing' });
+}
+
+export function definitionHeads(definitions) {
+  const parents = new Set(definitions.flatMap(definition => definition.parents));
+  return definitions.filter(definition => !parents.has(definition.hash)).sort((left, right) => left.hash.localeCompare(right.hash));
+}
+
+export function restoredState(epoch, observations, definition, asOf) {
+  if (!epoch) return { suspended: false, needed: [] };
+  const needed = ['target', 'authority', 'tasks', 'schedule'].filter(category => !observations.some(observation => observation.category === category && observation.homeEpoch === epoch.hash && Date.parse(observation.observedAt) >= Date.parse(epoch.restoredAt) && observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible && (category !== 'target' || observation.origin === 'observed-local') && (category !== 'authority' || observation.authority?.reference === definition.authorityRef.reference && observation.authority?.action === definition.action && observation.authority?.resource === definition.resource && observation.authority?.destination === definition.destination)));
+  return { suspended: needed.length > 0, needed, epoch: epoch.hash };
+}
+
+export function repairStatus(repair, finding, observations, definition, asOf) {
+  const reasons = [];
+  if (repair.findingId !== finding.id || !finding.failureRefs.every(ref => repair.failureRefs.includes(ref))) reasons.push('failure-link-mismatch');
+  if (!sameSubject(repair.expectedSubject, definition.target)) reasons.push('repair-subject-mismatch');
+  if (Date.parse(repair.observedAt) > Date.parse(asOf)) reasons.push('future-repair');
+  const failureTime = Math.max(...observations.filter(observation => finding.failureRefs.includes(observation.hash)).map(observation => Date.parse(observation.observedAt)));
+  const rechecks = observations.filter(observation => repair.recheckRefs.includes(observation.hash));
+  if (rechecks.length !== repair.recheckRefs.length) reasons.push('missing-recheck');
+  for (const criterion of finding.criteria) {
+    if (criterion.independentReview) { reasons.push('external-review-needed'); continue; }
+    const relevant = rechecks.filter(observation => Date.parse(observation.observedAt) > failureTime && Date.parse(observation.observedAt) <= Date.parse(repair.observedAt) && sameSubject(observation.subject, repair.expectedSubject) && observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible);
+    const claims = relevant.flatMap(observation => observation.claims.filter(claim => claim.criterionId === criterion.id && claim.kind === criterion.evidence && claim.specHash === criterionHash(criterion)).map(claim => ({ claim, observation })));
+    const passing = claims.some(({ claim, observation }) => claim.outcome === 'pass' && (criterion.evidence === 'reported-check' || observation.origin === 'observed-local'));
+    if (!passing || claims.some(({ claim }) => claim.outcome !== 'pass')) reasons.push(`recheck-failed:${criterion.id}`);
+  }
+  return { repairHash: repair.hash, valid: reasons.length === 0, reasons: [...new Set(reasons)].sort() };
 }
