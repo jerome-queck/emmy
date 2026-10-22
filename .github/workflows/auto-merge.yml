@@ -1,0 +1,42 @@
+name: Emmy auto-merge
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, edited]
+  workflow_run:
+    workflows: [Emmy checks]
+    types: [completed]
+  status:
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Optional pull request number. Empty checks all open main pull requests.
+        required: false
+        type: string
+
+permissions: {}
+
+jobs:
+  merge:
+    if: github.event.repository.fork == false && (github.event_name != 'pull_request_target' || github.event.pull_request.base.ref == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: read
+      checks: read
+      statuses: read
+    steps:
+      - name: Checkout trusted main policy
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.19.0
+      - name: Consider exact-head auto-merge
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/github-auto-merge.mjs
