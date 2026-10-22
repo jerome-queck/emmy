@@ -201,6 +201,8 @@ test('merge receipts distinguish enabled, queued, merged, failed and changed sta
     const github = fakeGitHub({ receipt, rejectRequest });
     const result = await considerPullRequest({ number: 7, expectedHead: head }, github);
     assert.equal(result.outcome, outcome);
+    if (outcome === 'merged') assert.equal(result.mergeCommit, other);
+    if (['enabled', 'queued'].includes(outcome)) assert.equal(result.observedOnly, true);
     assert.equal(github.calls.filter(call => call.method === 'requestMerge').length, 1);
   }
 });

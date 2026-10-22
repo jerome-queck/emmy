@@ -54,7 +54,7 @@ The privileged workflow checks out `main` and executes its policy. It never chec
 
 The merge workflow has no concurrency group that can cancel a pending status event. Repeated runs can observe the same candidate. The server's exact-head check and merge readback handle duplicate immediate requests.
 
-Results distinguish `skipped`, `enabled`, `queued`, `merged`, `failed`, and `unverified`. Enabled or queued states are observations of preexisting provider state and carry `observedOnly: true`. This helper creates neither state. A successful API response does not prove a merge. The adapter reads GitHub's PR state afterward. Only a confirmed merged PR at the expected head and target gets `merged`.
+Results distinguish `skipped`, `enabled`, `queued`, `merged`, `failed`, and `unverified`. Enabled or queued states are observations of preexisting provider state and carry `observedOnly: true`. This helper creates neither state. A successful API response does not prove a merge. The adapter reads GitHub's PR state afterward. Only a confirmed merged PR at the expected head and target with a valid full merge commit OID gets `merged`.
 
 ## Required GitHub setup
 
