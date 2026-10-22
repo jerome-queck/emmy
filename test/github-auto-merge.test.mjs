@@ -237,16 +237,16 @@ test('GitHub adapter paginates status history and checks every run at the exact 
   assert.equal(urls.some(url => url.includes(`/commits/${head}/check-runs?filter=all`)), true);
 });
 
-test('merge API uses an immediate exact-head request without deferred authorization or rule bypass', async () => {
+test('merge API preserves reviewed history in an immediate exact-head request', async () => {
   let call;
   const github = createGitHub('test-token', async (...args) => {
     call = args;
     return { ok: true, json: async () => ({ merged: true, sha: other }) };
   });
   await github.requestMerge({ number: 7, expectedHead: head });
-  assert.equal(call[0], `https://api.github.com/repos/${MERGE_POLICY.repository}/pulls/7/merge`);
+  assert.equal(call[0], 'https://api.github.com/repos/jerome-queck/emmy/pulls/7/merge');
   assert.equal(call[1].method, 'PUT');
-  assert.deepEqual(JSON.parse(call[1].body), { sha: head, merge_method: 'squash' });
+  assert.deepEqual(JSON.parse(call[1].body), { sha: head, merge_method: 'merge' });
   assert.equal(call[1].headers.Authorization, 'Bearer test-token');
 });
 
