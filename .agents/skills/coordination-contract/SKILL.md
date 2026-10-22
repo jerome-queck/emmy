@@ -21,6 +21,8 @@ The mapping covers exact own bindings and canonical repository intent; observati
 
 `reconcileState` is the production policy. `replayReview` reconstructs its inputs from the stored manifest and decision context. Boundary parsers force imports to reported origin. Actual local inspections are separate filesystem/process boundaries exercised by the behavioral driver.
 
+The behavioral boundary also covers reacquiring canonical repository identity before each executable criterion and evaluating canonical restored eligibility at a fresh clock after acquisition reads. Changed or unreadable identity and authority expiry between checks require actual CLI controls. The pure restored-state predicates do not prove that live acquisition occurs.
+
 ## Bounds and assumptions
 
 `verification/properties.mjs` exports the exact domains. They use two responsibility IDs, two targets, two revisions, zero-to-two structure sizes, all three claim outcomes, four availability states, complete/partial coverage, ages of minus one millisecond, zero, exactly 24 hours, and one millisecond beyond, one/two definition heads, and explicit trigger states. Active zero-criterion definitions are rejected by the actual parser; zero criteria cover retired/merged definitions.

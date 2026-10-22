@@ -295,8 +295,9 @@ try {
         }
       } finally {
         if (mode === 'changed') await writeFile(join(root, 'fixture-verifiers/dependency.mjs'), fixtureScripts['dependency.mjs']);
-        if (mode === 'unavailable') await rename(join(home, 'source-boundary.git'), join(root, '.git'));
+        if (mode === 'unavailable') await rename(join(home, 'source-boundary.git'), join(root, '.git')).catch(error => { if (error.code !== 'ENOENT') throw error; });
       }
+      assert.deepEqual(await inspectRepository(root), actual, 'Source-boundary fixture teardown restores the original repository identity');
     }
 
     await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, projects: { fixture: { ...bindings.projects.fixture, repository: 'https://example.invalid/intended-other-repository' } } }));
@@ -364,7 +365,7 @@ try {
     assert.equal(blockedIndependent.findings.find(item => item.id === errorFinding.id).status, 'open'); assert.ok(blockedIndependent.repairs.some(item => item.reasons.includes('external-review-needed')));
     report.localCheck = { sourceRevision: target.revision, execution: passingCommand.check, timeoutReason: 'timeout', outputReason: boundedOutput.reason, cancelledChildGone: true, e002: { failedRevision: badSubject.revision, correctedRevision: correctedSubject.revision, failureRef: actualFailure.ref, passingRef: actualReplayCheck.ref, independence: 'external-review-needed' } };
     await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
-    scenario('local-check', 'Pinned Node script/argv/authority and actual output/exit; timeout/output/cancellation clean owned child groups; retired removed scripts do not run; synthetic E002 CLI failure survives repair and corrected-revision replay still cannot authenticate independence.');
+    scenario('local-check', 'Pinned Node script/argv/authority and actual output/exit; changed dependency or unavailable git identity blocks the later command; unchanged two-check control executes both; timeout/output/cancellation clean owned child groups; retired scripts do not run; synthetic E002 failure survives repair and corrected-revision replay cannot authenticate independence.');
     const trigger = { nativeId: 'synthetic-schedule', promptDigest: digest('Synthetic schedule prompt'), timezone: 'UTC', destination: definition.destination, nextWindow: { start: new Date(Date.now() - 3000).toISOString(), due: new Date(Date.now() - 2000).toISOString(), graceMs: 0 } };
     const triggerDefinition = { ...definition, id: 'trigger-case', criteria: definition.criteria, trigger, feature: { ...definition.feature, reviewAt: new Date(Date.now() - 86400000).toISOString() } }; const triggerAdoption = await adopt(triggerDefinition);
     const schedule = { nativeId: trigger.nativeId, status: 'enabled', promptDigest: trigger.promptDigest, timezone: trigger.timezone, destination: trigger.destination };

@@ -53,6 +53,8 @@ For your responsibility, preserve the original failure reference. Fill `examples
 
 A `local-check` criterion executes only a pinned repository-relative `.mjs` script with Node, exact arguments, a finite timeout, and separate scoped `run-local-check` authority. Use trusted code within the granted scope. The command has the current OS user's permissions; the limits are not a sandbox. Its observed output does not authenticate independent authorship. Declared independence stays `external-review-needed` in this CLI.
 
+Every executable criterion reacquires canonical repository identity. Changed or unreadable source prevents that command from running. After acquisition reads, the current clock checks command authority and restored eligibility before launch. A check changing tracked source, or restored authority expiring during one check, prevents the next command. Post-execution inspection still detects changes during a command; filesystem pinning and revocation are not atomic.
+
 ## Evolve a method
 
 Import a utility review shaped like `examples/feature-review.json`. Record useful outcomes, false alarms, repair effort, motivating failures, and the next review. Quiet monitoring can remain useful.

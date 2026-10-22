@@ -8,6 +8,8 @@ Use `backup --to <archive>` to pin and validate immutable records, referenced ev
 
 A restored home has a new epoch. Fresh exact target, authority, task, and schedule observations must name it and remain current under explicit scoped supersession. A wrong-scope or unavailable authority correction can suspend an active restored home before its next local check. Local targets require actual local inspection. Dot-cloud and prepared Codex Cloud targets can refresh through exact reported readbacks, whose assurance stays reported. Byte inspection is available during suspension; local-check execution and work proposals wait. Original failures and stable effect keys survive. Unrelated inbox files, verification output, and repository checkouts are outside the archive.
 
+Every executable criterion reevaluates that epoch's retained observations after acquisition reads and immediately before launch. Authority expiring during an earlier check suspends the next command. The driver retains a three-second expiry counterexample and a current-authority positive control.
+
 ## Source and drive
 
 `records.mjs` owns immutable publication, dependency-first import order, archive manifests, and restore. `work.mjs` owns current epoch eligibility. `maintenance.mjs` derives public references. Scenarios `archive-recovery`, `cloud-recovery`, `restored-current-context`, `publication-interruption`, and `derived-boundaries` exercise actual bytes, corruption/traversal/symlink controls, local and cloud restore, superseded authority with a real execution marker, ten observed publication checkpoints, forward-reference retry, drift repair, and public/private separation.

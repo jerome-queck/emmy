@@ -37,12 +37,12 @@ export function terminateOwnedProcessGroup(pid, kill = process.kill) {
   }
 }
 
-async function runLocalCheck(criterion, definition, currentSubject, asOf, suspended) {
+async function runLocalCheck(criterion, definition, { asOf, epoch, observations }) {
   const check = criterion.check;
-  const startedAt = new Date().toISOString();
-  const executionAsOf = new Date(Math.max(Date.parse(asOf), Date.parse(startedAt))).toISOString();
-  const scoped = check.authorityRef.action === 'run-local-check' && check.authorityRef.resource === definition.resource && check.authorityRef.destination === definition.destination && (!check.authorityRef.expiresAt || Date.parse(check.authorityRef.expiresAt) >= Date.parse(executionAsOf));
-  if (suspended || !scoped || !sameSubject(currentSubject, definition.target)) return { outcome: 'unknown', reason: suspended ? 'restore-suspended' : !scoped ? 'check-authority-needed' : 'current-subject-mismatch' };
+  let currentSubject;
+  try { currentSubject = { ...definition.target, ...await inspectRepository(definition.target.path) }; }
+  catch (error) { return { outcome: 'unknown', reason: 'current-subject-unavailable', subjectError: error.code ?? error.message }; }
+  if (!sameSubject(currentSubject, definition.target)) return { outcome: 'unknown', reason: 'current-subject-mismatch', inspectedSubject: currentSubject };
   const path = await realpath(join(definition.target.path, check.script));
   const inside = relative(currentSubject.path, path);
   fail(inside && !inside.startsWith('..') && !isAbsolute(inside), 'Verifier escapes the configured repository');
@@ -50,6 +50,11 @@ async function runLocalCheck(criterion, definition, currentSubject, asOf, suspen
   if (digest(source) !== check.sha256) return { outcome: 'fail', reason: 'verifier-bytes-mismatch' };
   const verifierId = digest({ script: check.script, sha256: check.sha256, argv: check.argv });
   if (process.platform === 'win32') return { outcome: 'unknown', reason: 'local-check-process-groups-unsupported' };
+  const startedAt = new Date().toISOString();
+  const executionAsOf = reviewAsOf(asOf, startedAt);
+  const suspended = restoredState(epoch, observations, definition, executionAsOf).suspended;
+  const scoped = check.authorityRef.action === 'run-local-check' && check.authorityRef.resource === definition.resource && check.authorityRef.destination === definition.destination && (!check.authorityRef.expiresAt || Date.parse(check.authorityRef.expiresAt) >= Date.parse(executionAsOf));
+  if (suspended || !scoped) return { outcome: 'unknown', reason: suspended ? 'restore-suspended' : 'check-authority-needed' };
   const execution = await new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [path, ...check.argv], { cwd: currentSubject.path, detached: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, EMMY_VERIFY_BOUNDARY: '', EMMY_VERIFY_BOUNDARY_FILE: '' } });
     let stdout = Buffer.alloc(0); let stderr = Buffer.alloc(0); let reason = null; let cancelled = false; let settled = false;
@@ -96,7 +101,7 @@ async function runLocalCheck(criterion, definition, currentSubject, asOf, suspen
   return { outcome: !reason && exitCode === check.expectedExit ? 'pass' : 'fail', verifierId, sourceBase64: source.toString('base64'), startedAt, completedAt: new Date().toISOString(), resultingSubject: after, subjectError, script: check.script, sha256: check.sha256, argv: check.argv, expectedExit: check.expectedExit, exitCode, signal, reason, stdout, stderr, terminationReason: execution.terminationReason, cleanup: execution.cleanup, timeoutMs: check.timeoutMs, outputLimitBytes: 1024 * 1024, node: process.version, childTree: execution.cleanup.status === 'unverified' ? 'owned POSIX process-group cleanup unverified; detached descendants excluded' : execution.cleanup.status === 'not-started' ? 'local verifier process did not start' : 'owned POSIX process group terminated; detached descendants excluded' };
 }
 
-export async function inspectLocal(definition, { bindings, catalog, machine, asOf, epoch, suspended, criteria }) {
+export async function inspectLocal(definition, { bindings, catalog, machine, asOf, epoch, observations, criteria }) {
   if (!definition.target.executor.startsWith('local-')) return [];
   const route = routeTarget(definition, { bindings, catalog, machine });
   if (route.reasons.length) return [];
@@ -118,7 +123,7 @@ export async function inspectLocal(definition, { bindings, catalog, machine, asO
       try { const bytes = await readFile(criterion.path); const artifactEvidence = `artifact-${specHash}.bin`; files[artifactEvidence] = bytes; check = { outcome: digest(bytes) === criterion.sha256 ? 'pass' : 'fail', expectedSha256: criterion.sha256, actualSha256: digest(bytes), path: criterion.path, artifactEvidence }; }
       catch (error) { check = { outcome: 'unknown', path: criterion.path, reason: error.code ?? error.message }; }
     } else {
-      check = await runLocalCheck(criterion, definition, currentSubject, asOf, suspended);
+      check = await runLocalCheck(criterion, definition, { asOf, epoch, observations });
     }
     files[name] = `${canonical(check)}\n`;
     claims.push({ criterionId: criterion.id, revision: currentSubject.revision, kind: criterion.evidence, outcome: check.outcome, specHash, evidenceRef: name, reason: check.reason ?? null, verifierId: check.verifierId ?? null });
@@ -275,8 +280,7 @@ export async function reconcile(home, { id, imports, asOf, catalog }) {
     const previousCriteria = reviews.flatMap(review => review.findings.filter(finding => finding.durable).flatMap(finding => finding.criteria));
     const criteria = [...new Map([...definition.criteria, ...previousCriteria].map(criterion => [criterionHash(criterion), criterion])).values()];
     const liveStart = reviewAsOf(asOf, new Date().toISOString());
-    const suspended = restoredState(epoch, observations, definition, liveStart).suspended;
-    const local = heads.length === 1 ? await inspectLocal(definition, { bindings, catalog, machine, asOf: liveStart, epoch, suspended, criteria: definition.lifecycle.status === 'active' ? criteria : [] }) : [];
+    const local = heads.length === 1 ? await inspectLocal(definition, { bindings, catalog, machine, asOf: liveStart, epoch, observations, criteria: definition.lifecycle.status === 'active' ? criteria : [] }) : [];
     for (const item of local) { const published = await publishRecord(home, item.payload, item.files); if (!observations.some(record => record.hash === published.hash)) observations.push(published.record); if (!records.some(record => record.hash === published.hash)) records.push(published.record); }
     const relatedDefinitions = records.filter(record => record.type === 'definition' && record.id !== responsibilityId);
     const relatedReviews = records.filter(record => record.type === 'review' && record.responsibilityId !== responsibilityId);

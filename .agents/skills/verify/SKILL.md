@@ -25,6 +25,8 @@ Full and failed runs retain `.local/verification/behavior-*/report.json` plus im
 
 The full drive includes ten observed checkpoint cancellations. A child stops at named record/archive/restore publication boundaries or the first dependency-complete import publication, then the driver sends SIGKILL and replays. This is evidence at those boundaries. It is not all-instruction crash durability or filesystem flush proof.
 
+Each executable criterion reacquires canonical repository identity and reevaluates restored eligibility from the pinned epoch and observations at the current clock. A first check changing tracked dependency bytes or hiding git identity fails; the next check remains unexecuted with unknown evidence. An unchanged two-check control executes both. Restored authority expiring during a three-second check blocks the next command; current authority permits both. Post-execution inspection remains required. These observations do not establish atomic filesystem pinning or atomic revocation.
+
 Local-check timeout, output limit, normal completion, and handled cancellation terminate the owned POSIX process group when signalling succeeds. The driver proves a real child is gone. Injected first and persistent EPERM controls retain failed evidence, process-group identity, and explicit unverified cleanup. Their later harness group cleanup proves only teardown of those fixtures, not product cleanup under denied signals. Detached descendants and hostile-code containment remain outside the contract. The driver cleans only its own temporary state and processes, then retains evidence under this checkout's ignored home.
 
 ## Scope
