@@ -10,7 +10,7 @@ Fill `.local/bindings.json` from `examples/bindings.json`. Prepare a current req
 
 ## Driving it with the CLI driver
 
-Run `npm run verify:behavior`. Scenarios `local-proposal`, `unavailable-host`, `explicit-cloud`, `immutable-publication`, and `probe-packet` verify exact identity, ready and unavailable routes, long-tail private projects, cloud authority, proposal headings, idempotent replay, concurrent publication, interruption recovery, corruption rejection, and probe content. Read actual files alongside JSON output. Sentinels must show no executor commands ran.
+Run `npm run verify:behavior`. Scenarios `local-proposal`, `unavailable-host`, `explicit-cloud`, `immutable-publication`, and `probe-packet` verify exact identity, ready and unavailable routes, long-tail private projects, cloud authority, proposal headings, idempotent replay, concurrent publication, interruption recovery, altered packet-byte and record corruption rejection, and probe content. Read actual files alongside JSON output. Sentinels must show no executor commands ran.
 
 ## Gotchas
 

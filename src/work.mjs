@@ -4,11 +4,12 @@ export function snapshotStatus(snapshot, target, asOf) {
   if (!snapshot) return { status: 'needs-observation', reasons: ['No snapshot for the designated executor.'] };
   const reasons = [];
   const ageMs = Date.parse(asOf) - Date.parse(snapshot.observedAt);
-  if (snapshot.scope.product !== target.product || snapshot.scope.hostId !== target.hostId) reasons.push('Snapshot belongs to a different executor scope.');
+  const scopeMatches = snapshot.scope.product === target.product && snapshot.scope.hostId === target.hostId;
+  if (!scopeMatches) reasons.push('Snapshot belongs to a different executor scope.');
   if (!snapshot.coverage.complete || snapshot.coverage.gaps.length) reasons.push('Snapshot coverage is partial.');
   if (ageMs < 0 || ageMs > maximumSnapshotAgeMs) reasons.push('Snapshot is future-dated or stale.');
-  if (snapshot.availability !== 'online') reasons.push(`Designated executor is ${snapshot.availability}.`);
-  return { status: reasons.length ? (snapshot.availability === 'offline' || snapshot.availability === 'denied' ? 'unavailable' : 'needs-observation') : 'ready', reasons, ageMs };
+  if (snapshot.availability !== 'online') reasons.push(`${scopeMatches ? 'Designated' : 'Snapshot'} executor is ${snapshot.availability}.`);
+  return { status: reasons.length ? (scopeMatches && (snapshot.availability === 'offline' || snapshot.availability === 'denied') ? 'unavailable' : 'needs-observation') : 'ready', reasons, ageMs };
 }
 
 export function planTask(request, { catalog, bindings, snapshot, asOf }) {
@@ -87,5 +88,5 @@ export function assessOutcome(task, receipt, artifactChecks, revision, asOf) {
 }
 
 export function taskPacket(task) {
-  return `# PROPOSAL. NOT DISPATCHED.\n\n${task.request.goal}\n\nProject ${task.request.projectId}. Revision ${task.request.revision}.\nExecutor ${task.executor.kind}. Host or environment ${task.executor.hostId ?? 'unbound'}.\nNative project ${task.executor.projectId ?? 'unbound'}. Path ${task.executor.path ?? 'none'}.\nAuthority ${task.request.authority.reference}.\nRoute ${task.route.status}.\n\n## Sources\n\n${task.request.sources.map(value => `- ${value}`).join('\n')}\n\n## Finish criteria\n\n${task.request.finish.map(value => `- ${value.id}. ${value.description} Require ${value.evidence}.`).join('\n')}\n\n## Missing observations and limits\n\n${[...task.route.reasons, ...task.limits].map(value => `- ${value}`).join('\n')}\n`;
+  return `# PROPOSAL. NOT DISPATCHED.\n\n${task.request.goal}\n\nProject ${task.request.projectId}. Revision ${task.request.revision}.\nRepository ${task.executor.repository ?? 'unverified'}.\nExecutor ${task.executor.kind}. Host or environment ${task.executor.hostId ?? 'unbound'}.\nNative project ${task.executor.projectId ?? 'unbound'}. Path ${task.executor.path ?? 'none'}.\nAuthority ${task.request.authority.reference}.\nRoute ${task.route.status}.\nObservation ${task.snapshotId ?? 'none'} as of ${task.asOf}. Basis ${task.observationBasis}.\n\n## Sources\n\n${task.request.sources.map(value => `- ${value}`).join('\n')}\n\n## Finish criteria\n\n${task.request.finish.map(value => `- ${value.id}. ${value.description} Require ${value.evidence}.`).join('\n')}\n\n## Missing observations and limits\n\n${[...task.route.reasons, ...task.limits].map(value => `- ${value}`).join('\n')}\n`;
 }
