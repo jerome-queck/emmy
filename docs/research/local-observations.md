@@ -26,4 +26,4 @@ Computer Use denied access to the ChatGPT native app with a safety restriction. 
 
 ## Repository identity
 
-The connected GitHub identity is `jerome-queck`. The requested `jeromequeck` is a separate account. Publication waits for owner clarification. Credentials and private transcripts stay outside this public repository.
+The connected GitHub identity is `jerome-queck`. The human confirmed `jerome-queck/emmy` as the canonical public repository. Credentials and private transcripts stay outside this public repository.

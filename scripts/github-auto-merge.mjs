@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const intendedRepository = 'jeromequeck/emmy';
+const intendedRepository = 'jerome-queck/emmy';
 
 export const MERGE_POLICY = Object.freeze({
   repository: intendedRepository,
@@ -196,7 +196,7 @@ export function createGitHub(token, fetcher = fetch) {
       return normalizeSnapshot({ repository, pr, branch, checks, statuses }, expectedHead, expectedBase);
     },
     requestMerge({ number, expectedHead }) {
-      return request(`${prefix}/pulls/${number}/merge`, { sha: expectedHead, merge_method: 'squash' }, 'PUT');
+      return request(`${prefix}/pulls/${number}/merge`, { sha: expectedHead, merge_method: 'merge' }, 'PUT');
     },
     async receipt(number) {
       const data = await request('/graphql', {

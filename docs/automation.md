@@ -1,6 +1,6 @@
 # Repository automation
 
-This document describes repository behavior. Workflow files are proposals until the chosen GitHub repository runs them. The repository identity in `scripts/github-auto-merge.mjs` is provisional until the requested owner is confirmed.
+This document describes repository behavior for `jerome-queck/emmy`, the canonical repository confirmed by the human. Workflow files are proposals until that GitHub repository runs them.
 
 ## Checks and evidence
 
@@ -26,7 +26,7 @@ GitHub suppresses most new workflow runs caused by `GITHUB_TOKEN`, including pus
 
 ## Auto-merge policy
 
-`evaluateEligibility` is the pure merge decision. The GitHub adapter reads metadata and requests an immediate squash merge through the REST API. The request includes the exact head SHA. It does not arm GitHub's deferred auto-merge setting, enqueue a PR, or request a rule bypass.
+`evaluateEligibility` is the pure merge decision. The GitHub adapter reads metadata and requests an immediate merge commit through the REST API. The request includes the exact head SHA and `merge_method: "merge"`. Merge commits retain reviewed commits that the formal verifiers read with `git show` in fresh clones. Squash merges would discard that ancestry. The adapter does not arm GitHub's deferred auto-merge setting, enqueue a PR, or request a rule bypass.
 
 This choice keeps authorization tied to the reviewed revision. GitHub can retain deferred auto-merge after a writer pushes another head. A generic required status context cannot enforce this helper's reviewer-account restriction. Immediate merging avoids leaving that authorization active for a later revision. The coordinator accepted this design after reviewing GitHub's documented behavior.
 
@@ -60,8 +60,8 @@ Results distinguish `skipped`, `enabled`, `queued`, `merged`, `failed`, and `unv
 
 Repository files do not install settings or branch protection. The repository owner must confirm these provider settings before relying on unattended merges:
 
-1. Confirm the canonical repository in `intendedRepository`. The workflow observes `GITHUB_REPOSITORY`; the helper compares that value with this one configured identity.
-2. Enable squash merges. GitHub's deferred auto-merge setting is separate and is not required by this helper.
+1. Use `jerome-queck/emmy`, the canonical repository in `intendedRepository`. The workflow observes `GITHUB_REPOSITORY`; the helper compares that value with this one configured identity.
+2. Enable merge commits to retain the reviewed source commits required by the formal verifiers. GitHub's deferred auto-merge setting is separate and is not required by this helper.
 3. Protect `main`. Require `emmy-check` and `emmy-independent-review`. Require branches to be current before merging and enforce protection for administrators. Preserve any stricter existing rules, review requirements, and conversation requirements. Prohibit force pushes and branch deletion.
 4. Verify the branch API exposes the two required contexts and `enforcement_level: everyone`. Missing or unreadable metadata leaves this helper closed. Classic protection provides this metadata. Other rulesets need provider readback and compatibility testing.
 5. Run a reviewed PR through hosted CI, record its exact-head review status, and inspect the workflow's merge receipt. Local tests do not establish token permissions or hosted enforcement.
