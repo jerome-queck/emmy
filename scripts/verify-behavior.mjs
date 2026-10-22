@@ -6,8 +6,9 @@ import { hostname, tmpdir } from 'node:os';
 import { basename, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
-import { digest } from '../src/records.mjs';
-import { inspectRepository } from '../src/responsibilities.mjs';
+import { canonical, digest, parseObservation, recordPayload, readRecord, readStore } from '../src/records.mjs';
+import { fixtureScripts } from '../verification/fixtures.mjs';
+import { inspectRepository, replayReview } from '../src/responsibilities.mjs';
 import { commands, verification } from '../src/metadata.mjs';
 
 const sourceRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -36,10 +37,12 @@ const git = args => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8
 const review = data => data.responsibilities[0].record;
 const reconcile = async (id, expected = 0, imports = null, selectedHome = home, asOf = now()) => run(['reconcile', '--id', id, '--as-of', asOf, ...(imports ? ['--import', await fixture(`import-${randomUUID()}.json`, { schemaVersion: 1, records: imports })] : [])], expected, selectedHome);
 try {
-  for (const path of ['registry', 'docs', '.agents']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
+  for (const path of ['registry', 'docs', '.agents', 'src', 'scripts']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
   await mkdir(home, { recursive: true }); await mkdir(join(root, 'bin'));
   for (const name of ['gh', 'codex', 'curl', 'ssh']) await writeFile(join(root, 'bin', name), `#!/bin/sh\necho invoked >> '${join(home, 'executor-invoked')}'\nexit 99\n`, { mode: 0o755 });
   await writeFile(join(root, '.gitignore'), '.local/\nbin/\n');
+  await mkdir(join(root, 'fixture-verifiers'));
+  for (const [name, source] of Object.entries(fixtureScripts)) await writeFile(join(root, 'fixture-verifiers', name), source);
   git(['init', '-q']); git(['config', 'user.email', 'fixture@example.invalid']); git(['config', 'user.name', 'Synthetic fixture']); git(['remote', 'add', 'origin', 'https://example.invalid/fixture']); git(['add', '.']); git(['commit', '-qm', 'Synthetic fixture baseline']);
   const actual = await inspectRepository(root);
   const target = { projectId: 'fixture', repository: actual.repository, executor: 'local-codex', hostId: 'fixture-host', nativeProjectId: 'native-fixture', ...actual };
@@ -53,7 +56,7 @@ try {
   const definition = { id: 'self-check', parents: [], goal: 'Retain the expected local artifact and detect damage.', context: 'Synthetic responsibility survives a fresh process without a prior conversation.', action: 'verify', resource: 'fixture', destination: 'local-evidence', target, authorityRef: { reference: 'Synthetic owner request', action: 'verify', resource: 'fixture', destination: 'local-evidence' }, criteria: [{ id: 'artifact', description: 'Actual bytes match the retained expectation.', evidence: 'local-digest', path: artifact, sha256: digest(original) }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'artifact-watch', method: 'Compare expected local bytes.', intendedEffect: 'Maintain expected artifact bytes.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' } };
   const adopted = await run(['responsibility', '--file', await fixture('definition.json', definition)]);
   assert.equal((await run(['responsibility', '--file', await fixture('definition-replay.json', definition)])).hash, adopted.hash);
-  const nativeReport = { type: 'observation', responsibilityId: definition.id, subject: target, observedAt: now(), observer: 'Synthetic native readback', category: 'tasks', availability: 'available', coverage: { complete: true, gaps: [] }, claims: [], evidenceRefs: [] };
+  const nativeReport = { type: 'observation', responsibilityId: definition.id, subject: target, observedAt: now(), observer: 'Synthetic native readback', category: 'tasks', tasks: [], availability: 'available', coverage: { complete: true, gaps: [] }, claims: [], evidenceRefs: [] };
   const first = review(await reconcile(definition.id, 0, [nativeReport]));
   const restart = review(await reconcile(definition.id, 0, [nativeReport]));
   assert.equal(first.goal, definition.goal); assert.equal(restart.context, definition.context);
@@ -98,6 +101,229 @@ try {
   assert.equal(finalCorrection.findings.find(item => item.id === finding.id).status, 'resolved');
   report.selfCheck = { adopted: adopted.hash, firstReview: first.hash, detectedReview: detected.hash, finding, failedRepairReview: failed.hash, diagnosisReview: repeated.hash, correctedReview: corrected.hash, recoveredReview: recovered.hash, regressedReview: regressed.hash, unreadableReview: unreadable.hash, finalCorrection: finalCorrection.hash, actualArtifact: await readFile(artifact, 'utf8') };
   scenario('self-check-repair', 'Actual corruption discovered without supplied failure; two failed repairs survive restart and trigger diagnosis; matching current recheck closes exact retained finding.');
+  if (report.focus !== 'self-check-repair') {
+    const adopt = async value => run(['responsibility', '--file', await fixture(`definition-${randomUUID()}.json`, value)]);
+    const observed = (responsibilityId, change = {}) => ({ type: 'observation', responsibilityId, subject: target, observedAt: now(), observer: 'Synthetic attributed source', category: 'criteria', availability: 'available', coverage: { complete: true, gaps: [] }, claims: [], evidenceRefs: [], ...change });
+    const tasks = responsibilityId => observed(responsibilityId, { category: 'tasks', tasks: [] });
+    const manifest = await readStore(home);
+    const replayed = replayReview(finalCorrection, manifest.records);
+    const storedProjection = Object.fromEntries(Object.keys(replayed).map(key => [key, finalCorrection[key]]));
+    assert.deepEqual(replayed, storedProjection, 'Every decision input is recoverable from the pinned manifest/context');
+    assert.ok(finalCorrection.inputHashes.includes(recovered.hash), 'Prior reviews are pinned inputs');
+    const unknownDefinition = { ...definition, id: 'unknown-project', target: { ...target, projectId: 'constructor' } };
+    await adopt(unknownDefinition);
+    const unknown = review(await reconcile(unknownDefinition.id, 3));
+    assert.equal(unknown.route.project, null); assert.ok(unknown.route.reasons.includes('unknown-project'));
+    const constructorTarget = { ...target, projectId: 'constructor', hostId: 'constructor', nativeProjectId: 'native-constructor' };
+    const constructorDefinition = { ...definition, id: 'constructor-project', target: constructorTarget };
+    const constructorBindings = { ...bindings, localHostId: 'constructor', projects: { ...bindings.projects, constructor: { label: 'Explicit constructor', hostId: 'constructor', nativeProjectId: constructorTarget.nativeProjectId, path: target.path, repository: target.repository } } };
+    await writeFile(join(home, 'bindings.json'), JSON.stringify(constructorBindings));
+    await adopt(constructorDefinition);
+    assert.ok(review(await reconcile(constructorDefinition.id, 3)).route.reasons.includes('exact-binding-missing'));
+    await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...constructorBindings, hosts: { ...bindings.hosts, constructor: { label: 'Explicit constructor host', machine: hostname() } } }));
+    const bound = review(await reconcile(constructorDefinition.id, 0, [observed(constructorDefinition.id, { subject: constructorTarget, category: 'tasks', tasks: [] })]));
+    assert.equal(bound.route.status, 'bound'); assert.equal(bound.route.project.label, 'Explicit constructor');
+    await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, projects: { fixture: { ...bindings.projects.fixture, cloudEnvironmentId: 'prepared-cloud' } } }));
+    const cloudCriterion = { id: 'reported', evidence: 'reported-check', description: 'Attributed cloud report only.' };
+    const cloudDefinition = { ...definition, id: 'explicit-cloud', cloudReason: 'Synthetic prepared-environment check.', target: { ...target, executor: 'codex-cloud', hostId: 'prepared-cloud', nativeProjectId: 'prepared-cloud', path: null, dirtyDigest: 'reported' }, criteria: [cloudCriterion], authorityRef: { ...definition.authorityRef, cloud: true } };
+    const cloudAdoption = await adopt(cloudDefinition);
+    const cloudRecords = ['target', 'tasks', 'criteria'].map(category => observed(cloudDefinition.id, { category, subject: cloudDefinition.target, ...(category === 'tasks' ? { tasks: [] } : {}), claims: category === 'criteria' ? [{ criterionId: 'reported', kind: 'reported-check', outcome: 'pass', revision: target.revision, specHash: cloudAdoption.criteria[0].specHash, evidenceRef: 'Synthetic cloud text.' }] : [] }));
+    const cloud = review(await reconcile(cloudDefinition.id, 0, cloudRecords)); assert.equal(cloud.route.executor, 'codex-cloud'); assert.equal(cloud.criterionResults[0].assurance, 'reported');
+    const noCloud = { ...cloudDefinition, id: 'unauthorized-cloud', authorityRef: definition.authorityRef, cloudReason: undefined };
+    await adopt(noCloud); assert.ok(review(await reconcile(noCloud.id, 3)).route.reasons.includes('cloud-coding-authority-needed'));
+    await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
+    await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, projects: { fixture: { ...bindings.projects.fixture, repository: 'https://example.invalid/intended-other-repository' } } }));
+    const wrongRepository = review(await reconcile(definition.id, 3)); assert.ok(wrongRepository.route.reasons.includes('repository-binding-mismatch')); assert.equal(wrongRepository.proposals.some(item => item.type === 'work'), false);
+    await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
+    scenario('binding-boundaries', 'Unknown inherited project and host keys stay unbound; explicit constructor IDs work; cloud needs prepared binding, reason and explicit scoped authority.');
+    const probes = await run(['probe', '--nonce', 'synthetic-nonce']); assert.equal(probes.record.probes.length, 8); assert.equal(probes.record.accountStatus, 'unverified');
+    assert.match(await readFile(join(probes.path, 'packet.md'), 'utf8'), /Not installed\. No probe or schedule ran\./);
+    scenario('probe-packet', 'Retained actual onboarding packet contains eight proposals and remains uninstalled/unverified.');
+    const forkDefinition = { ...definition, id: 'fork-case' }; const forkBase = await adopt(forkDefinition);
+    await reconcile(forkDefinition.id, 0, [tasks(forkDefinition.id)]);
+    const forkArgs = async goal => ['responsibility', '--file', await fixture(`fork-${randomUUID()}.json`, { ...forkDefinition, parents: [forkBase.hash], goal })];
+    const branches = await Promise.all([run(await forkArgs('Synthetic branch one.')), run(await forkArgs('Synthetic branch two.'))]);
+    const conflict = review(await reconcile(forkDefinition.id, 3)); assert.equal(conflict.heads.length, 2); assert.deepEqual(conflict.proposals, []);
+    await adopt({ ...forkDefinition, parents: branches.map(item => item.hash).sort(), goal: 'Explicitly reconcile both synthetic heads.' });
+    const resolvedFork = review(await reconcile(forkDefinition.id)); assert.equal(resolvedFork.heads.length, 1);
+    await Promise.all([reconcile(forkDefinition.id, 0, [observed(forkDefinition.id, { category: 'effect', effects: [], observer: 'Concurrent source one' })]), reconcile(forkDefinition.id, 0, [observed(forkDefinition.id, { category: 'effect', effects: [], observer: 'Concurrent source two' })])]);
+    const afterConcurrency = await readStore(home); assert.equal(afterConcurrency.records.filter(record => record.responsibilityId === forkDefinition.id && ['Concurrent source one', 'Concurrent source two'].includes(record.observer)).length, 2);
+    scenario('definition-concurrency', 'Distinct concurrent observations survive; forked definitions block proposals; one definition referencing every head resolves the branch.');
+    const reportedCriterion = { id: 'report', description: 'Attributed evidence remains reported.', evidence: 'reported-check' };
+    const reportedDefinition = { ...definition, id: 'reported-case', criteria: [reportedCriterion] }; const reportedAdoption = await adopt(reportedDefinition);
+    const claim = { criterionId: 'report', revision: target.revision, kind: 'reported-check', outcome: 'pass', specHash: reportedAdoption.criteria[0].specHash, evidenceRef: 'Synthetic report.' };
+    const reported = review(await reconcile(reportedDefinition.id, 0, [tasks(reportedDefinition.id), observed(reportedDefinition.id, { origin: 'observed-local', claims: [claim] })]));
+    assert.equal(reported.criterionResults[0].assurance, 'reported');
+    const backdatedFailure = observed(reportedDefinition.id, { observedAt: new Date(Date.parse(reported.asOf) - 1).toISOString(), claims: [{ ...claim, outcome: 'fail' }] });
+    const correctedClaim = review(await reconcile(reportedDefinition.id, 3, [backdatedFailure])); assert.ok(correctedClaim.corrections.some(item => item.kind === 'correction' && item.priorReviewHash === reported.hash));
+    for (const [label, change, expectedReason] of [
+      ['stale', { observedAt: new Date(Date.now() - 86400001).toISOString() }, 'stale-observation'],
+      ['future', { observedAt: new Date(Date.now() + 86400000).toISOString() }, 'future-observation'],
+      ['partial', { coverage: { complete: false, gaps: ['Synthetic missing page'] } }, 'partial-observation'],
+      ['unavailable', { availability: 'unavailable' }, 'unavailable-observation'],
+      ['foreign', { subject: { ...target, hostId: 'foreign-host' } }, 'foreign-subject'],
+      ['revision', { subject: { ...target, revision: 'f'.repeat(40) } }, 'foreign-subject']
+    ]) {
+      const id = `boundary-${label}`; const value = { ...reportedDefinition, id }; const adoption = await adopt(value);
+      const refused = review(await reconcile(id, 3, [tasks(id), observed(id, { ...change, claims: [{ ...claim, specHash: adoption.criteria[0].specHash }] })]));
+      assert.ok(refused.observations.some(item => item.reasons.includes(expectedReason)), label); assert.equal(refused.criterionResults[0].supported, false);
+    }
+    const inaccessible = join(home, 'never-created.txt');
+    const localDefinition = { ...definition, id: 'forged-local', criteria: [{ ...definition.criteria[0], path: inaccessible }] }; const localAdoption = await adopt(localDefinition);
+    const forged = review(await reconcile(localDefinition.id, 3, [tasks(localDefinition.id), observed(localDefinition.id, { origin: 'observed-local', claims: [{ ...claim, criterionId: 'artifact', kind: 'local-digest', specHash: localAdoption.criteria[0].specHash }] })]));
+    assert.equal(forged.criterionResults[0].supported, false); assert.equal(forged.criterionResults[0].assurance, 'unverified');
+    const independentDefinition = { ...definition, id: 'independent-case', criteria: [{ ...definition.criteria[0], independentReview: true }] }; const independentAdoption = await adopt(independentDefinition);
+    const selfCertified = review(await reconcile(independentDefinition.id, 3, [tasks(independentDefinition.id), observed(independentDefinition.id, { category: 'independent-review', observer: 'Claimed different reviewer', origin: 'observed-local', claims: [{ ...claim, criterionId: 'artifact', kind: 'local-digest', specHash: independentAdoption.criteria[0].specHash }] })]));
+    assert.ok(selfCertified.findings.some(item => item.code === 'external-review-needed' && item.status === 'open')); assert.equal(selfCertified.criterionResults[0].supported, false);
+    const weakenedDefinition = { ...definition, id: 'weakened-check' }; const weakBase = await adopt(weakenedDefinition); await reconcile(weakenedDefinition.id, 0, [tasks(weakenedDefinition.id)]);
+    await writeFile(artifact, 'Wrong bytes for weakened expectation\n'); const weakFailure = review(await reconcile(weakenedDefinition.id, 3)); const retainedFailureId = weakFailure.findings.find(item => item.code === 'criterion-failed').id;
+    await adopt({ ...weakenedDefinition, parents: [weakBase.hash], criteria: [{ ...definition.criteria[0], sha256: digest(await readFile(artifact)) }] });
+    assert.equal(review(await reconcile(weakenedDefinition.id, 3)).findings.find(item => item.id === retainedFailureId).status, 'open'); await writeFile(artifact, original);
+    scenario('evidence-boundaries', 'Distinct stale/future/partial/unavailable/foreign/revision refusals, reported-only imports, false-claim correction, self-certification refusal and old failure surviving weakened criteria.');
+    const makeCheck = async (id, script, argv = [], timeoutMs = 5000) => ({ ...definition, id, criteria: [{ id: 'command', evidence: 'local-check', description: 'Run a pinned synthetic Node verifier.', check: { script: `fixture-verifiers/${script}`, sha256: digest(await readFile(join(root, 'fixture-verifiers', script))), argv, expectedExit: 0, timeoutMs, authorityRef: { reference: 'Synthetic local execution grant', action: 'run-local-check', resource: definition.resource, destination: definition.destination } } }] });
+    const checkBytes = async state => {
+      const ref = state.observations.filter(item => item.category === 'criteria' && item.assurance === 'observed-local').sort((left, right) => left.ageMs - right.ageMs)[0].hash;
+      const record = await readRecord(home, ref); const claim = record.claims.find(item => item.criterionId === 'command');
+      return { ref, check: JSON.parse(await readFile(join(home, 'records', ref, claim.evidenceRef), 'utf8')) };
+    };
+    const marker = join(home, 'local-check-marker.txt'); const passCheck = await makeCheck('local-command-pass', 'pass.mjs', [marker]); const passAdoption = await adopt(passCheck);
+    const observedPass = review(await reconcile(passCheck.id, 0, [tasks(passCheck.id)])); const passingCommand = await checkBytes(observedPass);
+    assert.equal(passingCommand.check.exitCode, 0); assert.equal(passingCommand.check.node, process.version); assert.equal(passingCommand.check.outputLimitBytes, 1024 * 1024); assert.match(passingCommand.check.stdout, /Synthetic local verification passed/);
+    assert.equal(observedPass.criterionResults[0].assurance, 'observed-local');
+    await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, projects: { fixture: { ...bindings.projects.fixture, repository: 'https://example.invalid/intended-other-repository' } } }));
+    const repoBlockedMarker = await readFile(marker, 'utf8'); const blockedRepoCheck = review(await reconcile(passCheck.id, 3)); assert.ok(blockedRepoCheck.route.reasons.includes('repository-binding-mismatch')); assert.equal(await readFile(marker, 'utf8'), repoBlockedMarker, 'Repository mismatch prevents executing a locally pinned verifier');
+    await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
+
+    const failCheck = await makeCheck('local-command-fail', 'fail.mjs'); await adopt(failCheck); const observedFail = review(await reconcile(failCheck.id, 3, [tasks(failCheck.id)])); assert.equal((await checkBytes(observedFail)).check.exitCode, 7);
+    const authorityMarker = join(home, 'unauthorized-execution.txt'); const unauthorizedCheck = await makeCheck('local-command-no-authority', 'pass.mjs', [authorityMarker]); unauthorizedCheck.criteria[0].check.authorityRef.action = 'inspect-local'; await adopt(unauthorizedCheck);
+    const deniedCheck = review(await reconcile(unauthorizedCheck.id, 3, [tasks(unauthorizedCheck.id)])); assert.equal((await checkBytes(deniedCheck)).check.reason, 'check-authority-needed');
+    await assert.rejects(readFile(authorityMarker), { code: 'ENOENT' });
+    const waitForFile = async path => { for (let i = 0; i < 400; i++) { try { return await readFile(path, 'utf8'); } catch (error) { if (error.code !== 'ENOENT') throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Timed out waiting for ${path}`); };
+    const gone = async pid => { for (let i = 0; i < 200; i++) { try { process.kill(pid, 0); } catch (error) { if (error.code === 'ESRCH') return; throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Owned verifier child survived ${pid}`); };
+    const timeoutPid = join(home, 'timeout-child.pid'); const timeoutCheck = await makeCheck('local-command-timeout', 'child.mjs', [timeoutPid], 250); await adopt(timeoutCheck);
+    const timeoutState = review(await reconcile(timeoutCheck.id, 3, [tasks(timeoutCheck.id)])); assert.equal((await checkBytes(timeoutState)).check.reason, 'timeout'); await gone(Number(await waitForFile(timeoutPid)));
+    const outputPid = join(home, 'output-child.pid'); const outputCheck = await makeCheck('local-command-output', 'output.mjs', [outputPid]); await adopt(outputCheck);
+    const outputState = review(await reconcile(outputCheck.id, 3, [tasks(outputCheck.id)])); const boundedOutput = (await checkBytes(outputState)).check; assert.equal(boundedOutput.reason, 'output-limit'); assert.ok(Buffer.byteLength(boundedOutput.stdout) + Buffer.byteLength(boundedOutput.stderr) <= 1024 * 1024); await gone(Number(await waitForFile(outputPid)));
+    const cancelPid = join(home, 'cancel-child.pid'); const cancelCheck = await makeCheck('local-command-cancel', 'child.mjs', [cancelPid], 5000); await adopt(cancelCheck);
+    const cancelArgs = ['reconcile', '--id', cancelCheck.id, '--as-of', now(), '--root', root, '--home', home];
+    const cancelled = await new Promise(async (resolve, reject) => {
+      const child = spawn(process.execPath, [join(sourceRoot, 'scripts/agent.mjs'), ...cancelArgs], { env: { ...process.env } }); children.add(child); let stdout = ''; let stderr = '';
+      child.stdout.on('data', bytes => { stdout += bytes; }); child.stderr.on('data', bytes => { stderr += bytes; }); child.on('error', reject);
+      child.on('close', (code, signal) => { children.delete(child); resolve({ args: cancelArgs, code, signal, stdout, stderr, kind: 'handled-cancellation' }); });
+      try { await waitForFile(cancelPid); child.kill('SIGTERM'); } catch (error) { child.kill('SIGKILL'); reject(error); }
+    });
+    report.commands.push(cancelled); assert.equal(cancelled.code, 2); assert.match(cancelled.stdout, /owned process-group cleanup/); await gone(Number(await readFile(cancelPid, 'utf8')));
+    const markerBeforeRetire = await readFile(marker, 'utf8'); await adopt({ ...passCheck, parents: [passAdoption.hash], lifecycle: { status: 'retired' } });
+    await rm(join(root, 'fixture-verifiers/pass.mjs')); const retiredCheck = review(await reconcile(passCheck.id)); assert.deepEqual(retiredCheck.proposals, []); assert.equal(await readFile(marker, 'utf8'), markerBeforeRetire); await writeFile(join(root, 'fixture-verifiers/pass.mjs'), fixtureScripts['pass.mjs']);
+    const errorRepo = join(home, 'e002-repository'); await mkdir(errorRepo);
+    for (const path of ['registry', 'docs', '.agents', 'src', 'scripts', 'fixture-verifiers']) await cp(join(root, path), join(errorRepo, path), { recursive: true });
+    await writeFile(join(errorRepo, '.gitignore'), '.local/\n');
+    const exactWork = await readFile(join(errorRepo, 'src/work.mjs'), 'utf8'); const ownExpression = "Object.hasOwn(bindings.projects, target.projectId) ? bindings.projects[target.projectId] : null"; assert.equal(exactWork.split(ownExpression).length, 2);
+    await writeFile(join(errorRepo, 'src/work.mjs'), exactWork.replace(ownExpression, 'bindings.projects[target.projectId] ?? null'));
+    const errorGit = args => execFileSync('git', ['-C', errorRepo, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    errorGit(['init', '-q']); errorGit(['config', 'user.email', 'fixture@example.invalid']); errorGit(['config', 'user.name', 'Synthetic fixture']); errorGit(['remote', 'add', 'origin', 'https://example.invalid/e002']); errorGit(['add', '.']); errorGit(['commit', '-qm', 'Synthetic inherited-binding failure']);
+    const badSubject = { ...target, projectId: 'e002', nativeProjectId: 'native-e002', ...await inspectRepository(errorRepo) };
+    const e002Bindings = { ...bindings, projects: { ...bindings.projects, e002: { label: 'Synthetic E002 analogue', path: badSubject.path, hostId: badSubject.hostId, nativeProjectId: badSubject.nativeProjectId, repository: badSubject.repository } } };
+    await writeFile(join(home, 'bindings.json'), JSON.stringify(e002Bindings));
+    const errorDefinition = { ...definition, id: 'e002-analogue', context: 'Synthetic actual CLI analogue for https://github.com/jerome-queck/emmy/issues/1. No root private evidence is consumed.', target: badSubject, criteria: [{ id: 'command', description: 'Actual CLI inherited-key negative controls at the exact corrected revision.', evidence: 'local-check', independentReview: true, check: { script: 'fixture-verifiers/own-binding-replay.mjs', sha256: digest(await readFile(join(errorRepo, 'fixture-verifiers/own-binding-replay.mjs'))), argv: [], expectedExit: 0, timeoutMs: 5000, authorityRef: { reference: 'Synthetic local replay grant', action: 'run-local-check', resource: definition.resource, destination: definition.destination } } }] };
+    const badAdoption = await adopt(errorDefinition); const errorFailure = review(await reconcile(errorDefinition.id, 3, [observed(errorDefinition.id, { subject: badSubject, category: 'tasks', tasks: [] })]));
+    const actualFailure = await checkBytes(errorFailure); assert.equal(actualFailure.check.outcome, 'fail'); assert.match(actualFailure.check.stderr, /AssertionError/); const errorFinding = errorFailure.findings.find(item => item.code === 'criterion-failed'); assert.ok(errorFinding);
+    const wrongRepair = { type: 'repair', responsibilityId: errorDefinition.id, findingId: errorFinding.id, failureRefs: errorFinding.failureRefs, expectedSubject: badSubject, recheckRefs: [actualFailure.ref], observedAt: now(), author: 'Synthetic author', changeRef: 'Incorrect repair retained the inherited lookup.' };
+    assert.equal(review(await reconcile(errorDefinition.id, 3, [wrongRepair])).findings.find(item => item.id === errorFinding.id).status, 'open');
+    await writeFile(join(errorRepo, 'src/work.mjs'), exactWork); errorGit(['add', 'src/work.mjs']); errorGit(['commit', '-qm', 'Correct own-key binding lookup']); const correctedSubject = { ...badSubject, ...await inspectRepository(errorRepo) };
+    assert.notEqual(correctedSubject.revision, badSubject.revision); await adopt({ ...errorDefinition, parents: [badAdoption.hash], target: correctedSubject });
+    const actualReplay = review(await reconcile(errorDefinition.id, 3, [observed(errorDefinition.id, { subject: correctedSubject, category: 'tasks', tasks: [] })])); const actualReplayCheck = await checkBytes(actualReplay); assert.equal(actualReplayCheck.check.outcome, 'pass'); assert.match(actualReplayCheck.check.stdout, /Actual CLI rejected inherited/);
+    const blockedIndependent = review(await reconcile(errorDefinition.id, 3, [{ ...wrongRepair, expectedSubject: correctedSubject, recheckRefs: [actualReplayCheck.ref], observedAt: now(), changeRef: `git:${correctedSubject.revision}` }, observed(errorDefinition.id, { subject: correctedSubject, category: 'independent-review', observer: 'Self-certified different reviewer', claims: [{ criterionId: 'command', kind: 'local-check', revision: correctedSubject.revision, outcome: 'pass', specHash: badAdoption.criteria[0].specHash, evidenceRef: 'Imported claim of independent review.' }] })]));
+    assert.equal(blockedIndependent.findings.find(item => item.id === errorFinding.id).status, 'open'); assert.ok(blockedIndependent.repairs.some(item => item.reasons.includes('external-review-needed')));
+    report.localCheck = { sourceRevision: target.revision, execution: passingCommand.check, timeoutReason: 'timeout', outputReason: boundedOutput.reason, cancelledChildGone: true, e002: { failedRevision: badSubject.revision, correctedRevision: correctedSubject.revision, failureRef: actualFailure.ref, passingRef: actualReplayCheck.ref, independence: 'external-review-needed' } };
+    await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
+    scenario('local-check', 'Pinned Node script/argv/authority and actual output/exit; timeout/output/cancellation clean owned child groups; retired removed scripts do not run; synthetic E002 CLI failure survives repair and corrected-revision replay still cannot authenticate independence.');
+    const trigger = { nativeId: 'synthetic-schedule', promptDigest: digest('Synthetic schedule prompt'), timezone: 'UTC', destination: definition.destination, nextWindow: { start: new Date(Date.now() - 3000).toISOString(), due: new Date(Date.now() - 2000).toISOString(), graceMs: 0 } };
+    const triggerDefinition = { ...definition, id: 'trigger-case', criteria: [], trigger, feature: { ...definition.feature, reviewAt: new Date(Date.now() - 86400000).toISOString() } }; const triggerAdoption = await adopt(triggerDefinition);
+    const schedule = { nativeId: trigger.nativeId, status: 'enabled', promptDigest: trigger.promptDigest, timezone: trigger.timezone, destination: trigger.destination };
+    const partialSchedule = observed(triggerDefinition.id, { category: 'schedule', observer: 'Synthetic partial schedule', coverage: { complete: false, gaps: ['Missing native run page'] }, schedule, runs: [] });
+    const utility = { type: 'feature-review', responsibilityId: triggerDefinition.id, featureId: definition.feature.id, observedAt: now(), reviewAt: '2099-01-01T00:00:00Z', recommendation: 'retain', usefulOutcomes: [], falseAlarms: [], repairEffortMinutes: 0, motivatingFailures: ['Observe a known missing window.'], reason: 'Quiet monitoring remains useful. Zero actions alone does not justify retirement.' };
+    const partialWindow = review(await reconcile(triggerDefinition.id, 3, [tasks(triggerDefinition.id), partialSchedule, utility])); assert.ok(partialWindow.findings.some(item => item.code === 'schedule-observation-needed')); assert.equal(partialWindow.findings.some(item => item.code === 'missed-run'), false);
+    const partialHash = (await readStore(home)).records.find(record => record.observer === partialSchedule.observer).hash;
+    const completeSchedule = observed(triggerDefinition.id, { category: 'schedule', observer: 'Synthetic complete schedule', schedule, runs: [], supersedes: { hash: partialHash, reason: 'Complete native run coverage replaces the partial page.' } });
+    const missedWindow = review(await reconcile(triggerDefinition.id, 3, [completeSchedule])); const missedFinding = missedWindow.findings.find(item => item.code === 'missed-run'); assert.ok(missedFinding); assert.equal(missedWindow.proposals[0].type, 'rediscover');
+    assert.equal(review(await reconcile(triggerDefinition.id, 3)).findings.filter(item => item.id === missedFinding.id).length, 1);
+    const longGap = review(await reconcile(triggerDefinition.id, 3, null, home, new Date(Date.now() + 48 * 3600000).toISOString())); assert.ok(longGap.findings.some(item => item.id === missedFinding.id)); assert.ok(longGap.findings.some(item => item.code === 'schedule-observation-needed')); assert.match(longGap.trigger.laterWindows, /Fresh native discovery/);
+    const completeHash = (await readStore(home)).records.find(record => record.observer === completeSchedule.observer).hash;
+    const noOp = observed(triggerDefinition.id, { category: 'schedule', observer: 'Synthetic no-op run', schedule, runs: [{ nativeId: trigger.nativeId, windowStart: trigger.nextWindow.start, outcomeRefs: [], deliveryRefs: [] }], supersedes: { hash: completeHash, reason: 'Native run is visible but its promised outcome and delivery are absent.' } });
+    const noOpWindow = review(await reconcile(triggerDefinition.id, 3, [noOp])); assert.ok(noOpWindow.findings.some(item => item.code === 'run-no-evidence')); assert.ok(noOpWindow.findings.some(item => item.code === 'delivery-unverified'));
+    const pendingDefinition = { ...definition, id: 'pending-effect', criteria: [] }; const pendingAdoption = await adopt(pendingDefinition); const initialPending = review(await reconcile(pendingDefinition.id, 0, [tasks(pendingDefinition.id)])); const pendingKey = initialPending.proposals[0].effectKey;
+    const pendingObservation = observed(pendingDefinition.id, { category: 'effect', observer: 'Synthetic uncertain effect', effects: [{ key: pendingKey, status: 'uncertain' }] });
+    const pending = review(await reconcile(pendingDefinition.id, 0, [pendingObservation])); assert.equal(pending.proposals[0].type, 'rediscover');
+    const pendingHash = (await readStore(home)).records.find(record => record.observer === pendingObservation.observer).hash;
+    const changedRevision = await adopt({ ...pendingDefinition, parents: [pendingAdoption.hash], target: { ...target, revision: 'e'.repeat(40) } }); const pendingRevision = review(await reconcile(pendingDefinition.id, 3)); assert.equal(pendingRevision.proposals[0].effectKey, pendingKey); assert.equal(pendingRevision.proposals[0].type, 'rediscover');
+    await adopt({ ...pendingDefinition, parents: [changedRevision.hash] });
+    const absentPartial = observed(pendingDefinition.id, { category: 'effect', observer: 'Synthetic partial absence', effects: [{ key: pendingKey, status: 'absent' }], coverage: { complete: false, gaps: ['Unobserved native scope'] }, supersedes: { hash: pendingHash, reason: 'Partial page is insufficient to establish absence.' } });
+    const noAbsence = review(await reconcile(pendingDefinition.id, 0, [absentPartial])); assert.equal(noAbsence.proposals[0].type, 'rediscover');
+    const partialAbsenceHash = (await readStore(home)).records.find(record => record.observer === absentPartial.observer).hash;
+    const rediscovered = review(await reconcile(pendingDefinition.id, 0, [observed(pendingDefinition.id, { category: 'effect', observer: 'Synthetic complete absence', effects: [{ key: pendingKey, status: 'absent' }], supersedes: { hash: partialAbsenceHash, reason: 'Fresh complete native discovery replaces the partial chain.' } })])); assert.equal(rediscovered.proposals[0].type, 'work');
+    const replacementDefinition = { ...definition, id: 'replacement-method', criteria: [] }; await adopt(replacementDefinition); await reconcile(replacementDefinition.id, 0, [tasks(replacementDefinition.id)]);
+    const retiredAdoption = await adopt({ ...triggerDefinition, parents: [triggerAdoption.hash], lifecycle: { status: 'retired', replacementId: replacementDefinition.id, transferFindingIds: [missedFinding.id] } });
+    const retirementPending = review(await reconcile(triggerDefinition.id, 3)); assert.deepEqual(retirementPending.proposals, []); assert.equal(retirementPending.retirement.status, 'pending-native-disablement'); assert.ok(retirementPending.findings.some(item => item.id === missedFinding.id && item.status === 'open' && item.transferredTo === replacementDefinition.id));
+    const noOpHash = (await readStore(home)).records.find(record => record.observer === noOp.observer).hash;
+    const conflictingDisablement = observed(triggerDefinition.id, { category: 'schedule', observer: 'Synthetic conflicting disablement', schedule: { nativeId: trigger.nativeId, status: 'disabled' }, runs: [] });
+    const conflictedRetirement = review(await reconcile(triggerDefinition.id, 3, [conflictingDisablement])); assert.equal(conflictedRetirement.retirement.status, 'pending-native-disablement'); assert.ok(conflictedRetirement.retirement.pendingTriggers.includes(trigger.nativeId));
+    const wrongScheduleSupersession = observed(triggerDefinition.id, { category: 'schedule', observer: 'Synthetic wrong schedule', schedule: { nativeId: 'foreign-schedule', status: 'disabled' }, runs: [], supersedes: { hash: noOpHash, reason: 'Invalid cross-schedule replacement.' } });
+    await reconcile(triggerDefinition.id, 2, [wrongScheduleSupersession]);
+    const disabled = observed(triggerDefinition.id, { category: 'schedule', observer: 'Synthetic disablement readback', schedule: { nativeId: trigger.nativeId, status: 'disabled' }, runs: [], supersedes: { hash: noOpHash, reason: 'Attributed native readback reports the linked trigger disabled.' } });
+    const stopped = review(await reconcile(triggerDefinition.id, 3, [disabled])); assert.equal(stopped.retirement.status, 'disablement-readback-reported'); assert.equal(stopped.retirement.assurance, 'reported');
+    await adopt({ ...triggerDefinition, parents: [retiredAdoption.hash], lifecycle: { status: 'merged', replacementId: replacementDefinition.id, transferFindingIds: [missedFinding.id] } });
+    const merged = review(await reconcile(triggerDefinition.id, 3)); assert.deepEqual(merged.proposals, []); assert.equal(merged.retirement.replacementId, replacementDefinition.id);
+    const inheritedObligation = review(await reconcile(replacementDefinition.id, 3)); assert.ok(inheritedObligation.incomingTransfers.some(item => item.findingId === missedFinding.id && item.status === 'open')); assert.equal(inheritedObligation.proposals[0].type, 'observe-or-decide');
+    scenario('trigger-evolution', 'Known missed window, no-op and delivery gaps stay distinct; partial absence cannot clear uncertainty; revision edits retain effect keys; quiet-monitor utility, retirement/disablement and merged incoming obligations remain visible.');
+    const archive = join(root, 'bin', 'archive-good'); const backup = await run(['backup', '--to', archive]); assert.ok(backup.manifest.files.length > 0); assert.equal((await run(['backup', '--to', archive])).replay, true);
+    const restoredHome = join(root, 'bin', 'restored-home'); const restored = await run(['restore', '--from', archive, '--into', restoredHome]); assert.equal(restored.suspended, true); await run(['restore', '--from', archive, '--into', restoredHome], 2); await run(['doctor'], 3, restoredHome);
+    const suspended = review(await reconcile(definition.id, 3, null, restoredHome)); assert.equal(suspended.restore.suspended, true); assert.deepEqual(suspended.proposals, []); assert.equal(suspended.findings.find(item => item.id === finding.id).status, 'resolved');
+    const freshEpoch = restored.epoch;
+    const refresh = ['authority', 'tasks', 'schedule'].map(category => observed(definition.id, { category, homeEpoch: freshEpoch, observedAt: now(), ...(category === 'authority' ? { authority: definition.authorityRef } : category === 'tasks' ? { tasks: [] } : { schedules: [] }) }));
+    const refreshed = review(await reconcile(definition.id, 0, refresh, restoredHome)); assert.equal(refreshed.restore.suspended, false); assert.equal(refreshed.proposals[0].effectKey, first.proposals[0].effectKey);
+    const restoredMarkerBefore = await readFile(marker, 'utf8'); const suspendedChecks = review(await reconcile(failCheck.id, 3, null, restoredHome)); assert.equal((await (async () => { const obs = suspendedChecks.observations.filter(item => item.category === 'criteria' && item.assurance === 'observed-local').sort((a, b) => a.ageMs - b.ageMs)[0]; const rec = await readRecord(restoredHome, obs.hash); return JSON.parse(await readFile(join(restoredHome, 'records', obs.hash, rec.claims[0].evidenceRef), 'utf8')); })()).reason, 'restore-suspended'); assert.equal(await readFile(marker, 'utf8'), restoredMarkerBefore);
+    const corruptArchive = join(root, 'bin', 'archive-corrupt'); await cp(archive, corruptArchive, { recursive: true }); const archiveRecord = backup.manifest.files.find(file => file.path.startsWith('records/') && !file.path.endsWith('/record.json')); assert.ok(archiveRecord); await writeFile(join(corruptArchive, archiveRecord.path), 'Corrupted archived evidence');
+    await run(['restore', '--from', corruptArchive, '--into', join(root, 'bin', 'restore-corrupt')], 2);
+    const traversalArchive = join(root, 'bin', 'archive-traversal'); await cp(archive, traversalArchive, { recursive: true }); const manifestBody = JSON.parse(await readFile(join(traversalArchive, 'manifest.json'), 'utf8')); delete manifestBody.hash; manifestBody.files[0].path = '../escape'; manifestBody.files.sort((left, right) => left.path.localeCompare(right.path)); await writeFile(join(traversalArchive, 'manifest.json'), JSON.stringify({ ...manifestBody, hash: digest(manifestBody) })); const traversal = await run(['restore', '--from', traversalArchive, '--into', join(root, 'bin', 'restore-traversal')], 2); assert.match(traversal.error, /Unsafe archive path/);
+    const missingArchive = join(root, 'bin', 'archive-missing'); await cp(archive, missingArchive, { recursive: true }); await rm(join(missingArchive, archiveRecord.path)); await run(['restore', '--from', missingArchive, '--into', join(root, 'bin', 'restore-missing')], 2);
+    const symlinkArchive = join(root, 'bin', 'archive-symlink'); await cp(archive, symlinkArchive, { recursive: true }); await rm(join(symlinkArchive, archiveRecord.path)); await (await import('node:fs/promises')).symlink(join(archive, archiveRecord.path), join(symlinkArchive, archiveRecord.path)); await run(['restore', '--from', symlinkArchive, '--into', join(root, 'bin', 'restore-symlink')], 2);
+    report.archive = { manifestHash: backup.manifest.hash, files: backup.manifest.files.length, restoredEpoch: restored.epoch, freshEffectKey: refreshed.proposals[0].effectKey, hardwareLossRecovery: 'unverified' };
+    scenario('archive-recovery', 'Pinned archive bytes/references and bindings restore only into a new suspended home; fresh epoch observations recover proposals and preserve keys/failures; corrupt/missing/traversal/symlink archives and existing destinations refuse.');
+    report.interruptions = [];
+    const interruptAt = async (args, boundary) => {
+      const checkpoint = join(root, 'bin', `checkpoint-${randomUUID()}.json`);
+      const captured = { args, boundary, stdout: '', stderr: '', kind: 'publication-boundary-cancellation' };
+      const child = spawn(process.execPath, [join(sourceRoot, 'scripts/agent.mjs'), ...args, '--root', root, '--home', home], { env: { ...process.env, EMMY_VERIFY_BOUNDARY: boundary, EMMY_VERIFY_BOUNDARY_FILE: checkpoint } }); children.add(child);
+      child.stdout.on('data', bytes => { captured.stdout += bytes; }); child.stderr.on('data', bytes => { captured.stderr += bytes; });
+      const completion = new Promise((resolve, reject) => { child.on('error', reject); child.on('close', (code, signal) => { children.delete(child); resolve({ ...captured, code, signal }); }); });
+      try { const marker = JSON.parse(await waitForFile(checkpoint)); assert.equal(marker.boundary, boundary); child.kill('SIGKILL'); const output = await completion; report.commands.push(output); assert.equal(output.signal, 'SIGKILL'); report.interruptions.push({ boundary, marker, signal: output.signal }); }
+      catch (error) { child.kill('SIGKILL'); await completion; throw error; }
+    };
+    for (const boundary of ['record:created', 'record:files-written', 'record:published']) {
+      const args = ['probe', '--nonce', `synthetic-${boundary}`]; await interruptAt(args, boundary); const replay = await run(args); assert.equal((await readRecord(home, replay.hash)).hash, replay.hash);
+    }
+    const predecessor = observed(forkDefinition.id, { category: 'effect', observer: 'Forward dependency predecessor', effects: [] });
+    const predecessorHash = recordPayload(parseObservation(predecessor)).hash;
+    const successor = observed(forkDefinition.id, { category: 'effect', observer: 'Forward dependency successor', observedAt: new Date(Date.parse(predecessor.observedAt) + 1).toISOString(), effects: [], supersedes: { hash: predecessorHash, reason: 'Successor occurs first in the input bundle but depends on the predecessor.' } });
+    const forwardBundle = await fixture('forward-dependent-import.json', { schemaVersion: 1, records: [successor, predecessor] }); const forwardArgs = ['reconcile', '--id', forkDefinition.id, '--import', forwardBundle, '--as-of', now()];
+    await interruptAt(forwardArgs, 'import:record:1'); const prefix = await readStore(home); assert.ok(prefix.records.some(record => record.hash === predecessorHash)); assert.equal(prefix.records.some(record => record.observer === successor.observer), false, 'Dependency is published before the successor');
+    await run(forwardArgs); const completeImport = await readStore(home); assert.equal(completeImport.records.filter(record => [predecessor.observer, successor.observer].includes(record.observer)).length, 2); await run(forwardArgs); assert.equal((await readStore(home)).records.filter(record => [predecessor.observer, successor.observer].includes(record.observer)).length, 2);
+    for (const boundary of ['archive:created', 'archive:files-written', 'archive:published']) {
+      const destination = join(root, 'bin', `archive-interrupt-${boundary.replaceAll(':', '-')}`); const args = ['backup', '--to', destination]; await interruptAt(args, boundary); const recoveredBackup = await run(args); assert.ok(recoveredBackup.manifest.files.length > 0);
+    }
+    for (const boundary of ['restore:created', 'restore:files-written', 'restore:published']) {
+      const destination = join(root, 'bin', `restore-interrupt-${boundary.replaceAll(':', '-')}`); const args = ['restore', '--from', archive, '--into', destination]; await interruptAt(args, boundary); const recoveredRestore = await run(args, boundary === 'restore:published' ? 2 : 0); if (boundary !== 'restore:published') assert.equal(recoveredRestore.suspended, true); else assert.match(recoveredRestore.error, /already exists/); await readStore(destination);
+    }
+    assert.equal(report.interruptions.length, 10); scenario('publication-interruption', 'Actual SIGSTOP checkpoints followed by SIGKILL at three record, three archive, three restore boundaries and forward-dependent import prefix; replay converges or explicitly refuses existing restored destination. No all-instruction crash-durability claim.');
+    const catalogBefore = await readFile(join(root, 'registry/catalog.json')); const formalPath = join(root, 'verification/coverage.json'); await mkdir(dirname(formalPath), { recursive: true }); await writeFile(formalPath, '{"sourceCommit":"do-not-advance"}\n'); const formalBefore = await readFile(formalPath);
+    await writeFile(join(root, 'docs/cli.md'), 'Stale generated reference'); assert.equal((await run(['maintain', '--check'], 3)).status, 'drift'); await run(['maintain', '--write']); await run(['maintain', '--check']); assert.deepEqual((await run(['maintain', '--write'])).changed, []);
+    const publicBefore = await readFile(join(root, 'docs/catalog.md')); await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, privateSentinel: 'synthetic-private-never-public' })); await run(['maintain', '--write']); assert.deepEqual(await readFile(join(root, 'docs/catalog.md')), publicBefore); assert.equal((await readFile(join(root, 'docs/catalog.md'), 'utf8')).includes('synthetic-private-never-public'), false); assert.deepEqual(await readFile(formalPath), formalBefore); assert.deepEqual(await readFile(join(root, 'registry/catalog.json')), catalogBefore);
+    scenario('derived-boundaries', 'Generated drift fails then regenerates idempotently; private state never enters public references; catalog review dates and formal pins stay unchanged.');
+
+
+
+  }
   assert.equal((await readdir(home)).includes('executor-invoked'), false);
   await cp(join(home, 'records'), join(evidenceDir, 'records'), { recursive: true });
   if (!report.focus) assert.deepEqual(report.scenarios.map(item => item.name).sort(), verification.features.flatMap(feature => feature.scenarios).sort(), 'Every mapped CLI scenario must execute');

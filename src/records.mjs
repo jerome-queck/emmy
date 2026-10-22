@@ -90,8 +90,9 @@ export function parseDefinition(input) {
   object(input, 'definition');
   id(input.id, 'responsibility ID'); hashes(input.parents, 'parents');
   for (const name of ['goal', 'context', 'action', 'resource', 'destination']) text(input[name], name);
-  subject(input.target); authority(input.authorityRef);
-  array(input.criteria, 'criteria'); requireValue(input.criteria.length > 0, 'At least one criterion is required'); input.criteria.forEach(criterion);
+  const target = { ...input.target, executor: input.target?.executor ?? 'local-codex' };
+  subject(target); authority(input.authorityRef);
+  array(input.criteria, 'criteria'); input.criteria.forEach(criterion);
   requireValue(new Set(input.criteria.map(item => item.id)).size === input.criteria.length, 'Duplicate criterion ID');
   object(input.freshness, 'freshness');
   requireValue(Number.isInteger(input.freshness.maxAgeMs) && input.freshness.maxAgeMs >= 0 && input.freshness.maxAgeMs <= 86400000, 'freshness.maxAgeMs must tighten the inclusive 24 hour maximum');
@@ -110,7 +111,7 @@ export function parseDefinition(input) {
     requireValue(Date.parse(trigger.nextWindow.due) >= Date.parse(trigger.nextWindow.start), 'Window due precedes start');
     requireValue(Number.isInteger(trigger.nextWindow.graceMs) && trigger.nextWindow.graceMs >= 0, 'window.graceMs must be nonnegative');
   }
-  return { ...input, type: 'definition', schemaVersion: 1 };
+  return { ...input, target, type: 'definition', schemaVersion: 1 };
 }
 
 export function parseObservation(input) {
@@ -123,13 +124,18 @@ export function parseObservation(input) {
   array(input.claims, 'claims');
   for (const claim of input.claims) {
     id(claim.criterionId, 'claim criterion'); choice(claim.kind, ['local-digest', 'local-check', 'reported-check'], 'claim kind'); choice(claim.outcome, ['pass', 'fail', 'unknown'], 'claim outcome');
-    text(claim.evidenceRef, 'claim.evidenceRef');
+    text(claim.evidenceRef, 'claim.evidenceRef'); text(claim.revision, 'claim.revision'); hash(claim.specHash, 'claim.specHash');
   }
   array(input.evidenceRefs, 'evidenceRefs');
   for (const ref of input.evidenceRefs) { requireValue(isAbsolute(ref.path ?? ''), 'evidence path must be absolute'); hash(ref.sha256, 'evidence sha256'); }
   if (input.supersedes !== undefined) { hash(input.supersedes.hash, 'supersedes.hash'); text(input.supersedes.reason, 'supersedes.reason'); }
   if (input.homeEpoch !== undefined) hash(input.homeEpoch, 'homeEpoch');
   if (input.authority !== undefined) authority(input.authority, 'observation.authority');
+  if (input.category === 'tasks') {
+    array(input.tasks, 'tasks');
+    for (const task of input.tasks) { text(task.nativeId, 'task.nativeId'); choice(task.status, ['pending', 'running', 'unknown', 'completed'], 'task status'); if (task.effectKey !== undefined) hash(task.effectKey, 'task.effectKey'); }
+  }
+  if (input.category === 'schedule' && input.schedule === undefined) array(input.schedules, 'schedules');
   if (input.effects !== undefined) {
     array(input.effects, 'effects');
     for (const effect of input.effects) { hash(effect.key, 'effect.key'); choice(effect.status, ['pending', 'uncertain', 'completed', 'absent'], 'effect status'); }
@@ -255,10 +261,20 @@ export function references(record) {
 export function validateReferences(records) {
   const known = new Map(records.map(record => [record.hash, record]));
   for (const record of records) for (const ref of references(record)) requireValue(known.has(ref), `Missing referenced record ${ref}`);
+  const responsibilityIds = new Set(records.filter(record => record.type === 'definition').map(record => record.id));
+  for (const record of records.filter(record => record.responsibilityId)) requireValue(responsibilityIds.has(record.responsibilityId), 'Record names an undefined responsibility');
+  for (const repair of records.filter(record => record.type === 'repair')) {
+    requireValue(records.some(record => record.type === 'review' && record.responsibilityId === repair.responsibilityId && record.findings.some(finding => finding.id === repair.findingId)), 'Repair names an unknown retained finding');
+    for (const ref of [...repair.failureRefs, ...repair.recheckRefs]) requireValue(known.get(ref).type === 'observation' && known.get(ref).responsibilityId === repair.responsibilityId, 'Repair reference is not an observation for this responsibility');
+  }
   for (const record of records.filter(item => item.type === 'definition')) for (const ref of record.parents) requireValue(known.get(ref).type === 'definition' && known.get(ref).id === record.id, 'Definition parent belongs to another responsibility');
   for (const record of records.filter(item => item.type === 'observation' && item.supersedes)) {
     const prior = known.get(record.supersedes.hash);
     requireValue(prior.type === 'observation' && prior.responsibilityId === record.responsibilityId && prior.category === record.category, 'Supersession belongs to another observation scope');
+    const scope = value => Object.fromEntries(['projectId', 'repository', 'executor', 'hostId', 'nativeProjectId', 'nativeId', 'path'].map(field => [field, value[field] ?? null]));
+    requireValue(canonical(scope(prior.subject)) === canonical(scope(record.subject)), 'Supersession belongs to another target scope');
+    if (record.category === 'schedule') requireValue((record.schedule?.nativeId ?? null) === (prior.schedule?.nativeId ?? null), 'Supersession belongs to another native schedule');
+
     requireValue(Date.parse(record.observedAt) >= Date.parse(prior.observedAt), 'Supersession predates its predecessor');
   }
 }
@@ -275,8 +291,11 @@ export async function retainImport(home, input) {
   }
   const { records } = await readStore(home);
   validateReferences([...records, ...prepared.map(item => item.record)]);
+  const publicationOrder = importOrder(records, prepared.map(item => item.record));
+  const byHash = new Map(prepared.map(item => [item.record.hash, item]));
   const published = [];
-  for (const item of prepared) {
+  for (const reference of publicationOrder) {
+    const item = byHash.get(reference);
     published.push(await publishRecord(home, item.payload, item.files));
     await publicationBoundary(`import:record:${published.length}`);
   }
@@ -404,4 +423,23 @@ export async function restoreHome(source, destination) {
     await publicationBoundary('restore:published');
     return { path: destination, epoch: epoch.hash, suspended: true, needed: ['target', 'authority', 'tasks', 'schedule'], limits: ['Fresh observations for this home epoch are required before local-check execution or work proposals.', 'Stable effect keys and historical failures remain retained.'] };
   } finally { await rm(pending, { recursive: true, force: true }); }
+}
+
+export function importOrder(existing, incoming) {
+  const known = new Set(existing.map(record => record.hash));
+  const pending = new Map(incoming.map(record => [record.hash, record]));
+  const result = [];
+  while (pending.size) {
+    const ready = [...pending.values()].filter(record => references(record).every(reference => known.has(reference))).sort((left, right) => left.hash.localeCompare(right.hash));
+    requireValue(ready.length > 0, 'Import reference cycle or missing dependency');
+    for (const record of ready) { result.push(record.hash); known.add(record.hash); pending.delete(record.hash); }
+  }
+  return result;
+}
+
+export function canonicalRepository(value) {
+  const normalized = value.trim().replace(/^git@([^:]+):/, 'https://$1/').replace(/^ssh:\/\/git@/, 'https://').replace(/\.git\/?$/, '').replace(/\/$/, '');
+  const url = new URL(normalized);
+  requireValue(['https:', 'http:'].includes(url.protocol) && !url.username && !url.password && !url.search && !url.hash, 'Repository must be a canonical remote URL without credentials');
+  return `${url.protocol}//${url.hostname.toLowerCase()}${url.port ? `:${url.port}` : ''}${url.hostname.toLowerCase() === 'github.com' ? url.pathname.toLowerCase() : url.pathname}`;
 }

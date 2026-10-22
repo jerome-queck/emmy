@@ -3,8 +3,8 @@ import { hostname } from 'node:os';
 import { readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative } from 'node:path';
 import { promisify } from 'node:util';
-import { canonical, digest, parseDefinition, publishRecord, readBindings, readStore, retainImport, validateReferences, recordPayload } from './records.mjs';
-import { authorityStatus, criterionHash, definitionHeads, effectKey, observationStatus, repairStatus, restoredState, retirementStatus, routeTarget, sameSubject, subjectKey, triggerStatus } from './work.mjs';
+import { canonical, canonicalRepository, digest, parseDefinition, publishRecord, readBindings, readStore, retainImport, validateReferences, recordPayload } from './records.mjs';
+import { authorityStatus, criterionHash, currentObservations, definitionHeads, effectKey, observationStatus, repairStatus, restoredState, retirementStatus, routeTarget, sameSubject, subjectKey, triggerStatus } from './work.mjs';
 
 const exec = promisify(execFile);
 export const ruleVersion = 'responsibility-v1';
@@ -12,7 +12,6 @@ const ordered = values => [...values].sort((left, right) => left.hash.localeComp
 const latestEpoch = records => records.filter(record => record.type === 'epoch').sort((left, right) => left.restoredAt.localeCompare(right.restoredAt) || left.hash.localeCompare(right.hash)).at(-1) ?? null;
 const fail = (condition, message) => { if (!condition) throw new Error(message); };
 const git = async (path, args) => (await exec('git', ['-C', path, ...args], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, timeout: 15000 })).stdout;
-const canonicalRepository = value => value.trim().replace(/^git@([^:]+):/, 'https://$1/').replace(/^ssh:\/\/git@/, 'https://').replace(/\.git\/?$/, '').replace(/\/$/, '').toLowerCase();
 
 export async function inspectRepository(path) {
   const actualPath = await realpath(path);
@@ -93,19 +92,34 @@ export async function inspectLocal(definition, { bindings, catalog, machine, asO
       check = await runLocalCheck(criterion, definition, currentSubject, asOf, suspended);
     }
     files[name] = `${canonical(check)}\n`;
-    claims.push({ criterionId: criterion.id, kind: criterion.evidence, outcome: check.outcome, specHash, evidenceRef: name, reason: check.reason ?? null, verifierId: check.verifierId ?? null });
+    claims.push({ criterionId: criterion.id, revision: currentSubject.revision, kind: criterion.evidence, outcome: check.outcome, specHash, evidenceRef: name, reason: check.reason ?? null, verifierId: check.verifierId ?? null });
   }
   result.push({ payload: { ...common, observedAt: new Date().toISOString(), category: 'criteria', observer: 'local-criterion-inspector', claims }, files });
   return result;
 }
 
-export function reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews = [], epoch = null, bindings, catalog, machine, asOf }) {
+export function reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews = [], relatedDefinitions = [], relatedReviews = [], epoch = null, bindings, catalog, machine, asOf }) {
+  definitions = ordered(definitions); observations = ordered(observations); repairs = ordered(repairs); reviews = ordered(reviews);
+  const active = definition.lifecycle.status === 'active';
   const diagnostics = ordered(observations).map(observation => ({ ...observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs), category: observation.category }));
-  const eligible = observations.filter(observation => diagnostics.find(status => status.hash === observation.hash).eligible);
+  const effectiveObservations = currentObservations(definition, observations, asOf);
+  const eligible = effectiveObservations.filter(observation => diagnostics.find(status => status.hash === observation.hash).eligible);
+  for (const status of diagnostics) status.superseded = !effectiveObservations.some(observation => observation.hash === status.hash);
   const route = routeTarget(definition, { bindings, catalog, machine });
   const authority = authorityStatus(definition, asOf);
   const restore = restoredState(epoch, observations, definition, asOf);
   const heads = definitionHeads(definitions);
+  const incomingTransfers = [];
+  const otherIds = [...new Set(relatedDefinitions.map(item => item.id))].sort();
+  for (const sourceId of otherIds) for (const head of definitionHeads(relatedDefinitions.filter(item => item.id === sourceId))) {
+    if (head.lifecycle.replacementId !== definition.id) continue;
+    const sourceReviews = relatedReviews.filter(review => review.responsibilityId === sourceId).sort((left, right) => right.asOf.localeCompare(left.asOf) || left.hash.localeCompare(right.hash));
+    for (const findingId of head.lifecycle.transferFindingIds ?? []) {
+      const sourceReview = sourceReviews.find(review => review.findings.some(finding => finding.id === findingId));
+      const finding = sourceReview?.findings.find(item => item.id === findingId);
+      if (finding) incomingTransfers.push({ fromResponsibilityId: sourceId, sourceDefinitionHash: head.hash, sourceReviewHash: sourceReview.hash, findingId, status: finding.status, failureRefs: finding.failureRefs });
+    }
+  }
   const prior = new Map();
   for (const review of [...reviews].sort((left, right) => left.asOf.localeCompare(right.asOf) || left.hash.localeCompare(right.hash))) for (const finding of review.findings) if (finding.durable && !prior.has(finding.id)) prior.set(finding.id, finding);
   const findings = new Map(prior);
@@ -117,33 +131,33 @@ export function reconcileState(definition, { definitions, observations, repairs,
     return findings.get(signature);
   };
   if (heads.length !== 1) add('definition-conflict', [], heads.map(head => head.hash), 'Every concurrent head must be named by the resolving definition.');
-  for (const reason of route.reasons) add(reason);
-  if (!authority.eligible) add(authority.reason);
+  if (active) for (const reason of route.reasons) add(reason);
+  if (active && !authority.eligible) add(authority.reason);
   if (restore.suspended) add('restore-suspended', [], [epoch.hash], restore.needed.join(', '));
   const localTargets = observations.filter(observation => observation.category === 'target' && observation.origin === 'observed-local' && Date.parse(observation.observedAt) <= Date.parse(asOf));
   const latestTargetTime = Math.max(...localTargets.map(observation => Date.parse(observation.observedAt)));
   const currentLocalTargets = localTargets.filter(observation => Date.parse(observation.observedAt) === latestTargetTime);
   const targetObservations = definition.target.executor.startsWith('local-') ? currentLocalTargets.filter(observation => observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible) : eligible.filter(observation => observation.category === 'target');
-  if (definition.target.executor.startsWith('local-') && currentLocalTargets.some(observation => !observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible)) add('current-local-target-mismatch');
-  if (!targetObservations.length) {
+  if (active && definition.target.executor.startsWith('local-') && currentLocalTargets.some(observation => !observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible)) add('current-local-target-mismatch');
+  if (active && !targetObservations.length) {
     const refused = diagnostics.filter(status => status.category === 'target');
     const reasons = [...new Set(refused.flatMap(status => status.reasons))];
     for (const code of reasons.length ? reasons : ['target-observation-missing']) add(code);
   }
-  for (const source of definition.freshness.sources) {
+  for (const source of active ? definition.freshness.sources : []) {
     const age = Date.parse(asOf) - Date.parse(source.observedAt);
     if (age < 0 || age > definition.freshness.maxAgeMs) add(age < 0 ? 'source-future' : 'source-stale', [], [], source.reference);
   }
-  if (!eligible.some(observation => observation.category === 'tasks')) add('native-discovery-needed');
+  if (active && !eligible.some(observation => observation.category === 'tasks')) add('native-discovery-needed');
   const trigger = triggerStatus(definition, observations, asOf);
-  for (const issue of trigger.findings) add(issue.code, [], issue.refs, 'Observe the exact native window; no catch-up is dispatched.', ['missed-run', 'run-no-evidence', 'delivery-unverified'].includes(issue.code), definition.target, issue.occurrence);
+  for (const issue of active ? trigger.findings : []) add(issue.code, [], issue.refs, 'Observe the exact native window; no catch-up is dispatched.', ['missed-run', 'run-no-evidence', 'delivery-unverified'].includes(issue.code), definition.target, issue.occurrence);
   const retirement = retirementStatus(definition, definitions, observations, asOf);
   if (retirement.pendingTriggers.length) add('retirement-disablement-needed', [], [], retirement.pendingTriggers.join(', '));
-  if (Date.parse(definition.feature.reviewAt) <= Date.parse(asOf) && !featureReviews.some(review => review.featureId === definition.feature.id && Date.parse(review.observedAt) <= Date.parse(asOf) && Date.parse(review.reviewAt) > Date.parse(asOf))) add('feature-review-due');
+  if (active && Date.parse(definition.feature.reviewAt) <= Date.parse(asOf) && !featureReviews.some(review => review.featureId === definition.feature.id && Date.parse(review.observedAt) <= Date.parse(asOf) && Date.parse(review.reviewAt) > Date.parse(asOf))) add('feature-review-due');
   const criterionResults = [];
-  for (const criterion of definition.criteria) {
-    const matching = eligible.filter(observation => observation.category === 'criteria').flatMap(observation => observation.claims.filter(claim => claim.criterionId === criterion.id && claim.kind === criterion.evidence && claim.specHash === criterionHash(criterion)).map(claim => ({ observation, claim })));
-    const historicalFailures = observations.filter(observation => observation.category === 'criteria' && Date.parse(observation.observedAt) <= Date.parse(asOf) && sameSubject(observation.subject, definition.target)).flatMap(observation => observation.claims.filter(claim => claim.criterionId === criterion.id && claim.kind === criterion.evidence && claim.specHash === criterionHash(criterion) && claim.outcome === 'fail').map(claim => ({ observation, claim })));
+  for (const criterion of definition.lifecycle.status === 'active' ? definition.criteria : []) {
+    const matching = eligible.filter(observation => observation.category === 'criteria').flatMap(observation => observation.claims.filter(claim => claim.criterionId === criterion.id && claim.kind === criterion.evidence && claim.revision === definition.target.revision && claim.specHash === criterionHash(criterion)).map(claim => ({ observation, claim })));
+    const historicalFailures = observations.filter(observation => observation.category === 'criteria' && Date.parse(observation.observedAt) <= Date.parse(asOf) && sameSubject(observation.subject, definition.target)).flatMap(observation => observation.claims.filter(claim => claim.criterionId === criterion.id && claim.kind === criterion.evidence && claim.revision === definition.target.revision && claim.specHash === criterionHash(criterion) && claim.outcome === 'fail').map(claim => ({ observation, claim })));
     for (const { observation, claim } of historicalFailures) add('criterion-failed', [criterion], [observation.hash], claim.reason ?? 'Retained failing criterion.', true, observation.subject);
     const localChecks = observations.filter(observation => observation.category === 'criteria' && observation.origin === 'observed-local' && Date.parse(observation.observedAt) <= Date.parse(asOf) && observation.claims.some(claim => claim.criterionId === criterion.id && claim.specHash === criterionHash(criterion)));
     const latestCheckTime = Math.max(...localChecks.map(observation => Date.parse(observation.observedAt)));
@@ -151,14 +165,14 @@ export function reconcileState(definition, { definitions, observations, repairs,
     const pass = current.some(({ claim }) => claim.outcome === 'pass') && !current.some(({ claim }) => claim.outcome !== 'pass');
     if (!pass) add('criterion-evidence-needed', [criterion]);
     if (criterion.independentReview) add('external-review-needed', [criterion], matching.map(item => item.observation.hash), 'This local register cannot authenticate non-author review.', true);
-    criterionResults.push({ criterionId: criterion.id, supported: pass && !criterion.independentReview, assurance: pass ? criterion.evidence === 'reported-check' ? 'reported' : 'observed-local' : 'unverified' });
+    criterionResults.push({ criterionId: criterion.id, specHash: criterionHash(criterion), supported: pass && !criterion.independentReview, assurance: pass ? criterion.evidence === 'reported-check' ? 'reported' : 'observed-local' : 'unverified' });
   }
   const repairResults = [];
   const retainedFindings = [...findings.values()].map(finding => {
     const attempts = repairs.filter(repair => repair.findingId === finding.id).map(repair => repairStatus(repair, finding, observations, definition, asOf));
     repairResults.push(...attempts);
     const closed = finding.durable && finding.code !== 'external-review-needed' && attempts.some(attempt => attempt.valid);
-    return { ...finding, status: closed ? 'resolved' : 'open', repairHashes: attempts.map(attempt => attempt.repairHash).sort(), failedRepairs: attempts.filter(attempt => attempt.outcome === 'failed').length };
+    return { ...finding, transferredTo: (definition.lifecycle.transferFindingIds ?? []).includes(finding.id) ? definition.lifecycle.replacementId : null, status: closed ? 'resolved' : 'open', repairHashes: attempts.map(attempt => attempt.repairHash).sort(), failedRepairs: attempts.filter(attempt => attempt.outcome === 'failed').length };
   });
   const corrections = [];
   for (const finding of retainedFindings.filter(item => item.durable)) {
@@ -172,27 +186,35 @@ export function reconcileState(definition, { definitions, observations, repairs,
   const open = retainedFindings.filter(finding => finding.status === 'open');
   for (const result of criterionResults) if (open.some(finding => finding.durable && finding.criterionIds.includes(result.criterionId))) result.supported = false;
   const key = effectKey(definition);
-  const effectObservations = observations.filter(observation => observation.category === 'effect' && Date.parse(observation.observedAt) <= Date.parse(asOf) && digest({ ...subjectKey(observation.subject), revision: null, dirtyDigest: null }) === digest({ ...subjectKey(definition.target), revision: null, dirtyDigest: null }));
-  const replaced = new Set(effectObservations.filter(observation => observation.supersedes && observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible).map(observation => observation.supersedes.hash));
-  const effects = effectObservations.filter(observation => !replaced.has(observation.hash)).flatMap(observation => observation.effects ?? []).filter(effect => effect.key === key);
+  const effectObservations = observations.filter(observation => ['effect', 'tasks'].includes(observation.category) && Date.parse(observation.observedAt) <= Date.parse(asOf) && digest({ ...subjectKey(observation.subject), revision: null, dirtyDigest: null }) === digest({ ...subjectKey(definition.target), revision: null, dirtyDigest: null }));
+  const replaced = new Set();
+  const effectByHash = new Map(effectObservations.map(observation => [observation.hash, observation]));
+  for (const observation of effectObservations.filter(observation => observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible)) {
+    let reference = observation.supersedes?.hash;
+    while (reference && !replaced.has(reference)) { replaced.add(reference); reference = effectByHash.get(reference)?.supersedes?.hash; }
+  }
+  const effects = effectObservations.filter(observation => !replaced.has(observation.hash)).flatMap(observation => [...(observation.effects ?? []), ...(observation.tasks ?? []).map(task => ({ key: task.effectKey ?? key, status: ['pending', 'running'].includes(task.status) ? 'pending' : task.status === 'unknown' ? 'uncertain' : 'completed' }))]).filter(effect => effect.key === key);
   const proposals = [];
   if (definition.lifecycle.status === 'active' && heads.length === 1 && !restore.suspended) {
     if (effects.some(effect => ['pending', 'uncertain'].includes(effect.status))) proposals.push({ type: 'rediscover', effectKey: key, reason: 'Native effect is pending or uncertain. Read its actual state before another execution.', execution: 'proposal-only' });
     else if (!effects.some(effect => effect.status === 'completed')) {
       const repeated = open.find(finding => finding.failedRepairs >= 2);
-      const type = trigger.findings.length ? 'rediscover' : repeated ? 'diagnose' : open.length ? 'observe-or-decide' : 'work';
+      const type = trigger.findings.length ? 'rediscover' : repeated ? 'diagnose' : open.length || incomingTransfers.some(item => item.status === 'open') ? 'observe-or-decide' : 'work';
       if (authority.eligible || type === 'observe-or-decide') proposals.push({ type, effectKey: key, definitionHash: definition.hash, target: subjectKey(definition.target), reason: repeated ? repeated.id : open.map(finding => finding.code).join(', '), execution: 'proposal-only' });
     }
   }
-  return { schemaVersion: 1, type: 'review', responsibilityId: definition.id, definitionHash: definition.hash, ruleVersion, asOf, goal: definition.goal, context: definition.context, target: definition.target, route, authority, restore, heads: heads.map(head => head.hash), observations: diagnostics, criterionResults, findings: retainedFindings.sort((left, right) => left.id.localeCompare(right.id)), repairs: repairResults.sort((left, right) => left.repairHash.localeCompare(right.repairHash)), corrections, proposals, featureReviews: ordered(featureReviews).map(review => ({ ...review, assurance: 'reported' })), trigger, retirement, lifecycle: definition.lifecycle, reviewAt: definition.reviewAt, limits: ['Proposals are not native execution, permissions, delivery, or authenticated review.', 'Local evidence proves the inspected bytes or bounded command result, not native state.', 'No local process can detect total dormancy without an external wakeup.'] };
+  return { schemaVersion: 1, type: 'review', responsibilityId: definition.id, definitionHash: definition.hash, ruleVersion, asOf, goal: definition.goal, context: definition.context, target: definition.target, route, authority, restore, heads: heads.map(head => head.hash), observations: diagnostics, criterionResults, findings: retainedFindings.sort((left, right) => left.id.localeCompare(right.id)), repairs: repairResults.sort((left, right) => left.repairHash.localeCompare(right.repairHash)), corrections, proposals, incomingTransfers: incomingTransfers.sort((left, right) => left.findingId.localeCompare(right.findingId)), featureReviews: ordered(featureReviews).map(review => ({ ...review, assurance: 'reported' })), trigger, retirement, lifecycle: definition.lifecycle, reviewAt: definition.reviewAt, limits: ['Proposals are not native execution, permissions, delivery, or authenticated review.', 'Local evidence proves the inspected bytes or bounded command result, not native state.', 'No local process can detect total dormancy without an external wakeup.'] };
 }
 
 export async function adoptResponsibility(home, input) {
   const definition = parseDefinition(input);
   const { records } = await readStore(home);
+  if (definition.lifecycle.replacementId) fail(definition.lifecycle.replacementId !== definition.id && records.some(record => record.type === 'definition' && record.id === definition.lifecycle.replacementId), 'Replacement responsibility must already exist and differ from this one');
+  for (const findingId of definition.lifecycle.transferFindingIds ?? []) fail(records.some(record => record.type === 'review' && record.responsibilityId === definition.id && record.findings.some(finding => finding.id === findingId)), 'Transferred finding is not retained by this responsibility');
   const prepared = recordPayload(definition);
   validateReferences([...records, prepared]);
-  return publishRecord(home, definition);
+  const published = await publishRecord(home, definition);
+  return { ...published, criteria: definition.criteria.map(criterion => ({ id: criterion.id, evidence: criterion.evidence, specHash: criterionHash(criterion) })) };
 }
 
 export async function reconcile(home, { id, imports, asOf, catalog }) {
@@ -204,7 +226,8 @@ export async function reconcile(home, { id, imports, asOf, catalog }) {
   const results = [];
   for (const responsibilityId of id ? [id] : ids) {
     const definitions = records.filter(record => record.type === 'definition' && record.id === responsibilityId);
-    const heads = definitionHeads(definitions); const definition = heads[0];
+    const heads = definitionHeads(definitions);
+ const definition = heads[0];
     const relevant = records.filter(record => record.responsibilityId === responsibilityId);
     const observations = relevant.filter(record => record.type === 'observation');
     const reviews = relevant.filter(record => record.type === 'review');
@@ -214,19 +237,36 @@ export async function reconcile(home, { id, imports, asOf, catalog }) {
     const criteria = [...new Map([...definition.criteria, ...previousCriteria].map(criterion => [criterionHash(criterion), criterion])).values()];
     const liveStart = new Date(Math.max(Date.parse(asOf), Date.now())).toISOString();
     const suspended = restoredState(epoch, observations, definition, liveStart).suspended;
-    const local = heads.length === 1 ? await inspectLocal(definition, { bindings, catalog, machine, asOf: liveStart, epoch, suspended, criteria }) : [];
+    const local = heads.length === 1 ? await inspectLocal(definition, { bindings, catalog, machine, asOf: liveStart, epoch, suspended, criteria: definition.lifecycle.status === 'active' ? criteria : [] }) : [];
     for (const item of local) { const published = await publishRecord(home, item.payload, item.files); if (!observations.some(record => record.hash === published.hash)) observations.push(published.record); if (!records.some(record => record.hash === published.hash)) records.push(published.record); }
+    const relatedDefinitions = records.filter(record => record.type === 'definition' && record.id !== responsibilityId);
+    const relatedReviews = records.filter(record => record.type === 'review' && record.responsibilityId !== responsibilityId);
     const effectiveAsOf = new Date(Math.max(Date.parse(asOf), ...local.map(item => Date.parse(item.payload.observedAt)))).toISOString();
-    const state = { ...reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews, epoch, bindings, catalog, machine, asOf: effectiveAsOf }), requestedAsOf: asOf };
-    const inputHashes = [...new Set([...definitions, ...observations, ...repairs, ...featureReviews, ...(epoch ? [epoch] : [])].map(record => record.hash))].sort();
-    const published = await publishRecord(home, { ...state, inputHashes });
+    const state = { ...reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews, relatedDefinitions, relatedReviews, epoch, bindings, catalog, machine, asOf: effectiveAsOf }), requestedAsOf: asOf };
+    const inputHashes = [...new Set([...definitions, ...observations, ...repairs, ...reviews, ...featureReviews, ...relatedDefinitions, ...relatedReviews, ...(epoch ? [epoch] : [])].map(record => record.hash))].sort();
+    const ruleDigest = digest(await Promise.all(['records.mjs', 'work.mjs', 'responsibilities.mjs'].map(name => readFile(new URL(name, import.meta.url), 'utf8'))));
+    const published = await publishRecord(home, { ...state, inputHashes, inputContext: { bindings, catalog, machine }, ruleDigest });
     results.push(published);
   }
-  return { asOf, responsibilities: results, pending, status: results.some(result => result.record.findings.some(finding => finding.status === 'open')) ? 'actionable' : 'current' };
+  return { asOf, responsibilities: results, pending, status: results.some(result => result.record.findings.some(finding => finding.status === 'open') || result.record.incomingTransfers.some(item => item.status === 'open')) ? 'actionable' : 'current' };
 }
 
 export async function inspectHome(home) {
   const { records, pending } = await readStore(home);
   const epoch = latestEpoch(records);
-  return { records: records.length, pending, responsibilities: new Set(records.filter(record => record.type === 'definition').map(record => record.id)).size, restoredEpoch: epoch?.hash ?? null, restoredNeedsFreshObservations: Boolean(epoch) };
+  const ids = [...new Set(records.filter(record => record.type === 'definition').map(record => record.id))].sort();
+  const suspension = epoch ? ids.map(id => {
+    const heads = definitionHeads(records.filter(record => record.type === 'definition' && record.id === id));
+    return { responsibilityId: id, ...(heads.length === 1 ? restoredState(epoch, records.filter(record => record.type === 'observation' && record.responsibilityId === id), heads[0], new Date().toISOString()) : { suspended: true, needed: ['definition-conflict'] }) };
+  }) : [];
+  return { records: records.length, pending, responsibilities: ids.length, restoredEpoch: epoch?.hash ?? null, restoredNeedsFreshObservations: suspension.some(item => item.suspended), suspension };
+}
+
+export function replayReview(review, records) {
+  const byHash = new Map(records.map(record => [record.hash, record]));
+  const selected = review.inputHashes.map(hash => { fail(byHash.has(hash), `Missing replay input ${hash}`); return byHash.get(hash); });
+  const definition = byHash.get(review.definitionHash);
+  fail(definition?.type === 'definition', 'Replay definition is absent');
+  const context = { ...review.inputContext, asOf: review.asOf, definitions: selected.filter(record => record.type === 'definition' && record.id === review.responsibilityId), relatedDefinitions: selected.filter(record => record.type === 'definition' && record.id !== review.responsibilityId), observations: selected.filter(record => record.type === 'observation'), repairs: selected.filter(record => record.type === 'repair'), reviews: selected.filter(record => record.type === 'review' && record.responsibilityId === review.responsibilityId), relatedReviews: selected.filter(record => record.type === 'review' && record.responsibilityId !== review.responsibilityId), featureReviews: selected.filter(record => record.type === 'feature-review'), epoch: latestEpoch(selected) };
+  return reconcileState(definition, context);
 }
