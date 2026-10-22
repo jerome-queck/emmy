@@ -35,7 +35,7 @@ Boundary parsing and artifact byte reads are separate production boundaries exer
 
 ## Coverage and sync record
 
-The reviewed source commit is `a8b91385f6f8bef0f0e5b39e31b44fd1b8c8ee7a`. `verification/coverage.json` records exact file digests and the function-to-property mapping. It also pins boundary parsers and the verification runner so changes to the assumed inputs or checking method require review. This is the implementation owner's mapping review. Parent independent review remains required before integration.
+The reviewed source commit is `fc7664044b3ab870ee4b8e502914922d5a7a1a09`. `verification/coverage.json` records exact file digests and the function-to-property mapping. It also pins boundary parsers and the verification runner so changes to the assumed inputs or checking method require review. The coordinator reviewed the mapping against the integrated source. Independent release review remains required.
 
 | Covered file | SHA-256 |
 | --- | --- |

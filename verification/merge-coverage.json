@@ -1,7 +1,7 @@
 {
-  "sourceCommit": "493ec6e37fee71061d16659d987e1cf58a6bb11b",
+  "sourceCommit": "fc7664044b3ab870ee4b8e502914922d5a7a1a09",
   "files": {
-    "scripts/github-auto-merge.mjs": "7d24434c615f4da8dc558d43495e1666ffb347ed4b606c30b5563b9011957a5f",
+    "scripts/github-auto-merge.mjs": "ac133794197dbae3983c1aabbac5419a8395edcdee290df7825b2a93d01203db",
     "verification/merge-policy.mjs": "e909f86c4d44b482c255e61f841e6361347edf409e8f8d38e440096cf6615bac"
   },
   "mapping": [
@@ -9,18 +9,37 @@
       "file": "scripts/github-auto-merge.mjs",
       "symbol": "evaluateEligibility",
       "property": "Eligibility requires every configured identity, revision, protection, CI and review gate.",
-      "mutations": ["head", "base", "ci", "independentReview"]
+      "mutations": [
+        "head",
+        "base",
+        "ci",
+        "independentReview"
+      ]
     }
   ],
   "bounds": {
     "binaryDimensions": 10,
-    "ciStates": ["success", "failure", "pending", "skipped", "neutral", "absent"],
-    "reviewStates": ["success", "failure", "error", "pending", "absent"],
+    "ciStates": [
+      "success",
+      "failure",
+      "pending",
+      "skipped",
+      "neutral",
+      "absent"
+    ],
+    "reviewStates": [
+      "success",
+      "failure",
+      "error",
+      "pending",
+      "absent"
+    ],
     "cases": 30720
   },
   "assumptions": [
     "GitHub metadata has its documented types and repository commits use SHA-1 IDs.",
     "Publisher, protection presence, required contexts and metadata normalization have focused tests beyond the finite enumeration.",
     "The verifier does not execute a GitHub merge or prove actual reviewer independence or provider race freedom."
-  ]
+  ],
+  "reviewBasis": "Coordinator read 493ec6e..fc76640 covered source, adapter test and workflow diffs. Repository identity is human-confirmed; merge commits preserve formal source ancestry. Eligibility fields and finite domains are unchanged. Old checker rejected intended hash drift; intended source mutants must pass before release."
 }
