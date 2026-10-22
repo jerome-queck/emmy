@@ -1,7 +1,8 @@
 {
-  "sourceCommit": "e84d3f4ea935f5edaccbf676607eefd805fd14a0",
+  "sourceCommit": "493ec6e37fee71061d16659d987e1cf58a6bb11b",
   "files": {
-    "scripts/github-auto-merge.mjs": "7d24434c615f4da8dc558d43495e1666ffb347ed4b606c30b5563b9011957a5f"
+    "scripts/github-auto-merge.mjs": "7d24434c615f4da8dc558d43495e1666ffb347ed4b606c30b5563b9011957a5f",
+    "verification/merge-policy.mjs": "e909f86c4d44b482c255e61f841e6361347edf409e8f8d38e440096cf6615bac"
   },
   "mapping": [
     {
