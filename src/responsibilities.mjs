@@ -201,12 +201,15 @@ export function reconcileState(definition, { definitions, observations, repairs,
     let reference = observation.supersedes?.hash;
     while (reference && !replaced.has(reference)) { replaced.add(reference); reference = effectByHash.get(reference)?.supersedes?.hash; }
   }
-  const effects = effectObservations.filter(observation => !replaced.has(observation.hash)).flatMap(observation => [...(observation.effects ?? []), ...(observation.tasks ?? []).map(task => ({ key: task.effectKey ?? key, status: ['pending', 'running'].includes(task.status) ? 'pending' : task.status === 'unknown' ? 'uncertain' : 'completed' }))]).filter(effect => effect.key === key);
+  const currentEffectObservations = effectObservations.filter(observation => !replaced.has(observation.hash));
+  const nativeTasks = currentEffectObservations.flatMap(observation => observation.tasks ?? []);
+  const uncorrelatedTaskIds = [...new Set(nativeTasks.filter(task => !task.effectKey).map(task => task.nativeId))].sort();
+  const effects = [...currentEffectObservations.flatMap(observation => observation.effects ?? []), ...nativeTasks.filter(task => task.effectKey).map(task => ({ key: task.effectKey, status: ['pending', 'running'].includes(task.status) ? 'pending' : task.status === 'unknown' ? 'uncertain' : 'completed' }))].filter(effect => effect.key === key);
   const completed = effects.some(effect => effect.status === 'completed');
   const attentionNeeded = open.length > 0 || incomingTransfers.some(item => item.status === 'open') || trigger.findings.length > 0;
   const proposals = [];
   if (definition.lifecycle.status === 'active' && heads.length === 1 && !restore.suspended) {
-    if (effects.some(effect => ['pending', 'uncertain'].includes(effect.status))) proposals.push({ type: 'rediscover', effectKey: key, reason: 'Native effect is pending or uncertain. Read its actual state before another execution.', execution: 'proposal-only' });
+    if (uncorrelatedTaskIds.length || effects.some(effect => ['pending', 'uncertain'].includes(effect.status))) proposals.push({ type: 'rediscover', effectKey: key, reason: uncorrelatedTaskIds.length ? 'Native tasks lack effect correlation. Rediscover their intended effects before another execution.' : 'Native effect is pending or uncertain. Read its actual state before another execution.', ...(uncorrelatedTaskIds.length ? { uncorrelatedTaskIds } : {}), execution: 'proposal-only' });
     else if (!completed || attentionNeeded) {
       const repeated = open.find(finding => finding.failedRepairs >= 2);
       const preferredType = trigger.findings.length ? 'rediscover' : repeated ? 'diagnose' : attentionNeeded ? 'observe-or-decide' : 'work';
