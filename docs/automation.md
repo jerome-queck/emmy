@@ -1,6 +1,6 @@
 # Repository automation
 
-This document describes repository behavior for `jerome-queck/emmy`, the canonical repository confirmed by the human. Workflow files are proposals until that GitHub repository runs them.
+This document describes repository behavior for `jerome-queck/emmy`, the canonical repository confirmed by the human. Workflow files are proposals until that GitHub repository runs them. Use the [installed acceptance procedure](automation-acceptance.md) to collect actual provider receipts.
 
 ## Checks and evidence
 
