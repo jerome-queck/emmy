@@ -1,3 +1,5 @@
+Historical initial review. Superseded by the persistent responsibility contract in [the architecture](../architecture.md) after the human clarified the continuity and self-correction requirement. Kept to explain the earlier choice.
+
 Recommend registry-first for v1. Both documents were read end to end. This is design judgment. Neither candidate implements or executes tasks. All arena seats use Sol max by user override, so model diversity is absent.
 
 | Rubric criterion | Registry | Ledger |
