@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "projects": [
+    { "id": "algebra", "label": "Algebra", "group": "mathematics", "repository": "https://github.com/Jerome-Group/algebra", "basis": "observed" },
+    { "id": "calculus", "label": "Calculus", "group": "mathematics", "repository": "https://github.com/Jerome-Group/calculus", "basis": "observed" },
+    { "id": "calculator", "label": "Calculator", "group": "mathematics", "repository": "https://github.com/Jerome-Group/calculator", "basis": "observed" },
+    { "id": "numbertheory", "label": "Number Theory", "group": "mathematics", "repository": "https://github.com/Jerome-Group/numbertheory", "basis": "observed" },
+    { "id": "probability", "label": "Probability", "group": "mathematics", "repository": "https://github.com/jerome-queck/probability", "basis": "observed" },
+    { "id": "academic-os", "label": "Academic OS", "group": "academic", "repository": "https://github.com/Jerome-Group/academic-os", "basis": "observed" },
+    { "id": "ntulearn", "label": "ntulearn", "group": "academic", "repository": "https://github.com/Jerome-Group/ntulearn", "basis": "observed" },
+    { "id": "homepage", "label": "Homepage", "group": "infrastructure", "repository": null, "basis": "observed", "limits": ["Registered project. Public URL unverified."] },
+    { "id": "codex-config", "label": "Codex configuration", "group": "infrastructure", "repository": "https://github.com/jerome-queck/codex-config", "basis": "observed" },
+    { "id": "emmy", "label": "Emmy", "group": "infrastructure", "repository": null, "basis": "unverified", "limits": ["Repository owner pending confirmation."] }
+  ],
+  "sources": [
+    { "id": "dot-computers", "url": "https://learn.chatgpt.com/docs/dots/computers-and-apps", "reviewedAt": "2026-10-22", "basis": "documented", "statement": "Dot cloud, local computer, and delegated cloud tasks are separate environments. One personal computer connection is documented." },
+    { "id": "dot-tasks", "url": "https://learn.chatgpt.com/docs/dots/tasks-and-memory", "reviewedAt": "2026-10-22", "basis": "documented", "statement": "Dots can delegate and follow up. Codex Cloud requires a prepared environment. Fixed-time work needs a saved schedule." },
+    { "id": "dot-controls", "url": "https://learn.chatgpt.com/docs/dots/controls", "reviewedAt": "2026-10-22", "basis": "documented", "statement": "Task stopping, Dot pause, and saved schedule controls are distinct." },
+    { "id": "configuration-contract", "url": "https://github.com/jerome-queck/codex-config", "reviewedAt": "2026-10-22", "basis": "documented", "statement": "Canonical sidebar, naming, and lifecycle rules live in codex-config." }
+  ],
+  "capabilities": [
+    { "id": "dot-cloud", "label": "Dot cloud computer", "sources": ["dot-computers"], "accountStatus": "unverified", "probe": "runtime" },
+    { "id": "persistence", "label": "Cloud file persistence", "sources": ["dot-computers"], "accountStatus": "unverified", "probe": "persistence" },
+    { "id": "chat-discovery", "label": "Scoped chat discovery", "sources": ["dot-tasks"], "accountStatus": "unverified", "probe": "discovery" },
+    { "id": "local-routing", "label": "Local tasks and continuation", "sources": ["dot-computers", "dot-tasks"], "accountStatus": "unverified", "probe": "local-routing" },
+    { "id": "cloud-delegation", "label": "Cloud Work and Codex Cloud", "sources": ["dot-tasks"], "accountStatus": "unverified", "probe": "cloud-delegation" },
+    { "id": "skill-access", "label": "Connected-computer skill access", "sources": ["dot-computers"], "accountStatus": "unverified", "probe": "skill-access" },
+    { "id": "autonomous-wake", "label": "Autonomous follow-up", "sources": ["dot-tasks"], "accountStatus": "unverified", "probe": "wake" },
+    { "id": "saved-schedule", "label": "Saved scheduling", "sources": ["dot-tasks", "dot-controls"], "accountStatus": "unverified", "probe": "schedule" }
+  ],
+  "tools": [
+    { "id": "codex", "priority": 1, "use": "Read native projects and chats. Delegate normal coding locally.", "basis": "inferred", "dotAccess": "unverified" },
+    { "id": "github", "priority": 1, "use": "Inspect exact repository revisions, checks, reviews, and releases.", "basis": "inferred", "dotAccess": "unverified" },
+    { "id": "drive", "priority": 1, "use": "Read academic sources and preserve editable artifacts.", "basis": "inferred", "dotAccess": "unverified" },
+    { "id": "calendar", "priority": 2, "use": "Coordinate assigned deadlines and events after reading provider records.", "basis": "inferred", "dotAccess": "unverified" },
+    { "id": "gmail", "priority": 2, "use": "Read assigned coordination. Send only with explicit authority.", "basis": "inferred", "dotAccess": "unverified" },
+    { "id": "other-connected-tools", "priority": 3, "use": "Discover tools when the responsibility needs them.", "basis": "inferred", "dotAccess": "unverified" }
+  ],
+  "probes": [
+    { "id": "runtime", "prompt": "Inspect your own cloud computer using read-only commands. Report OS, shell, working directory, Node and Python versions. Fetch https://example.com through browser and shell separately when available. Do not install software or dump environment variables.", "evidence": "Executor identity, exact command output, browser result, shell networking result, and limitations." },
+    { "id": "persistence", "prompt": "Create one harmless temporary file containing nonce {{nonce}}. Return its exact path and SHA-256. In a later turn, read that file without recreating it and return the hash. Do not create a service or schedule.", "evidence": "Matching bytes and hash across separate turns. This establishes only observed persistence." },
+    { "id": "discovery", "prompt": "Read native discovery to find the owner-supplied known Codex task and ChatGPT conversation. Return exact IDs, location, last visible status, retrieval source, requested scope, and missing records. Do not send messages or start tasks.", "evidence": "Held-out native inventory comparison with coverage gaps and timestamps." },
+    { "id": "local-routing", "prompt": "In the owner-supplied scratch repository on the designated connected Mac, create a read-only local Codex task to return directory, commit, and probe.txt digest. Create a local Work task to summarize that file. Return identities and locations. On explicit owner follow-up, send nonce {{nonce}} to the same Codex chat.", "evidence": "Native task links, exact executor readbacks, same-chat continuation, and failed-host recovery." },
+    { "id": "cloud-delegation", "prompt": "Start one cloud Work thread to summarize https://example.com. If the owner supplies an already prepared Codex Cloud environment, start a read-only task there to return commit and test command. Do not configure environments. Return distinct identities and locations.", "evidence": "Visible cloud task records and correct prepared environment identity." },
+    { "id": "skill-access", "prompt": "On the connected computer, read the owner-supplied Emmy verification SKILL.md and run its documented doctor command. Return loaded path, command, commit, stdout, and exit code. Do not install plugins. State unavailable cloud steps.", "evidence": "Actual local verifier output and explicit cloud boundary." },
+    { "id": "wake", "prompt": "Keep responsibility for one check. Pause and choose a follow-up within about ten minutes, then report nonce {{nonce}} here. Do not schedule recurring work or contact others. State if a saved trigger is required.", "evidence": "Unsolicited later result with timestamps and Activity record. A promise is insufficient." },
+    { "id": "schedule", "prompt": "After the owner supplies a future absolute time in Asia/Singapore, save one harmless one-time check reporting nonce {{nonce}} in this Dot conversation. Read back identifier, timezone, destination, and enabled state. Afterward inspect the actual run. Do not create recurrence.", "evidence": "Saved Scheduled fields, later run record, notification observation, and test-trigger cleanup." }
+  ]
+}

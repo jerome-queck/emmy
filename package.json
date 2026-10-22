@@ -1,0 +1,13 @@
+{
+  "name": "emmy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "agent": "node scripts/agent.mjs",
+    "check": "node scripts/check.mjs",
+    "verify:behavior": "node scripts/verify-behavior.mjs",
+    "verify:formal": "node scripts/verify-formal.mjs"
+  }
+}
