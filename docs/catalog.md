@@ -15,7 +15,7 @@ Generated from `registry/catalog.json`. Project registration and public reposito
 | ntulearn | ntulearn | academic | [Repository](https://github.com/Jerome-Group/ntulearn) | observed |
 | homepage | Homepage | infrastructure | Unverified | observed |
 | codex-config | Codex configuration | infrastructure | [Repository](https://github.com/jerome-queck/codex-config) | observed |
-| emmy | Emmy | infrastructure | Unverified | unverified |
+| emmy | Emmy | infrastructure | [Repository](https://github.com/jerome-queck/emmy) | observed |
 
 ## Capabilities
 

@@ -10,7 +10,7 @@
     { "id": "ntulearn", "label": "ntulearn", "group": "academic", "repository": "https://github.com/Jerome-Group/ntulearn", "basis": "observed" },
     { "id": "homepage", "label": "Homepage", "group": "infrastructure", "repository": null, "basis": "observed", "limits": ["Registered project. Public URL unverified."] },
     { "id": "codex-config", "label": "Codex configuration", "group": "infrastructure", "repository": "https://github.com/jerome-queck/codex-config", "basis": "observed" },
-    { "id": "emmy", "label": "Emmy", "group": "infrastructure", "repository": null, "basis": "unverified", "limits": ["Repository owner pending confirmation."] }
+    { "id": "emmy", "label": "Emmy", "group": "infrastructure", "repository": "https://github.com/jerome-queck/emmy", "basis": "observed" }
   ],
   "sources": [
     { "id": "dot-computers", "url": "https://learn.chatgpt.com/docs/dots/computers-and-apps", "reviewedAt": "2026-10-22", "basis": "documented", "statement": "Dot cloud, local computer, and delegated cloud tasks are separate environments. One personal computer connection is documented." },
