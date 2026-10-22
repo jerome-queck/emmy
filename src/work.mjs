@@ -13,7 +13,7 @@ export function snapshotStatus(snapshot, target, asOf) {
 }
 
 export function planTask(request, { catalog, bindings, snapshot, asOf }) {
-  const binding = bindings.projects[request.projectId];
+  const binding = Object.hasOwn(bindings.projects, request.projectId) ? bindings.projects[request.projectId] : null;
   const project = catalog.projects.find(value => value.id === request.projectId) ?? (binding ? { id: request.projectId, label: binding.label, repository: binding.repository ?? null, basis: 'reported' } : null);
   const kind = request.executor ?? (request.workClass === 'code' ? 'local-codex' : 'dot-cloud');
   const local = kind === 'local-codex' || kind === 'local-work';
@@ -28,7 +28,7 @@ export function planTask(request, { catalog, bindings, snapshot, asOf }) {
   };
   const reasons = [];
   if (!project) reasons.push('Unknown project. Add public metadata or a private project binding.');
-  if (local && (!binding?.path || !binding?.nativeProjectId || !bindings.hosts[binding?.hostId])) reasons.push('Exact local project and host binding is missing.');
+  if (local && (!binding?.path || !binding?.nativeProjectId || !Object.hasOwn(bindings.hosts, binding?.hostId))) reasons.push('Exact local project and host binding is missing.');
   if (cloud && (!binding?.cloudEnvironmentId || !request.cloudReason || !request.authority.cloud)) reasons.push('Codex Cloud requires a prepared environment, reason, and explicit cloud authority.');
   if (request.workClass === 'code' && !local && (!request.cloudReason || !request.authority.cloud)) reasons.push('Cloud coding requires an explicit reason and cloud authority.');
   const observation = snapshotStatus(snapshot, target, asOf);
