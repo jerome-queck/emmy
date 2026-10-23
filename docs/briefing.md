@@ -12,7 +12,7 @@ Keep corrections in the existing native note or responsibility register. Read ba
 
 The command retains complete immutable guidance snapshots and exact per-run artifacts under `<private-home>/briefing/`. Failed refresh keeps the original successful main-check time. Pending or corrupt snapshots cannot replace verified guidance. Responsibility backups exclude these disposable caches and briefing evidence. Native adoption, automatic invocation, schedules and later-turn correction recovery require the actual Dot probes.
 
-The human body contains scoped status, source links, material limits and declared coverage. Source claims remain reported. Unchecked entry labels, opaque references, routine checker prose and the full date inventory stay private. Safe absolute HTTP(S) references become Markdown links. Unsupported schemes and malformed references remain private with a missing-link limit. Credential-bearing HTTP(S) source, correction and endpoint references are refused before acquisition or draft retention, without echoing the URL.
+The human body contains scoped status, source links, material limits and declared coverage. Source claims remain reported. Unchecked entry labels, opaque references, routine checker prose and the full date inventory stay private. Safe absolute HTTP(S) references become Markdown links. Entity-safe Markdown preserves literal ampersands and entity text in source URLs, scopes, coverage and gaps. Private assessment evidence retains canonical URLs. Unsupported schemes and malformed references remain private with a missing-link limit. Credential-bearing HTTP(S) source, correction and endpoint references are refused before acquisition or draft retention, without echoing the URL.
 
 ## Prepare declared input
 

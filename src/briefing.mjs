@@ -32,7 +32,7 @@ const scope = (value, name) => {
   if (value.endpoint) webReference(value.endpoint);
 };
 const sameScope = (left, right) => canonical(left) === canonical(right);
-const md = value => value.replace(/[\\`*_{}\[\]()<>#+.!|~-]/g, '\\$&');
+const md = value => value.replaceAll('&', '&amp;').replace(/[\\`*_{}\[\]()<>#+.!|~-]/g, '\\$&');
 const scopeText = value => [value.subject, value.effect, ...['operation', 'executor', 'host', 'endpoint'].filter(key => value[key]).map(key => `${key} ${value[key]}`)].map(md).join(', ');
 const gitBlob = bytes => createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
 
@@ -345,7 +345,7 @@ function assessDraft(draft, guidance, checkedAt) {
 
 function renderBriefing(assessment) {
   const sources = new Map(assessment.sources.map(value => [value.source.id, value]));
-  const links = ids => ids.map(id => sources.get(id)).filter(value => value.webReference.kind === 'link').map(value => `[${md(`${value.source.kind} source`)}](<${value.webReference.href}>)`).join('; ');
+  const links = ids => ids.map(id => sources.get(id)).filter(value => value.webReference.kind === 'link').map(value => `[${md(`${value.source.kind} source`)}](<${value.webReference.href.replaceAll('&', '&amp;')}>)`).join('; ');
   const lines = ['# Briefing', '', '## Updates', ''];
   for (const { entry, decision } of assessment.entries) {
     let status; let sourceIds = decision.sourceIds ?? [];
