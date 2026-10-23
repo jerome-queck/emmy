@@ -31,7 +31,7 @@ try {
   let data; let exitCode = 0;
   switch (command.name) {
     case 'help':
-      data = { commands, globalOptions: ['--root <public-source>', '--home <private-state>', '--json'], output: 'One JSON object', exitCodes: { 0: 'local operation completed', 2: 'invalid input, corrupt storage, or operational error', 3: 'actionable findings, conflict, suspension, or generated drift' } };
+      data = { commands, globalOptions: ['--root <public-source>', '--home <private-state>', '--json'], output: 'One JSON object', exitCodes: { 0: 'local operation completed', 2: 'invalid input, corrupt storage, or operational error', 3: 'actionable findings, conflict, suspension, generated drift, or advisory revision/degradation' } };
       break;
     case 'catalog': data = catalog; break;
     case 'doctor': {
