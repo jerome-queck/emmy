@@ -147,10 +147,23 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
   assert.match((await invoke(wrongCorrection, 3)).findings.join(' '), /exact user completion/);
   const uncoveredCorrection = structuredClone(draft); uncoveredCorrection.coverage.otherSourcesRead = [];
   assert.match((await invoke(uncoveredCorrection, 3)).findings.join(' '), /outside declared read coverage/);
+  const rawDraft = JSON.stringify(draft);
+  const referenceField = `"reference":${JSON.stringify(draft.sources[0].reference)}`;
+  const escapedReferenceField = `"ref\\u0065rence":${JSON.stringify(draft.sources[0].reference)}`;
+  const stringDraft = structuredClone(draft); stringDraft.coverage.selection = 'Quoted "value", backslash \\, and {"reference":"text","reference":"text"} braces';
+  for (const [name, bytes] of [
+    ['whitespace and repeated keys in separate objects', Buffer.from(` \t\r\n${JSON.stringify(draft, null, '\t')}\r\n`)],
+    ['escaped quotes, backslashes and braces within a string', Buffer.from(JSON.stringify(stringDraft))],
+    ['a unique escaped key', Buffer.from(rawDraft.replace(referenceField, escapedReferenceField))]
+  ]) {
+    const accepted = await invoke(bytes); assert.equal(accepted.status, 'checked', name); await exactBody(accepted);
+    assert.deepEqual(await readFile(join(accepted.evidence.directory, 'draft.json')), bytes, name);
+  }
   const credential = 'https://private-user:private-password@source.example.invalid/read';
   const credentialSource = structuredClone(draft); credentialSource.sources[0].reference = credential;
   const credentialCorrection = structuredClone(draft); credentialCorrection.correctionReadback[0].reference = credential;
   const credentialEndpoint = structuredClone(draft); credentialEndpoint.sources[0].scope.endpoint = credential;
+  const credentialField = `"reference":${JSON.stringify(credential)}`;
   const invalidInputs = [
     { ...draft, body: 'Unchecked arbitrary complete body' },
     { ...draft, schemaVersion: 2 },
@@ -158,11 +171,22 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
     { ...draft, coverage: { ...draft.coverage, chatsRead: ['cedar-old', 'cedar-old'] } },
     { ...draft, sources: [{ ...draft.sources[0], contentAt: '2026-02-30T00:00:00Z' }] },
     { ...draft, entries: [{ ...draft.entries[0], label: 'Markdown\ninjection' }] }, credentialSource, credentialCorrection, credentialEndpoint,
-    Buffer.from(`{"reference":"${credential}",]`)
+    Buffer.from(`{"reference":"${credential}",]`),
+    ...[
+      rawDraft.replace(referenceField, `${credentialField},${referenceField}`),
+      rawDraft.replace(referenceField, `${credentialField},${escapedReferenceField}`),
+      `{"sources":{${credentialField}},${rawDraft.slice(1)}`,
+      `{"sources":[{${credentialField}}],${rawDraft.slice(1)}`,
+      rawDraft.replace('"subject":"Cedar"', `"subject":${JSON.stringify(credential)},"subject":"Cedar"`),
+      rawDraft.replace('"gaps":[]', `"gaps":[${JSON.stringify(credential)}],"gaps":[]`)
+    ].map(bytes => Buffer.from(bytes))
   ];
   const requestsBeforeInvalid = await readFile(transport.requests, 'utf8');
   const runsBeforeInvalid = await readdir(join(home, 'briefing/runs'));
-  for (const invalid of invalidInputs) { const rejected = await invoke(invalid, 2); assert.ok(rejected.error); assert.doesNotMatch(JSON.stringify(rejected), /private-user|private-password/); }
+  for (const invalid of invalidInputs) {
+    const rejected = await invoke(invalid, 2); assert.ok(rejected.error);
+    const output = report.commands.at(-1); assert.doesNotMatch(`${output.stdout}\n${output.stderr}`, /private-user|private-password/);
+  }
   assert.equal(await readFile(transport.requests, 'utf8'), requestsBeforeInvalid, 'Invalid boundary input cannot acquire guidance or run policy');
   assert.deepEqual(await readdir(join(home, 'briefing/runs')), runsBeforeInvalid, 'Credential and other invalid inputs are refused before retaining raw drafts');
   const historical = structuredClone(draft); delete historical.correctionReadback[0].completionSourceId;
