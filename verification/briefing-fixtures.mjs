@@ -3,10 +3,15 @@ import { createRequire, syncBuiltinESMExports } from 'node:module';
 const fixture = JSON.parse(fs.readFileSync(process.env.EMMY_VERIFY_BRIEFING_FIXTURE, 'utf8'));
 const origin = 'https://api.github.com/repos/jerome-queck/emmy/';
 let mainReads = 0;
+let transientFailed = false;
 globalThis.fetch = async (url, options) => {
   fs.appendFileSync(fixture.requests, JSON.stringify({ url, redirect: options.redirect, headers: options.headers }) + '\\n');
   if (!url.startsWith(origin) || options.redirect !== 'error') throw new Error('Unexpected transport or redirect');
   const path = url.slice(origin.length);
+  if (fixture.transient && path === 'commits/main' && !transientFailed) {
+    transientFailed = true;
+    throw new TypeError('fetch failed', { cause: Object.assign(new Error('Temporary DNS lookup failure'), { code: 'EAI_AGAIN' }) });
+  }
   if (fixture.unavailable) return new Response('unavailable', { status: 503 });
   if (fixture.timeout) return new Promise((resolve, reject) => {
     const keepAlive = setInterval(() => {}, 1000);

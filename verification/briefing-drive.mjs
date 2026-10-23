@@ -38,6 +38,10 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
   assert.deepEqual(JSON.parse(await readFile(join(guidance.guidance.snapshot, 'bundle.json'), 'utf8')), JSON.parse(bundle));
   const requests = (await readFile(transport.requests, 'utf8')).trim().split('\n').map(line => JSON.parse(line));
   assert.deepEqual(requests.map(value => value.url), [`https://api.github.com/repos/jerome-queck/emmy/commits/main`, `https://api.github.com/repos/jerome-queck/emmy/git/trees/${transport.tree}?recursive=1`, `https://api.github.com/repos/jerome-queck/emmy/git/blobs/${transport.blob}`]);
+  const recovered = await invoke(null, 0, { transient: true });
+  assert.equal(recovered.guidance.state, 'current', 'One temporary DNS failure must recover current canonical guidance');
+  const retryRequests = (await readFile(transport.requests, 'utf8')).trim().split('\n').slice(requests.length).map(line => JSON.parse(line));
+  assert.ok(retryRequests.length <= 4, `One temporary DNS failure used ${retryRequests.length} GETs; maximum is four`);
   scenario('briefing-guidance', 'Actual guidance-only CLI resolves main once, follows its tree/blob pins across a simulated main advance, validates exact bundle bytes, returns both readable approved documents and retains an immutable snapshot.');
   const date = offset => new Date(Date.now() - offset).toISOString();
   const cedar = { subject: 'Cedar', effect: 'complete report' }; const maple = { subject: 'Maple', effect: 'complete report' };
@@ -51,11 +55,17 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
   };
   const checked = await invoke(draft);
   assert.equal(checked.status, 'checked'); assert.match(checked.body, /Cedar, complete report\. Complete, reported by the user/); assert.match(checked.body, /Older reminder suppressed/); assert.match(checked.body, /Maple, complete report\. pending, reported/);
-  assert.match(checked.body, /Repositories inspected: none/); assert.match(checked.body, /One catalog page remains unread/); assert.match(checked.body, /opaque\\-note:cedar/);
+  assert.match(checked.body, /Repositories inspected: none/); assert.match(checked.body, /One catalog page remains unread/);
+  assert.doesNotMatch(checked.body, /Unverified label|opaque(?:\\)?-note:|native recovery unverified by this checker/, 'Normal briefing keeps useful status and coverage without opaque notes or routine checker prose');
   assert.equal(sha256(checked.body), checked.bodyDigest); assert.equal(await readFile(checked.evidence.body, 'utf8'), checked.body);
   assert.equal(JSON.parse(await readFile(checked.evidence.receipt, 'utf8')).bodyDigest, checked.bodyDigest);
   report.briefing = { guidance: guidance.evidence.directory, checked: checked.evidence.directory, bodyDigest: checked.bodyDigest, sourceTruth: 'reported', nativeInvocation: 'unverified' };
-  scenario('briefing-draft', 'Actual structured Cedar/Maple CLI renders scoped user completion with opaque note references, suppresses only Cedar, preserves Maple and exact coverage, and independently verifies returned/retained Markdown bytes and digest.');
+  scenario('briefing-draft', 'Actual structured Cedar/Maple CLI renders scoped user completion, suppresses only Cedar, preserves Maple and exact coverage, and independently verifies returned/retained Markdown bytes and digest.');
+  const references = ['https://github.com/example/project-name/issues/42', 'http://source.example.invalid/project-name/updates'];
+  const linkedDraft = structuredClone(draft); linkedDraft.sources[0].reference = references[0]; linkedDraft.sources[2].reference = references[1];
+  const linked = await invoke(linkedDraft);
+  const destinations = [...linked.body.matchAll(/\[[^\]\r\n]+\]\((?:<([^>\r\n]+)>|([^\s()]+))\)/g)].map(match => match[1] ?? match[2]);
+  for (const reference of references) assert.ok(destinations.includes(reference), `Source reference must be an exact valid Markdown link destination: ${reference}`);
   const exactBody = async result => {
     assert.equal(sha256(result.body), result.bodyDigest); assert.equal(await readFile(result.evidence.body, 'utf8'), result.body);
     assert.equal(JSON.parse(await readFile(result.evidence.receipt, 'utf8')).bodyDigest, result.bodyDigest);
