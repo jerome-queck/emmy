@@ -506,8 +506,14 @@ try {
       child.stdout.on('data', bytes => { captured.stdout += bytes; }); child.stderr.on('data', bytes => { captured.stderr += bytes; });
       const completion = new Promise((resolve, reject) => { child.on('error', reject); child.on('close', (code, signal) => { children.delete(child); resolve({ ...captured, code, signal }); }); });
       let output;
-      try { captured.checkpointBytes = await waitForFile(checkpoint, bytes => bytes.endsWith('\n')); const marker = JSON.parse(captured.checkpointBytes); assert.equal(marker.boundary, boundary); child.kill('SIGKILL'); output = await completion; report.commands.push(output); assert.equal(output.signal, 'SIGKILL'); report.interruptions.push({ boundary, marker, signal: output.signal }); }
-      catch (error) { child.kill('SIGKILL'); output ??= await completion; if (!report.commands.includes(output)) report.commands.push(output); throw error; }
+      try {
+        captured.checkpointBytes = await waitForFile(checkpoint, bytes => {
+          if (!bytes.endsWith('\n')) { captured.lastIncompleteCheckpointBytes = bytes.slice(0, 4096); captured.incompleteCheckpointTruncated = bytes.length > 4096; }
+          return bytes.endsWith('\n');
+        });
+        const marker = JSON.parse(captured.checkpointBytes); assert.equal(marker.boundary, boundary); child.kill('SIGKILL'); output = await completion; report.commands.push(output); assert.equal(output.signal, 'SIGKILL'); report.interruptions.push({ boundary, marker, signal: output.signal });
+      }
+      catch (error) { child.kill('SIGKILL'); output ??= await completion; Object.assign(output, captured); if (!report.commands.includes(output)) report.commands.push(output); throw error; }
     };
     for (const boundary of ['record:created', 'record:files-written', 'record:published']) {
       const args = ['probe', '--nonce', `synthetic-${boundary}`]; await interruptAt(args, boundary); const replay = await run(args); assert.equal((await readRecord(home, replay.hash)).hash, replay.hash);

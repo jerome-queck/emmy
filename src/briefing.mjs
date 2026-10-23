@@ -4,10 +4,6 @@ import { join } from 'node:path';
 import { briefingGuidance } from './metadata.mjs';
 import { canonical, digest } from './records.mjs';
 
-// Guidance = current | cached (verified bytes, original main-check time) | unavailable.
-// Draft = {authoredUnder, sources: Source[], coverage, correctionReadback: Readback[], entries: Entry[]}.
-// Source binds a claim, exact scope, content/retrieval/metadata times, coverage and reported attribution.
-// Entry = status | reminder | capability | budget. Result = checked | revise (no body) | degraded.
 const origin = 'https://api.github.com/repos/jerome-queck/emmy';
 const maxBytes = 262144;
 const maxAgeMs = 86400000;
@@ -134,7 +130,7 @@ async function refreshGuidance(home) {
         time(receipt.sourceCheckedAt, 'Cached main-check time');
         requireValue(Date.parse(receipt.sourceCheckedAt) <= Date.now() && receipt.bundleSha256 === digest(bytes) && receipt.blob === gitBlob(bytes) && receipt.guidanceDigest === parsed.digest, 'Corrupt cached guidance');
         candidates.push({ state: 'cached', ...parsed, ...receipt, snapshot, ...failure });
-      } catch { /* Ignore incomplete or corrupt snapshots; never publish them as verified. */ }
+      } catch {}
     }
     return candidates.sort((a, b) => b.sourceCheckedAt.localeCompare(a.sourceCheckedAt))[0] ?? { state: 'unavailable', ...failure };
   }

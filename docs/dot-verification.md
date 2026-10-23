@@ -55,7 +55,7 @@ Retain actual tool reads, entry readback, briefings, conflicts, and failures as 
 
 Proposed and unexecuted. After [one-time adoption](dot-bootstrap.md), retain these native checks separately from the local CLI controls.
 
-1. Read back the actual saved bootstrap. Discover and demonstrate the runtime, trusted installed runner and selected private home. A local fixture or copied command is insufficient.
+1. Read back the actual saved bootstrap. Discover and demonstrate the runtime, trusted installed runner and selected private home. If one bounded setup action provisions the runner, retain its reviewed published revision and actual route readback. Until then, runner provisioning remains an unverified native prerequisite. A local fixture or copied command is insufficient.
 2. Continue an ordinary unrelated turn, then request a briefing without repeating the setup reminder. Retain the actual guidance command and source-check time. An instruction promising to run it is insufficient.
 3. Recover a synthetic scoped correction with a new nonce through an actual native read. Keep expected values held out. Accept an attributable opaque note reference. Compare the recovered statement and source against the earlier retained correction. Conversation-only persistence remains unverified.
 4. After an approved public guidance release, request the next briefing without repeating setup. Verify that the command reads the new pinned guidance and the draft is revised under its digest. A current repository check alone cannot establish current source facts.

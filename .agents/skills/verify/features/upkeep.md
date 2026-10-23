@@ -16,7 +16,7 @@ Every executable criterion reevaluates that epoch's retained observations after 
 
 ## Source and drive
 
-`records.mjs` owns immutable publication, dependency-first import order, archive manifests, and restore. `work.mjs` owns current epoch eligibility. `maintenance.mjs` derives public references. Scenarios `archive-recovery`, `cloud-recovery`, `restored-current-context`, `publication-interruption`, and `derived-boundaries` exercise actual bytes, corruption/traversal/symlink controls, local and cloud restore, superseded authority with a real execution marker, ten observed publication checkpoints, forward-reference retry, drift repair, and public/private separation.
+`records.mjs` owns immutable publication, dependency-first import order, archive manifests, and restore. `work.mjs` owns current epoch eligibility. `maintenance.mjs` derives public references. Scenarios `archive-recovery`, `cloud-recovery`, `restored-current-context`, `publication-interruption`, and `derived-boundaries` exercise actual bytes, corruption/traversal/symlink controls, local and cloud restore, superseded authority with a real execution marker, ten record/archive/restore/import checkpoints, forward-reference retry, drift repair, and public/private separation. Briefing adds one cache-publication cancellation in its separate advisory drive.
 
 ## Boundaries
 

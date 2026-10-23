@@ -27,9 +27,9 @@ Full and failed runs retain `.local/verification/behavior-*/report.json` plus im
 
 Briefing runs also retain the complete `briefing/` tree and `retainedCheckedBody`. The driver rereads that body after deleting its temporary repository. Interrupted pending snapshots and corrupt controls remain evidence. A simulated canonical response proves the local boundary, not public-main publication. Run a separate real public acquisition after the generated bundle is published.
 
-The full drive includes ten observed checkpoint cancellations. A child stops at named record/archive/restore publication boundaries or the first dependency-complete import publication, then the driver sends SIGKILL and replays. This is evidence at those boundaries. It is not all-instruction crash durability or filesystem flush proof.
+The full drive includes ten record/archive/restore/import checkpoint cancellations and one briefing-cache cancellation. A child stops at each named boundary, then the driver sends SIGKILL and replays. This is evidence at those boundaries. It is not all-instruction crash durability or filesystem flush proof.
 
-Checkpoint reads wait for the writer's complete newline-terminated frame. An empty/partial/full marker control proves that file existence alone cannot trigger parsing or cancellation. Attempted complete marker bytes and child output remain in the report when a checkpoint assertion fails.
+Checkpoint reads wait for the writer's complete newline-terminated frame. An empty/partial/full marker control proves that file existence alone cannot trigger parsing or cancellation. The last observed incomplete frame, bounded to 4096 characters, complete marker bytes and child output remain in the report when a checkpoint assertion fails.
 
 Each executable criterion reacquires canonical repository identity and reevaluates restored eligibility from the pinned epoch and observations at the current clock. A first check changing tracked dependency bytes or hiding git identity fails; the next check remains unexecuted with unknown evidence. An unchanged two-check control executes both. Restored authority expiring during a three-second check blocks the next command; current authority permits both. Post-execution inspection remains required. These observations do not establish atomic filesystem pinning or atomic revocation.
 
