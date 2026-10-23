@@ -95,7 +95,7 @@ Use these entry kinds and states. Each supplied source must match the entry's ex
 
 An entry with no support renders unknown. Declare a contrary report as another covered source. A fresh attributed `pending` report later than a scoped user completion produces a visible conflict and next source check. A budget notice or alert cannot produce `spending-stopped`. A separately supplied stop remains reported, with enforcement unverified. Free-text labels remain in private evidence and cannot replace the structured state.
 
-Keep the draft below 262144 bytes. Each array accepts at most 128 items. Text fields contain one nonempty line, at most 1000 characters. Duplicate IDs, duplicate coverage references, duplicate correction scopes, missing fields and unexpected fields are rejected. An arbitrary complete `body` is not accepted. References to absent source IDs or mismatched scopes return revision findings without a body.
+Keep the draft below 262144 bytes. Each array accepts at most 128 items. Text fields contain one nonempty line, at most 1000 characters. Duplicate decoded field names in any object, including escaped aliases, are rejected before guidance fetch or draft retention. Duplicate IDs, duplicate coverage references, duplicate correction scopes, missing fields and unexpected fields are rejected. An arbitrary complete `body` is not accepted. References to absent source IDs or mismatched scopes return revision findings without a body.
 
 ## Repair or retain a limit
 

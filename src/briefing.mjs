@@ -213,9 +213,30 @@ async function refreshGuidance(home) {
 }
 
 function parseDraft(bytes) {
+  const inputText = bytes.toString('utf8');
   let draft;
-  try { draft = JSON.parse(bytes.toString('utf8')); }
+  try { draft = JSON.parse(inputText); }
   catch { throw new Error('Draft must be valid JSON'); }
+  const frames = [];
+  for (let index = 0; index < inputText.length; index++) {
+    const character = inputText[index];
+    if (character === '"') {
+      const start = index++;
+      while (inputText[index] !== '"') index += inputText[index] === '\\' ? 2 : 1;
+      const frame = frames.at(-1);
+      if (frame?.kind === 'object' && frame.expectKey) {
+        const key = JSON.parse(inputText.slice(start, index + 1));
+        requireValue(!frame.keys.has(key), 'Draft contains duplicate fields');
+        frame.keys.add(key); frame.expectKey = false;
+      }
+    } else if (character === '{') frames.push({ kind: 'object', keys: new Set(), expectKey: true });
+    else if (character === '[') frames.push({ kind: 'array' });
+    else if (character === '}' || character === ']') frames.pop();
+    else if (character === ',') {
+      const frame = frames.at(-1);
+      if (frame?.kind === 'object') frame.expectKey = true;
+    }
+  }
   shape(draft, 'Draft', ['schemaVersion', 'authoredUnder', 'sources', 'coverage', 'correctionReadback', 'entries']);
   requireValue(draft.schemaVersion === 1, 'Unknown draft schema'); hash(draft.authoredUnder, 'authoredUnder');
   array(draft.sources, 'Sources'); array(draft.entries, 'Entries'); array(draft.correctionReadback, 'Correction readback');
