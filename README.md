@@ -2,9 +2,10 @@
 
 Emmy is Jerome's ChatGPT Dot. This repository gives one chief of staff durable responsibility context, current evidence checks, retained failures and repairs, and bounded next proposals.
 
-Use Node 24 or later. No dependency install, database, server, or API key is required.
+Use Node 24 or later. The agent CLI needs no dependency install. Verification uses locked development dependencies. No database, server, or API key is required.
 
 ```sh
+npm ci --ignore-scripts
 npm run agent -- doctor
 npm run agent -- help --json
 npm run agent -- briefing --home <private-home>

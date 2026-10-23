@@ -4,10 +4,21 @@ import { spawn } from 'node:child_process';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
+import { Parser } from 'commonmark';
 import { briefingTransport } from './briefing-fixtures.mjs';
 
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const blobId = bytes => createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+const parseMarkdown = body => {
+  const walker = new Parser().parse(body).walker(); const destinations = []; let text = '';
+  for (let event = walker.next(); event; event = walker.next()) {
+    const { node, entering } = event;
+    if (entering && node.type === 'link') destinations.push(node.destination);
+    if (entering && node.type === 'text') text += node.literal;
+    if (entering && ['softbreak', 'linebreak'].includes(node.type) || !entering && ['paragraph', 'heading'].includes(node.type)) text += '\n';
+  }
+  return { destinations, text };
+};
 
 export async function driveBriefing({ sourceRoot, root, home, run, scenario, report, children }) {
   await run(['probe', '--nonce', 'synthetic-briefing-journal-control']);
@@ -109,22 +120,30 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
   assert.equal(JSON.parse(await readFile(checked.evidence.receipt, 'utf8')).bodyDigest, checked.bodyDigest);
   report.briefing = { guidance: guidance.evidence.directory, checked: checked.evidence.directory, bodyDigest: checked.bodyDigest, acquisitionControls, sourceTruth: 'reported', nativeInvocation: 'unverified' };
   scenario('briefing-draft', 'Actual structured Cedar/Maple CLI renders scoped user completion, suppresses only Cedar, preserves Maple and exact coverage, and independently verifies returned/retained Markdown bytes and digest.');
-  const markdownDestinations = body => [...body.matchAll(/\[[^\]\r\n]+\]\((?:<([^>\r\n]+)>|([^\s()]+))\)/g)].map(match => match[1] ?? match[2]);
   const references = ['https://github.com/example/project-name/issues/42', 'http://source.example.invalid/project-name/updates'];
   const linkedDraft = structuredClone(draft); linkedDraft.sources[0].reference = references[0]; linkedDraft.sources[2].reference = references[1];
   const linked = await invoke(linkedDraft);
-  const destinations = markdownDestinations(linked.body);
+  const destinations = parseMarkdown(linked.body).destinations;
   for (const reference of references) assert.ok(destinations.includes(reference), `Source reference must be an exact valid Markdown link destination: ${reference}`);
+  const linkedAssessment = await readJson(linked.evidence.assessment);
+  assert.deepEqual(linkedAssessment.sources[0].webReference, { kind: 'link', href: references[0] }); assert.deepEqual(linkedAssessment.sources[2].webReference, { kind: 'link', href: references[1] });
   assert.equal(linked.body.split('\n').find(line => line.startsWith('- Cedar,')).includes(references[0]), false, 'An older pending source cannot be presented as support for the user completion');
-  for (const reference of ['https://例え.example/path/δ/[a](b)?q=a%2Fb&part=2#fragment', 'https://source.example.invalid/a<b>"quote"(part)?query=[ok]&value=%20']) {
+  for (const [reference, expectedDestination] of [
+    ['https://source.example.invalid/issue?first=one&second=two#part', 'https://source.example.invalid/issue?first=one&second=two#part'],
+    ['https://source.example.invalid/a%2Fb?q=%20#part%2Fone', 'https://source.example.invalid/a%2Fb?q=%20#part%2Fone'],
+    ['https://例え.example/path/δ/[a](b)?q=a%2Fb&part=2#fragment', 'https://xn--r8jz45g.example/path/%CE%B4/%5Ba%5D(b)?q=a%2Fb&part=2#fragment'],
+    ['https://source.example.invalid/a<b>"quote"(part)?query=[ok]&value=%20', 'https://source.example.invalid/a%3Cb%3E%22quote%22(part)?query=%5Bok%5D&value=%20']
+  ]) {
     const safe = structuredClone(draft); safe.sources[2].reference = reference;
     const result = await invoke(safe);
-    assert.ok(markdownDestinations(result.body).includes(new URL(reference).href), 'URL serialization preserves its destination without text Markdown escaping');
+    assert.deepEqual(parseMarkdown(result.body).destinations, [expectedDestination, expectedDestination], `CommonMark preserves source destinations with URL percent encoding: ${reference}`);
+    const assessment = await readJson(result.evidence.assessment);
+    assert.equal(assessment.sources[2].source.reference, reference); assert.deepEqual(assessment.sources[2].webReference, { kind: 'link', href: new URL(reference).href });
     assert.doesNotMatch(result.body, /\]\(javascript:|<script|<b>/i);
   }
   for (const reference of ['javascript:alert(1)', 'file:///private/example', 'https://', 'https:source.example.invalid/path', 'https://source.example.invalid\\path', ' https://source.example.invalid/path ', 'https://source.example.invalid/%zz', 'https://source.example.invalid/> [bad](javascript:alert(1))']) {
     const hostile = structuredClone(draft); hostile.sources[2].reference = reference;
-    const result = await invoke(hostile); assert.deepEqual(markdownDestinations(result.body), []); assert.equal(result.body.includes(reference), false);
+    const result = await invoke(hostile); assert.deepEqual(parseMarkdown(result.body).destinations, []); assert.equal(result.body.includes(reference), false);
     assert.match(result.body, /Web links unavailable/); assert.equal((await readJson(result.evidence.assessment)).sources[2].source.reference, reference);
   }
   const exactBody = async result => {
@@ -289,5 +308,42 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
   assert.deepEqual(await journalBytes(), journalBefore, 'Advisory command never changes responsibility record or retained evidence bytes');
   for (const result of [old, aged, conflict, conversation, recovery, capabilities, fallback]) await exactBody(result);
   report.briefing.negativeControls = { revise: revise.evidence.directory, historical: old.evidence.directory, conflict: conflict.evidence.directory, capabilities: capabilities.evidence.directory, cached: fallback.evidence.directory, firstRun: firstRun.evidence.directory, nativeExecution: 'not invoked', journalChanged: false };
+  const entityLinks = [];
+  for (const [name, reference] of [
+    ['named query', 'https://source.example.invalid/issue?q=&copy;'],
+    ['named path', 'https://source.example.invalid/f&ouml;&ouml;'],
+    ['named fragment', 'https://source.example.invalid/issue#part&copy;'],
+    ['decimal query', 'https://source.example.invalid/issue?q=&#65;'],
+    ['decimal path', 'https://source.example.invalid/a&#65;/item'],
+    ['decimal fragment', 'https://source.example.invalid/issue#x&#65;'],
+    ['hexadecimal query', 'https://source.example.invalid/issue?q=&#x41;'],
+    ['hexadecimal path', 'https://source.example.invalid/a&#x41;/item'],
+    ['hexadecimal fragment', 'https://source.example.invalid/issue#x&#x41;'],
+    ['percent-encoded entity', 'https://source.example.invalid/issue?q=%26copy%3B'],
+    ['literal amp entity', 'https://source.example.invalid/issue?q=&amp;copy;']
+  ]) {
+    const entityDraft = structuredClone(draft); entityDraft.sources[2].reference = reference;
+    const result = await invoke(entityDraft); await exactBody(result);
+    const assessment = await readJson(result.evidence.assessment);
+    assert.equal(assessment.sources[2].source.reference, reference); assert.deepEqual(assessment.sources[2].webReference, { kind: 'link', href: reference }, 'Private assessment keeps the canonical URL without Markdown escaping');
+    entityLinks.push({ name, reference, destinations: parseMarkdown(result.body).destinations, evidence: result.evidence.directory });
+  }
+  const proseDraft = structuredClone(draft);
+  const entityScope = { subject: 'Maple &copy;', effect: 'complete &#65; report', operation: 'read &#x42;', executor: 'local-codex &amp;copy;', host: 'Synthetic &ouml; Mac', endpoint: 'https://source.example.invalid/service?named=&copy;' };
+  proseDraft.sources[2].scope = entityScope; proseDraft.entries[1].scope = entityScope; proseDraft.correctionReadback[1].scope = entityScope;
+  proseDraft.coverage.selection = 'Synthetic &copy; &#65; &#x42; &amp;copy; coverage';
+  proseDraft.coverage.gaps = ['Unread overall &copy; &#71; &#x48; &amp;copy;'];
+  proseDraft.sources[2].coverage = { complete: false, gaps: ['Unread source &ouml; &#73; &#x4A; &amp;copy;'] };
+  const prose = await invoke(proseDraft); await exactBody(prose);
+  const expectedProse = [
+    'Maple &copy;, complete &#65; report, operation read &#x42;, executor local-codex &amp;copy;, host Synthetic &ouml; Mac, endpoint https://source.example.invalid/service?named=&copy;.',
+    'Selection: Synthetic &copy; &#65; &#x42; &amp;copy; coverage.',
+    'Gaps: Unread overall &copy; &#71; &#x48; &amp;copy;.',
+    'Coverage gaps: Unread source &ouml; &#73; &#x4A; &amp;copy;.'
+  ];
+  const parsedProse = parseMarkdown(prose.body).text;
+  report.briefing.markdown = { parser: 'commonmark@0.31.2', entityLinks, prose: { expected: expectedProse, parsed: parsedProse, evidence: prose.evidence.directory } };
+  assert.deepEqual(entityLinks.map(({ name, destinations }) => ({ name, destinations })), entityLinks.map(({ name, reference }) => ({ name, destinations: [reference, reference] })), 'CommonMark link destinations preserve literal entity text');
+  for (const expected of expectedProse) assert.ok(parsedProse.includes(expected), `CommonMark prose preserves literal entity text: ${expected}\nParsed text: ${parsedProse}`);
   scenario('briefing-boundaries', 'Actual CLI controls reject wrong digest/references/schema and arbitrary bodies; qualify stale/future/partial/undated support and newer metadata; retain scoped completion across aging, conflict and capability distinctions; enforce blob/embedded integrity, upgrade refusal, byte/time limits, interrupted/corrupt cache fallback, first-run degradation and unchanged journal.');
 }
