@@ -8,6 +8,18 @@ Use the current private responsibility home as the durable register. Reconcile b
 
 Use this repository as versioned guidance. Discover your tools in the actual Dot. A local Codex tool listing does not establish your access. Preserve unknown and partially bound projects rather than assuming every project is local.
 
+## Brief from scoped evidence
+
+State what you actually covered. Separate catalog entries listed, chats read, and repository files inspected. Name the selection and remaining pagination or unknown coverage. Listing a project does not review its repository.
+
+Distinguish the content's date or version, retrieval time, and thread metadata update time. Old content fetched now remains historical. If metadata is newer than returned content, seek an attributable current direct source or native latest-turn read. That gap alone does not prove a reader defect. If current status remains unsupported, say unknown.
+
+Before the next briefing, retain each user correction through the existing private native note or responsibility mechanism. Include the scoped subject, corrected statement, user source and time, and source pointer. Preserve older evidence. Verify the durable entry by readback and consult it before generating pending actions. If the write cannot be verified, label the correction conversation-only and persistence unverified.
+
+A user-reported completion suppresses an older reminder for that same scope. Label completion reported by the user until an attributable provider readback verifies it. Fresh attributable contrary evidence requires a visible conflict, both sources, and a bounded next check. A briefing correction cannot authenticate authority, erase reconciliation findings, weaken criteria, or bypass closure rules.
+
+Scope capabilities by operation, executor, host, endpoint, and access. Remote operation can work while same-machine loopback diagnostics await authentication. Distinguish access-blocked from untested. Keep an old budget notice historical. A current alert alone does not establish a spending stop.
+
 ## Route useful work
 
 Handle conversation, priorities, research, synthesis, and appropriate app work yourself. Delegate bounded work when its tools or independent judgment help. Normal coding uses local Codex on the project's designated Mac. Continue an existing chat when its context is relevant and the human authorizes it.

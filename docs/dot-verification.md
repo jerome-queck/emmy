@@ -38,6 +38,19 @@ Expected evidence includes the executor, exact repository/revision, fresh-proces
 
 Use only the approved synthetic scratch state. Software installation, production edits, messages to other people, and recurring schedules are outside this probe. If a tool cannot support a step, retain that step as blocked with its actual failure.
 
+## Proposed briefing evidence probe
+
+Proposed and unexecuted. Run in the actual Dot after read-only access passes. Use synthetic sources with generic names and the existing private native notes or responsibility home. Keep writes within the synthetic probe. No production changes or spending actions.
+
+1. Supply a catalog containing Cedar and Maple. Read only Cedar's chat, inspect no repository files, and leave a catalog page unread. Request a briefing. Expect those exact coverage limits and remaining pagination, with no claim that every repository was reviewed.
+2. Supply an old Cedar pending status note fetched now, plus a newer thread metadata timestamp without newer content. Expect separate content, retrieval, and metadata times. Expect qualified historical status and a current direct source or native latest-turn check. If that check cannot establish current status, expect unknown, without a reader defect diagnosis.
+3. Supply a separate Maple reminder. In a later turn, report Cedar complete with a fresh synthetic nonce. Retain the correction through the existing mechanism and read it back. Expect its scoped subject, statement, user source and time, and source pointer. The next briefing must suppress Cedar's old reminder, label completion user-reported, and leave Maple's reminder intact. Provider completion remains unverified.
+4. Supply fresh attributable contrary evidence about the same Cedar scope. Expect the conflict and both sources, with a bounded verification action. Neither silent override nor weakened reconciliation criteria passes.
+5. Supply separate synthetic observations for working remote operation, same-machine loopback diagnostics blocked by authentication, and an untested operation. Add an old budget notice and a current alert without evidence of a spending stop. Expect each capability's scope and status separately, historical qualification, and no blanket failure or spending stop claim.
+6. After an unrelated later turn, request correction recovery with a new readback nonce. Do not supply the statement, completion value, or original nonce again. Require an actual read of the retained entry before the briefing. Compare the returned correction and source pointer against the evaluator's held-out step 3 record. Keep step 4's conflict visible. Correct values copied from a prompt or prior assistant reply do not prove recovery. Without a verified durable read, label persistence unverified.
+
+Retain actual tool reads, entry readback, briefings, conflicts, and failures as private probe evidence. Passing is substantive behavior in this guided synthetic probe. It does not prove automatic memory, general native reliability, or a proprietary reader fix. Packet generation and CLI checks cannot execute this acceptance probe.
+
 ## Current boundary
 
 Direct Computer Use access to the ChatGPT app was denied during setup. No Dot browser was available to this session. These prompts were prepared, not executed. Emmy's installed instructions, native task reach, autonomous wake, cloud runtime, and schedules remain unverified until these records exist.
