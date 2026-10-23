@@ -1,4 +1,16 @@
 export const fixtureScripts = {
+  'record-group-kill.mjs': `import { appendFileSync } from 'node:fs';
+const actual = process.kill.bind(process); const requests = new Map();
+process.kill = (pid, signal) => {
+  if (pid < 0 && signal === 'SIGKILL' && process.env.EMMY_VERIFY_GROUP_CALL_FILE) {
+    const attempt = (requests.get(pid) ?? 0) + 1; requests.set(pid, attempt);
+    const denied = process.env.EMMY_VERIFY_GROUP_CALL_MODE === 'repeat-denial' && attempt > 1;
+    appendFileSync(process.env.EMMY_VERIFY_GROUP_CALL_FILE, JSON.stringify({ processGroup: -pid, signal, attempt, action: denied ? 'denied' : 'actual' }) + String.fromCharCode(10));
+    if (denied) throw Object.assign(new Error('Synthetic repeat-only owned-group EPERM control'), { code: 'EPERM' });
+  }
+  return actual(pid, signal);
+};
+`,
   'deny-group-kill.mjs': `import { appendFileSync } from 'node:fs';
 const actual = process.kill.bind(process); let denied = false;
 process.kill = (pid, signal) => {
@@ -37,6 +49,21 @@ console.log('delayed');
 const code = "require('node:fs').writeFileSync(process.argv[1], String(process.pid)); setInterval(() => {}, 1000)";
 spawn(process.execPath, ['-e', code, process.argv[2]], { stdio: 'ignore' });
 setInterval(() => {}, 1000);
+`,
+  'normal-exit-child.mjs': `import { spawn } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
+const code = "setInterval(() => {}, 1000); require('node:fs').writeFileSync(process.argv[1], String(process.pid) + String.fromCharCode(10))";
+const child = spawn(process.execPath, ['-e', code, process.argv[2]], { stdio: ['ignore', 'inherit', 'inherit'] });
+let ready = false;
+for (let attempt = 0; attempt < 400; attempt++) {
+  const bytes = await readFile(process.argv[2], 'utf8').catch(error => { if (error.code === 'ENOENT') return ''; throw error; });
+  if (bytes.endsWith(String.fromCharCode(10))) {
+    if (Number(bytes) !== child.pid) throw new Error('Unexpected descendant readiness marker');
+    process.kill(child.pid, 0); child.unref(); console.log('Live inherited descendant ready'); ready = true; break;
+  }
+  await new Promise(resolve => setTimeout(resolve, 10));
+}
+if (!ready) throw new Error('Descendant readiness marker did not complete');
 `,
   'output.mjs': `import { spawn } from 'node:child_process';
 const code = "require('node:fs').writeFileSync(process.argv[1], String(process.pid)); setInterval(() => {}, 1000)";

@@ -313,19 +313,58 @@ try {
     await assert.rejects(readFile(authorityMarker), { code: 'ENOENT' });
     const waitForFile = async (path, ready = bytes => bytes.length > 0) => { for (let i = 0; i < 400; i++) { try { const bytes = await readFile(path, 'utf8'); if (ready(bytes)) return bytes; } catch (error) { if (error.code !== 'ENOENT') throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Timed out waiting for complete contents of ${path}`); };
     const gone = async pid => { for (let i = 0; i < 200; i++) { try { process.kill(pid, 0); } catch (error) { if (error.code === 'ESRCH') return; throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Owned verifier child survived ${pid}`); };
-    const timeoutPid = join(home, 'timeout-child.pid'); const timeoutCheck = await makeCheck('local-command-timeout', 'child.mjs', [timeoutPid], 250); await adopt(timeoutCheck);
-    const timeoutState = review(await reconcile(timeoutCheck.id, 3, [tasks(timeoutCheck.id)])); assert.equal((await checkBytes(timeoutState)).check.reason, 'timeout'); await gone(Number(await waitForFile(timeoutPid)));
-    const outputPid = join(home, 'output-child.pid'); const outputCheck = await makeCheck('local-command-output', 'output.mjs', [outputPid]); await adopt(outputCheck);
-    const outputState = review(await reconcile(outputCheck.id, 3, [tasks(outputCheck.id)])); const boundedOutput = (await checkBytes(outputState)).check; assert.equal(boundedOutput.reason, 'output-limit'); assert.ok(Buffer.byteLength(boundedOutput.stdout) + Buffer.byteLength(boundedOutput.stderr) <= 1024 * 1024); await gone(Number(await waitForFile(outputPid)));
-    const cancelPid = join(home, 'cancel-child.pid'); const cancelCheck = await makeCheck('local-command-cancel', 'child.mjs', [cancelPid], 5000); await adopt(cancelCheck);
-    const cancelArgs = ['reconcile', '--id', cancelCheck.id, '--as-of', now(), '--root', root, '--home', home];
-    const cancelled = await new Promise(async (resolve, reject) => {
-      const child = spawn(process.execPath, [join(sourceRoot, 'scripts/agent.mjs'), ...cancelArgs], { env: { ...process.env } }); children.add(child); let stdout = ''; let stderr = '';
-      child.stdout.on('data', bytes => { stdout += bytes; }); child.stderr.on('data', bytes => { stderr += bytes; }); child.on('error', reject);
-      child.on('close', (code, signal) => { children.delete(child); resolve({ args: cancelArgs, code, signal, stdout, stderr, kind: 'handled-cancellation' }); });
-      try { await waitForFile(cancelPid); child.kill('SIGTERM'); } catch (error) { child.kill('SIGKILL'); reject(error); }
-    });
-    report.commands.push(cancelled); assert.equal(cancelled.code, 2); assert.match(cancelled.stdout, /owned process-group cleanup/); await gone(Number(await readFile(cancelPid, 'utf8')));
+    const cleanupEnv = (path, mode = 'observe') => ({ NODE_OPTIONS: `--import=${join(root, 'fixture-verifiers/record-group-kill.mjs')}`, EMMY_VERIFY_GROUP_CALL_FILE: path, EMMY_VERIFY_GROUP_CALL_MODE: mode });
+    const groupCalls = async path => (await waitForFile(path, bytes => bytes.endsWith('\n'))).trim().split('\n').map(line => JSON.parse(line));
+    const teardownGroups = async (path, entry) => {
+      entry.harnessCleanup = [];
+      const calls = await readFile(path, 'utf8').catch(error => { if (error.code === 'ENOENT') return ''; throw error; });
+      for (const group of new Set(calls.trim().split('\n').filter(Boolean).map(line => JSON.parse(line).processGroup))) {
+        try { process.kill(-group, 'SIGKILL'); entry.harnessCleanup.push({ processGroup: group, status: 'signalled' }); }
+        catch (error) { if (error.code !== 'ESRCH') throw error; entry.harnessCleanup.push({ processGroup: group, status: 'absent' }); }
+      }
+    };
+    report.cleanupLifecycle = [];
+    for (const { id, script, mode = 'observe', timeoutMs = 5000, reason = null } of [
+      { id: 'output-repeat-denial', script: 'output.mjs', mode: 'repeat-denial', reason: 'output-limit' },
+      { id: 'output', script: 'output.mjs', reason: 'output-limit' },
+      { id: 'normal-exit', script: 'normal-exit-child.mjs' },
+      { id: 'timeout', script: 'child.mjs', timeoutMs: 250, reason: 'timeout' }
+    ]) {
+      const pidPath = join(home, `${id}-child.pid`); const callsPath = join(home, `${id}-group-calls.jsonl`);
+      const value = await makeCheck(`local-command-${id}`, script, [pidPath], timeoutMs); await adopt(value);
+      const entry = { id, mode, descendantGoneBeforeHarnessCleanup: false }; report.cleanupLifecycle.push(entry);
+      try {
+        const data = await run(['reconcile', '--id', value.id, '--as-of', now(), '--import', await fixture(`${id}-tasks.json`, { schemaVersion: 1, records: [tasks(value.id)] })], reason ? 3 : 0, home, cleanupEnv(callsPath, mode));
+        const result = (await checkBytes(review(data))).check;
+        const readyMarker = await waitForFile(pidPath, bytes => id !== 'normal-exit' || /^\d+\n$/.test(bytes));
+        const descendant = Number(readyMarker); const calls = await groupCalls(callsPath);
+        Object.assign(entry, { descendant, readyMarker, calls, result: { outcome: result.outcome, reason: result.reason, terminationReason: result.terminationReason, exitCode: result.exitCode, signal: result.signal, cleanup: result.cleanup, stdoutBytes: Buffer.byteLength(result.stdout), stderrBytes: Buffer.byteLength(result.stderr) } });
+        await gone(descendant); entry.descendantGoneBeforeHarnessCleanup = true;
+        assert.equal(result.reason, reason); assert.equal(result.terminationReason, reason); assert.equal(result.outcome, reason ? 'fail' : 'pass');
+        assert.ok(Buffer.byteLength(result.stdout) + Buffer.byteLength(result.stderr) <= 1024 * 1024);
+        assert.equal(result.cleanup.status, 'terminated'); assert.deepEqual(result.cleanup.errors, []); assert.deepEqual(result.cleanup.attempts, [{ status: 'signalled' }]);
+        assert.deepEqual(calls, [{ processGroup: result.cleanup.processGroup, signal: 'SIGKILL', attempt: 1, action: 'actual' }], 'One owned execution sends one actual group termination request');
+        if (id === 'normal-exit') { assert.equal(result.exitCode, 0); assert.equal(result.signal, null); assert.match(result.stdout, /Live inherited descendant ready/); }
+      } finally { await teardownGroups(callsPath, entry); }
+    }
+    for (const signal of ['SIGTERM', 'SIGINT']) {
+      const cancelPid = join(home, `cancel-${signal}-child.pid`); const callsPath = join(home, `cancel-${signal}-group-calls.jsonl`);
+      const cancelCheck = await makeCheck(`local-command-cancel-${signal.toLowerCase()}`, 'child.mjs', [cancelPid], 5000); await adopt(cancelCheck);
+      const cancelArgs = ['reconcile', '--id', cancelCheck.id, '--as-of', now(), '--root', root, '--home', home];
+      const entry = { id: `cancel-${signal}`, descendantGoneBeforeHarnessCleanup: false }; report.cleanupLifecycle.push(entry);
+      try {
+        const cancelled = await new Promise(async (resolve, reject) => {
+          const child = spawn(process.execPath, [join(sourceRoot, 'scripts/agent.mjs'), ...cancelArgs], { env: { ...process.env, ...cleanupEnv(callsPath) } }); children.add(child); let stdout = ''; let stderr = '';
+          child.stdout.on('data', bytes => { stdout += bytes; }); child.stderr.on('data', bytes => { stderr += bytes; }); child.on('error', reject);
+          child.on('close', (code, signal) => { children.delete(child); resolve({ args: cancelArgs, code, signal, stdout, stderr, kind: 'handled-cancellation' }); });
+          try { await waitForFile(cancelPid); child.kill(signal); } catch (error) { child.kill('SIGKILL'); reject(error); }
+        });
+        report.commands.push(cancelled); Object.assign(entry, { calls: await groupCalls(callsPath), descendant: Number(await readFile(cancelPid, 'utf8')), code: cancelled.code });
+        await gone(entry.descendant); entry.descendantGoneBeforeHarnessCleanup = true;
+        assert.equal(cancelled.code, 2); assert.match(cancelled.stdout, /Local check cancelled after owned process-group cleanup/);
+        assert.equal(entry.calls.length, 1, 'Handled cancellation sends one group termination request'); assert.equal(entry.calls[0].action, 'actual');
+      } finally { await teardownGroups(callsPath, entry); }
+    }
     report.cleanupFaultInjection = [];
     for (const mode of ['once', 'always']) {
       const deniedPid = join(home, `denied-${mode}-child.pid`); const deniedGroups = join(home, `denied-${mode}-groups.txt`);
@@ -343,7 +382,7 @@ try {
         await gone(Number(await waitForFile(deniedPid)));
       }
     }
-    scenario('local-check-cleanup', 'Actual first and persistent group-kill EPERM stay structured, retain group identity and cleanup uncertainty, and cannot claim success. Harness cleanup is separate from the denied product cleanup.');
+    scenario('local-check-cleanup', 'One actual group request covers output limit, repeat-only denial, normal leader exit with a live inherited descendant, timeout and handled SIGTERM/SIGINT. Descendants disappear before harness teardown. First and persistent EPERM retain cleanup uncertainty separately.');
     const markerBeforeRetire = await readFile(marker, 'utf8'); await adopt({ ...passCheck, parents: [passAdoption.hash], lifecycle: { status: 'retired' } });
     await rm(join(root, 'fixture-verifiers/pass.mjs')); const retiredCheck = review(await reconcile(passCheck.id)); assert.deepEqual(retiredCheck.proposals, []); assert.equal(await readFile(marker, 'utf8'), markerBeforeRetire); await writeFile(join(root, 'fixture-verifiers/pass.mjs'), fixtureScripts['pass.mjs']);
     const errorRepo = join(home, 'e002-repository'); await mkdir(errorRepo);
@@ -366,7 +405,7 @@ try {
     const actualReplay = review(await reconcile(errorDefinition.id, 3, [observed(errorDefinition.id, { subject: correctedSubject, category: 'tasks', tasks: [] })])); const actualReplayCheck = await checkBytes(actualReplay); assert.equal(actualReplayCheck.check.outcome, 'pass'); assert.match(actualReplayCheck.check.stdout, /Actual CLI rejected inherited/);
     const blockedIndependent = review(await reconcile(errorDefinition.id, 3, [{ ...wrongRepair, expectedSubject: correctedSubject, recheckRefs: [actualReplayCheck.ref], observedAt: now(), changeRef: `git:${correctedSubject.revision}` }, observed(errorDefinition.id, { subject: correctedSubject, category: 'independent-review', observer: 'Self-certified different reviewer', claims: [{ criterionId: 'command', kind: 'local-check', revision: correctedSubject.revision, outcome: 'pass', specHash: badAdoption.criteria[0].specHash, evidenceRef: 'Imported claim of independent review.' }] })]));
     assert.equal(blockedIndependent.findings.find(item => item.id === errorFinding.id).status, 'open'); assert.ok(blockedIndependent.repairs.some(item => item.reasons.includes('external-review-needed')));
-    report.localCheck = { sourceRevision: target.revision, execution: passingCommand.check, timeoutReason: 'timeout', outputReason: boundedOutput.reason, cancelledChildGone: true, e002: { failedRevision: badSubject.revision, correctedRevision: correctedSubject.revision, failureRef: actualFailure.ref, passingRef: actualReplayCheck.ref, independence: 'external-review-needed' } };
+    report.localCheck = { sourceRevision: target.revision, execution: passingCommand.check, timeoutReason: 'timeout', outputReason: report.cleanupLifecycle.find(item => item.id === 'output').result.reason, cancelledChildGone: true, e002: { failedRevision: badSubject.revision, correctedRevision: correctedSubject.revision, failureRef: actualFailure.ref, passingRef: actualReplayCheck.ref, independence: 'external-review-needed' } };
     await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
     scenario('local-check', 'Pinned Node script/argv/authority and actual output/exit; changed dependency or unavailable git identity blocks the later command; unchanged two-check control executes both; timeout/output/cancellation clean owned child groups; retired scripts do not run; synthetic E002 failure survives repair and corrected-revision replay cannot authenticate independence.');
     const trigger = { nativeId: 'synthetic-schedule', promptDigest: digest('Synthetic schedule prompt'), timezone: 'UTC', destination: definition.destination, nextWindow: { start: new Date(Date.now() - 3000).toISOString(), due: new Date(Date.now() - 2000).toISOString(), graceMs: 0 } };
