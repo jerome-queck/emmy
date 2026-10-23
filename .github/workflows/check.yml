@@ -32,6 +32,12 @@ jobs:
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: 24.19.0
+      - name: Select hosted Java 21
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$JAVA_HOME_21_X64/bin/java" -version
+          echo "EMMY_JAVA_BIN=$JAVA_HOME_21_X64/bin/java" >> "$GITHUB_ENV"
       - name: Check repository
         env:
           EMMY_TESTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -58,7 +64,9 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: emmy-check-${{ github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .local/verification/
+          path: |
+            .local/verification/
+            .local/publication-model/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 30
