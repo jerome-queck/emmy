@@ -51,6 +51,20 @@ Proposed and unexecuted. Run in the actual Dot after read-only access passes. Us
 
 Retain actual tool reads, entry readback, briefings, conflicts, and failures as private probe evidence. Passing is substantive behavior in this guided synthetic probe. It does not prove automatic memory, general native reliability, or a proprietary reader fix. Packet generation and CLI checks cannot execute this acceptance probe.
 
+## Verify automatic guidance and exact output
+
+Proposed and unexecuted. After [one-time adoption](dot-bootstrap.md), retain these native checks separately from the local CLI controls.
+
+1. Read back the actual saved bootstrap. Discover and demonstrate the runtime, trusted installed runner and selected private home. If one bounded setup action provisions the runner, retain its reviewed published revision and actual route readback. Until then, runner provisioning remains an unverified native prerequisite. A local fixture or copied command is insufficient.
+2. Continue an ordinary unrelated turn, then request a briefing without repeating the setup reminder. Retain the actual guidance command and source-check time. An instruction promising to run it is insufficient.
+3. Recover a synthetic scoped correction with a new nonce through an actual native read. Keep expected values held out. Accept an attributable opaque note reference. Compare the recovered statement and source against the earlier retained correction. Conversation-only persistence remains unverified.
+4. After an approved public guidance release, request the next briefing without repeating setup. Verify that the command reads the new pinned guidance and the draft is revised under its digest. A current repository check alone cannot establish current source facts.
+5. Make one synthetic source unavailable and, separately, the guidance refresh unavailable. Expect useful qualified output, original successful cache-check time where available, and no false current or recovery claim.
+6. Compare the returned body bytes and digest with the exact briefing shown. Repair findings and rerun after any edit. Retain receipts privately. Passing a draft followed by a rewritten display fails this check.
+7. If an existing saved briefing schedule is used, read back its actual prompt, cadence and destination after any edit, then observe its run and delivered output separately. Create no new recurrence for this feature.
+
+Hashes establish byte identity. Semantic source checking, actual note recovery, automatic invocation and native delivery need their own evidence.
+
 ## Current boundary
 
 Direct Computer Use access to the ChatGPT app was denied during setup. No Dot browser was available to this session. These prompts were prepared, not executed. Emmy's installed instructions, native task reach, autonomous wake, cloud runtime, and schedules remain unverified until these records exist.

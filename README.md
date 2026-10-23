@@ -7,12 +7,15 @@ Use Node 24 or later. No dependency install, database, server, or API key is req
 ```sh
 npm run agent -- doctor
 npm run agent -- help --json
+npm run agent -- briefing --home <private-home>
 npm run agent -- responsibility --file .local/responsibility.json
 npm run agent -- reconcile --id scratch-watch --as-of <UTC>
 npm run check
 ```
 
-Read [onboarding](docs/onboarding.md) to bind a designated Mac, adopt a responsibility, and recover it from a fresh process. Read [the operating brief](docs/operating-brief.md) with Emmy in the actual Dot. The nine commands retain local commitments and evidence. Native products still own execution, permissions, schedules, and delivery.
+Read [onboarding](docs/onboarding.md) to bind a designated Mac, adopt a responsibility, and recover it from a fresh process. Use [the one-time Dot bootstrap](docs/dot-bootstrap.md) to adopt the briefing routine in Emmy's existing notes. The ten commands retain local commitments and evidence and provide advisory briefing checks. Native products still own execution, permissions, schedules, and delivery.
+
+`briefing` returns readable guidance from one pinned public-main bundle. With `--file <private-draft.json>`, it checks declared sources and renders the exact Markdown to show. [The briefing contract](docs/briefing.md) defines input, source age, correction scope and degraded output. The command does not install a native hook or verify automatic invocation.
 
 A responsibility retains its goal, context, exact repository/host/path/revision, authority reference, finish criteria, source age, next review, feature, and lifecycle. `reconcile` imports optional evidence and reads actual local bytes and git identity. It preserves contradictions, failed repairs, and original reviews. Imported text stays reported. Required independent review stays an external gate.
 

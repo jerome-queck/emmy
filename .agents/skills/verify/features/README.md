@@ -6,7 +6,7 @@ Generated from `src/metadata.mjs`. Read [the driver skill](../SKILL.md) before a
 | --- | --- | --- | --- |
 | [Orientation and private integrity](orientation.md) | help, doctor, catalog | orientation | Public derivation is exercised behaviorally |
 | [Responsibilities and proposals](routing.md) | responsibility, probe | persistent-context, binding-boundaries, native-effect-correlation, probe-packet, definition-concurrency | exact-binding, branch-blocking, effect-stability, authority-scope, native-uncertainty |
-| [Reconciliation and correction](evidence.md) | reconcile | self-check-repair, evidence-boundaries, live-cutoff, local-check, local-check-cleanup, trigger-evolution | observation-gates, reported-assurance, failure-preservation, repair-closure, deterministic-replay, current-evidence, live-cutoff, process-group-cleanup, trigger-coverage, retirement-closure |
+| [Reconciliation and correction](evidence.md) | reconcile, briefing | self-check-repair, evidence-boundaries, live-cutoff, local-check, local-check-cleanup, trigger-evolution, briefing-guidance, briefing-draft, briefing-boundaries | observation-gates, reported-assurance, failure-preservation, repair-closure, deterministic-replay, current-evidence, live-cutoff, process-group-cleanup, trigger-coverage, retirement-closure |
 | [Upkeep and recovery](upkeep.md) | maintain, backup, restore | archive-recovery, cloud-recovery, restored-current-context, publication-interruption, derived-boundaries | restore-suspension, import-prefix |
 
-Feature instructions are maintained prose. This index and the command reference are derived. Maintenance does not independently read behavior or review formal assumptions.
+Feature instructions are maintained prose. This index and the command reference are derived. Maintenance does not independently read behavior or review formal assumptions. Briefing scenarios are behavioral checks; the existing bounded properties do not prove advisory policy.

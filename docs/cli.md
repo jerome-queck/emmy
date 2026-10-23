@@ -11,11 +11,14 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 | catalog | none | Read public projects, source claims, capabilities, tools, and probes. | orientation |
 | responsibility | `--file <value>` required | Retain an immutable goal, context, exact target, criteria, authority, feature, and lifecycle definition. | routing |
 | reconcile | `--id <value>`, `--import <value>`, `--as-of <value>` required | Import evidence, inspect current local state, retain findings/repairs, and propose bounded next work. | evidence |
+| briefing | `--file <value>` | Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown. | evidence |
 | probe | `--id <value>`, `--nonce <value>` required | Publish a proposed Dot onboarding packet with eight probes. | routing |
 | maintain | `--check`, `--write` | Compare or regenerate public references without changing review records. | upkeep |
 | backup | `--to <value>` required | Verify and atomically archive a pinned private record/evidence manifest and bindings. | upkeep |
 | restore | `--from <value>` required, `--into <value>` required | Verify an archive and restore into a new suspended private home. | upkeep |
 
-Exit 0 means the command completed and its applicable checks passed. Exit 2 means invalid input, corrupt storage, or an operational error. Exit 3 means actionable findings, definition conflict, restored suspension, or generated reference drift. These exit codes do not report native task execution.
+Exit 0 means the command completed and its applicable checks passed. Exit 2 means invalid input, corrupt storage, or an operational error. Exit 3 means actionable findings, definition conflict, restored suspension, generated reference drift, or advisory revision/degradation. These exit codes do not report native task execution.
 
 `maintain` requires exactly one of `--check` and `--write`. `probe` selects all eight probes unless `--id` names one. `reconcile` reviews one responsibility with `--id`, or all when omitted. Imports are optional immutable bundles. Local checks require separately scoped execution authority. Restore always needs a new destination and fresh observations in its new epoch.
+
+`briefing` without a file returns readable pinned canonical-main guidance. With `--file <draft.json>`, it returns advisory checked/revise/degraded results and exact rendered Markdown when usable. Revision has no normal body. Cached guidance retains its original successful main-check time. Global `--root` does not change the canonical guidance origin. See [the briefing procedure](briefing.md). No command installs native invocation.

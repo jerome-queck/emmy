@@ -14,6 +14,10 @@ An owned process-group signal denied with `EPERM` produces failed evidence with 
 
 ## Source and drive
 
+`briefing --home <private-home>` returns current or cached readable guidance, or an explicit unavailable state. With `--file <draft.json>`, it validates declared sources and renders advisory Markdown. Digest/reference mismatches return `revise` without a normal body. Cached/unavailable guidance or unavailable correction recovery returns `degraded` with useful qualified output. Invalid input exits 2. The existing native note/register owns durable corrections.
+
+`src/briefing.mjs` owns acquisition, cache, parsing, policy and exact rendering. Scenarios `briefing-guidance`, `briefing-draft` and `briefing-boundaries` drive a real child CLI with harness-owned canonical transport. They verify source pins and bytes, exact returned/retained body digest, scoped suppression and conflict, separate capability scopes, historical budgets, coverage/age limits, incompatible versions, interruption and corrupt fallback. Journal record/evidence bytes stay unchanged. The fixture supplies no native fact and product configuration supplies no endpoint override.
+
 `responsibilities.mjs` performs live inspection and pure reconciliation; `work.mjs` decides evidence/repair/trigger policy; `records.mjs` parses and retains inputs. Scenarios `self-check-repair`, `evidence-boundaries`, `live-cutoff`, `local-check`, `local-check-cleanup`, and `trigger-evolution` cover actual corruption, later recurrence, unreadable-after-green, two-criterion exact closure, false-claim correction, wrong identities/ages/coverage, backdated cloud reviews, bounded child cleanup, first and persistent injected EPERM, E002 analogue, missed/no-op/delivery gaps, retirement conflicts, native uncertainty, and merged obligations.
 
 The local-check drive also changes a tracked imported dependency, hides git identity, and proves the second command stays unexecuted. Its unchanged two-command control executes both.
@@ -21,3 +25,5 @@ The local-check drive also changes a tracked imported dependency, hides git iden
 ## Boundaries
 
 An earlier passing repair stays in its immutable review when later deterioration makes that attempt currently insufficient. A native run, useful outcome, and delivered notification require separate evidence. Only a known explicit due window is evaluated; later windows need native discovery. Retired methods stop their local-check execution, preserve failures, and expose pending native disablement. Imported enabled/disabled contradictions need explicit scope-safe supersession.
+
+Briefing consistency is advisory. Its reviewed source manifest does not prove new formal policy. Downloaded guidance executes no code and grants no authority. Output receipts never replace correction storage. Native invocation, later-turn recovery and exact displayed output remain unverified until their actual probes pass.

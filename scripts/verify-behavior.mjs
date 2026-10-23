@@ -10,6 +10,7 @@ import { canonical, digest, parseObservation, recordPayload, readRecord, readSto
 import { fixtureScripts } from '../verification/fixtures.mjs';
 import { inspectRepository, replayReview } from '../src/responsibilities.mjs';
 import { commands, verification } from '../src/metadata.mjs';
+import { driveBriefing } from '../verification/briefing-drive.mjs';
 
 const sourceRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const evidenceDir = join(sourceRoot, '.local/verification', `behavior-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 8)}`);
@@ -37,9 +38,9 @@ const git = args => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8
 const review = data => data.responsibilities[0].record;
 const reconcile = async (id, expected = 0, imports = null, selectedHome = home, asOf = now()) => run(['reconcile', '--id', id, '--as-of', asOf, ...(imports ? ['--import', await fixture(`import-${randomUUID()}.json`, { schemaVersion: 1, records: imports })] : [])], expected, selectedHome);
 try {
-  assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && process.argv[3] === 'self-check-repair', 'Use no arguments or --focus self-check-repair');
+  assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing');
   for (const path of ['registry', 'docs', '.agents', 'src', 'scripts']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
-  await mkdir(home, { recursive: true }); await mkdir(join(root, 'bin'));
+  await mkdir(join(home, 'records'), { recursive: true }); await mkdir(join(root, 'bin'));
   for (const name of ['gh', 'codex', 'curl', 'ssh']) await writeFile(join(root, 'bin', name), `#!/bin/sh\necho invoked >> '${join(home, 'executor-invoked')}'\nexit 99\n`, { mode: 0o755 });
   await writeFile(join(root, '.gitignore'), '.local/\nbin/\n');
   await mkdir(join(root, 'fixture-verifiers'));
@@ -49,10 +50,12 @@ try {
   const target = { projectId: 'fixture', repository: actual.repository, executor: 'local-codex', hostId: 'fixture-host', nativeProjectId: 'native-fixture', ...actual };
   const bindings = { schemaVersion: 1, localHostId: target.hostId, hosts: { [target.hostId]: { label: 'Synthetic host', machine: hostname() } }, projects: { fixture: { label: 'Synthetic project', hostId: target.hostId, nativeProjectId: target.nativeProjectId, path: target.path, repository: target.repository } } };
   await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
-  assert.equal((await run(['help', '--json'])).commands.length, 9);
+  assert.equal((await run(['help', '--json'])).commands.length, 10);
   assert.deepEqual((await run(['help'])).commands.map(item => item.name), commands.map(item => item.name));
   await run(['doctor']); await run(['catalog']); await run(['snapshot'], 2); await run(['help', '--bogus'], 2);
-  scenario('orientation', 'Nine commands, doctor in isolated repository, catalog and rejected legacy/unknown options.');
+  scenario('orientation', 'Ten commands, doctor in isolated repository, catalog and rejected legacy/unknown options.');
+  if (report.focus !== 'self-check-repair') await driveBriefing({ sourceRoot, root, home, run, scenario, report, children });
+  if (report.focus !== 'briefing') {
   const artifact = join(home, 'artifact.txt'); const original = 'Expected fixture bytes\n'; await writeFile(artifact, original);
   const definition = { id: 'self-check', parents: [], goal: 'Retain the expected local artifact and detect damage.', context: 'Synthetic responsibility survives a fresh process without a prior conversation.', action: 'verify', resource: 'fixture', destination: 'local-evidence', target, authorityRef: { reference: 'Synthetic owner request', action: 'verify', resource: 'fixture', destination: 'local-evidence' }, criteria: [{ id: 'artifact', description: 'Actual bytes match the retained expectation.', evidence: 'local-digest', path: artifact, sha256: digest(original) }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'artifact-watch', method: 'Compare expected local bytes.', intendedEffect: 'Maintain expected artifact bytes.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' } };
   const adopted = await run(['responsibility', '--file', await fixture('definition.json', definition)]);
@@ -308,7 +311,7 @@ try {
     const authorityMarker = join(home, 'unauthorized-execution.txt'); const unauthorizedCheck = await makeCheck('local-command-no-authority', 'pass.mjs', [authorityMarker]); unauthorizedCheck.criteria[0].check.authorityRef.action = 'inspect-local'; await adopt(unauthorizedCheck);
     const deniedCheck = review(await reconcile(unauthorizedCheck.id, 3, [tasks(unauthorizedCheck.id)])); assert.equal((await checkBytes(deniedCheck)).check.reason, 'check-authority-needed');
     await assert.rejects(readFile(authorityMarker), { code: 'ENOENT' });
-    const waitForFile = async path => { for (let i = 0; i < 400; i++) { try { return await readFile(path, 'utf8'); } catch (error) { if (error.code !== 'ENOENT') throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Timed out waiting for ${path}`); };
+    const waitForFile = async (path, ready = bytes => bytes.length > 0) => { for (let i = 0; i < 400; i++) { try { const bytes = await readFile(path, 'utf8'); if (ready(bytes)) return bytes; } catch (error) { if (error.code !== 'ENOENT') throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Timed out waiting for complete contents of ${path}`); };
     const gone = async pid => { for (let i = 0; i < 200; i++) { try { process.kill(pid, 0); } catch (error) { if (error.code === 'ESRCH') return; throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Owned verifier child survived ${pid}`); };
     const timeoutPid = join(home, 'timeout-child.pid'); const timeoutCheck = await makeCheck('local-command-timeout', 'child.mjs', [timeoutPid], 250); await adopt(timeoutCheck);
     const timeoutState = review(await reconcile(timeoutCheck.id, 3, [tasks(timeoutCheck.id)])); assert.equal((await checkBytes(timeoutState)).check.reason, 'timeout'); await gone(Number(await waitForFile(timeoutPid)));
@@ -485,14 +488,32 @@ try {
     report.archive = { manifestHash: backup.manifest.hash, files: backup.manifest.files.length, restoredEpoch: restored.epoch, freshEffectKey: refreshed.proposals[0].effectKey, hardwareLossRecovery: 'unverified' };
     scenario('archive-recovery', 'Pinned archive bytes/references and bindings restore only into a new suspended home; fresh epoch observations recover proposals and preserve keys/failures; corrupt/missing/traversal/symlink archives and existing destinations refuse.');
     report.interruptions = [];
+    const splitCheckpoint = join(root, 'bin/split-checkpoint.json'); const checkpointReads = []; let returnedEarly = false;
+    await writeFile(splitCheckpoint, '');
+    const framedRead = waitForFile(splitCheckpoint, bytes => { checkpointReads.push(bytes); return bytes.endsWith('\n'); }).then(bytes => { returnedEarly = true; return bytes; });
+    for (const bytes of ['', '{"boundary":']) {
+      if (bytes) await writeFile(splitCheckpoint, bytes);
+      const deadline = Date.now() + 2000;
+      while (!checkpointReads.includes(bytes) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 10));
+      assert.ok(checkpointReads.includes(bytes), 'Control observes the actual incomplete marker bytes'); assert.equal(returnedEarly, false, 'Incomplete checkpoint cannot trigger parsing or cancellation');
+    }
+    await writeFile(splitCheckpoint, '{"boundary":"synthetic-complete-marker"}\n');
+    assert.equal(JSON.parse(await framedRead).boundary, 'synthetic-complete-marker'); report.checkpointReadiness = checkpointReads;
     const interruptAt = async (args, boundary) => {
       const checkpoint = join(root, 'bin', `checkpoint-${randomUUID()}.json`);
       const captured = { args, boundary, stdout: '', stderr: '', kind: 'publication-boundary-cancellation' };
       const child = spawn(process.execPath, [join(sourceRoot, 'scripts/agent.mjs'), ...args, '--root', root, '--home', home], { env: { ...process.env, EMMY_VERIFY_BOUNDARY: boundary, EMMY_VERIFY_BOUNDARY_FILE: checkpoint } }); children.add(child);
       child.stdout.on('data', bytes => { captured.stdout += bytes; }); child.stderr.on('data', bytes => { captured.stderr += bytes; });
       const completion = new Promise((resolve, reject) => { child.on('error', reject); child.on('close', (code, signal) => { children.delete(child); resolve({ ...captured, code, signal }); }); });
-      try { const marker = JSON.parse(await waitForFile(checkpoint)); assert.equal(marker.boundary, boundary); child.kill('SIGKILL'); const output = await completion; report.commands.push(output); assert.equal(output.signal, 'SIGKILL'); report.interruptions.push({ boundary, marker, signal: output.signal }); }
-      catch (error) { child.kill('SIGKILL'); await completion; throw error; }
+      let output;
+      try {
+        captured.checkpointBytes = await waitForFile(checkpoint, bytes => {
+          if (!bytes.endsWith('\n')) { captured.lastIncompleteCheckpointBytes = bytes.slice(0, 4096); captured.incompleteCheckpointTruncated = bytes.length > 4096; }
+          return bytes.endsWith('\n');
+        });
+        const marker = JSON.parse(captured.checkpointBytes); assert.equal(marker.boundary, boundary); child.kill('SIGKILL'); output = await completion; report.commands.push(output); assert.equal(output.signal, 'SIGKILL'); report.interruptions.push({ boundary, marker, signal: output.signal });
+      }
+      catch (error) { child.kill('SIGKILL'); output ??= await completion; Object.assign(output, captured); if (!report.commands.includes(output)) report.commands.push(output); throw error; }
     };
     for (const boundary of ['record:created', 'record:files-written', 'record:published']) {
       const args = ['probe', '--nonce', `synthetic-${boundary}`]; await interruptAt(args, boundary); const replay = await run(args); assert.equal((await readRecord(home, replay.hash)).hash, replay.hash);
@@ -521,6 +542,7 @@ try {
     assert.ok(oldFinding.evidenceHistoryRefs.every(reference => advancedFinding.evidenceHistoryRefs.includes(reference)), 'A source advance must preserve every previously retained failure occurrence'); assert.deepEqual(advancedFinding.failureRefs, completionFinding.failureRefs); assert.equal(advancedFinding.status, 'open');
     report.sourceAdvance = { from: target.revision, to: advancedTarget.revision, originalFailureRefs: advancedFinding.failureRefs, retainedOccurrences: advancedFinding.evidenceHistoryRefs.length };
   }
+  }
   assert.equal((await readdir(home)).includes('executor-invoked'), false);
   await cp(join(home, 'records'), join(evidenceDir, 'records'), { recursive: true });
   if (!report.focus) assert.deepEqual(report.scenarios.map(item => item.name).sort(), verification.features.flatMap(feature => feature.scenarios).sort(), 'Every mapped CLI scenario must execute');
@@ -530,7 +552,14 @@ try {
 } finally {
   for (const child of children) child.kill('SIGKILL');
   try { await cp(join(home, 'records'), join(evidenceDir, 'retained-records'), { recursive: true }); } catch (error) { if (error.code !== 'ENOENT') report.evidenceCopyError = error.message; }
+  try { await cp(join(home, 'briefing'), join(evidenceDir, 'briefing'), { recursive: true }); report.retainedBriefing = join(evidenceDir, 'briefing'); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.briefingCopyError = error.message; process.exitCode = 1; } }
   await rm(root, { recursive: true, force: true }); report.cleaned = !await readdir(tmpdir()).then(names => names.includes(basename(root)));
+  if (report.retainedBriefing && report.briefing) {
+    try {
+      report.retainedCheckedBody = join(report.retainedBriefing, 'runs', basename(report.briefing.checked), 'body.md');
+      assert.equal(digest(await readFile(report.retainedCheckedBody)), report.briefing.bodyDigest, 'Exact emitted body survives temporary-root cleanup');
+    } catch (error) { report.status = 'failed'; report.briefingCopyError = error.message; process.exitCode = 1; }
+  }
   await writeFile(join(evidenceDir, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
   process.stdout.write(`${JSON.stringify({ status: report.status, scenarios: report.scenarios.length, commands: report.commands.length, cleaned: report.cleaned, evidence: join(evidenceDir, 'report.json'), error: report.error?.message })}\n`);
 }
