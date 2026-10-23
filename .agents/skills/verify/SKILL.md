@@ -43,4 +43,4 @@ No result establishes native dispatch, Dot installation, account access, schedul
 
 Briefing's advisory policy is behaviorally covered. Its reviewed-source hashes do not add formal semantics or prove source truth, actual correction recovery, automatic invocation or native output identity.
 
-Run `npm run check` for generated references, full behavior, existing merge tests, bounded responsibility properties/mutants, and the unchanged merge-policy verifier. Apply the installed pstack maintenance workflows after feature changes. Generated indexes do not perform independent source review or advance formal pins.
+Run `npm run check` for generated references, full behavior, existing merge tests, bounded responsibility properties/mutants, the unchanged merge-policy verifier, and the [publication model](../publication-contract/SKILL.md). The model requires Java 21 and a hash-pinned TLC jar. Apply the installed pstack maintenance workflows after feature changes. Generated indexes do not perform independent source review or advance formal pins.

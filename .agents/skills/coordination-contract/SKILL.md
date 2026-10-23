@@ -7,7 +7,7 @@ description: Check Emmy's bounded responsibility routing, replay, observation, r
 
 ## Run and interpret
 
-Run `npm run verify:formal` with Node 24 or later. It runs the responsibility checker and the existing independent merge-policy verifier. No package install, solver, service, or account is required.
+Run `node scripts/verify-formal.mjs` with Node 24 or later for the responsibility checker. It requires no package install, solver, service, or account. `npm run verify:formal` also runs the merge-policy enumeration and the [publication model](../publication-contract/SKILL.md), which requires Java 21 and a hash-pinned TLC jar.
 
 The responsibility checker calls actual functions in `src/work.mjs`, `src/responsibilities.mjs`, and `src/records.mjs`. It checks 6,913 predicates across seventeen named properties, then kills thirty-seven paired mutations of those actual source files, then reruns unchanged production. These are finite checks, not a universal proof.
 

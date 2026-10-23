@@ -10,6 +10,7 @@ for (const args of [
   ['--test', 'test/github-auto-merge.test.mjs'],
   ['scripts/verify-formal.mjs'],
   ['verification/merge-policy.mjs'],
+  ['scripts/verify-publication.mjs'],
 ]) {
   const result = spawnSync(process.execPath, args, { cwd: root, stdio: 'inherit' });
   if (result.error) throw result.error;

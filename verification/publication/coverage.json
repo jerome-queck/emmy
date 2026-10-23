@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "kind": "bounded-tla-publication-safety",
+  "sourceCommit": "ae743cefe4d4409600716c18a0cdc549f3232581",
+  "reviewBasis": "Coordinator reviewed the unchanged covered production source at ae743cefe4d4409600716c18a0cdc549f3232581 against every model action and both actual copied-source witnesses. Complete writes precede atomic rename, readback precedes pending-only cleanup, imports begin after complete validation and await dependency-first publication, and observer listing/reads/reference validation remain separate. Retry order may vary only after its dependency exists. Orphan contents are abstracted to an existence bit because no later action reads them; writer, record, partial-write, crash and retry bounds are unchanged. Named stage operators replace explanatory numeric comments without changing their values. Existing production finite checks remain complementary; no source commit was advanced. Current verification digests bind the reviewed artifacts. Fresh independent exact-head review and the restored model/production runs remain release gates.",
+  "sourceFiles": {
+    "src/records.mjs": "88ec4d1c92eef4ffd79fc60093f20b8338b6626a5d9ab4cf3dcc2a45064cb596"
+  },
+  "verificationFiles": {
+    "verification/publication/RecordPublication.tla": "9570ee406a8ea90a767dc5093186585860f83cbf082b94b9b8e13e67a83d0edb",
+    "verification/publication/same-hash.cfg": "79aeb92f6b87a4373b508cbe1b5404625c53890ad85a7b762024e62debc6d0e3",
+    "verification/publication/distinct-import.cfg": "2e8541dfee1521933f7012664ae951d27ade45b4345c4f43edc7ecacabda0b80",
+    "verification/publication/direct-canonical-mutant.cfg": "ac01138937a08ef825759358c3096312c563aaa81213c9395763a3746e8375e2",
+    "verification/publication/reversed-import-mutant.cfg": "3d01afb8d826dcaa45673a67cb9391409b9164576d4248a3d5b5ca74fa05e21c",
+    "verification/publication/drive.mjs": "98352f00f228d28443cb13e54f982aa787dccd09e0c3a478a8fae83df34d82c2",
+    "verification/publication/worker.mjs": "92ea1c8bb11138b5f2ae32b7465e7e9fc8e9edd688be6bc2062c3a1a0fcb630d",
+    "scripts/verify-publication.mjs": "9a34dedf98d2e1a544707f66139b48ebfea185214b5274e05095924333e7f6de",
+    ".agents/skills/publication-contract/SKILL.md": "523c0530ee398bab2b0e230487c5a101a441b9e6fb22ddf0e74bfe9d583f96e3"
+  },
+  "tool": {
+    "release": "TLA+ tools 1.7.4",
+    "tlcVersion": "2.19 of 08 August 2024",
+    "javaMajor": 21,
+    "filename": "tla2tools-1.7.4.jar",
+    "url": "https://github.com/tlaplus/tlaplus/releases/download/v1.7.4/tla2tools.jar",
+    "sha256": "936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88",
+    "officialSha1": "bee4a54f3ee3d4afc347c3240ec2d9e93b075104",
+    "provenance": "The official release checksum table publishes this SHA-1. The cached jar matches it. SHA-256 was computed over those same bytes and is enforced before execution. Java and the jar are never committed.",
+    "sources": [
+      "https://github.com/tlaplus/tlaplus/releases/tag/v1.7.4",
+      "https://github.com/tlaplus/tlaplus/blob/master/USE.md",
+      "https://lamport.azurewebsites.net/tla/book.html"
+    ],
+    "arguments": [
+      "-XX:+UseParallelGC",
+      "-Xmx1g",
+      "tlc2.TLC",
+      "-workers",
+      "1",
+      "-fp",
+      "0"
+    ],
+    "mode": "Breadth-first complete reachable-state exploration. No simulation, depth cutoff, fairness or temporal liveness property. Terminal deadlocks are permitted."
+  },
+  "bounds": {
+    "writers": 2,
+    "observers": 1,
+    "symbolicHashes": [
+      "a",
+      "b",
+      "c"
+    ],
+    "filesPerRecord": 2,
+    "fileStages": [
+      "absent-directory",
+      "empty-directory",
+      "partial-record",
+      "complete-record",
+      "partial-evidence",
+      "both-complete"
+    ],
+    "sameHashRequests": {
+      "1": [
+        "a"
+      ],
+      "2": [
+        "a"
+      ]
+    },
+    "distinctRequests": {
+      "1": [
+        "a",
+        "b"
+      ],
+      "2": [
+        "c"
+      ]
+    },
+    "dependency": {
+      "b": [
+        "a"
+      ]
+    },
+    "crashesPerWriter": 1,
+    "retriesPerWriter": 1,
+    "retryOrder": "The same request restarts. When a already exists, either lexical order of a and b is allowed. This overapproximates symbolic hash ordering after importOrder reads a valid existing prefix.",
+    "observer": "One captured subset of currently visible hashes, arbitrary per-record read order, separate record and evidence reads, then reference validation.",
+    "orphanAbstraction": "Keep one existence bit per writer. A crashed pending directory's fresh name and file stage cannot affect any later modeled action. All partial/completion stages remain explicit before the crash."
+  },
+  "assumptions": [
+    "Content hashes are collision-free and file completion writes exactly the requested symbolic bytes.",
+    "Every pending directory name is fresh, ordinary and disjoint from canonical hash names.",
+    "Directory rename within the same filesystem is atomic. A duplicate nonempty canonical destination is preserved and the writer reads it back.",
+    "No external deletion, mutation, symlink substitution or power loss occurs.",
+    "The modeled import begins after complete preparation and reference validation over a valid existing store.",
+    "Successful filesystem operations and duplicate-destination collisions are modeled. Unexpected I/O errors and cleanup failures are excluded.",
+    "Pure validation and metadata guards around immutable file reads are silent steps. Recursive cleanup only removes an unobservable pending directory.",
+    "TLC's fixed fingerprint implementation is trusted subject to its logged collision estimate. A pass is bounded model evidence, not a universal proof."
+  ],
+  "properties": [
+    {
+      "id": "PublishedComplete",
+      "promise": "Every visible canonical directory contains both complete matching files.",
+      "harm": "A partial canonical record can corrupt later responsibility reviews."
+    },
+    {
+      "id": "ImportPrefixSafe",
+      "promise": "For the configured retainImport caller, visible b always has visible dependency a.",
+      "scope": "publishRecord alone has no dependency-order promise."
+    },
+    {
+      "id": "ReadbackExact",
+      "promise": "Every successful record/evidence readback matches a requested hash and complete canonical bytes."
+    },
+    {
+      "id": "CompletedSurvive",
+      "promise": "Every returned publication remains visible through later interleavings and retries."
+    },
+    {
+      "id": "RetryConvergesOnReturn",
+      "promise": "A completed plan returns exactly its requested hashes, including after a retry.",
+      "scope": "Conditional safety only. No eventual retry or completion guarantee."
+    },
+    {
+      "id": "AcceptedManifestComplete",
+      "promise": "An accepted reader manifest contains its dependencies and complete matching files.",
+      "scope": "Reference-incomplete captured lists may be refused. No atomic snapshot promise."
+    }
+  ],
+  "mapping": [
+    {
+      "source": "src/records.mjs",
+      "functions": [
+        "recordPayload"
+      ],
+      "lines": [
+        196,
+        205
+      ],
+      "model": [
+        "Hashes",
+        "content",
+        "Expected"
+      ],
+      "boundary": "Collision-free symbolic contents abstract canonical hashing and expected file digests."
+    },
+    {
+      "source": "src/records.mjs",
+      "functions": [
+        "publishRecord"
+      ],
+      "lines": [
+        207,
+        224
+      ],
+      "model": [
+        "CreatePending",
+        "WriteFile",
+        "Rename",
+        "ReadRecord",
+        "ReadEvidence",
+        "Cleanup",
+        "Reply"
+      ],
+      "boundary": "Directory creation, each write's partial/completed bytes, atomic rename, separate readbacks and pending-only cleanup remain separate."
+    },
+    {
+      "source": "src/records.mjs",
+      "functions": [
+        "readRecord",
+        "readStore",
+        "validateReferences"
+      ],
+      "lines": [
+        227,
+        284
+      ],
+      "model": [
+        "ObserveList",
+        "ObserveChoose",
+        "ObserveRecord",
+        "ObserveEvidence",
+        "ObserveValidate"
+      ],
+      "boundary": "Metadata guards are silent under ordinary immutable-file assumptions. Each file read and final reference validation remain separate."
+    },
+    {
+      "source": "src/records.mjs",
+      "functions": [
+        "retainImport",
+        "references",
+        "importOrder"
+      ],
+      "lines": [
+        255,
+        306,
+        432,
+        441
+      ],
+      "model": [
+        "Order",
+        "ImportNext",
+        "Retry",
+        "ImportPrefixSafe"
+      ],
+      "boundary": "Initial validated two-record plan is dependency-first. A new call may use either order if the dependency already exists. Arbitrary direct publishers are excluded from dependency promises."
+    },
+    {
+      "source": "src/records.mjs",
+      "functions": [
+        "publicationBoundary",
+        "publishRecord",
+        "retainImport"
+      ],
+      "lines": [
+        189,
+        224,
+        286,
+        306
+      ],
+      "model": [
+        "Crash",
+        "Retry",
+        "orphan"
+      ],
+      "boundary": "A process can stop between mapped operations. A fresh same-input call leaves old pending names ignored and uses a new unique pending directory."
+    }
+  ],
+  "mutations": [
+    {
+      "id": "direct-canonical",
+      "config": "direct-canonical-mutant.cfg",
+      "property": "PublishedComplete",
+      "modelStep": "CreatePending",
+      "sourceChange": "Copied publishRecord uses destination as pending.",
+      "actualBoundary": "record:created",
+      "requiredWitness": "The requested canonical hash directory exists with neither expected file before the child is killed."
+    },
+    {
+      "id": "reversed-import",
+      "config": "reversed-import-mutant.cfg",
+      "property": "ImportPrefixSafe",
+      "modelStep": "Rename",
+      "sourceChange": "Copied importOrder reverses its result.",
+      "actualBoundary": "import:record:1",
+      "requiredWitness": "A complete successor exists and its actual supersedes.hash names an absent predecessor directory."
+    }
+  ],
+  "excluded": [
+    "Arbitrary-size bundles, all record-type reference validation and full parser input domains.",
+    "Unbounded retries, fairness, liveness, filesystem flushes and power-loss durability.",
+    "Arbitrary I/O errors, cleanup failures and hostile external filesystem mutation.",
+    "A globally atomic readStore or responsibility review snapshot.",
+    "Native dispatch, at-most-once execution, provider authentication or authority, accounts, schedules, delivery, merge and deployment."
+  ]
+}
