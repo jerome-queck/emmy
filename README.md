@@ -17,6 +17,8 @@ Read [onboarding](docs/onboarding.md) to bind a designated Mac, adopt a responsi
 
 `briefing` returns readable guidance from one pinned public-main bundle. With `--file <private-draft.json>`, it checks declared sources and renders the exact Markdown to show. [The briefing contract](docs/briefing.md) defines input, source age, correction scope and degraded output. The command does not install a native hook or verify automatic invocation.
 
+[Change delivery](docs/change-delivery.md) proposes Emmy's native coding route and repository quality gates. Published source, installed runner, loaded guidance and ordinary-turn adoption require separate readbacks. Briefing recovery and output evidence stay private; the human body contains scoped updates, safe source links and material limits.
+
 A responsibility retains its goal, context, exact repository/host/path/revision, authority reference, finish criteria, source age, next review, feature, and lifecycle. `reconcile` imports optional evidence and reads actual local bytes and git identity. It preserves contradictions, failed repairs, and original reviews. Imported text stays reported. Required independent review stays an external gate.
 
 Use `--home <private-state>` to select one private register. The default is this checkout's ignored `.local/`. `backup` verifies a pinned record/evidence manifest and bindings. `restore` requires a new destination and suspends work until fresh observations name its new epoch. This does not establish hardware-loss recovery.
