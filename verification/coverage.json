@@ -1,20 +1,23 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "ff6aeb3b8d4a1dad9a4ee81e7ffcfce791a8e4d9",
-  "reviewBasis": "Owner reviewed every covered diff from fdb927098a967e9c59c7214964765d6771532934 through this source commit. Only responsibilities, the actual CLI driver and its fixtures changed; nine other covered owners match the prior reviewed bytes. Each executable check reacquires canonical source. After all acquisition reads, a fresh live cutoff checks canonical restored eligibility and separate command authority immediately before synchronous launch. Original E014 and E015 CLI counterexamples and corrected replays remain retained. Existing local-check and restored-current-context scenarios now require changed-dependency and unavailable-git refusals, an unchanged two-check positive control, delayed restored-authority expiry refusal and a current-authority positive control. The normal source gate refused before this pin update. A diagnostic current-source replay retained all 6,913 predicates, 17 properties, 37 paired actual-source mutants and the restored baseline; its disabled source gate is not acceptance. Pure mappings, bounds, properties and mutation expressions remain unchanged. Filesystem acquisition and live-clock wiring remain actual CLI boundaries. The original EPERM cause remains unresolved and denied product cleanup remains explicit uncertainty. This is owner source maintenance; fresh non-author correction review, the normal source-gated aggregate, hosted CI and native/provider acceptance remain separate.",
+  "sourceCommit": "96f4f61fc25aa9ec915359cd17b36edd1b12fc7d",
+  "reviewBasis": "Owner reviewed every covered diff from ff6aeb3b8d4a1dad9a4ee81e7ffcfce791a8e4d9 through 96f4f61fc25aa9ec915359cd17b36edd1b12fc7d, including all new owners. Four prior covered files change: command metadata, guidance generation, CLI dispatch/help and the actual behavioral driver. Eight other covered owners match their prior reviewed bytes. New briefing acquisition/cache/parsing/rendering and its two harness owners are added to source integrity and behavioral mappings only. The advisory operation writes no responsibility records and changes no authority or closure semantics. No finite property, assumption, bound, production coordination function or mutation expression changes; all 17 properties and 37 paired actual-source mutants remain. The old source gate refused changed bytes before this pin. An exact-source development replay passed 6,913 predicates, killed all 37 intended mutants, then restored the passing production baseline; its disabled source gate is non-acceptance. Issue22 repairs complete checkpoint readiness and failure-byte retention in the driver without changing record publication. Merge source, tests, workflow, coverage pin and bounds are unchanged. This is owner source maintenance. The normal source-gated aggregate, coordinator live maintenance, independent exact-head review, public-main acquisition and native acceptance remain separate.",
   "files": {
     "src/catalog.mjs": "d2c333d10851197c893a96eed024d3163473306189c8dce220ba9cfc5c14c27e",
-    "src/maintenance.mjs": "0aded5eff8d0715b83d906571b51b71da40774f436741e0505f2dfdf9796bb86",
-    "src/metadata.mjs": "7a2003b633eb1454407cd7f4a2e6965076586a1d646908ffee32690e1864aaba",
+    "src/maintenance.mjs": "9249133650e27eb979fdf728aef18e6a36322d556db65d56a7fffa67428b94c4",
+    "src/metadata.mjs": "3a671f7b85cfa127f4f63436135f2e5c2a2cc291fbbc29da4007edb64b540619",
     "src/records.mjs": "88ec4d1c92eef4ffd79fc60093f20b8338b6626a5d9ab4cf3dcc2a45064cb596",
     "src/work.mjs": "283daf5686a7c46df7daae56ed9395d7d49f0268c42558f032189e4a1bc8b3e0",
     "src/responsibilities.mjs": "c71e574971d9bee09c65525147573c6c0386483c08b80b3519e6e73baffb6076",
-    "scripts/agent.mjs": "2ef39a3748dc6b42c1d82f74c064df4cfbcc2f04994b6f4881a5bd5f21887b84",
-    "scripts/verify-behavior.mjs": "969c6c761f74c3aa63fe5c03df2df22bbf28ec4d5fee4df07610e0c531f56b39",
+    "scripts/agent.mjs": "4069987c67303f88fe447c399c28a6c92ac77eab392f7e4a1d949090b94a162c",
+    "scripts/verify-behavior.mjs": "12df5b277434f92659fafaf21824c210afa7f7c3f9874304a222af95a64d6116",
     "scripts/verify-formal.mjs": "b89549617b88178b94ddef772ae3d183ec879fbe51d76449f7dec283240a5a78",
     "verification/fixtures.mjs": "06ebba5fb13423435c7bbbf637f2465eace092f1cd62350d97fed4a74c784d14",
     "verification/properties.mjs": "6e0f157f73a3f1972a00f7405c38995549d43b52dad422b0c596bd6264e2246d",
-    "verification/mutations.mjs": "1477489f94b957eff4d2f8ab0f28e5ac7b8b103ce8566be0c17b5125c06b7683"
+    "verification/mutations.mjs": "1477489f94b957eff4d2f8ab0f28e5ac7b8b103ce8566be0c17b5125c06b7683",
+    "src/briefing.mjs": "699e86455a47b1c70bd636a649852b5b2de11568177ab5e0dc3ec8a6605ae167",
+    "verification/briefing-drive.mjs": "7e73d208ddcd8db35439a858e3c2a4546c8b51cf9e50c5fba923808bee0db886",
+    "verification/briefing-fixtures.mjs": "8a3529a3d99d6ee25ec7958becf7bafd3e11b6b0a59f6b55284aeb01f869e94c"
   },
   "mapping": [
     {
@@ -220,7 +223,10 @@
       "scenarios": [
         "orientation",
         "probe-packet",
-        "derived-boundaries"
+        "derived-boundaries",
+        "briefing-guidance",
+        "briefing-draft",
+        "briefing-boundaries"
       ]
     },
     {
@@ -231,6 +237,22 @@
       ],
       "scenarios": [
         "derived-boundaries"
+      ]
+    },
+    {
+      "source": "src/briefing.mjs",
+      "functions": [
+        "briefing",
+        "acquireGuidance",
+        "refreshGuidance",
+        "parseDraft",
+        "inspectDraft",
+        "publish"
+      ],
+      "scenarios": [
+        "briefing-guidance",
+        "briefing-draft",
+        "briefing-boundaries"
       ]
     }
   ],
@@ -243,6 +265,7 @@
     "Native dispatch, native at-most-once execution, total dormancy and account permissions",
     "Actual schedules, delivery, merges, deployments and hardware-loss recovery",
     "Pure cutoff and signal-result checks do not establish actual clock acquisition, OS signal delivery or asynchronous callback cleanup; these require the CLI driver.",
-    "Pre-execution filesystem acquisition and live restored eligibility require actual CLI driving; finite restoredState checks assume their supplied epoch, observations and evaluation time."
+    "Pre-execution filesystem acquisition and live restored eligibility require actual CLI driving; finite restoredState checks assume their supplied epoch, observations and evaluation time.",
+    "Advisory briefing policy has behavioral CLI controls only. Reviewed-source hashes establish byte identity, not a formal proof of that policy, source truth, native correction recovery or automatic invocation."
   ]
 }
