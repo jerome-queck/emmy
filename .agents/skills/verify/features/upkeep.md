@@ -4,9 +4,13 @@
 
 Run `maintain --check` at session start. After public metadata changes, run `maintain --write`, inspect derived files, and run the aggregate check. Metadata owns commands, feature map, scenario names, and property IDs. Maintenance preserves research dates and formal sync records.
 
+Maintenance also generates `docs/briefing-guidance.json` from exactly the metadata-approved operating brief and briefing procedure. It binds each path, UTF-8 byte length and SHA-256 plus the complete content digest. Local generation does not publish canonical main or install native instructions.
+
 Use `backup --to <archive>` to pin and validate immutable records, referenced evidence bytes, historical records, and private bindings. Use `restore --from <archive> --into <new-home>`. Existing destinations, unsafe paths, symlinks, missing files, corrupt bytes, and invalid references are refused.
 
 A restored home has a new epoch. Fresh exact target, authority, task, and schedule observations must name it and remain current under explicit scoped supersession. A wrong-scope or unavailable authority correction can suspend an active restored home before its next local check. Local targets require actual local inspection. Dot-cloud and prepared Codex Cloud targets can refresh through exact reported readbacks, whose assurance stays reported. Byte inspection is available during suspension; local-check execution and work proposals wait. Original failures and stable effect keys survive. Unrelated inbox files, verification output, and repository checkouts are outside the archive.
+
+The archive also excludes disposable guidance snapshots and briefing artifacts under `<home>/briefing/`. Preserve any wanted briefing evidence separately. The briefing cache has no mutable latest pointer; only complete verified snapshots can support fallback, with their original successful main-check time.
 
 Every executable criterion reevaluates that epoch's retained observations after acquisition reads and immediately before launch. Authority expiring during an earlier check suspends the next command. The driver retains a three-second expiry counterexample and a current-authority positive control.
 

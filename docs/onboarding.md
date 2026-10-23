@@ -1,6 +1,6 @@
 # Adopt and recover a responsibility
 
-Use a scratch repository first. Read [the operating brief](operating-brief.md) with Emmy in the actual Dot and discover tools there. This checkout prepares guidance; it cannot install Dot instructions.
+Use a scratch repository first. Follow [the one-time bootstrap](dot-bootstrap.md) with Emmy in the actual Dot and discover tools there. This checkout prepares guidance; it cannot install Dot instructions.
 
 ## Bind the source
 
@@ -41,6 +41,10 @@ Imports remain reported, including claimed native success, authority, and review
 
 ## Recheck an error
 
+For a briefing, run `briefing --home <private-home>`, read the returned guidance, and prepare the [structured draft](briefing.md) under its digest. Recover corrections from the existing native note or responsibility register. Run `briefing --home <private-home> --file <private-draft.json>`, repair revision findings and rerun. Show its returned body unchanged. A cached or unavailable refresh and unavailable recovery remain explicitly degraded. An opaque native readback reference is accepted; a private path is unnecessary.
+
+`briefing` retains advisory evidence separately from the responsibility journal. A prior briefing receipt never becomes a correction source. It does not execute native tools or install a schedule.
+
 For a safe guided drive, run:
 
 ```sh
@@ -71,6 +75,6 @@ node scripts/agent.mjs restore --from /replace/with/private-archive --into /repl
 node scripts/agent.mjs doctor --home /replace/with/new-home
 ```
 
-The archive contains selected immutable records, retained evidence bytes, historical records, and bindings. It excludes unrelated inbox files, verification output, and repository checkouts. Inspect the returned manifest. Store a verified external copy if hardware-loss recovery matters.
+The archive contains selected immutable records, retained evidence bytes, historical records, and bindings. It excludes unrelated inbox files, verification output, repository checkouts, disposable guidance caches and briefing artifacts. Inspect the returned manifest. Store a verified external copy if hardware-loss recovery matters.
 
 Restore refuses corruption, traversal, symlinks, missing evidence, and an existing destination. The new epoch preserves failures and effect keys. Import fresh target, authority, task, and schedule observations naming that epoch. Actual local target inspection supplies its own observed readback. Byte inspection remains available during suspension; local-check execution and work proposals wait for all required fresh categories.

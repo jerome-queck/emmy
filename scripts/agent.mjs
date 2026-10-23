@@ -7,6 +7,7 @@ import { readCatalog } from '../src/catalog.mjs';
 import { maintain } from '../src/maintenance.mjs';
 import { backupHome, digest, historicalFiles, publishRecord, readBindings, readJson, restoreHome, timestamp } from '../src/records.mjs';
 import { adoptResponsibility, inspectHome, reconcile } from '../src/responsibilities.mjs';
+import { briefing } from '../src/briefing.mjs';
 
 const args = process.argv.slice(2);
 const commandName = args.shift() ?? 'help';
@@ -43,6 +44,9 @@ try {
     case 'reconcile':
       data = await reconcile(home, { id: options.id, imports: options.import ? await readJson(resolve(options.import)) : null, asOf: timestamp(options['as-of'], 'as-of'), catalog });
       exitCode = data.status === 'current' ? 0 : 3; break;
+    case 'briefing':
+      data = await briefing(home, { file: options.file ? resolve(options.file) : null });
+      exitCode = data.mode === 'guidance' ? (data.guidance.state === 'current' ? 0 : 3) : (data.status === 'checked' ? 0 : 3); break;
     case 'probe': {
       const selected = options.id ? catalog.probes.filter(probe => probe.id === options.id) : catalog.probes;
       if (!selected.length) throw new Error(`Unknown probe ${options.id}`);

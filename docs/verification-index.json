@@ -47,6 +47,16 @@
       "feature": "evidence"
     },
     {
+      "name": "briefing",
+      "description": "Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown.",
+      "options": [
+        {
+          "name": "file"
+        }
+      ],
+      "feature": "evidence"
+    },
+    {
       "name": "probe",
       "description": "Publish a proposed Dot onboarding packet with eight probes.",
       "options": [
@@ -142,7 +152,8 @@
       "id": "evidence",
       "title": "Reconciliation and correction",
       "commands": [
-        "reconcile"
+        "reconcile",
+        "briefing"
       ],
       "scenarios": [
         "self-check-repair",
@@ -150,7 +161,10 @@
         "live-cutoff",
         "local-check",
         "local-check-cleanup",
-        "trigger-evolution"
+        "trigger-evolution",
+        "briefing-guidance",
+        "briefing-draft",
+        "briefing-boundaries"
       ],
       "properties": [
         "observation-gates",

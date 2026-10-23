@@ -4,17 +4,25 @@ export const commands = [
   { name: 'catalog', description: 'Read public projects, source claims, capabilities, tools, and probes.', options: [], feature: 'orientation' },
   { name: 'responsibility', description: 'Retain an immutable goal, context, exact target, criteria, authority, feature, and lifecycle definition.', options: [{ name: 'file', required: true }], feature: 'routing' },
   { name: 'reconcile', description: 'Import evidence, inspect current local state, retain findings/repairs, and propose bounded next work.', options: [{ name: 'id' }, { name: 'import' }, { name: 'as-of', required: true }], feature: 'evidence' },
+  { name: 'briefing', description: 'Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown.', options: [{ name: 'file' }], feature: 'evidence' },
   { name: 'probe', description: 'Publish a proposed Dot onboarding packet with eight probes.', options: [{ name: 'id' }, { name: 'nonce', required: true }], feature: 'routing' },
   { name: 'maintain', description: 'Compare or regenerate public references without changing review records.', options: [{ name: 'check', flag: true }, { name: 'write', flag: true }], feature: 'upkeep' },
   { name: 'backup', description: 'Verify and atomically archive a pinned private record/evidence manifest and bindings.', options: [{ name: 'to', required: true }], feature: 'upkeep' },
   { name: 'restore', description: 'Verify an archive and restore into a new suspended private home.', options: [{ name: 'from', required: true }, { name: 'into', required: true }], feature: 'upkeep' }
 ];
 
+export const briefingGuidance = {
+  schemaVersion: 1,
+  checkerVersion: 1,
+  path: 'docs/briefing-guidance.json',
+  paths: ['docs/operating-brief.md', 'docs/briefing.md']
+};
+
 export const verification = {
   features: [
     { id: 'orientation', title: 'Orientation and private integrity', commands: ['help', 'doctor', 'catalog'], scenarios: ['orientation'], properties: [] },
     { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'native-effect-correlation', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope', 'native-uncertainty'] },
-    { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile'], scenarios: ['self-check-repair', 'evidence-boundaries', 'live-cutoff', 'local-check', 'local-check-cleanup', 'trigger-evolution'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay', 'current-evidence', 'live-cutoff', 'process-group-cleanup', 'trigger-coverage', 'retirement-closure'] },
+    { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile', 'briefing'], scenarios: ['self-check-repair', 'evidence-boundaries', 'live-cutoff', 'local-check', 'local-check-cleanup', 'trigger-evolution', 'briefing-guidance', 'briefing-draft', 'briefing-boundaries'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay', 'current-evidence', 'live-cutoff', 'process-group-cleanup', 'trigger-coverage', 'retirement-closure'] },
     { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore'], scenarios: ['archive-recovery', 'cloud-recovery', 'restored-current-context', 'publication-interruption', 'derived-boundaries'], properties: ['restore-suspension', 'import-prefix'] }
   ],
   properties: [

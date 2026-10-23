@@ -76,11 +76,17 @@ Backup fixes a manifest, copies every referenced record/evidence byte and privat
 
 Feature reviews record useful outcomes, false alarms, repair effort, motivating failures, and review dates. Recommend retain/change/merge/retire. Zero actions alone does not discredit monitoring. Retirement immediately stops new work proposals. It remains pending until every linked trigger has attributable native disablement readback, with imported assurance still reported. Preserve unresolved findings or explicitly transfer them to a replacement. Merged IDs redirect without rewriting history. The replacement review exposes incoming unresolved transfers. An unsuperseded current enabled readback keeps native disablement pending even beside a disabled report. Scope-safe explicit supersession can report ordinary enabled-to-disabled evolution.
 
-Replace `snapshot`, `brief`, `plan`, `receipt`, and `assess` with `responsibility` and `reconcile`. Retain `help`, `doctor`, `catalog`, `probe`, `maintain`. Add `backup` and `restore`. Nine commands total. `doctor` checks private-store integrity and suspension, without native probes. Exit 0 completes the local operation, 2 rejects invalid/corrupt input, 3 reports actionable findings/conflict. No exit code asserts native execution.
+Replace `snapshot`, `brief`, `plan`, `receipt`, and `assess` with `responsibility` and `reconcile`. Retain `help`, `doctor`, `catalog`, `probe`, `maintain`. Add `backup` and `restore`. The 23 October advisory addition below brings the CLI to ten commands. `doctor` checks private-store integrity and suspension, without native probes. Exit 0 completes the local operation, 2 rejects invalid/corrupt input, 3 reports actionable findings/conflict or advisory revision/degradation. No exit code asserts native execution.
 
 Migrate examples, driver, metadata, operating brief, and onboarding together; delete old public command branches. Preserve legacy immutable records as historical imports without upgrading assurance. Rewrite the existing four feature files for orientation, responsibility/routing, reconciliation/evidence, and upkeep/recovery. Regenerate indexes. Review covered diffs before updating formal hashes. No parallel legacy API.
 
 ## Verification and implementation gate
+
+The 23 October `briefing` addition is a separate advisory operation. `src/briefing.mjs` owns canonical acquisition, immutable cache snapshots, the draft boundary and deterministic Markdown. Metadata approves exactly the operating brief and `docs/briefing.md`; maintenance generates their bundle. Main resolves once, then tree/blob pins and embedded digests bind the actual bytes. Downloads remain data. Incompatible guidance requests an installed-checker upgrade.
+
+The draft declares separate content/retrieval/metadata dates, exact source and coverage scopes, opaque correction readbacks and structured entries. Current/cached/unavailable guidance and checked/revise/degraded results retain their distinct meaning. A required revision returns no normal body. A usable result retains the exact emitted body and SHA-256. Native notes and responsibility records remain the correction owners; cached guidance and output evidence create no journal authority or closure semantics.
+
+Briefing policy has actual CLI coverage. Adding its source to the reviewed-file manifest establishes source integrity only. It adds no bounded formal property. The existing seventeen coordination properties, thirty-seven paired source mutants, assumptions and bounds remain unchanged. Native adoption, ordinary-turn invocation, later correction recovery and displayed-output comparison remain separate probes.
 
 Serial real CLI acceptance must cover:
 
