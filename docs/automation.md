@@ -4,9 +4,15 @@ This document describes repository behavior for `jerome-queck/emmy`, the canonic
 
 ## Checks and evidence
 
-`Emmy checks` publishes one required job named `emmy-check`. It uses Node 24.19.0 and runs `npm run check` without third-party package installation. The job checks the PR head for pull requests and the event SHA for other events. It records the actual checkout SHA before running the command.
+`Emmy checks` publishes one required job named `emmy-check`. It uses Node 24.19.0 and the hosted runner's Java 21. It runs `npm run check` without npm package installation. The publication checker downloads the official TLA+ tools 1.7.4 jar into ignored `.local/tools/` when absent and verifies its pinned SHA-256 before execution. The job checks the PR head for pull requests and the event SHA for other events. It records the actual checkout SHA before running the command.
 
-`npm run check` checks generated references, drives CLI behavior, runs the GitHub adapter tests, and runs both bounded verifiers. `npm run verify:formal` runs coordination and merge policy verification.
+`npm run check` checks generated references and combines three verification layers:
+
+- Real CLI journeys and GitHub adapter tests check observed behavior.
+- Finite coordination and merge-policy checks call actual production functions and reject paired source mutants.
+- The bounded TLA+ publication model explores filesystem interleavings. Paired copied-production mutations must produce matching actual filesystem witnesses.
+
+`npm run verify:formal` runs both finite checkers and the publication model. `npm run verify:model` runs the [publication contract](../.agents/skills/publication-contract/SKILL.md) alone. Its pass covers the stated model bounds and assumptions, not arbitrary filesystem behavior or native execution.
 
 The workflow runs on these events:
 
@@ -18,7 +24,7 @@ The workflow runs on these events:
 | Weekly Sunday, 01:17 UTC | Default branch. GitHub may delay scheduled runs. |
 | `workflow_dispatch` | Selected ref. |
 
-Each run uploads `.local/verification/`, including the checkout receipt and captured command output. Artifact names contain the checked SHA, run ID, and attempt. Retention is 30 days. Upload also runs after failure. Other `.local/` content can contain private account and machine state and is excluded.
+Each run uploads `.local/verification/`, including the checkout receipt and captured command output, and `.local/publication-model/`, including TLC logs, counterexamples, copied-source filesystem witnesses and restored baselines. Artifact names contain the checked SHA, run ID, and attempt. Retention is 30 days. Upload also runs after failure. Other `.local/` content, including the cached jar and private account or machine state, is excluded.
 
 The read-only CI token has `contents: read`. PR code runs only in this job. Checkout does not persist credentials. Upstream actions use commit SHA pins. Dependabot proposes weekly GitHub Actions updates through the same review policy.
 
