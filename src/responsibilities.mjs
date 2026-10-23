@@ -70,7 +70,7 @@ async function runLocalCheck(criterion, definition, { asOf, epoch, observations 
       else resolve({ stdout: stdout.toString('utf8'), stderr: stderr.toString('utf8'), exitCode, signal, reason: errors.length ? 'process-group-cleanup-failed' : reason, terminationReason: reason, cleanup });
     };
     const terminate = () => {
-      if (settled) return;
+      if (settled || cleanupAttempts.length > 0) return;
       let attempt;
       try { attempt = terminateOwnedProcessGroup(child.pid); }
       catch (error) { settled = true; stopWaiting(); release(); reject(new Error(`Owned process-group cleanup unverified for ${child.pid}: ${error.code ?? error.message}`, { cause: error })); return; }
