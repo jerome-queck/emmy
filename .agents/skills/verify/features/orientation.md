@@ -8,7 +8,7 @@ Doctor validates bindings, immutable hashes, referenced records/evidence, retain
 
 ## Source and drive
 
-`scripts/agent.mjs`, `src/records.mjs`, `src/responsibilities.mjs`, and `src/metadata.mjs` own this route. Full scenario `orientation` drives actual help, doctor in an isolated repository, catalog, removed command rejection, and unknown options. Other scenarios test corruption and restored doctor state.
+`scripts/agent.mjs`, `src/catalog.mjs`, `src/maintenance.mjs`, `src/metadata.mjs`, `src/records.mjs`, `src/responsibilities.mjs`, and `src/work.mjs` own this route. Full scenario `orientation` drives actual help, doctor in an isolated repository, catalog, removed command rejection, and unknown options. Other scenarios test corruption and restored doctor state.
 
 ## Boundaries
 

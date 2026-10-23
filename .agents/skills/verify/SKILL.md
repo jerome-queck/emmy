@@ -7,7 +7,7 @@ description: Drive Emmy's real CLI after changes to responsibility context, reco
 
 ## Launch and health
 
-Use Node 24 or later. Run `npm run agent -- help --json`. It returns `ok: true` with ten commands. Run `npm run agent -- doctor` and `maintain --check`. Doctor checks local runtime, catalog, bindings, store references/evidence, historical records, generated drift, and restored suspension. It does not probe native tools.
+Use Node 24 or later. Run `npm ci --ignore-scripts` to install locked verification dependencies. Run `npm run agent -- help --json`. It returns `ok: true` with ten commands. Run `npm run agent -- doctor` and `maintain --check`. Doctor checks local runtime, catalog, bindings, store references/evidence, historical records, generated drift, and restored suspension. It does not probe native tools.
 
 Each driver command starts a fresh Node process. Run `npm run verify:behavior` for the complete mapped drive. It creates and health-checks its own synthetic temporary git repository and private home. After a surprising failure, retain the report and rerun in a new isolated session with doctor. Expected refusal controls are part of the drive.
 

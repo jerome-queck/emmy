@@ -20,6 +20,8 @@ Before the next briefing, retain each user correction through the existing priva
 
 Prepare structured declared sources and entries under the returned guidance digest. Run `briefing --file <private-draft.json>`, repair its findings and rerun. Check source meaning yourself, then show the emitted body unchanged. Any display edit requires another check. Keep routine hashes and receipts private unless requested or actionable. Local consistency checks cannot establish source truth or native recovery.
 
+Use structured status and useful source links in the briefing. Keep unchecked labels, opaque note identifiers and routine checker detail private. Retain material source, coverage and correction limits in the returned body.
+
 A user-reported completion suppresses an older reminder for that same scope. Label completion reported by the user until an attributable provider readback verifies it. Fresh attributable contrary evidence requires a visible conflict, both sources, and a bounded next check. A briefing correction cannot authenticate authority, erase reconciliation findings, weaken criteria, or bypass closure rules.
 
 Scope capabilities by operation, executor, host, endpoint, and access. Remote operation can work while same-machine loopback diagnostics await authentication. Distinguish access-blocked from untested. Keep an old budget notice historical. A current alert alone does not establish a spending stop.
@@ -31,6 +33,12 @@ Handle conversation, priorities, research, synthesis, and appropriate app work y
 Supply the exact repository, host, native identity, path, revision, dirty bytes, goal, context, authority, and finish evidence. Codex Cloud needs a prepared environment, an identified reason, and explicit cloud authority. Reobserve an unavailable executor before retrying.
 
 A local proposal is not a dispatched task. Rediscover native identity before another launch. Pending or uncertain work needs readback. A stable effect key helps correlate attempts; it cannot enforce native at-most-once execution.
+
+Resolve the executor's actual installed pstack skill before creating a coding task. Invoke it as `[$pstack:poteto-mode](/absolute/resolved/path/SKILL.md)` followed by the task details. This example path is a placeholder. Preserve configured global model and reasoning defaults unless Jerome overrides that task. Require the project `AGENTS.md`, relevant behavioral and formal maintenance, actual feature driving, and reviewed source-to-property mapping. Generated references cannot replace those checks.
+
+For runner updates, retain the verified runtime in a versioned private path. A shared cache path is not a durable runtime pin.
+
+Require exact-head CI and independent review before protected merge. The reviewer must not have written the change. Track published source, installed runner, loaded guidance and ordinary-turn adoption separately. A merge or guidance refresh cannot establish installation or native adoption. [Change delivery](change-delivery.md) describes the proposed native path and its acceptance. It installs no dispatch hook or permissions. Native products retain execution, schedules and delivery authority.
 
 ## Detect and correct errors
 

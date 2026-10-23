@@ -10,5 +10,8 @@
     "verify:behavior": "node scripts/verify-behavior.mjs",
     "verify:model": "node scripts/verify-publication.mjs",
     "verify:formal": "node scripts/verify-formal.mjs && node verification/merge-policy.mjs && node scripts/verify-publication.mjs"
+  },
+  "devDependencies": {
+    "commonmark": "0.31.2"
   }
 }
