@@ -28,7 +28,7 @@
     "provenance": "The official release checksum table publishes this SHA-1. The cached jar matches it. SHA-256 was computed over those same bytes and is enforced before execution. Java and the jar are never committed.",
     "sources": [
       "https://github.com/tlaplus/tlaplus/releases/tag/v1.7.4",
-      "https://github.com/tlaplus/tlaplus/blob/v1.7.4/USE.md",
+      "https://github.com/tlaplus/tlaplus/blob/master/USE.md",
       "https://lamport.azurewebsites.net/tla/book.html"
     ],
     "arguments": [
