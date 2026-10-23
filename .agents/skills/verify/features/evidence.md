@@ -14,7 +14,7 @@ An owned process-group signal denied with `EPERM` produces failed evidence with 
 
 ## Source and drive
 
-`briefing --home <private-home>` returns current, cached or unavailable readable guidance. With `--file <draft.json>`, it validates declared sources and renders advisory Markdown. Digest/reference mismatches return `revise` without a normal body. Cached/unavailable guidance or unavailable correction recovery returns `degraded` with useful qualified output. Invalid input exits 2. The existing native note/register owns durable corrections.
+`briefing --home <private-home>` returns current or cached readable guidance, or an explicit unavailable state. With `--file <draft.json>`, it validates declared sources and renders advisory Markdown. Digest/reference mismatches return `revise` without a normal body. Cached/unavailable guidance or unavailable correction recovery returns `degraded` with useful qualified output. Invalid input exits 2. The existing native note/register owns durable corrections.
 
 `src/briefing.mjs` owns acquisition, cache, parsing, policy and exact rendering. Scenarios `briefing-guidance`, `briefing-draft` and `briefing-boundaries` drive a real child CLI with harness-owned canonical transport. They verify source pins and bytes, exact returned/retained body digest, scoped suppression and conflict, separate capability scopes, historical budgets, coverage/age limits, incompatible versions, interruption and corrupt fallback. Journal record/evidence bytes stay unchanged. The fixture supplies no native fact and product configuration supplies no endpoint override.
 
