@@ -10,7 +10,7 @@ A local-check pins a repository-relative Node script, digest, arguments, expecte
 
 Before each executable criterion, the canonical inspector reacquires repository path, repository identity, revision and dirty bytes. A mismatch or unreadable identity yields unknown evidence without executing that command. Restored eligibility uses the pinned epoch and observations with a fresh live cutoff for each command. Earlier source-changing failure remains retained. Post-execution inspection still detects changes during execution. These checks do not atomically pin filesystem bytes or revoke running commands.
 
-An owned process-group signal denied with `EPERM` produces failed evidence with `process-group-cleanup-failed`, its process-group ID, and `cleanup.status = unverified`. The operation stops waiting without claiming termination. Cancellation reports the same uncertainty as an operational error. An unverified group may still contain processes; the driver records its later fixture cleanup separately. The original observed EPERM cause remains unresolved.
+Each child records at most one cleanup attempt across output, timeout, cancellation, exit, and close callbacks. Successful signalling waits for close, including normal leader exit with inherited descendants. An owned process-group signal denied with `EPERM` produces failed evidence with `process-group-cleanup-failed`, its process-group ID, and `cleanup.status = unverified`. The operation stops waiting without claiming termination. Cancellation reports the same uncertainty as an operational error. An unverified group may still contain processes; the driver records its later fixture cleanup separately. The original observed EPERM cause remains unresolved.
 
 ## Source and drive
 
@@ -21,6 +21,8 @@ An owned process-group signal denied with `EPERM` produces failed evidence with 
 `responsibilities.mjs` performs live inspection and pure reconciliation; `work.mjs` decides evidence/repair/trigger policy; `records.mjs` parses and retains inputs. Scenarios `self-check-repair`, `evidence-boundaries`, `live-cutoff`, `local-check`, `local-check-cleanup`, and `trigger-evolution` cover actual corruption, later recurrence, unreadable-after-green, two-criterion exact closure, false-claim correction, wrong identities/ages/coverage, backdated cloud reviews, bounded child cleanup, first and persistent injected EPERM, E002 analogue, missed/no-op/delivery gaps, retirement conflicts, native uncertainty, and merged obligations.
 
 The local-check drive also changes a tracked imported dependency, hides git identity, and proves the second command stays unexecuted. Its unchanged two-command control executes both.
+
+The cleanup drive counts actual group requests for output limit, normal leader exit, timeout, and handled SIGTERM/SIGINT. Its repeat-only EPERM control calls the OS on the first request and denies only a redundant request. Positive controls prove descendant disappearance before harness teardown. The normal-exit descendant supplies a complete readiness marker and inherits the leader's output pipes. Bounded helper predicates classify independent calls and do not prove this asynchronous lifecycle.
 
 ## Boundaries
 
