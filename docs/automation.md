@@ -4,15 +4,17 @@ This document describes repository behavior for `jerome-queck/emmy`, the canonic
 
 ## Checks and evidence
 
-`Emmy checks` publishes one required job named `emmy-check`. It uses Node 24.19.0 and the hosted runner's Java 21. It runs `npm run check` without npm package installation. The publication checker downloads the official TLA+ tools 1.7.4 jar into ignored `.local/tools/` when absent and verifies its pinned SHA-256 before execution. The job checks the PR head for pull requests and the event SHA for other events. It records the actual checkout SHA before running the command.
+`Emmy checks` publishes one required job named `emmy-check`. It uses Node 24.19.0 and the hosted runner's Java 21. It installs locked verification dependencies with `npm ci --ignore-scripts`, then runs `npm run check`. The publication checker downloads the official TLA+ tools 1.7.4 jar into ignored `.local/tools/` when absent and verifies its pinned SHA-256 before execution. The job checks the PR head for pull requests and the event SHA for other events. It records the actual checkout SHA before running the command.
 
-`npm run check` checks generated references and combines three verification layers:
+`npm run check` first runs the tracked Markdown link checker and its CLI fixture tests, then checks generated references and combines three verification layers:
 
 - Real CLI journeys and GitHub adapter tests check observed behavior.
 - Finite coordination and merge-policy checks call actual production functions and reject paired source mutants.
 - The bounded TLA+ publication model explores filesystem interleavings. Paired copied-production mutations must produce matching actual filesystem witnesses.
 
 `npm run verify:formal` runs both finite checkers and the publication model. `npm run verify:model` runs the [publication contract](../.agents/skills/publication-contract/SKILL.md) alone. Its pass covers the stated model bounds and assumptions, not arbitrary filesystem behavior or native execution.
+
+`npm run check:links` runs the Markdown check alone. Local targets must exist with exact tracked spelling; Markdown fragments must match the repository's heading rules. External URLs and code examples are ignored. The [verification skill](../.agents/skills/verify/SKILL.md#scope) records the block-level diagnostic locations and unsupported HTML anchors and links.
 
 The workflow runs on these events:
 

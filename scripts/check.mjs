@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 for (const args of [
+  ['scripts/check-markdown-links.mjs'],
+  ['--test', 'test/markdown-links.test.mjs'],
   ['scripts/agent.mjs', 'maintain', '--check'],
   ['scripts/verify-behavior.mjs'],
   ['--test', 'test/github-auto-merge.test.mjs'],
