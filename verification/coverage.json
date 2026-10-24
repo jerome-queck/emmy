@@ -1,26 +1,26 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "e715838bd56a7ceebd272424b1e2eacdd0a0f8d3",
-  "reviewBasis": "Reviewed the complete covered diff from 8785949e008d7e0b605ae5c41fdd7676db658138 through e715838bd56a7ceebd272424b1e2eacdd0a0f8d3. Existing reviewed owners change only in records, CLI and metadata, behavioral/formal runners, properties and mutations. The new dispatch owner is a read-only advisory projection over the existing binding and responsibility journal. Optional schema guards add no publication awaits or record-reference edges. Definitions pin dispatcher/correlation/skill, with scoped model-change provenance; task observations retain attempt and ready-child lineage. The pure decision reads current explicit authority, host/project identity, recorded policy, installed skill bytes, coverage and acquisition times. It refuses unresolved launch attempts, masked second attempts, dispatcher-as-child, cross-objective reuse and pre-restore nested acquisitions. Native creation and effective access remain external and unproved. The real fresh-process CLI driver covers recovery, exact request construction, lost responses, no-effect resolution, refusal boundaries and exact archive/restore bytes. Its post-cleanup evidence retention is checked. Seven prior covered files changed, eight retain their reviewed bytes and three new owners are pinned. The existing seventeen properties and thirty-seven mutants keep their promises and assumptions. Added dispatch-recovery enumerates 160 phase/coverage/availability/age cases and 31 targeted cases, each with record-order permutation, for 382 additional predicates and seven intended production-source mutants. Parsed immutable inputs, symbolic hashes and supplied native reports are assumed; this is bounded advice, not native at-most-once, authenticated settings, provider or invocation proof. Strict stale-source refusals, reproduced product failures and development counterexamples were retained before pin advancement. Independent exact-head review, source-gated replay, TLC and actual filesystem witnesses remain separate acceptance gates.",
+  "sourceCommit": "4f21068b2dc34d082f7897a91d79a3293f6830a9",
+  "reviewBasis": "Reviewed the complete covered diff from 8785949e008d7e0b605ae5c41fdd7676db658138 through e715838bd56a7ceebd272424b1e2eacdd0a0f8d3. Existing reviewed owners change only in records, CLI and metadata, behavioral/formal runners, properties and mutations. The new dispatch owner is a read-only advisory projection over the existing binding and responsibility journal. Optional schema guards add no publication awaits or record-reference edges. Definitions pin dispatcher/correlation/skill, with scoped model-change provenance; task observations retain attempt and ready-child lineage. The pure decision reads current explicit authority, host/project identity, recorded policy, installed skill bytes, coverage and acquisition times. It refuses unresolved launch attempts, masked second attempts, dispatcher-as-child, cross-objective reuse and pre-restore nested acquisitions. Native creation and effective access remain external and unproved. The real fresh-process CLI driver covers recovery, exact request construction, lost responses, no-effect resolution, refusal boundaries and exact archive/restore bytes. Its post-cleanup evidence retention is checked. Nine prior covered files changed, six retain their reviewed bytes and three new owners are pinned. The existing seventeen properties and thirty-seven mutants keep their promises and assumptions. Added dispatch-recovery enumerates 160 phase/coverage/availability/age cases and 42 targeted cases, each with record-order permutation, for 404 additional predicates and nine intended production-source mutants. Parsed immutable inputs, symbolic hashes and supplied native reports are assumed; this is bounded advice, not native at-most-once, authenticated settings, provider or invocation proof. Strict stale-source refusals, reproduced product failures and development counterexamples were retained before pin advancement. Independent exact-head review, source-gated replay, TLC and actual filesystem witnesses remain separate acceptance gates. Follow-up independent actual CLI review at 8d3e9fa09fdd76e85e6538a3dbfd1329930aa995 found standalone category=effect uncertainty and child bindings from legacy definitions were invisible to dispatch. The author reproduced the create error on that old source with new real CLI controls. Reviewed full follow-up through 4f21068b2dc34d082f7897a91d79a3293f6830a9. currentNativeEffects moves the existing reconcileState selector unchanged into work.mjs; both consumers now share exact target scope excluding revision/dirty digest and only eligible complete supersession can retire retained effects. The existing native-uncertainty mutant now targets that new owner with the same promised counterexample. Dispatch treats other relevant native effect evidence as requiring rediscovery and scans all objective definitions for child reuse. Eleven new targeted cases/permutations, CLI refusal/resolution/continuation controls and two further dispatch mutants cover these findings. No previous predicate or property was removed. The strict stale-source refusal and development replay are retained; exact-head re-review remains required.",
   "files": {
     "src/catalog.mjs": "d2c333d10851197c893a96eed024d3163473306189c8dce220ba9cfc5c14c27e",
     "src/maintenance.mjs": "9249133650e27eb979fdf728aef18e6a36322d556db65d56a7fffa67428b94c4",
     "src/metadata.mjs": "ffc50596b21db6965f507f12cb3ebcfda19b81b00a619c8bdc205534a59ff4c8",
     "src/records.mjs": "15067f4f68794fbe36c021fe8194ea59c19150d3ee77e70cd64aab2ddfe5ff59",
-    "src/work.mjs": "283daf5686a7c46df7daae56ed9395d7d49f0268c42558f032189e4a1bc8b3e0",
-    "src/responsibilities.mjs": "e189b0e97eee5ec2abfe8aebd8afa8f20d4f3a8726fc223c5e99f71ce8119256",
+    "src/work.mjs": "5e46b075f4f64b1da5f2099a8a68b02867745dc5b1a0ede654688c06d569d3dd",
+    "src/responsibilities.mjs": "c98f912e04241e6a86b189e5913b65489a659845aeed25948934eb61cbb5339e",
     "scripts/agent.mjs": "8b1d905a161c4ae9b96faea277a3c2a0981dc9644b66ec577c24824dd2e52e62",
     "scripts/verify-behavior.mjs": "9f5d10035323e8397d88af8bfe2b76b6e2d360879e4de8590b993ff612d7ea70",
     "scripts/verify-formal.mjs": "d151e2b7c0cc5f13afe6f4d14b74752d2514c91435f761208d8ac6145c774345",
     "verification/fixtures.mjs": "388cf9e2fc5ccec675367a7110ea123902b53f7d22198c5c51035db12517f98c",
     "verification/properties.mjs": "198067e90e984ce5fa3997026ed6d8a35f60aab8e9e42c99d931126420a4f2bf",
-    "verification/mutations.mjs": "9cad34a2dcd526414f6088d1d77ecb9b7de6cc0fe6eb061323752d09bc3da75e",
+    "verification/mutations.mjs": "4a4505fb850549a3db80cf419144296f39f277d78ec5212b7057829196a2f790",
     "src/briefing.mjs": "5dc14c945c9208edbd0ae5a782e8b4c9a4300fc37bbab521d51322d8e4cae6b3",
     "verification/briefing-drive.mjs": "7047dd27f49e9c6695ef42bda9418e10be180d24ac96253b3d7a905bfe16f8d9",
     "verification/briefing-fixtures.mjs": "b882ee5e672110184e8ebb1f1159c721d1d3ce9be037339fd367d4e9d7dad792",
-    "src/dispatch.mjs": "7e9fb39ad892d22612955bd3dbbebcf8f11f1faa649d7648c0f1e5b26529daae",
-    "verification/dispatch-drive.mjs": "88f04fe0862436d3b54e71b8f5db8f20b4030a57ed12145176c00c31c631743f",
-    "verification/dispatch-properties.mjs": "bc9982d72ed7581fc8b351d0fdaee1247d9fea9f1f4dfe6dbeafe326f4fd0f62"
+    "src/dispatch.mjs": "578c64cd294f86a624044f66a3c95866e261762b82e0c9aa835a305c881df5f7",
+    "verification/dispatch-drive.mjs": "3f5056627c9f6d143f358c6fcff0f8e2086aec8cf39f24823d65e68a58ab5f28",
+    "verification/dispatch-properties.mjs": "5ce12e213752440f0b4f732e57d2d3c24fe1a7ca2a3d66ebbe3ae1ca9e483988"
   },
   "mapping": [
     {
@@ -192,6 +192,14 @@
       "properties": [
         "dispatch-recovery"
       ]
+    },
+    {
+      "function": "currentNativeEffects",
+      "source": "src/work.mjs",
+      "properties": [
+        "native-uncertainty",
+        "dispatch-recovery"
+      ]
     }
   ],
   "boundsSource": "verification/properties.mjs#bounds",
@@ -309,6 +317,16 @@
         "standingScope"
       ],
       "scenarios": [
+        "native-dispatch"
+      ]
+    },
+    {
+      "source": "src/work.mjs",
+      "functions": [
+        "currentNativeEffects"
+      ],
+      "scenarios": [
+        "native-effect-correlation",
         "native-dispatch"
       ]
     }
