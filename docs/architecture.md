@@ -92,6 +92,8 @@ The standing policy in `AGENTS.md` applies to every Emmy objective. The approved
 
 Calendar planning reuses native Tasks and Events and the existing private note or responsibility register. The saved native ID anchors later moves and resizing. Fresh inventory, scoped intent, slot selection, uncertain-save rediscovery and reopened field verification precede a saved-plan claim. Connector capability limits can require Calendar UI in Emmy's cloud browser. No second planner, calendar database, recurrence engine or dispatch reservation is introduced. The existing bounded coordination properties cover their mapped register behavior, not semantic compliance with calendar guidance or native provider writes.
 
+Native project membership is a separate postcreation observation. A requested project ID or matching repository directory cannot establish the thread's saved association. The delivered procedure requires explicit membership readback and same-thread correction through supported native operations. Missing or conflicting readbacks preserve uncertainty and the owner's contrary evidence. This is an agent procedure, not a new executable native dispatch gate. Calendar free/busy coverage, Task inventory, clock consistency and move acceptance likewise remain separate native checks.
+
 Briefing policy has actual CLI coverage. Adding its source to the reviewed-file manifest establishes source integrity only. It adds no bounded formal property. The existing seventeen coordination properties, thirty-seven paired source mutants, assumptions and bounds remain unchanged. Native adoption, ordinary-turn invocation, later correction recovery and displayed-output comparison remain separate probes.
 
 Serial real CLI acceptance must cover:
