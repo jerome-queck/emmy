@@ -107,3 +107,11 @@ Calendar acceptance also distinguishes three independent gaps. A resize does not
 The repository supplies delivered procedures and supported model defaults. It does not install an automatic calendar executor or enforce native dispatch membership. Native creation/association, saved Task behavior, provider-model execution, and genuinely later ordinary-turn adoption each need their own evidence.
 
 Retain command and native receipts privately with UTC times, actual model evidence, source and installed digests, and the two saved Task readbacks. Published source, installed bytes, loaded guidance, saved project defaults, fixture verification, native execution, and later ordinary-turn adoption are distinct claims.
+
+## Verify dispatch across saved projects
+
+Retain the complete native inventory and its actual coverage limits. Resolve two distinct destinations with actual source evidence. For a bounded marker-only setup, use only the separately authorized count and destinations. The implementation child reports readiness before the selected coordinator creates either marker. Keep one private acceptance ledger, retain each attempt before launch, and rediscover uncertain effects before retry. A local marker must reply exactly and use no tools, commands, helpers, or project changes.
+
+Read actual coordinator creation records and each child's first-turn records. Independently verify creator, returned host, explicit saved project membership, completed marker, zero tool calls, recorded policy, and scoped model settings. Marker success establishes bounded native routing only. It does not establish coding acceptance, provider execution, effective access, or remote inheritance.
+
+For remote saved projects, separately verify configured-host creation, source and destination-installed skill evidence, actual returned host, saved membership, creator, first-turn settings, and outcome under specific authorization. Native metadata reads establish metadata capability only. Studio's two local markers cannot substitute for remote launch acceptance. ChatGPT conversational Project semantics remain unsupported; a cloud Work target is a different operation.

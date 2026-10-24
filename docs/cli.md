@@ -11,7 +11,7 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 | catalog | none | Read public projects, source claims, capabilities, tools, and probes. | orientation |
 | responsibility | `--file <value>` required | Retain an immutable goal, context, exact target, criteria, authority, feature, and lifecycle definition. | routing |
 | reconcile | `--id <value>`, `--import <value>`, `--as-of <value>` required | Import evidence, inspect current local state, retain findings/repairs, and propose bounded next work. | evidence |
-| dispatch | `--id <value>`, `--project <value>`, `--as-of <value>` required, `--context-needed` | Recover a private native dispatcher and objective bindings, then return read-only native dispatch advice. | routing |
+| dispatch | `--id <value>`, `--project <value>`, `--resolve <value>`, `--discovery <value>`, `--as-of <value>` required, `--context-needed` | Resolve an explicit saved destination from fresh discovery, recover private bindings, and return read-only native dispatch advice. | routing |
 | briefing | `--file <value>` | Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown. | evidence |
 | probe | `--id <value>`, `--nonce <value>` required | Publish a proposed Dot onboarding packet with eight probes. | routing |
 | maintain | `--check`, `--write` | Compare or regenerate public references without changing review records. | upkeep |

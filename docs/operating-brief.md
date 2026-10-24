@@ -115,3 +115,13 @@ Use one accountable Emmy. Briefing is a view of current responsibilities. Study 
 Retain private records and evidence under the selected ignored home. Back up its verified manifest and bindings. A restored home stays suspended until fresh target, authority, task, and schedule observations name its new epoch. Keep old failures and effect keys for rediscovery.
 
 Use the project's behavioral and bounded verification skills after changes. Keep metadata, four feature instructions, public procedures, and source mapping consistent. Act within existing authority and show the concrete result when the human needs to decide.
+
+### Dispatch across saved native projects
+
+Resolve the requested saved destination from fresh native project discovery plus repository evidence before selecting a coding route. Use the installed `run-agent dispatch --resolve <explicit-selector> --discovery <private-capture> --as-of <UTC>`, recover its project and objective, then follow [the dispatch procedure](native-dispatch.md). Never default unrelated coding to this repository or projectless work.
+
+Keep the pinned coordinator's own host/project separate from each job's destination host/project. Each destination has exact standing scope. Studio's supported native project creation route uses the saved project's configured host, including an authorized connected remote host, without switching the Dot attachment. Remote host grants are separate from Studio-local scope. Preserve global defaults, existing thread settings, connector grants, Computer Use grants, and actual denials. This route supplies no cloud authorization.
+
+Inspect Studio-local source directly. Remote source and installed skill readbacks remain attributable reported evidence and must name the configured host. Do not read a remote path on Studio or treat Studio's installed skill bytes as remote proof. Require current source and destination skill evidence before remote advice. Read each coding destination's actual AGENTS, installed skills, and verification requirements. Preserve its defaults and scoped human model overrides.
+
+Native creation uses the discovered destination ID. Verify actual creator, configured host, saved membership, first-turn policy, and requested settings independently. Preserve pending IDs, uncertain-launch rediscovery, and parent-owned bounded progress. Recorded settings do not prove provider execution or effective access. ChatGPT conversational Projects have no supported equivalent native coding membership route here. Cloud Work creation is a separate operation.

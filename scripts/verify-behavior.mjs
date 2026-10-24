@@ -594,7 +594,7 @@ try {
   for (const child of children) child.kill('SIGKILL');
   try { await cp(join(home, 'records'), join(evidenceDir, 'retained-records'), { recursive: true }); } catch (error) { if (error.code !== 'ENOENT') report.evidenceCopyError = error.message; }
   try { await cp(join(home, 'dispatch-home'), join(evidenceDir, 'dispatch'), { recursive: true }); report.retainedDispatch = join(evidenceDir, 'dispatch'); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.dispatchCopyError = error.message; process.exitCode = 1; } }
-  for (const name of ['dispatch-backup', 'dispatch-restored']) {
+  for (const name of ['dispatch-backup', 'dispatch-restored', 'remote-dispatch-backup', 'remote-dispatch-restored']) {
     try { await cp(join(home, name), join(evidenceDir, name), { recursive: true }); report[name] = join(evidenceDir, name); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.dispatchCopyError = error.message; process.exitCode = 1; } }
   }
   try { await cp(join(home, 'briefing'), join(evidenceDir, 'briefing'), { recursive: true }); report.retainedBriefing = join(evidenceDir, 'briefing'); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.briefingCopyError = error.message; process.exitCode = 1; } }
