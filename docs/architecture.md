@@ -88,6 +88,10 @@ The draft declares separate content/retrieval/metadata dates, exact source and c
 
 [Change delivery](change-delivery.md) proposes the native user-triggered coding path, repository quality gates and separate published, installed, guidance-loaded and adopted acceptance. The approved operating brief carries the core routing rules. This repository does not install dispatch, notes, permissions or schedules.
 
+The standing policy in `AGENTS.md` applies to every Emmy objective. The approved operating brief carries the same thread/model rules and the complete calendar planning procedure, so the existing two-document bundle delivers them without a new runtime. Project `.codex/config.toml` supplies supported session and helper defaults. Explicit human settings retain their named scope. Native controls and actual execution require separate readbacks.
+
+Calendar planning reuses native Tasks and Events and the existing private note or responsibility register. The saved native ID anchors later moves and resizing. Fresh inventory, scoped intent, slot selection, uncertain-save rediscovery and reopened field verification precede a saved-plan claim. Connector capability limits can require Calendar UI in Emmy's cloud browser. No second planner, calendar database, recurrence engine or dispatch reservation is introduced. The existing bounded coordination properties cover their mapped register behavior, not semantic compliance with calendar guidance or native provider writes.
+
 Briefing policy has actual CLI coverage. Adding its source to the reviewed-file manifest establishes source integrity only. It adds no bounded formal property. The existing seventeen coordination properties, thirty-seven paired source mutants, assumptions and bounds remain unchanged. Native adoption, ordinary-turn invocation, later correction recovery and displayed-output comparison remain separate probes.
 
 Serial real CLI acceptance must cover:

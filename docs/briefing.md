@@ -1,6 +1,6 @@
 # Check a briefing
 
-Run `node scripts/agent.mjs briefing --home <private-home>` before normal work after resumption and before each briefing. Read the returned guidance. The command accepts one canonical public-main pin and checks its guidance bundle. It downloads data and never executes fetched code or grants authority.
+Run `node scripts/agent.mjs briefing --home <private-home>` before each ordinary work turn, including after resumption, and before each briefing. Read the returned guidance. The command accepts one canonical public-main pin and checks its guidance bundle. It downloads data and never executes fetched code or grants authority.
 
 Prepare declared sources, coverage, scoped correction readbacks and structured entries under the existing private home. Set `authoredUnder` to the returned guidance digest. Then run `node scripts/agent.mjs briefing --home <private-home> --file <draft.json>`. Repair revision findings and rerun. Show the returned `body` unchanged. Editing the body requires another check.
 

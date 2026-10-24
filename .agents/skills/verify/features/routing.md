@@ -17,3 +17,9 @@ Definitions name parent hashes. Concurrent heads block proposals until one defin
 ## Boundaries
 
 Bindings remain local input, not authenticated native permission. A repository mismatch prevents local-check execution and work. Current native discovery remains required before actual execution. Partial inventory cannot prove absence. New concurrent input requires another pinned review.
+
+## Standing policy and native planning
+
+Read `AGENTS.md`, project `.codex/config.toml`, and the complete policy and calendar procedure in `docs/operating-brief.md`. New objectives require fresh project-bound threads. Same-objective continuation requires its prior context. Rediscover uncertain dispatches before retrying. Compare requested models with resolved project settings and actual execution separately. Ordinary sessions use Sol High minimum, nontrivial helpers Sol Medium minimum, and trivial helpers may use Luna Max. Most automations default to Luna Max, with heavy reasoning on Sol High or higher. Scoped explicit human settings prevail. Do not modify global settings.
+
+The register and packets retain context and proposals. Calendar Tasks and Events remain native. Reopen saved items to verify their fields and use the same native ID for moves or resizing. Event-only connectors cannot fulfill Task intent. Task duration can require Emmy's cloud Calendar UI. `.codex/config.toml` strict native readback and the dedicated `docs/dot-verification.md` acceptance contract cover configuration and native behavior separately. Existing CLI fixtures do not prove that native procedure or an ordinary turn followed it.
