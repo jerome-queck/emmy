@@ -7,6 +7,7 @@
   "scripts": {
     "agent": "node scripts/agent.mjs",
     "check": "node scripts/check.mjs",
+    "check:links": "node scripts/check-markdown-links.mjs",
     "verify:behavior": "node scripts/verify-behavior.mjs",
     "verify:model": "node scripts/verify-publication.mjs",
     "verify:formal": "node scripts/verify-formal.mjs && node verification/merge-policy.mjs && node scripts/verify-publication.mjs"
