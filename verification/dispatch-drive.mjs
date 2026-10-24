@@ -41,6 +41,19 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   assert.ok(create.nativeCreateRequest.prompt.startsWith(`[$pstack:poteto-mode](${skillPath})\n\n`));
   assert.deepEqual(Object.keys(create.nativeCreateRequest).sort(), ['model', 'prompt', 'target', 'thinking', 'title']);
   assert.equal(create.providerExecution, 'unverified'); assert.equal(create.effectiveChildAccess, 'unverified');
+  const standalone = async (status, prior = null, extra = {}) => {
+    const { tasks, dispatch, ...base } = await observation(adopted, 'absent');
+    return { ...base, category: 'effect', effects: [{ key: effectKey(adopted), status }], ...(prior ? { supersedes: { hash: prior.hash, reason: 'Targeted standalone native effect rediscovery.' } } : {}), ...extra };
+  };
+  let retainedEffect;
+  for (const status of ['pending', 'uncertain', 'completed']) {
+    retainedEffect = await retain(await standalone(status, retainedEffect));
+    assert.ok((await advise(3)).reasons.includes('native-effect-rediscovery-needed'));
+    retainedEffect = await retain(await standalone('absent', retainedEffect, { coverage: { complete: false, gaps: ['Synthetic incomplete native effect discovery'] } }));
+    assert.ok((await advise(3)).reasons.includes('native-effect-rediscovery-needed'));
+    retainedEffect = await retain(await standalone('absent', retainedEffect));
+    assert.equal((await advise()).next, 'create-via-dispatcher');
+  }
   const beforeRead = canonical((await readStore(privateHome)).records); const bindingBytes = await readFile(bindingsPath);
   assert.equal((await advise()).next, create.next); assert.equal((await advise()).effectKey, create.effectKey);
   assert.equal(canonical((await readStore(privateHome)).records), beforeRead); assert.deepEqual(await readFile(bindingsPath), bindingBytes);
@@ -65,6 +78,10 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   const child = readback('synthetic-ready-child', { correlationKey: adopted.dispatch.correlationKey });
   current = await retain(await observation(adopted, 'ready', current, { child, afterCursor: 'synthetic-wait-cursor' }));
   const ready = await advise(); assert.equal(ready.next, 'read-or-wait'); assert.equal(ready.readyThreadId, child.threadId); assert.equal(ready.afterCursor, 'synthetic-wait-cursor');
+  assert.equal((await advise(0, ['--context-needed'])).next, 'continue-child');
+  retainedEffect = await retain(await standalone('uncertain', retainedEffect));
+  assert.ok((await advise(3, ['--context-needed'])).reasons.includes('native-effect-rediscovery-needed'));
+  retainedEffect = await retain(await standalone('absent', retainedEffect));
   assert.equal((await advise(0, ['--context-needed'])).next, 'continue-child');
   const recovered = await cli(['dispatch', '--project', target.projectId, '--as-of', now()]);
   assert.equal(recovered.dispatcher.threadId, dispatcher.threadId); assert.deepEqual(recovered.jobs[0].readyThreadIds, [child.threadId]);
@@ -119,6 +136,10 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   const fresh = await observation(adopted, 'ready', wrappedRecord, { child: readback(child.threadId, { correlationKey: adopted.dispatch.correlationKey }) }); fresh.homeEpoch = restored.epoch;
   await cli(['reconcile', '--id', adopted.id, '--import', await file({ schemaVersion: 1, records: [fresh] }), '--as-of', now()], 3, restoredHome);
   assert.equal((await advise(0, ['--context-needed'], restoredHome)).next, 'continue-child');
+  const legacy = structuredClone(definition); legacy.id = 'legacy-objective'; delete legacy.dispatch; await adopt(legacy);
+  const legacyTask = await observation(adopted, 'ready', null, { child: readback(child.threadId, { correlationKey: adopted.dispatch.correlationKey }) });
+  legacyTask.responsibilityId = legacy.id; delete legacyTask.dispatch; await retain(legacyTask);
+  assert.ok((await advise(3, ['--context-needed'])).reasons.includes('child-bound-to-another-objective'));
   const second = structuredClone(definition); second.id = 'another-objective'; second.dispatch.correlationKey = 'synthetic-objective-two'; delete second.dispatch.requestedSettings;
   const secondAdopted = await adopt(second); let secondState = await retain(await observation(secondAdopted, 'absent'));
   const secondAdvice = await advise(0, [], privateHome, second.id); assert.equal(secondAdvice.next, 'create-via-dispatcher'); assert.equal(secondAdvice.nativeCreateRequest.thinking, 'high');

@@ -25,6 +25,23 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
     const expected = eligible && phase === 'absent' ? 'create-via-dispatcher' : eligible && phase === 'ready' ? 'read-or-wait' : null;
     assertAdvice(`${phase}-${complete}-${availability}-${age}`, make({ phase, complete, availability, age }), expected);
   }
+  const standaloneEffect = (input, status, prior = null, extra = {}) => {
+    const { hash, tasks, dispatch, supersedes, ...base } = input.records.at(-1);
+    return records.recordPayload(records.parseObservation({ ...base, category: 'effect', effects: [{ key: work.effectKey(input.records[0]), status }], ...(prior ? { supersedes: { hash: prior.hash, reason: 'Targeted standalone native effect rediscovery.' } } : {}), ...extra }));
+  };
+  for (const status of ['pending', 'uncertain', 'completed']) {
+    const absence = make({ phase: 'absent' }); absence.records.push(standaloneEffect(absence, status)); assertAdvice(`standalone-${status}-blocks-create`, absence, null);
+    const ready = make(); ready.contextNeeded = true; ready.records.push(standaloneEffect(ready, status)); assertAdvice(`standalone-${status}-blocks-continuation`, ready, null);
+  }
+  const partialEffect = make({ phase: 'absent' }); const pendingEffect = standaloneEffect(partialEffect, 'uncertain');
+  partialEffect.records.push(pendingEffect, standaloneEffect(partialEffect, 'absent', pendingEffect, { coverage: { complete: false, gaps: ['Synthetic incomplete native readback'] } }));
+  assertAdvice('partial-standalone-resolution-cannot-erase-uncertainty', partialEffect, null);
+  const resolvedEffect = make({ phase: 'absent' }); const oldEffect = standaloneEffect(resolvedEffect, 'uncertain');
+  resolvedEffect.records.push(oldEffect, standaloneEffect(resolvedEffect, 'absent', oldEffect)); assertAdvice('complete-standalone-resolution-restores-create', resolvedEffect, 'create-via-dispatcher');
+  const foreignEffect = make({ phase: 'absent' }); foreignEffect.records.push(standaloneEffect(foreignEffect, 'uncertain', null, { effects: [{ key: records.digest('another-effect'), status: 'uncertain' }] }));
+  assertAdvice('another-effect-key-does-not-block', foreignEffect, 'create-via-dispatcher');
+  const priorRevision = make({ phase: 'absent' }); priorRevision.records.push(standaloneEffect(priorRevision, 'uncertain', null, { subject: { ...target, revision: 'b'.repeat(40) }, observedAt: '2000-01-01T00:00:00Z' }));
+  assertAdvice('standalone-uncertainty-survives-revision-and-age', priorRevision, null);
   const change = (label, edit) => { const input = make(); edit(input, input.records.at(-1)); assertAdvice(label, input, null); };
   change('wrong-child-project', (_input, event) => { event.dispatch.child.nativeProjectId = 'foreign-project'; });
   change('missing-child-project', (_input, event) => { event.dispatch.child.nativeProjectId = null; });
@@ -49,6 +66,10 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
   change('child-used-by-another-objective', (input, event) => {
     const other = { ...structuredClone(definition), id: 'other-objective', hash: records.digest('other-definition') }; other.dispatch.correlationKey = 'bounded-objective-two';
     input.records.push(other, { ...structuredClone(event), responsibilityId: other.id, hash: records.digest('other-native-observation') });
+  });
+  change('child-used-by-legacy-objective', (input, event) => {
+    const other = { ...structuredClone(definition), id: 'legacy-objective', hash: records.digest('legacy-definition') }; delete other.dispatch;
+    input.records.push(other, { ...structuredClone(event), responsibilityId: other.id, hash: records.digest('legacy-native-observation') });
   });
   const continued = make(); continued.contextNeeded = true; assertAdvice('same-objective-context-needed', continued, 'continue-child');
   const completed = make(); completed.records.at(-1).tasks[0].status = 'completed'; assertAdvice('native-completion-is-outcome-inspection', completed, 'inspect-outcome');

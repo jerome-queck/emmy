@@ -83,7 +83,7 @@ Evidence imports remain reported. Retained byte hashes cannot authenticate nativ
 
 Multiple objective bindings for one child, multiple unsuperseded native observations, or contradictory source records hold further action. Preserve the records and resolve them explicitly. Repository similarity never establishes objective equality. The command cannot stop a caller acting outside this procedure or recover a native effect whose history was never retained.
 
-A ready result for one attempt cannot settle a different unresolved attempt. An implementation child cannot be the selected dispatcher. A confirmed no-effect observation settles only its named attempt; retain the entire chain and every original failure.
+Standalone pending, uncertain or completed effect records require targeted rediscovery before creation or continuation. Partial or stale replacement evidence cannot erase their history. Child reuse checks include existing objectives without the optional dispatch extension. A ready result for one attempt cannot settle a different unresolved attempt. An implementation child cannot be the selected dispatcher. A confirmed no-effect observation settles only its named attempt; retain the entire chain and every original failure.
 
 ## Install and verify recovery
 

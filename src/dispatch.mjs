@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { hostname } from 'node:os';
-import { authorityStatus, currentObservations, definitionHeads, effectKey, observationStatus, restoredState, reviewAsOf, routeTarget } from './work.mjs';
+import { authorityStatus, currentNativeEffects, currentObservations, definitionHeads, effectKey, observationStatus, restoredState, reviewAsOf, routeTarget } from './work.mjs';
 import { canonical, digest, dispatchEfforts as efforts, parseDefinition, parseObservation, readBindings, readStore } from './records.mjs';
 
 const identity = value => [value?.threadId, value?.hostId, value?.nativeProjectId];
@@ -62,7 +62,7 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   const tasks = observations.filter(record => record.category === 'tasks');
   const knownIds = [...new Set(tasks.flatMap(record => record.tasks.map(task => task.nativeId)))].sort();
   result.knownReadyThreadIds = knownIds;
-  const objectiveIds = new Set(records.filter(record => record.type === 'definition' && record.dispatch && record.id !== id).map(record => record.id));
+  const objectiveIds = new Set(records.filter(record => record.type === 'definition' && record.id !== id).map(record => record.id));
   if (records.some(record => record.type === 'observation' && objectiveIds.has(record.responsibilityId) && record.category === 'tasks' && record.tasks.some(task => knownIds.includes(task.nativeId)))) result.reasons.push('child-bound-to-another-objective');
   if (knownIds.length > 1) result.reasons.push('multiple-native-child-bindings');
   const epoch = records.filter(record => record.type === 'epoch').sort((a, b) => a.restoredAt.localeCompare(b.restoredAt) || a.hash.localeCompare(b.hash)).at(-1);
@@ -70,6 +70,8 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   const active = currentObservations(definition, tasks, asOf);
   if (active.length !== 1) return stop(active.length ? 'native-observation-conflict' : 'native-discovery-needed');
   const observation = active[0]; const state = observation.dispatch;
+  const otherEffects = currentNativeEffects(definition, observations, asOf).filter(event => event.hash !== observation.hash);
+  if (otherEffects.some(event => event.tasks?.some(task => !task.effectKey || task.effectKey === key) || event.effects?.some(effect => effect.key === key && effect.status !== 'absent'))) result.reasons.push('native-effect-rediscovery-needed');
   result.observationHash = observation.hash;
   result.reasons.push(...observationStatus(observation, target, asOf, definition.freshness.maxAgeMs).reasons);
   if (!state || state.correlationKey !== spec.correlationKey) return stop('native-correlation-needed');
