@@ -46,7 +46,7 @@ export const bounds = {
   temporalTraces: ['green-unknown', 'fail-pass-repair-fail', 'fail-pass-repair-fail-pass-repair', 'recurrence-before-source-advance', 'weakened-definition', 'two-failed-repairs', 'completed-fail-failed-repair-failed-repair'],
   temporalMaximum: { criteria: 2, criterionObservations: 4, targetObservations: 2, taskObservations: 1, effectObservations: 2, repairs: 2, priorReviews: 3 },
   importGraph: { records: 2, orderings: 2, testedPrefixes: [0, 1, 2], explicitAbstractCycle: true },
-  dispatchRecovery: { phases: ['absent', 'attempted', 'pending', 'uncertain', 'ready'], coverage: ['complete', 'partial'], availability: ['available', 'unavailable', 'denied', 'unknown'], agesMs: [-1, 0, 86400000, 86400001], stateCombinations: 160, targetedCases: 31, permutations: ['original', 'reversed'], assumptions: 'Parsed byte-verified journal inputs and symbolic hash identities; native state remains reported.' },
+  dispatchRecovery: { phases: ['absent', 'attempted', 'pending', 'uncertain', 'ready'], coverage: ['complete', 'partial'], availability: ['available', 'unavailable', 'denied', 'unknown'], agesMs: [-1, 0, 86400000, 86400001], stateCombinations: 160, targetedCases: 42, permutations: ['original', 'reversed'], assumptions: 'Parsed byte-verified journal inputs and symbolic hash identities; native state remains reported.' },
   assumptions: [
     'These are finite products and targeted temporal traces, not one full Cartesian product of every field.',
     'Active zero-criterion definitions are rejected by the actual boundary parser. Zero criteria cover retired/merged states.',
@@ -393,6 +393,10 @@ export function verifyProperties({ work, responsibilities, records, dispatch }, 
     try { records.importOrder([], [{ hash: 'a'.repeat(64), type: 'definition', parents: ['b'.repeat(64)] }, { hash: 'b'.repeat(64), type: 'definition', parents: ['a'.repeat(64)] }]); } catch (error) { refused = /cycle/.test(error.message); }
     check('import-prefix', { case: 'abstract-cycle' }, refused, 'An abstract dependency cycle refuses before publication.');
   }
-  if (!selected || selected === 'dispatch-recovery') verifyDispatchPolicy({ dispatch, records, work }, check);
+  if (!selected || selected === 'dispatch-recovery') {
+    verifyDispatchPolicy({ dispatch, records, work }, check);
+    const domain = bounds.dispatchRecovery;
+    if (counts['dispatch-recovery'] !== (domain.stateCombinations + domain.targetedCases) * domain.permutations.length) throw new Error('Declared dispatch bounds differ from executed predicates');
+  }
   return { counts, checks: Object.values(counts).reduce((sum, count) => sum + count, 0) };
 }
