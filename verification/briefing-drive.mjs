@@ -46,6 +46,18 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
   assert.equal(guidance.mode, 'guidance'); assert.equal(guidance.guidance.state, 'current');
   assert.equal(Object.hasOwn(guidance, 'body'), false); assert.equal(Object.hasOwn(guidance, 'status'), false);
   assert.equal(guidance.guidance.commit, transport.commit); assert.match(guidance.guidance.text, /# Emmy's operating brief/); assert.match(guidance.guidance.text, /# Check a briefing/);
+  const calendarGuidance = guidance.guidance.text.match(/## Plan and maintain calendar Tasks\n([\s\S]*?)(?=\n## |$)/)?.[1];
+  assert.ok(calendarGuidance, 'Returned operating brief includes its calendar procedure');
+  for (const [requirement, detail] of [
+    [/requested (?:Task )?notes/, 'Retain requested Task notes'],
+    [/exact (?:requested |supplied )?text[\s\S]*meaningful line breaks[\s\S]*source URLs/, 'Preserve notes text, line breaks and source URLs'],
+    [/Save[\s\S]*reload[\s\S]*reopen[\s\S]*same native ID[\s\S]*compare[\s\S]*notes/, 'Compare saved notes after Save, reload and same-ID reopen'],
+    [/missing, blank, truncated, mismatched, or unavailable[\s\S]*notes acceptance pending/, 'Missing, mismatched or unavailable saved notes cannot pass'],
+    [/inspect[\s\S]*uncertain[\s\S]*before[\s\S]*retry/, 'Inspect an uncertain draft or save before retrying'],
+    [/visible edit[\s\S]*supported[\s\S]*same[\s\S]*Task/, 'Retry through a supported visible edit on the same Task'],
+    [/End, Space, Backspace, Tab[\s\S]*reported[\s\S]*not a universal[\s\S]*restore[\s\S]*exact requested text[\s\S]*Save/, 'Qualify the reported workaround and preserve requested text'],
+    [/tim(?:e|ing)[\s\S]*separate[\s\S]*notes/, 'Keep time discrepancies separate from notes acceptance']
+  ]) assert.match(calendarGuidance, requirement, detail);
   assert.deepEqual(JSON.parse(await readFile(join(guidance.guidance.snapshot, 'bundle.json'), 'utf8')), JSON.parse(bundle));
   const requests = (await readFile(transport.requests, 'utf8')).trim().split('\n').map(line => JSON.parse(line));
   assert.deepEqual(requests.map(value => value.url), [`https://api.github.com/repos/jerome-queck/emmy/commits/main`, `https://api.github.com/repos/jerome-queck/emmy/git/trees/${transport.tree}?recursive=1`, `https://api.github.com/repos/jerome-queck/emmy/git/blobs/${transport.blob}`]);
