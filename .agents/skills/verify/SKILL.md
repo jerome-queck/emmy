@@ -7,7 +7,7 @@ description: Drive Emmy's real CLI after changes to responsibility context, reco
 
 ## Launch and health
 
-Use Node 24 or later. Run `npm ci --ignore-scripts` to install locked verification dependencies. Run `npm run agent -- help --json`. It returns `ok: true` with ten commands. Run `npm run agent -- doctor` and `maintain --check`. Doctor checks local runtime, catalog, bindings, store references/evidence, historical records, generated drift, and restored suspension. It does not probe native tools.
+Use Node 24 or later. Run `npm ci --ignore-scripts` to install locked verification dependencies. Run `npm run agent -- help --json`. It returns `ok: true` with eleven commands. Run `npm run agent -- doctor` and `maintain --check`. Doctor checks local runtime, catalog, bindings, store references/evidence, historical records, generated drift, and restored suspension. It does not probe native tools.
 
 Each driver command starts a fresh Node process. Run `npm run verify:behavior` for the complete mapped drive. It creates and health-checks its own synthetic temporary git repository and private home. After a surprising failure, retain the report and rerun in a new isolated session with doctor. Expected refusal controls are part of the drive.
 
@@ -21,9 +21,13 @@ For a manual target, follow [onboarding](../../../docs/onboarding.md). Use its s
 
 Use `node scripts/verify-behavior.mjs --focus briefing` for the advisory command. It drives the real child CLI through a harness-owned canonical-origin fetch preload. The product has no fixture endpoint option. Controls cover pinned Git blob bytes, main advancing during reads, incompatible guidance, bounded reads/time, interrupted and corrupt cache publication, stale content/newer metadata, scoped corrections, opaque readback references, conflicts, separate capabilities and budget notices. Independently recomputed SHA-256 and actual retained Markdown bind the output. The driver verifies unchanged journal bytes and no executor sentinel. This focused run does not cover responsibility reconciliation.
 
+Use `node scripts/verify-behavior.mjs --focus dispatch` for private native dispatch recovery. It drives the real CLI in fresh processes over a separate synthetic home. It retains attempted, pending, uncertain, confirmed-no-effect and ready evidence through the existing importer. Controls cover read-only decisions, exact native request fields and installed skill, private bootstrap inventory, settings and membership gaps/mismatches, standing authority, same-objective continuation, cross-objective child reuse, idempotent imports and suspended archive restore. Reconciliation may add actual local observations; duplicate-import assertions count the imported task scope. These fixtures invoke no native executor and establish no real creation or inherited access.
+
 ## Evidence and teardown
 
 Full and failed runs retain `.local/verification/behavior-*/report.json` plus immutable synthetic records/evidence. The report survives temporary-repository cleanup. Check that named path exists. Failed command and assertion output remains available even when the driver exits nonzero.
+
+Dispatch runs retain their complete synthetic private home under the report's `retainedDispatch` directory, including bindings, source evidence and immutable records. The original failed controls remain evidence. Actual installed bootstrap recovery and native readbacks require the separate [acceptance](../../../docs/dot-verification.md#verify-persistent-native-dispatch-recovery).
 
 Briefing runs also retain the complete `briefing/` tree and `retainedCheckedBody`. The driver rereads that body after deleting its temporary repository. Interrupted pending snapshots and corrupt controls remain evidence. A simulated canonical response proves the local boundary, not public-main publication. Run a separate real public acquisition after the generated bundle is published.
 

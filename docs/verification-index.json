@@ -47,6 +47,27 @@
       "feature": "evidence"
     },
     {
+      "name": "dispatch",
+      "description": "Recover a private native dispatcher and objective bindings, then return read-only native dispatch advice.",
+      "options": [
+        {
+          "name": "id"
+        },
+        {
+          "name": "project"
+        },
+        {
+          "name": "as-of",
+          "required": true
+        },
+        {
+          "name": "context-needed",
+          "flag": true
+        }
+      ],
+      "feature": "routing"
+    },
+    {
       "name": "briefing",
       "description": "Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown.",
       "options": [
@@ -131,12 +152,14 @@
       "title": "Responsibilities and proposals",
       "commands": [
         "responsibility",
+        "dispatch",
         "probe"
       ],
       "scenarios": [
         "persistent-context",
         "binding-boundaries",
         "native-effect-correlation",
+        "native-dispatch",
         "probe-packet",
         "definition-concurrency"
       ],
@@ -145,7 +168,8 @@
         "branch-blocking",
         "effect-stability",
         "authority-scope",
-        "native-uncertainty"
+        "native-uncertainty",
+        "dispatch-recovery"
       ]
     },
     {
@@ -305,6 +329,14 @@
         "reconcileState"
       ],
       "statement": "Known pending, uncertain or uncorrelated native tasks require rediscovery; partial inventories cannot prove absence and unkeyed completion cannot prove an intended effect."
+    },
+    {
+      "id": "dispatch-recovery",
+      "source": "src/dispatch.mjs",
+      "functions": [
+        "dispatchDecision"
+      ],
+      "statement": "Retained launch uncertainty, mismatched native identity or settings, and reused child bindings cannot authorize another child or an unverified continuation in the bounded dispatch domain."
     },
     {
       "id": "trigger-coverage",

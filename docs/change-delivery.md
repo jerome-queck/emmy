@@ -14,9 +14,11 @@ Project `.codex/config.toml` supplies new-session Sol High and helper Sol Medium
 
 Emmy owns coordination and authorized follow-ups. The CLI's proposals are not dispatched tasks. The actual native identifier and product readback establish dispatch.
 
+When a private project binding selects a persistent local native dispatcher, that route takes precedence. Recover its identity and known objectives with the trusted installed `dispatch` command. Keep the selected dispatcher pinned for coordination and use the existing authorized control connection to give it the scoped objective. It creates the fresh implementation child. Private bindings and objective/task records retain exact identities, human source authorization, launch attempts and native readbacks. [Private dispatch recovery](native-dispatch.md) defines the supported schema and invocation. The command is a read-only projection over the existing archived journal, not a native executor or a second authority store.
+
 ## Create through the native host service
 
-Discover the current tool catalog and saved projects on the designated Mac. When available, use `mcp__codex_app__list_projects`, then `mcp__codex_app__create_thread` with the returned native project ID and a local environment:
+Discover the current tool catalog and saved projects on the designated Mac. A selected eligible dispatcher performs the creation. If no dispatcher is selected, use the supported direct or authorized bridge route. Use `mcp__codex_app__list_projects`, then `mcp__codex_app__create_thread` with the returned native project ID and a local environment:
 
 ```json
 {
@@ -34,13 +36,13 @@ Discover the current tool catalog and saved projects on the designated Mac. When
 
 The example explicitly requests the ordinary-session minimum. Apply stronger scoped human settings when specified. A connected host's `local` environment means that project's saved checkout on that host. Rediscover its identity rather than copying a project ID between environments.
 
-The inspected native create schema exposes no permission profile, approval policy, sandbox, or Full Access field. The inspected native catalog also exposes no per-thread access-mode setter. Native creation therefore cannot promise approval-free execution or enforce Full Access. Keep the current permissions, report a concrete blocked action when exposed, and use the product's supported user-controlled permission setting for any separately authorized change. Do not invent creation parameters or alter global/project security settings to compensate. Recheck future supported catalogs before treating this observed limitation as permanent.
+The inspected native create schema exposes no permission profile, approval policy, sandbox, or Full Access field. The inspected native catalog also exposes no per-thread access-mode setter. Preserve an existing explicit standing human scope for qualifying FullAccess children and reuse it without repeated consent. Verify the dispatcher's actual host/project/pin and recorded policy/model, then the child's actual first-turn record. Stop the affected action on mismatch. Keep authorization, recorded settings, effective access and provider execution separate. Native creation cannot enforce access through nonexistent parameters. Any scope expansion needs concrete confirmation; do not alter global/project security settings, other threads or connector/Computer Use grants.
 
 `cloud_threads.create` creates cloud-managed durable tasks. A repository path or project parameter in that request does not establish native host creation. Moving an existing durable task is a separate association attempt and cannot pass direct native creation acceptance. A delegation sender label alone cannot identify the backend. Inspect the actual operation and its native readbacks.
 
 If Emmy lacks the native operations directly, use an existing authorized control bridge that exposes them on the designated Mac. The bridge performs the native create above. Do not substitute another durable coding create. If neither direct tools nor that bridge are available, report native creation unavailable and describe the supported fallback without claiming native success.
 
-Emmy retains ownership through that bridge. Keep the ready native ID and actual host ID, then request supported `read_thread` detail or bounded `wait_threads` progress through the bridge. Retain cursors as `afterCursor`, back off on unchanged state, and read back completion. Do not depend on the ordinary coding chat waking or messaging Emmy. No new schedule or polling service is required. Follow-ups still need the human's authorization for that objective.
+Emmy retains ownership through that bridge. Keep the ready native ID and actual host ID, then request supported `read_thread` detail or bounded `wait_threads` progress through the bridge. Retain cursors as `afterCursor`, back off on unchanged state, and read back completion. Do not depend on the ordinary coding chat waking or messaging Emmy. No new schedule or polling service is required. Reuse retained human authorization for the same objective. An expansion requires scoped confirmation.
 
 ## Verify the created thread's project membership
 
@@ -76,6 +78,8 @@ Track these states separately, bound to exact revisions:
 Guidance refresh downloads approved data. It cannot execute new code or install a capability. Executable changes need a reviewed runner update. A new app connection or permission needs actual native discovery and the human's existing authority. Report the last proven delivery state instead of saying a feature is active merely because its PR merged.
 
 Keep a small stable bootstrap in Emmy's existing native note. It points to the trusted runner and current guidance rather than copying every procedure. Load that guidance after resumption and before briefings; recover scoped corrections independently. Preserve existing schedule cadence and destination. No new polling service or recurrence is needed for this user-triggered loop.
+
+For selected-dispatcher projects, the bootstrap also loads `run-agent dispatch --project <project-key> --as-of <UTC>` from the reviewed versioned installation and recovers the matching objective before a native instruction. Verify the saved private selection, actual installed invocation, and source guidance digest separately. Preserve the existing bootstrap and corrections when adding this short route.
 
 These instructions and project defaults do not install an automatic dispatcher or calendar executor. The existing runner executes guidance acquisition and checking. Native products perform thread association and calendar writes. Verify those actual operations separately from delivered prose.
 

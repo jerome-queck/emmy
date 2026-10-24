@@ -130,3 +130,14 @@ export function currentObservations(definition, observations, asOf) {
   }
   return observations.filter(observation => !replaced.has(observation.hash));
 }
+
+export function currentNativeEffects(definition, observations, asOf) {
+  const effectObservations = observations.filter(observation => ['effect', 'tasks'].includes(observation.category) && Date.parse(observation.observedAt) <= Date.parse(asOf) && digest({ ...subjectKey(observation.subject), revision: null, dirtyDigest: null }) === digest({ ...subjectKey(definition.target), revision: null, dirtyDigest: null }));
+  const replaced = new Set();
+  const effectByHash = new Map(effectObservations.map(observation => [observation.hash, observation]));
+  for (const observation of effectObservations.filter(observation => observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible)) {
+    let reference = observation.supersedes?.hash;
+    while (reference && !replaced.has(reference)) { replaced.add(reference); reference = effectByHash.get(reference)?.supersedes?.hash; }
+  }
+  return effectObservations.filter(observation => !replaced.has(observation.hash));
+}

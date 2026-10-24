@@ -4,7 +4,7 @@ import { readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative } from 'node:path';
 import { promisify } from 'node:util';
 import { canonical, canonicalRepository, digest, parseDefinition, publishRecord, readBindings, readStore, retainImport, validateReferences, recordPayload } from './records.mjs';
-import { authorityStatus, criterionHash, currentObservations, definitionHeads, effectKey, observationStatus, repairStatus, restoredState, retirementStatus, reviewAsOf, routeTarget, sameSubject, subjectKey, triggerStatus } from './work.mjs';
+import { authorityStatus, criterionHash, currentNativeEffects, currentObservations, definitionHeads, effectKey, observationStatus, repairStatus, restoredState, retirementStatus, reviewAsOf, routeTarget, sameSubject, subjectKey, triggerStatus } from './work.mjs';
 
 const exec = promisify(execFile);
 export const ruleVersion = 'responsibility-v1';
@@ -224,14 +224,7 @@ export function reconcileState(definition, { definitions, observations, repairs,
   const open = retainedFindings.filter(finding => finding.status === 'open');
   for (const result of criterionResults) if (open.some(finding => finding.durable && finding.criterionIds.includes(result.criterionId))) result.supported = false;
   const key = effectKey(definition);
-  const effectObservations = observations.filter(observation => ['effect', 'tasks'].includes(observation.category) && Date.parse(observation.observedAt) <= Date.parse(asOf) && digest({ ...subjectKey(observation.subject), revision: null, dirtyDigest: null }) === digest({ ...subjectKey(definition.target), revision: null, dirtyDigest: null }));
-  const replaced = new Set();
-  const effectByHash = new Map(effectObservations.map(observation => [observation.hash, observation]));
-  for (const observation of effectObservations.filter(observation => observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible)) {
-    let reference = observation.supersedes?.hash;
-    while (reference && !replaced.has(reference)) { replaced.add(reference); reference = effectByHash.get(reference)?.supersedes?.hash; }
-  }
-  const currentEffectObservations = effectObservations.filter(observation => !replaced.has(observation.hash));
+  const currentEffectObservations = currentNativeEffects(definition, observations, asOf);
   const nativeTasks = currentEffectObservations.flatMap(observation => observation.tasks ?? []);
   const uncorrelatedTaskIds = [...new Set(nativeTasks.filter(task => !task.effectKey).map(task => task.nativeId))].sort();
   const effects = [...currentEffectObservations.flatMap(observation => observation.effects ?? []), ...nativeTasks.filter(task => task.effectKey).map(task => ({ key: task.effectKey, status: ['pending', 'running'].includes(task.status) ? 'pending' : task.status === 'unknown' ? 'uncertain' : 'completed' }))].filter(effect => effect.key === key);
