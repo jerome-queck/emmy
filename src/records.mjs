@@ -13,6 +13,7 @@ export function digest(value) {
 }
 
 export const readJson = async path => JSON.parse(await readFile(path, 'utf8'));
+export const dispatchEfforts = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra'];
 const requireValue = (condition, message) => { if (!condition) throw new Error(message); };
 const text = (value, name) => requireValue(typeof value === 'string' && value.trim().length > 0, `${name} must be nonempty text`);
 const object = (value, name) => requireValue(value && typeof value === 'object' && !Array.isArray(value), `${name} must be an object`);
@@ -45,6 +46,7 @@ export async function readBindings(home) {
     id(projectId, 'project ID'); text(project.label, 'project label');
     if (project.path !== undefined) requireValue(isAbsolute(project.path), 'Project path must be absolute');
     for (const name of ['hostId', 'nativeProjectId', 'cloudEnvironmentId', 'repository']) if (project[name] !== undefined) text(project[name], name);
+    if (project.dispatcher !== undefined) dispatcherBinding(project.dispatcher);
   }
   return value;
 }
@@ -67,6 +69,57 @@ function authority(value, name = 'authorityRef') {
   for (const field of ['reference', 'action', 'resource', 'destination']) text(value[field], `${name}.${field}`);
   if (value.expiresAt !== undefined) timestamp(value.expiresAt, `${name}.expiresAt`);
   if (value.cloud !== undefined) requireValue(typeof value.cloud === 'boolean', `${name}.cloud must be boolean`);
+}
+
+function dispatcherBinding(value) {
+  object(value, 'dispatcher');
+  for (const field of ['threadId', 'hostId', 'nativeProjectId', 'selectionRef']) text(value[field], `dispatcher.${field}`);
+  authority(value.authorityRef, 'dispatcher.authorityRef');
+  choice(value.childAccessIntent, ['full-access-inherit'], 'dispatcher.childAccessIntent');
+}
+
+function nativeReadback(value) {
+  object(value, 'native readback'); text(value.threadId, 'readback.threadId');
+  for (const field of ['hostId', 'nativeProjectId']) if (value[field] !== null) text(value[field], `readback.${field}`);
+  timestamp(value.observedAt, 'readback.observedAt'); text(value.sourceRef, 'readback.sourceRef');
+  if (value.pinned !== undefined) requireValue(typeof value.pinned === 'boolean', 'readback.pinned must be boolean');
+  if (value.correlationKey !== undefined) text(value.correlationKey, 'readback.correlationKey');
+  if (value.recordedSettings !== undefined && value.recordedSettings !== null) {
+    object(value.recordedSettings, 'recordedSettings');
+    for (const field of ['model', 'effort', 'sandboxMode', 'approvalPolicy', 'sourceRef']) text(value.recordedSettings[field], `recordedSettings.${field}`);
+    timestamp(value.recordedSettings.observedAt, 'recordedSettings.observedAt');
+    if (value.recordedSettings.recordedAt !== undefined) timestamp(value.recordedSettings.recordedAt, 'recordedSettings.recordedAt');
+  }
+}
+
+function dispatchDefinition(value) {
+  object(value, 'dispatch'); text(value.correlationKey, 'dispatch.correlationKey'); dispatcherBinding(value.dispatcher);
+  object(value.skill, 'dispatch.skill'); requireValue(isAbsolute(value.skill.path ?? ''), 'dispatch.skill.path must be absolute'); hash(value.skill.sha256, 'dispatch.skill.sha256');
+  if (value.requestedSettings !== undefined) {
+    object(value.requestedSettings, 'dispatch.requestedSettings');
+    for (const field of ['model', 'effort', 'sourceRef']) text(value.requestedSettings[field], `requestedSettings.${field}`);
+    choice(value.requestedSettings.effort, dispatchEfforts, 'requestedSettings.effort');
+    if (value.requestedSettings.scopedOverrideRef !== undefined) text(value.requestedSettings.scopedOverrideRef, 'scopedOverrideRef');
+  }
+}
+
+function dispatchObservation(value, input) {
+  object(value, 'dispatch'); requireValue(input.category === 'tasks', 'Dispatch metadata requires a tasks observation');
+  text(value.correlationKey, 'dispatch.correlationKey'); choice(value.phase, ['absent', 'attempted', 'pending', 'uncertain', 'ready'], 'dispatch.phase');
+  if (value.dispatcher !== undefined) nativeReadback(value.dispatcher);
+  if (value.child !== undefined) nativeReadback(value.child);
+  if (value.attemptKey !== undefined || value.phase !== 'absent') hash(value.attemptKey, 'dispatch.attemptKey');
+  if (value.phase === 'attempted') hash(value.requestDigest, 'dispatch.requestDigest');
+  if (value.phase === 'pending') text(value.clientThreadId, 'dispatch.clientThreadId');
+  else requireValue(value.clientThreadId === undefined, 'Pending client ID cannot be used as a ready thread ID');
+  if (value.afterCursor !== undefined) text(value.afterCursor, 'dispatch.afterCursor');
+  if (value.resolution !== undefined) choice(value.resolution, ['confirmed-no-effect'], 'dispatch.resolution');
+  if (value.resolution === 'confirmed-no-effect') hash(value.attemptKey, 'resolved dispatch.attemptKey');
+  if (value.phase === 'ready') requireValue(input.tasks.length === 1 && ['running', 'completed'].includes(input.tasks[0].status), 'Ready dispatch requires exactly one ready task');
+  if (['absent', 'attempted', 'pending'].includes(value.phase)) requireValue(input.tasks.length === 0, 'Unresolved dispatch cannot contain ready task IDs');
+  const effectStatus = { absent: 'absent', attempted: 'pending', pending: 'pending', uncertain: 'uncertain' }[value.phase];
+  if (effectStatus) requireValue(input.effects?.length === 1 && input.effects[0].status === effectStatus, 'Dispatch phase must agree with its retained effect');
+  else requireValue(!input.effects?.length, 'Ready dispatch cannot retain a competing effect status');
 }
 
 function criterion(value) {
@@ -95,6 +148,7 @@ export function parseDefinition(input) {
   for (const name of ['goal', 'context', 'action', 'resource', 'destination']) text(input[name], name);
   const target = { ...input.target, executor: input.target?.executor ?? 'local-codex' };
   subject(target); authority(input.authorityRef);
+  if (input.dispatch !== undefined) dispatchDefinition(input.dispatch);
   array(input.criteria, 'criteria'); input.criteria.forEach(criterion);
   requireValue(new Set(input.criteria.map(item => item.id)).size === input.criteria.length, 'Duplicate criterion ID');
   object(input.freshness, 'freshness');
@@ -152,6 +206,7 @@ export function parseObservation(input) {
     array(input.runs, 'runs');
     for (const run of input.runs) { text(run.nativeId, 'run.nativeId'); timestamp(run.windowStart, 'run.windowStart'); texts(run.outcomeRefs, 'run.outcomeRefs'); texts(run.deliveryRefs, 'run.deliveryRefs'); }
   }
+  if (input.dispatch !== undefined) dispatchObservation(input.dispatch, input);
   return { ...input, type: 'observation', schemaVersion: 1, origin: 'reported' };
 }
 
@@ -271,7 +326,15 @@ export function validateReferences(records) {
     requireValue(records.some(record => record.type === 'review' && record.responsibilityId === repair.responsibilityId && record.findings.some(finding => finding.id === repair.findingId)), 'Repair names an unknown retained finding');
     for (const ref of [...repair.failureRefs, ...repair.recheckRefs]) requireValue(known.get(ref).type === 'observation' && known.get(ref).responsibilityId === repair.responsibilityId, 'Repair reference is not an observation for this responsibility');
   }
-  for (const record of records.filter(item => item.type === 'definition')) for (const ref of record.parents) requireValue(known.get(ref).type === 'definition' && known.get(ref).id === record.id, 'Definition parent belongs to another responsibility');
+  for (const record of records.filter(item => item.type === 'definition')) for (const ref of record.parents) {
+    const parent = known.get(ref);
+    requireValue(parent.type === 'definition' && parent.id === record.id, 'Definition parent belongs to another responsibility');
+    if (parent.dispatch) {
+      const stable = value => value && { correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill };
+      requireValue(canonical(stable(parent.dispatch)) === canonical(stable(record.dispatch)), 'An objective cannot silently replace its dispatch binding or correlation');
+      if (canonical(parent.dispatch.requestedSettings ?? null) !== canonical(record.dispatch.requestedSettings ?? null)) requireValue(Boolean(record.dispatch.requestedSettings?.scopedOverrideRef), 'A changed model request requires its explicit scoped override source');
+    }
+  }
   for (const record of records.filter(item => item.type === 'observation' && item.supersedes)) {
     const prior = known.get(record.supersedes.hash);
     requireValue(prior.type === 'observation' && prior.responsibilityId === record.responsibilityId && prior.category === record.category, 'Supersession belongs to another observation scope');

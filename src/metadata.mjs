@@ -4,6 +4,7 @@ export const commands = [
   { name: 'catalog', description: 'Read public projects, source claims, capabilities, tools, and probes.', options: [], feature: 'orientation' },
   { name: 'responsibility', description: 'Retain an immutable goal, context, exact target, criteria, authority, feature, and lifecycle definition.', options: [{ name: 'file', required: true }], feature: 'routing' },
   { name: 'reconcile', description: 'Import evidence, inspect current local state, retain findings/repairs, and propose bounded next work.', options: [{ name: 'id' }, { name: 'import' }, { name: 'as-of', required: true }], feature: 'evidence' },
+  { name: 'dispatch', description: 'Recover a private native dispatcher and objective bindings, then return read-only native dispatch advice.', options: [{ name: 'id' }, { name: 'project' }, { name: 'as-of', required: true }, { name: 'context-needed', flag: true }], feature: 'routing' },
   { name: 'briefing', description: 'Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown.', options: [{ name: 'file' }], feature: 'evidence' },
   { name: 'probe', description: 'Publish a proposed Dot onboarding packet with eight probes.', options: [{ name: 'id' }, { name: 'nonce', required: true }], feature: 'routing' },
   { name: 'maintain', description: 'Compare or regenerate public references without changing review records.', options: [{ name: 'check', flag: true }, { name: 'write', flag: true }], feature: 'upkeep' },
@@ -21,7 +22,7 @@ export const briefingGuidance = {
 export const verification = {
   features: [
     { id: 'orientation', title: 'Orientation and private integrity', commands: ['help', 'doctor', 'catalog'], scenarios: ['orientation'], properties: [] },
-    { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'native-effect-correlation', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope', 'native-uncertainty'] },
+    { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'dispatch', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'native-effect-correlation', 'native-dispatch', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope', 'native-uncertainty', 'dispatch-recovery'] },
     { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile', 'briefing'], scenarios: ['self-check-repair', 'evidence-boundaries', 'live-cutoff', 'local-check', 'local-check-cleanup', 'trigger-evolution', 'briefing-guidance', 'briefing-draft', 'briefing-boundaries'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay', 'current-evidence', 'live-cutoff', 'process-group-cleanup', 'trigger-coverage', 'retirement-closure'] },
     { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore'], scenarios: ['archive-recovery', 'cloud-recovery', 'restored-current-context', 'publication-interruption', 'derived-boundaries'], properties: ['restore-suspension', 'import-prefix'] }
   ],
@@ -39,6 +40,7 @@ export const verification = {
     { id: 'deterministic-replay', source: 'src/responsibilities.mjs', functions: ['reconcileState', 'replayReview'], statement: 'Identical sorted evidence manifests/time/rules produce identical reconciliation results under permutation.' },
     { id: 'current-evidence', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Newest actual local identity/bytes cannot borrow an older green result.' },
     { id: 'native-uncertainty', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Known pending, uncertain or uncorrelated native tasks require rediscovery; partial inventories cannot prove absence and unkeyed completion cannot prove an intended effect.' },
+    { id: 'dispatch-recovery', source: 'src/dispatch.mjs', functions: ['dispatchDecision'], statement: 'Retained launch uncertainty, mismatched native identity or settings, and reused child bindings cannot authorize another child or an unverified continuation in the bounded dispatch domain.' },
     { id: 'trigger-coverage', source: 'src/work.mjs', functions: ['triggerStatus'], statement: 'Missed runs require fresh complete post-window coverage; no-op and delivery gaps remain distinct.' },
     { id: 'retirement-closure', source: 'src/work.mjs', functions: ['retirementStatus'], statement: 'Unsuperseded enabled readbacks keep native disablement pending and retirement stops proposals.' },
     { id: 'import-prefix', source: 'src/records.mjs', functions: ['importOrder', 'validateReferences'], statement: 'Every imported publication prefix is dependency-complete and supersession stays within scope.' },

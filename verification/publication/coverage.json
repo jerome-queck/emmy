@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "kind": "bounded-tla-publication-safety",
-  "sourceCommit": "ae743cefe4d4409600716c18a0cdc549f3232581",
-  "reviewBasis": "Coordinator reviewed the unchanged covered production source at ae743cefe4d4409600716c18a0cdc549f3232581 against every model action and both actual copied-source witnesses. Complete writes precede atomic rename, readback precedes pending-only cleanup, imports begin after complete validation and await dependency-first publication, and observer listing/reads/reference validation remain separate. Retry order may vary only after its dependency exists. Orphan contents are abstracted to an existence bit because no later action reads them; writer, record, partial-write, crash and retry bounds are unchanged. Named stage operators replace explanatory numeric comments without changing their values. Existing production finite checks remain complementary; no source commit was advanced. Current verification digests bind the reviewed artifacts. Fresh independent exact-head review and the restored model/production runs remain release gates.",
+  "sourceCommit": "e715838bd56a7ceebd272424b1e2eacdd0a0f8d3",
+  "reviewBasis": "Reviewed the complete src/records.mjs diff from ae743cefe4d4409600716c18a0cdc549f3232581 through e715838bd56a7ceebd272424b1e2eacdd0a0f8d3 and every mapped publication await. Optional dispatcher, requested-settings and task-observation parsing and definition-lineage guards are pure validation before publication. No new record type, graph-reference edge, publication operation, filesystem await, cleanup target or import ordering is added. publishRecord, readRecord, readStore, references, retainImport and importOrder retain their operations and ordering. The model still starts after full preparation/reference validation; its silent pure-validation assumption remains appropriate. Reviewed source-reader reports independently identified the unchanged publisher and the separate dispatch restore-acquisition risk, which was fixed in the advisory owner. Source lines are refreshed for inserted guards. Bounds, model actions, all six safety properties, configs, tool pin, two model mutants and two actual copied-source filesystem witnesses are unchanged. The previous strict source refusal is retained. Advance binds the reviewed product commit, not an inference from generators or passing tests. Fresh independent exact-head review and restored model/filesystem runs remain acceptance gates.",
   "sourceFiles": {
-    "src/records.mjs": "88ec4d1c92eef4ffd79fc60093f20b8338b6626a5d9ab4cf3dcc2a45064cb596"
+    "src/records.mjs": "15067f4f68794fbe36c021fe8194ea59c19150d3ee77e70cd64aab2ddfe5ff59"
   },
   "verificationFiles": {
     "verification/publication/RecordPublication.tla": "9570ee406a8ea90a767dc5093186585860f83cbf082b94b9b8e13e67a83d0edb",
@@ -15,7 +15,7 @@
     "verification/publication/drive.mjs": "98352f00f228d28443cb13e54f982aa787dccd09e0c3a478a8fae83df34d82c2",
     "verification/publication/worker.mjs": "92ea1c8bb11138b5f2ae32b7465e7e9fc8e9edd688be6bc2062c3a1a0fcb630d",
     "scripts/verify-publication.mjs": "9a34dedf98d2e1a544707f66139b48ebfea185214b5274e05095924333e7f6de",
-    ".agents/skills/publication-contract/SKILL.md": "523c0530ee398bab2b0e230487c5a101a441b9e6fb22ddf0e74bfe9d583f96e3"
+    ".agents/skills/publication-contract/SKILL.md": "0fa8299b1215a43f8803ad7a10ed66f9c5f2707be299756cb48e8b6aa8f17825"
   },
   "tool": {
     "release": "TLA+ tools 1.7.4",
@@ -134,8 +134,8 @@
         "recordPayload"
       ],
       "lines": [
-        196,
-        205
+        251,
+        260
       ],
       "model": [
         "Hashes",
@@ -150,8 +150,8 @@
         "publishRecord"
       ],
       "lines": [
-        207,
-        224
+        262,
+        280
       ],
       "model": [
         "CreatePending",
@@ -172,8 +172,8 @@
         "validateReferences"
       ],
       "lines": [
-        227,
-        284
+        282,
+        346
       ],
       "model": [
         "ObserveList",
@@ -192,10 +192,12 @@
         "importOrder"
       ],
       "lines": [
-        255,
-        306,
-        432,
-        441
+        311,
+        318,
+        349,
+        370,
+        495,
+        504
       ],
       "model": [
         "Order",
@@ -213,10 +215,12 @@
         "retainImport"
       ],
       "lines": [
-        189,
-        224,
-        286,
-        306
+        244,
+        249,
+        262,
+        280,
+        349,
+        370
       ],
       "model": [
         "Crash",

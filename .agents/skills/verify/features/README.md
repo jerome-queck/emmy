@@ -5,7 +5,7 @@ Generated from `src/metadata.mjs`. Read [the driver skill](../SKILL.md) before a
 | Feature | Commands | Scenarios | Bounded properties |
 | --- | --- | --- | --- |
 | [Orientation and private integrity](orientation.md) | help, doctor, catalog | orientation | Public derivation is exercised behaviorally |
-| [Responsibilities and proposals](routing.md) | responsibility, probe | persistent-context, binding-boundaries, native-effect-correlation, probe-packet, definition-concurrency | exact-binding, branch-blocking, effect-stability, authority-scope, native-uncertainty |
+| [Responsibilities and proposals](routing.md) | responsibility, dispatch, probe | persistent-context, binding-boundaries, native-effect-correlation, native-dispatch, probe-packet, definition-concurrency | exact-binding, branch-blocking, effect-stability, authority-scope, native-uncertainty, dispatch-recovery |
 | [Reconciliation and correction](evidence.md) | reconcile, briefing | self-check-repair, evidence-boundaries, live-cutoff, local-check, local-check-cleanup, trigger-evolution, briefing-guidance, briefing-draft, briefing-boundaries | observation-gates, reported-assurance, failure-preservation, repair-closure, deterministic-replay, current-evidence, live-cutoff, process-group-cleanup, trigger-coverage, retirement-closure |
 | [Upkeep and recovery](upkeep.md) | maintain, backup, restore | archive-recovery, cloud-recovery, restored-current-context, publication-interruption, derived-boundaries | restore-suspension, import-prefix |
 

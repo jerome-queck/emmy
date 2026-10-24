@@ -32,6 +32,16 @@ Record requested model and effort, resolved project defaults, supported session 
 
 For fixed-time work, test one harmless one-time run before making a recurring schedule. Confirm notification delivery separately from task execution. Disable or delete test schedules through the provider after collecting their evidence.
 
+## Verify persistent native dispatch recovery
+
+Use the private selected dispatcher and current authorized implementation job. Discover the actual local native host, saved project and dispatcher pin. Retain the dispatcher's create operation, exact request and returned ready child, then list and reopen that child. Keep recorded first-turn policy/model distinct from provider execution and effective access. Do not create an additional rehearsal child.
+
+Import the real selection and job through the supported [private dispatch schema](native-dispatch.md). Invoke the reviewed installed `run-agent dispatch` route in fresh processes. Compare its recovered selection, objective, native child and wait cursor with actual native readbacks. Demonstrate pending/uncertain refusal through isolated fixtures. Preserve all old evidence. A fixture cannot establish actual native creation or permission inheritance.
+
+Verify protected publication, versioned installed bytes/runtime/launcher, loaded guidance digest/source-check and actual bootstrap invocation independently. Save and read back the short bootstrap in the existing native note when supported. A local bootstrap invocation does not prove a remote note was changed. Keep unavailable environments explicit.
+
+On a later unrelated ordinary human coding request without setup reminders, observe the parent recovering this route, the selected dispatcher creating one fresh native project child, and parent-owned progress through completion. For a same-objective authorized follow-up, observe context-based continuation of its existing child. That later adoption remains separate from setup, saved instructions, prompted rehearsals and published source. No schedule is needed.
+
 ## Proposed self-correction and simplification probe
 
 Run this only after read-only access and the normal local route pass. It is a proposed assigned task, never executed by this local acceptance suite. Keep the catalog's eight capability probes separate.
