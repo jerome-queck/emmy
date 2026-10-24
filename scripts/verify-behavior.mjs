@@ -11,6 +11,7 @@ import { fixtureScripts } from '../verification/fixtures.mjs';
 import { inspectRepository, replayReview } from '../src/responsibilities.mjs';
 import { commands, verification } from '../src/metadata.mjs';
 import { driveBriefing } from '../verification/briefing-drive.mjs';
+import { driveDispatch } from '../verification/dispatch-drive.mjs';
 
 const sourceRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const evidenceDir = join(sourceRoot, '.local/verification', `behavior-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 8)}`);
@@ -38,7 +39,7 @@ const git = args => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8
 const review = data => data.responsibilities[0].record;
 const reconcile = async (id, expected = 0, imports = null, selectedHome = home, asOf = now()) => run(['reconcile', '--id', id, '--as-of', asOf, ...(imports ? ['--import', await fixture(`import-${randomUUID()}.json`, { schemaVersion: 1, records: imports })] : [])], expected, selectedHome);
 try {
-  assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing');
+  assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing', 'dispatch'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing|dispatch');
   for (const path of ['registry', 'docs', '.agents', 'src', 'scripts']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
   await mkdir(join(home, 'records'), { recursive: true }); await mkdir(join(root, 'bin'));
   for (const name of ['gh', 'codex', 'curl', 'ssh']) await writeFile(join(root, 'bin', name), `#!/bin/sh\necho invoked >> '${join(home, 'executor-invoked')}'\nexit 99\n`, { mode: 0o755 });
@@ -50,12 +51,13 @@ try {
   const target = { projectId: 'fixture', repository: actual.repository, executor: 'local-codex', hostId: 'fixture-host', nativeProjectId: 'native-fixture', ...actual };
   const bindings = { schemaVersion: 1, localHostId: target.hostId, hosts: { [target.hostId]: { label: 'Synthetic host', machine: hostname() } }, projects: { fixture: { label: 'Synthetic project', hostId: target.hostId, nativeProjectId: target.nativeProjectId, path: target.path, repository: target.repository } } };
   await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
-  assert.equal((await run(['help', '--json'])).commands.length, 10);
+  assert.equal((await run(['help', '--json'])).commands.length, commands.length);
   assert.deepEqual((await run(['help'])).commands.map(item => item.name), commands.map(item => item.name));
   await run(['doctor']); await run(['catalog']); await run(['snapshot'], 2); await run(['help', '--bogus'], 2);
-  scenario('orientation', 'Ten commands, doctor in isolated repository, catalog and rejected legacy/unknown options.');
-  if (report.focus !== 'self-check-repair') await driveBriefing({ sourceRoot, root, home, run, scenario, report, children });
-  if (report.focus !== 'briefing') {
+  scenario('orientation', 'Metadata-defined commands, doctor in isolated repository, catalog and rejected legacy/unknown options.');
+  if (!['self-check-repair', 'dispatch'].includes(report.focus)) await driveBriefing({ sourceRoot, root, home, run, scenario, report, children });
+  if (!['self-check-repair', 'briefing'].includes(report.focus)) await driveDispatch({ root, home, run, scenario, report, bindings, target });
+  if (!['briefing', 'dispatch'].includes(report.focus)) {
   const artifact = join(home, 'artifact.txt'); const original = 'Expected fixture bytes\n'; await writeFile(artifact, original);
   const definition = { id: 'self-check', parents: [], goal: 'Retain the expected local artifact and detect damage.', context: 'Synthetic responsibility survives a fresh process without a prior conversation.', action: 'verify', resource: 'fixture', destination: 'local-evidence', target, authorityRef: { reference: 'Synthetic owner request', action: 'verify', resource: 'fixture', destination: 'local-evidence' }, criteria: [{ id: 'artifact', description: 'Actual bytes match the retained expectation.', evidence: 'local-digest', path: artifact, sha256: digest(original) }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'artifact-watch', method: 'Compare expected local bytes.', intendedEffect: 'Maintain expected artifact bytes.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' } };
   const adopted = await run(['responsibility', '--file', await fixture('definition.json', definition)]);
@@ -591,8 +593,20 @@ try {
 } finally {
   for (const child of children) child.kill('SIGKILL');
   try { await cp(join(home, 'records'), join(evidenceDir, 'retained-records'), { recursive: true }); } catch (error) { if (error.code !== 'ENOENT') report.evidenceCopyError = error.message; }
+  try { await cp(join(home, 'dispatch-home'), join(evidenceDir, 'dispatch'), { recursive: true }); report.retainedDispatch = join(evidenceDir, 'dispatch'); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.dispatchCopyError = error.message; process.exitCode = 1; } }
+  for (const name of ['dispatch-backup', 'dispatch-restored']) {
+    try { await cp(join(home, name), join(evidenceDir, name), { recursive: true }); report[name] = join(evidenceDir, name); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.dispatchCopyError = error.message; process.exitCode = 1; } }
+  }
   try { await cp(join(home, 'briefing'), join(evidenceDir, 'briefing'), { recursive: true }); report.retainedBriefing = join(evidenceDir, 'briefing'); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.briefingCopyError = error.message; process.exitCode = 1; } }
   await rm(root, { recursive: true, force: true }); report.cleaned = !await readdir(tmpdir()).then(names => names.includes(basename(root)));
+  if (report.dispatch && report.retainedDispatch) {
+    try {
+      assert.equal(digest(await readFile(join(report.retainedDispatch, 'bindings.json'))), report.dispatch.bindingDigest);
+      assert.ok((await readStore(report.retainedDispatch)).records.some(record => record.hash === report.dispatch.retainedAttemptHash));
+      assert.ok((await readStore(report['dispatch-restored'])).records.some(record => record.hash === report.dispatch.restoredEpoch));
+      const manifest = JSON.parse(await readFile(join(report['dispatch-backup'], 'manifest.json'), 'utf8')); assert.equal(manifest.hash, report.dispatch.archiveManifestHash);
+    } catch (error) { report.status = 'failed'; report.dispatchCopyError = error.message; process.exitCode = 1; }
+  }
   if (report.retainedBriefing && report.briefing) {
     try {
       report.retainedCheckedBody = join(report.retainedBriefing, 'runs', basename(report.briefing.checked), 'body.md');

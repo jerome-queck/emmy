@@ -14,7 +14,9 @@ npm run agent -- reconcile --id scratch-watch --as-of <UTC>
 npm run check
 ```
 
-Read [onboarding](docs/onboarding.md) to bind a designated Mac, adopt a responsibility, and recover it from a fresh process. Use [the one-time Dot bootstrap](docs/dot-bootstrap.md) to adopt the briefing routine in Emmy's existing notes. The ten commands retain local commitments and evidence and provide advisory briefing checks. Native products still own execution, permissions, schedules, and delivery.
+Read [onboarding](docs/onboarding.md) to bind a designated Mac, adopt a responsibility, and recover it from a fresh process. Use [the one-time Dot bootstrap](docs/dot-bootstrap.md) to adopt the routine in Emmy's existing notes. The eleven commands retain local commitments and evidence and provide advisory briefing and dispatch checks. Native products still own execution, permissions, schedules, and delivery.
+
+[Private dispatch recovery](docs/native-dispatch.md) loads a project's selected native dispatcher and objective bindings from the existing private home. `dispatch --project <project-key> --as-of <UTC>` recovers the selection and jobs. With `--id <objective-id>`, it validates retained evidence and returns the next native action. It writes no records, creates no task and changes no permissions.
 
 `briefing` returns readable guidance from one pinned public-main bundle. With `--file <private-draft.json>`, it checks declared sources and renders the exact Markdown to show. [The briefing contract](docs/briefing.md) defines input, source age, correction scope and degraded output. The command does not install a native hook or verify automatic invocation.
 

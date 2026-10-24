@@ -1,4 +1,11 @@
 export const mutations = [
+  { id: 'dispatch-retry-unresolved-launch', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["return stop('native-launch-unresolved');", "return { ...result, status: 'advice-ready', next: 'create-via-dispatcher' };"]] },
+  { id: 'dispatch-ignore-native-identity', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["readback.threadId !== expected.threadId || readback.hostId !== null && readback.hostId !== expected.hostId || readback.nativeProjectId !== null && readback.nativeProjectId !== expected.nativeProjectId", 'false']] },
+  { id: 'dispatch-ignore-recorded-policy', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["settings.sandboxMode !== 'danger-full-access' || settings.approvalPolicy !== 'never'", 'false']] },
+  { id: 'dispatch-reuse-other-objective-child', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["result.reasons.push('child-bound-to-another-objective');", 'result.reasons.push();']] },
+  { id: 'dispatch-forget-lost-response', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["!['attempted', 'pending', 'uncertain'].includes(state.phase) && unsettled.size", 'false']] },
+  { id: 'dispatch-reuse-dispatcher-as-child', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["task.nativeId === spec.dispatcher.threadId || task.nativeId === selected?.threadId", 'false']] },
+  { id: 'dispatch-borrow-pre-restore-native-readback', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["restoredAt && Date.parse(readback.observedAt) < Date.parse(restoredAt)", 'false'], ["restoredAt && Date.parse(settings.observedAt) < Date.parse(restoredAt)", 'false']] },
   { id: 'cloud-default', property: 'exact-binding', source: 'src/records.mjs', edits: [["input.target?.executor ?? 'local-codex'", "input.target?.executor ?? 'codex-cloud'"]] },
   { id: 'accept-empty-active-criteria', property: 'exact-binding', source: 'src/records.mjs', edits: [["input.lifecycle.status !== 'active' || input.criteria.length > 0", 'true']] },
   { id: 'inherit-project-binding', property: 'exact-binding', source: 'src/work.mjs', edits: [["Object.hasOwn(bindings.projects, target.projectId) ? bindings.projects[target.projectId] : null", 'bindings.projects[target.projectId] ?? null']] },

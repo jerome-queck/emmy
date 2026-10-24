@@ -17,4 +17,10 @@ If no trusted runner route is available, report that limit and give a useful sco
 
 > Before normal work after resumption and before each briefing, run the trusted installed Emmy `briefing` runner with the existing private home and read its returned guidance. Recover corrections through the existing native mechanism. Check the structured draft, repair findings, rerun, check source meaning, and show the emitted body unchanged. Keep receipts private. Disclose unavailable guidance, runner or recovery. Preserve existing authority, schedules and correction ownership.
 
+For a project with a selected native dispatcher, append this short recovery instruction to the same existing note:
+
+> Before routing coding, use the trusted reviewed `run-agent` launcher with the existing private home to run `dispatch --project <project-key> --as-of <UTC>`. Recover the objective before any native instruction. Keep the selected dispatcher pinned for coordination; fresh native project children own implementation. Reuse the retained human scope for qualifying FullAccess children without recurring consent. Verify actual native identity and recorded settings. Rediscover pending, uncertain or conflicting launches before retry. The parent owns bounded native read/wait and follow-through through the existing control connection. Preserve all corrections, other permissions and access boundaries. Keep exact bindings and receipts private.
+
+Replace placeholders from the saved private binding, then save and read back the note through the existing native mechanism. Demonstrate the actual installed `dispatch` invocation separately from that saved text. The existing `run-briefing` launcher cannot expose this new executable capability by downloading guidance. Follow [private dispatch installation](native-dispatch.md#install-and-verify-recovery).
+
 This note requests a routine. Its saved readback alone does not prove a runner was provisioned or later invoked automatically. An ordinary later turn, an actual guidance advance and a comparison with the shown output provide separate acceptance evidence.
