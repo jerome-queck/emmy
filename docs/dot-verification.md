@@ -24,6 +24,12 @@ Stop one harmless delegated probe and verify it stays stopped. Ask Emmy to redis
 
 After a successful local task, ask for a follow-up in that same chat. Verify the task ID and the new result. A different chat is a different continuation result. Test cross-Mac access only after the Studio path works, and distinguish a native remote-host connection from a daisy chain through a shell.
 
+For a native routing repair, reserve one identifiable fresh thread and correlation marker. Inspect the actual catalog, discover the saved native project, and use [the concrete native route](change-delivery.md#create-through-the-native-host-service). Retain the exact create request and response. Immediately list and reopen its ready ID on the returned host. Compare explicit saved project membership with the intended project. A durable cloud task moved later cannot pass this direct-creation check. A sender label alone does not prove an intermediary.
+
+If creation returns only `clientThreadId`, retain it and rediscover the same launch until its ready ID is correlated. Never pass the pending ID to ready-thread operations or create a second test on uncertainty. Exercise parent-owned progress readback through the existing authorized bridge when Emmy lacks direct native operations. Keep the coding chat's normal results there for the bridge to read. No callback or new schedule is needed.
+
+Record requested model and effort, resolved project defaults, supported session readback, and provider execution separately. Retain unavailable fields as unverified. Check visibility from the other device only through already supported access. A successful local native test does not prove cross-device visibility or later ordinary-turn adoption.
+
 For fixed-time work, test one harmless one-time run before making a recurring schedule. Confirm notification delivery separately from task execution. Disable or delete test schedules through the provider after collecting their evidence.
 
 ## Proposed self-correction and simplification probe
