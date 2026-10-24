@@ -51,6 +51,26 @@ export async function readBindings(home) {
   return value;
 }
 
+export function parseProjectDiscovery(value) {
+  object(value, 'project discovery');
+  requireValue(value.schemaVersion === 1, 'Unsupported project discovery schemaVersion');
+  timestamp(value.observedAt, 'discovery.observedAt'); text(value.sourceRef, 'discovery.sourceRef');
+  object(value.coverage, 'discovery.coverage');
+  requireValue(typeof value.coverage.complete === 'boolean', 'discovery.coverage.complete must be boolean');
+  texts(value.coverage.gaps, 'discovery.coverage.gaps'); array(value.projects, 'discovery.projects');
+  for (const project of value.projects) {
+    object(project, 'native project');
+    for (const field of ['projectId', 'label']) text(project[field], `native project.${field}`);
+    choice(project.projectKind, ['local', 'remote', 'chatgpt'], 'native project kind');
+    if (project.projectKind !== 'chatgpt') {
+      text(project.hostId, 'native project.hostId');
+      requireValue(isAbsolute(project.path ?? ''), 'Native project.path must be absolute');
+    }
+  }
+  requireValue(new Set(value.projects.map(project => project.projectId)).size === value.projects.length, 'Duplicate native project IDs');
+  return value;
+}
+
 function subject(value) {
   object(value, 'subject');
   for (const name of ['projectId', 'repository', 'executor', 'hostId', 'revision', 'dirtyDigest']) text(value[name], `subject.${name}`);
@@ -75,6 +95,7 @@ function dispatcherBinding(value) {
   object(value, 'dispatcher');
   for (const field of ['threadId', 'hostId', 'nativeProjectId', 'selectionRef']) text(value[field], `dispatcher.${field}`);
   authority(value.authorityRef, 'dispatcher.authorityRef');
+  if (value.remoteAuthorityRef !== undefined) authority(value.remoteAuthorityRef, 'dispatcher.remoteAuthorityRef');
   choice(value.childAccessIntent, ['full-access-inherit'], 'dispatcher.childAccessIntent');
 }
 
@@ -84,6 +105,7 @@ function nativeReadback(value) {
   timestamp(value.observedAt, 'readback.observedAt'); text(value.sourceRef, 'readback.sourceRef');
   if (value.pinned !== undefined) requireValue(typeof value.pinned === 'boolean', 'readback.pinned must be boolean');
   if (value.correlationKey !== undefined) text(value.correlationKey, 'readback.correlationKey');
+  if (value.creatorThreadId !== undefined) text(value.creatorThreadId, 'readback.creatorThreadId');
   if (value.recordedSettings !== undefined && value.recordedSettings !== null) {
     object(value.recordedSettings, 'recordedSettings');
     for (const field of ['model', 'effort', 'sandboxMode', 'approvalPolicy', 'sourceRef']) text(value.recordedSettings[field], `recordedSettings.${field}`);
@@ -108,6 +130,12 @@ function dispatchObservation(value, input) {
   text(value.correlationKey, 'dispatch.correlationKey'); choice(value.phase, ['absent', 'attempted', 'pending', 'uncertain', 'ready'], 'dispatch.phase');
   if (value.dispatcher !== undefined) nativeReadback(value.dispatcher);
   if (value.child !== undefined) nativeReadback(value.child);
+  if (value.destinationSkill !== undefined) {
+    object(value.destinationSkill, 'destinationSkill');
+    for (const field of ['hostId', 'sourceRef']) text(value.destinationSkill[field], `destinationSkill.${field}`);
+    requireValue(isAbsolute(value.destinationSkill.path ?? ''), 'destinationSkill.path must be absolute');
+    hash(value.destinationSkill.sha256, 'destinationSkill.sha256'); timestamp(value.destinationSkill.observedAt, 'destinationSkill.observedAt');
+  }
   if (value.attemptKey !== undefined || value.phase !== 'absent') hash(value.attemptKey, 'dispatch.attemptKey');
   if (value.phase === 'attempted') hash(value.requestDigest, 'dispatch.requestDigest');
   if (value.phase === 'pending') text(value.clientThreadId, 'dispatch.clientThreadId');

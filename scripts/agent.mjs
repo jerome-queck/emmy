@@ -49,8 +49,8 @@ try {
       data = await briefing(home, { file: options.file ? resolve(options.file) : null });
       exitCode = data.mode === 'guidance' ? (data.guidance.state === 'current' ? 0 : 3) : (data.status === 'checked' ? 0 : 3); break;
     case 'dispatch':
-      data = await dispatch(home, { id: options.id, project: options.project, asOf: timestamp(options['as-of'], 'as-of'), contextNeeded: Boolean(options['context-needed']), catalog });
-      exitCode = ['advice-ready', 'recovered'].includes(data.status) ? 0 : 3; break;
+      data = await dispatch(home, { id: options.id, project: options.project, resolve: options.resolve, discoveryFile: options.discovery ? resolve(options.discovery) : null, asOf: timestamp(options['as-of'], 'as-of'), contextNeeded: Boolean(options['context-needed']), catalog });
+      exitCode = ['advice-ready', 'recovered', 'resolved'].includes(data.status) ? 0 : 3; break;
     case 'probe': {
       const selected = options.id ? catalog.probes.filter(probe => probe.id === options.id) : catalog.probes;
       if (!selected.length) throw new Error(`Unknown probe ${options.id}`);

@@ -3,16 +3,64 @@
 Use the trusted installed runner with the existing private home. This command recovers saved state and returns advice. Supported native tools perform creation and supervision.
 
 ```sh
+agent dispatch --resolve name:<exact-saved-label> --discovery <private-discovery.json> --as-of <UTC>
 agent dispatch --project <project-key> --as-of <UTC>
-agent dispatch --id <objective-id> --as-of <UTC>
-agent dispatch --id <objective-id> --context-needed --as-of <UTC>
+agent dispatch --id <objective-id> --discovery <private-discovery.json> --as-of <UTC>
+agent dispatch --id <objective-id> --discovery <private-discovery.json> --context-needed --as-of <UTC>
 ```
 
-Project recovery returns the selected dispatcher and known objective bindings. It does not establish current native eligibility. Objective recovery pins the journal inputs and returns one next action. The command writes no records and invokes no native executor. Exit 0 means usable advice or recovered inventory, 2 means invalid input, and 3 means observation or resolution is needed.
+Project recovery returns the selected dispatcher and known objective bindings. It does not establish current native eligibility. Objective recovery pins the journal inputs and returns one next action. The command writes no records and invokes no native executor. Exit 0 means a resolved destination, usable advice, or recovered inventory, 2 means invalid input, and 3 means observation or resolution is needed.
+
+## Resolve the saved destination
+
+Capture the complete result of the designated coordinator's supported native `list_projects`. Preserve every returned row, acquisition time, source, and coverage limits privately. The inspected API has no pagination arguments. Its returned inventory is the known scope, not proof of an undiscoverable project's absence.
+
+Wrap the native `projects` array in this data envelope:
+
+```json
+{
+  "schemaVersion": 1,
+  "observedAt": "<actual-UTC-acquisition-time>",
+  "sourceRef": "<private-native-discovery-receipt>",
+  "coverage": { "complete": true, "gaps": [] },
+  "projects": [
+    { "projectId": "<saved-ID>", "projectKind": "local", "label": "<exact-label>", "hostId": "<configured-host>", "path": "<absolute-checkout>" }
+  ]
+}
+```
+
+Use an explicit `key:`, `id:`, `name:`, `path:`, or `repository:` selector. Names and paths match exactly. Repository selectors match private canonical repository bindings, then actual local source inspection checks the result. Multiple matches require an explicit destination choice. Missing, duplicate, stale, future, partial, or conflicting discovery cannot yield action advice. Discovery expires after five minutes or the objective's tighter freshness limit. After restore, acquire it again in the new epoch.
+
+Resolution returns the saved identity even when source or authority is unavailable. A non-Git saved root remains identifiable, but an existing coding definition requires a verified Git root, canonical origin, revision, and dirty digest. Resolve the actual source before constructing that definition. Never manufacture a revision or substitute another project.
+
+For Studio-local destinations, the resolver and objective operation inspect the current repository directly. Advice refuses changed source bytes. The command invokes no native executor and executes no project checks. Retain the discovery file with the private job evidence. It remains reported native input; its digest does not authenticate a native account or authority.
+
+## Separate coordinator and configured host
+
+`dispatcher.hostId` and `dispatcher.nativeProjectId` identify the coordinator itself. The job's `target.hostId` and `target.nativeProjectId` identify the destination. Each destination binding may select the same coordinator identity with its own exact destination authority. The dispatcher owner is the unique private project with that host and native project ID. Its own selection, scope, machine, live project row, and thread readback must agree independently.
+
+The supported native `create_thread` project route accepts the discovered destination ID. Its `environment.type = "local"` means the saved project's configured host. That host can be a Studio-connected remote host. This route does not switch the Dot's connected computer, use `cloud_threads`, or create a cloud environment. Supervision uses the actual returned `hostId`. Destination-host model compatibility is checked by the native tool when called.
+
+A remote destination additionally requires `dispatcher.remoteAuthorityRef` on both its selected binding and immutable objective snapshot:
+
+```json
+{
+  "reference": "<explicit-host-and-project-human-source>",
+  "action": "dispatch-native-remote-child",
+  "resource": "<destination-project-key>",
+  "destination": "<configured-remote-host-ID>"
+}
+```
+
+The ordinary `authorityRef` still binds the destination project key and saved native project ID. The remote grant binds that destination's configured host. No wildcard or Studio-only grant authorizes another host. Preserve separate app and Computer Use grants and actual denials.
+
+The CLI never inspects a remote path on Studio. Before remote advice, import current complete target evidence with actual native source bytes through the existing journal. Remote source assurance stays reported. Unsuperseded contrary reports hold action; timestamps alone cannot erase them. The current tasks dispatch metadata also needs `destinationSkill` with the destination `hostId`, actual installed `path`, `sha256`, `observedAt`, and `sourceRef`. Its host/path/digest must match the objective skill, its acquisition must fit five minutes and the objective limit, and it must follow restore. Studio's copy cannot verify remote installed bytes. Missing remote source or skill evidence holds that job.
+
+ChatGPT conversational Projects, saved Codex coding projects, and cloud Work environments have distinct membership contracts. Native discovery can identify ChatGPT Projects, but this command returns `chatgpt-coding-membership-unsupported`. The separate `chatgptWorkCloud` creation target is cloud work, not ordinary conversational chat creation or saved native coding membership. Optional support is excluded here.
 
 ## Save the private selection
 
-Keep the selected dispatcher under `bindings.json` at `projects.<project-key>.dispatcher`. Use actual native discovery and the human's existing source authorization. The binding has this shape:
+Keep the selected dispatcher under `bindings.json` at `projects.<project-key>.dispatcher`. Use actual native discovery and the human's existing source authorization. The `nativeProjectId` below belongs to the dispatcher owner. Its authority destination belongs to the selected child destination. The binding has this shape:
 
 ```json
 {
@@ -53,7 +101,7 @@ Adopt one ordinary responsibility definition per distinct coding objective throu
 
 The dispatcher placeholder represents the complete object above. Resolve and hash the actual installed skill. The create proposal begins with `[$pstack:poteto-mode](/absolute/resolved/path/SKILL.md)` followed by the objective details. Never copy a placeholder path into a native task.
 
-Omitting `requestedSettings` uses ordinary Sol High. Stronger scoped human settings apply to that objective and its named helpers. A model outside the ordinary default or an effort below its floor needs `scopedOverrideRef`. A later changed request needs that explicit source in a descendant definition. Its dispatcher, correlation key and skill binding stay fixed. Retain the original request and first-turn evidence.
+Omitting `requestedSettings` uses the ordinary Sol High floor. An explicit settings request requires its exact model and effort in child readback. Stronger scoped human settings apply to that objective and its named helpers. A model outside the ordinary default or an effort below its floor needs `scopedOverrideRef`. A later changed request needs that explicit source in a descendant definition. Its dispatcher, correlation key and skill binding stay fixed. Retain the original request and first-turn evidence.
 
 Retain native evidence through existing `reconcile --import`. Use a `tasks` observation with real evidence paths and digests. Its `dispatch` extension contains `phase`, `correlationKey`, the dispatcher readback, and an `attemptKey` for every phase except initial absence. The create proposal derives a unique attempt key from its objective and pinned discovery and includes it in the child prompt. Retain that key plus `requestDigest`, the SHA-256 of the exact request, in attempted state. Existing `supersedes` links connect observations to that launch. No new record category or private ledger exists.
 
@@ -65,7 +113,7 @@ Retain native evidence through existing `reconcile --import`. Use a `tasks` obse
 | `uncertain` | One matching `uncertain` effect | Retained attempt identity and any known native IDs. |
 | `ready` | Exactly one running or completed task with its native ID and matching effect key, no competing effects | Correlated child readback, attempt chain and optional `afterCursor`. |
 
-A readback contains `threadId`, actual `hostId`, explicit saved `nativeProjectId`, `observedAt`, and `sourceRef`. Use null for unavailable host or membership. The dispatcher readback also needs `pinned: true`. A child readback includes the objective's `correlationKey`.
+A readback contains `threadId`, actual `hostId`, explicit saved `nativeProjectId`, `observedAt`, and `sourceRef`. Use null for unavailable host or membership. The dispatcher readback also needs `pinned: true`. A child readback includes the objective's `correlationKey` and `creatorThreadId`. Verify that creator from the actual coordinator creation record. It must equal the pinned dispatcher. Missing provenance holds the existing child without replacement.
 
 `recordedSettings` is separate evidence with `model`, `effort`, `sandboxMode`, `approvalPolicy`, its actual acquisition time `observedAt`, and `sourceRef`. Optional `recordedAt` preserves the original native source timestamp. Omit settings or use null when unavailable. After restore, both native and settings acquisition must occur in the new epoch. Wrapping an old readback in a new observation does not refresh it. Eligibility compares the recorded model and effort with the scoped request and checks the expected `danger-full-access` and `never` record. Missing, stale or contrary evidence requires inspection. It never changes settings or proves provider execution or effective access.
 
@@ -73,7 +121,7 @@ Evidence imports remain reported. Retained byte hashes cannot authenticate nativ
 
 ## Execute through the selected dispatcher
 
-1. Load current approved guidance and recover the private selection and objective. Discover the selected dispatcher's actual host, saved project, pin and current recorded policy/model through supported reads. Stop that action on a mismatch. Preserve missing evidence as unverified.
+1. Load current approved guidance and recover the private selection and objective. Resolve the requested destination from current native discovery and repository evidence. Discover the selected dispatcher's own actual host, saved project, pin and current recorded policy/model through supported reads. Stop that action on a mismatch. Preserve missing evidence as unverified.
 2. Classify the human request. A distinct objective gets a new definition and unique marker, then a fresh project child. Continue a known child only for the same objective when its context is needed and existing objective authority covers the follow-up. `--context-needed` supplies no authority itself.
 3. Use fresh targeted native discovery. State its request window, marker, project and coverage. A partial page cannot establish absence. Pending, uncertain, uncorrelated, stale or conflicting launch history requires rediscovery. A later source revision cannot erase it.
 4. For `create-via-dispatcher`, retain attempted state through the existing importer before the native call. The eligible selected dispatcher uses that previously pinned proposal once through `mcp__codex_app__create_thread`. The proposal and intent are not a reservation or native at-most-once guarantee. Do not substitute a durable cloud task.

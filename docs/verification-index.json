@@ -48,13 +48,19 @@
     },
     {
       "name": "dispatch",
-      "description": "Recover a private native dispatcher and objective bindings, then return read-only native dispatch advice.",
+      "description": "Resolve an explicit saved destination from fresh discovery, recover private bindings, and return read-only native dispatch advice.",
       "options": [
         {
           "name": "id"
         },
         {
           "name": "project"
+        },
+        {
+          "name": "resolve"
+        },
+        {
+          "name": "discovery"
         },
         {
           "name": "as-of",
@@ -336,7 +342,7 @@
       "functions": [
         "dispatchDecision"
       ],
-      "statement": "Retained launch uncertainty, mismatched native identity or settings, and reused child bindings cannot authorize another child or an unverified continuation in the bounded dispatch domain."
+      "statement": "Independent coordinator and destination identities, fresh project/source evidence, exact destination/remote-host scope, recorded settings and creator lineage gate bounded dispatch advice without erasing launch uncertainty or reused child bindings."
     },
     {
       "id": "trigger-coverage",

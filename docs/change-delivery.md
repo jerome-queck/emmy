@@ -90,3 +90,9 @@ Use a later ordinary human request without a setup reminder. Observe Emmy creati
 For that later unrelated objective, retain the actual guidance refresh, fresh native thread ID and explicit saved project membership after creation. Requested model and resolved project defaults do not establish provider execution. Read back execution when supported and leave unavailable evidence unverified. Do not count the setup or repair conversation as this later acceptance. This acceptance waits for the real human request and needs no new schedule.
 
 Primary sources: [Dot task support](https://learn.chatgpt.com/docs/dots/tasks-and-memory), [connected-computer boundaries](https://learn.chatgpt.com/docs/dots/computers-and-apps), [pstack verification creation](https://github.com/cursor/plugins/blob/main/pstack/skills/create-formal-verification-skill/SKILL.md).
+
+## Route saved local and remote projects
+
+Use [native destination resolution](native-dispatch.md#resolve-the-saved-destination) with complete fresh discovery and repository evidence. The coordinator's own project does not determine the child's destination. Each saved destination has its own exact scope and independently verified membership. The native project creation route's local environment runs on the saved project's configured host. Authorized Studio-connected remote projects use that existing route, with separate host-specific scope, source, and destination-installed skill readbacks. No Dot attachment switch or cloud executor is implied.
+
+Studio-local source inspection is observed directly. Remote reports remain reported and cannot inherit Studio's source or skill assurance. Missing evidence holds the action. Actual remote creation, destination-host model availability, and first-turn permission inheritance need their own native acceptance. A local marker cannot establish them.

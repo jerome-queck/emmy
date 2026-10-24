@@ -24,3 +24,7 @@ For a project with a selected native dispatcher, append this short recovery inst
 Replace placeholders from the saved private binding, then save and read back the note through the existing native mechanism. Demonstrate the actual installed `dispatch` invocation separately from that saved text. The existing `run-briefing` launcher cannot expose this new executable capability by downloading guidance. Follow [private dispatch installation](native-dispatch.md#install-and-verify-recovery).
 
 This note requests a routine. Its saved readback alone does not prove a runner was provisioned or later invoked automatically. An ordinary later turn, an actual guidance advance and a comparison with the shown output provide separate acceptance evidence.
+
+## Recover a requested saved destination
+
+After loading current guidance, capture fresh native saved-project discovery and resolve the requested destination with the installed `run-agent dispatch --resolve <explicit-selector> --discovery <private-capture> --as-of <UTC>`. Recover its private project selection and matching objective. Pass the same fresh capture to objective advice. Keep the coordinator's own identity separate from the destination's configured host and saved membership. Follow [the destination and host contract](native-dispatch.md#separate-coordinator-and-configured-host) for authorized remote projects. Preserve the existing native bootstrap note and corrections. A local bootstrap run does not prove saved-note adoption or ordinary-turn invocation.

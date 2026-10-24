@@ -35,18 +35,18 @@ Assume collision-free hashes, fresh unique pending names, correct requested byte
 
 ## Read the source mapping
 
-The reviewed source commit is `e715838bd56a7ceebd272424b1e2eacdd0a0f8d3`. Only `src/records.mjs` is pinned to that commit. The coverage record also checks current model, config, bridge, runner and skill digests. New verification artifacts are not claimed to exist at that older source commit.
+The reviewed source commit is `1ba92c5dd36a92c892514f9ee32906ddc9bd1c8a`. Only `src/records.mjs` is pinned to that commit. The coverage record also checks current model, config, bridge, runner and skill digests. New verification artifacts are not claimed to exist at that older source commit.
 
 | Model action or property | Production owner |
 | --- | --- |
-| Symbolic requested hashes and matching completed bytes | `recordPayload`, lines 251-260 |
-| `CreatePending`, four `WriteFile` stages, `Rename` | `publishRecord`, lines 262-274 |
-| `ReadRecord`, `ReadEvidence`, `Cleanup`, `Reply` | `publishRecord`, lines 275-280, and `readRecord`, lines 282-297 |
-| `ObserveList`, `ObserveChoose`, `ObserveRecord`, `ObserveEvidence`, `ObserveValidate` | `readStore`, lines 299-309, and `readRecord`, lines 282-297 |
-| `ImportNext`, retry plan, `ImportPrefixSafe` | `retainImport`, lines 349-370, `references`, lines 311-318, and `importOrder`, lines 495-504 |
-| `Crash`, `Retry`, orphan existence | Process interruption between the mapped awaits and a fresh call using the same input. Real markers are in `publicationBoundary`, lines 244-249. |
+| Symbolic requested hashes and matching completed bytes | `recordPayload`, lines 279-288 |
+| `CreatePending`, four `WriteFile` stages, `Rename` | `publishRecord`, lines 290-302 |
+| `ReadRecord`, `ReadEvidence`, `Cleanup`, `Reply` | `publishRecord`, lines 303-308, and `readRecord`, lines 310-325 |
+| `ObserveList`, `ObserveChoose`, `ObserveRecord`, `ObserveEvidence`, `ObserveValidate` | `readStore`, lines 327-337, and `readRecord`, lines 310-325 |
+| `ImportNext`, retry plan, `ImportPrefixSafe` | `retainImport`, lines 377-398, `references`, lines 339-346, and `importOrder`, lines 523-532 |
+| `Crash`, `Retry`, orphan existence | Process interruption between the mapped awaits and a fresh call using the same input. Real markers are in `publicationBoundary`, lines 272-277. |
 
-Dispatch metadata adds pure validation and immutable lineage guards. It adds no publication await or reference edge. The import model starts after full bundle preparation and reference validation. It includes one dependency edge, not every record-type validation rule. Writer 2 has no dependencies. The observer's reads are deliberately not one atomic `readStore` action. Symbolic hash order and conservative list subsets overapproximate the configured callers.
+Dispatch metadata adds pure validation and immutable lineage guards. The cross-project extension adds optional remote authority, creator and destination skill validation plus a separate parsed project-discovery input. All remain pure boundaries with no publication await or graph-reference change. It adds no publication await or reference edge. The import model starts after full bundle preparation and reference validation. It includes one dependency edge, not every record-type validation rule. Writer 2 has no dependencies. The observer's reads are deliberately not one atomic `readStore` action. Symbolic hash order and conservative list subsets overapproximate the configured callers.
 
 ## Replay a counterexample
 

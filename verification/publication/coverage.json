@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "kind": "bounded-tla-publication-safety",
-  "sourceCommit": "e715838bd56a7ceebd272424b1e2eacdd0a0f8d3",
-  "reviewBasis": "Reviewed the complete src/records.mjs diff from ae743cefe4d4409600716c18a0cdc549f3232581 through e715838bd56a7ceebd272424b1e2eacdd0a0f8d3 and every mapped publication await. Optional dispatcher, requested-settings and task-observation parsing and definition-lineage guards are pure validation before publication. No new record type, graph-reference edge, publication operation, filesystem await, cleanup target or import ordering is added. publishRecord, readRecord, readStore, references, retainImport and importOrder retain their operations and ordering. The model still starts after full preparation/reference validation; its silent pure-validation assumption remains appropriate. Reviewed source-reader reports independently identified the unchanged publisher and the separate dispatch restore-acquisition risk, which was fixed in the advisory owner. Source lines are refreshed for inserted guards. Bounds, model actions, all six safety properties, configs, tool pin, two model mutants and two actual copied-source filesystem witnesses are unchanged. The previous strict source refusal is retained. Advance binds the reviewed product commit, not an inference from generators or passing tests. Fresh independent exact-head review and restored model/filesystem runs remain acceptance gates.",
+  "sourceCommit": "1ba92c5dd36a92c892514f9ee32906ddc9bd1c8a",
+  "reviewBasis": "Reviewed the complete src/records.mjs diff from ae743cefe4d4409600716c18a0cdc549f3232581 through e715838bd56a7ceebd272424b1e2eacdd0a0f8d3 and every mapped publication await. Optional dispatcher, requested-settings and task-observation parsing and definition-lineage guards are pure validation before publication. No new record type, graph-reference edge, publication operation, filesystem await, cleanup target or import ordering is added. publishRecord, readRecord, readStore, references, retainImport and importOrder retain their operations and ordering. The model still starts after full preparation/reference validation; its silent pure-validation assumption remains appropriate. Reviewed source-reader reports independently identified the unchanged publisher and the separate dispatch restore-acquisition risk, which was fixed in the advisory owner. Source lines are refreshed for inserted guards. Bounds, model actions, all six safety properties, configs, tool pin, two model mutants and two actual copied-source filesystem witnesses are unchanged. The previous strict source refusal is retained. Advance binds the reviewed product commit, not an inference from generators or passing tests. Fresh independent exact-head review and restored model/filesystem runs remain acceptance gates. Reviewed the full records diff through 1ba92c5dd36a92c892514f9ee32906ddc9bd1c8a. The changes add only parseProjectDiscovery, optional remote authority, creatorThreadId and destinationSkill boundary checks. Every mapped publication await, reference edge, write, import order, readback and archive operation remains unchanged. Independent upkeep source reading confirmed this. Source locations shift by 28 lines. Strict stale-source refusal is retained; unchanged TLC bounds and paired model/filesystem mutants must rerun after this reviewed pin update.",
   "sourceFiles": {
-    "src/records.mjs": "15067f4f68794fbe36c021fe8194ea59c19150d3ee77e70cd64aab2ddfe5ff59"
+    "src/records.mjs": "a1e028abe6b3767ce0731c50e10021e66d18eb307b5dee4a76d5c11aa63770c8"
   },
   "verificationFiles": {
     "verification/publication/RecordPublication.tla": "9570ee406a8ea90a767dc5093186585860f83cbf082b94b9b8e13e67a83d0edb",
@@ -15,7 +15,7 @@
     "verification/publication/drive.mjs": "98352f00f228d28443cb13e54f982aa787dccd09e0c3a478a8fae83df34d82c2",
     "verification/publication/worker.mjs": "92ea1c8bb11138b5f2ae32b7465e7e9fc8e9edd688be6bc2062c3a1a0fcb630d",
     "scripts/verify-publication.mjs": "9a34dedf98d2e1a544707f66139b48ebfea185214b5274e05095924333e7f6de",
-    ".agents/skills/publication-contract/SKILL.md": "0fa8299b1215a43f8803ad7a10ed66f9c5f2707be299756cb48e8b6aa8f17825"
+    ".agents/skills/publication-contract/SKILL.md": "8f3d079b125ec987936f507a74a5cc7847542abefcdbbb70d888e42149afd9d4"
   },
   "tool": {
     "release": "TLA+ tools 1.7.4",
@@ -134,8 +134,8 @@
         "recordPayload"
       ],
       "lines": [
-        251,
-        260
+        279,
+        288
       ],
       "model": [
         "Hashes",
@@ -150,8 +150,8 @@
         "publishRecord"
       ],
       "lines": [
-        262,
-        280
+        290,
+        308
       ],
       "model": [
         "CreatePending",
@@ -172,8 +172,8 @@
         "validateReferences"
       ],
       "lines": [
-        282,
-        346
+        310,
+        374
       ],
       "model": [
         "ObserveList",
@@ -192,12 +192,12 @@
         "importOrder"
       ],
       "lines": [
-        311,
-        318,
-        349,
-        370,
-        495,
-        504
+        339,
+        346,
+        377,
+        398,
+        523,
+        532
       ],
       "model": [
         "Order",
@@ -215,12 +215,12 @@
         "retainImport"
       ],
       "lines": [
-        244,
-        249,
-        262,
-        280,
-        349,
-        370
+        272,
+        277,
+        290,
+        308,
+        377,
+        398
       ],
       "model": [
         "Crash",

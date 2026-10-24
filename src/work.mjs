@@ -50,10 +50,10 @@ export function definitionHeads(definitions) {
   return definitions.filter(definition => !parents.has(definition.hash)).sort((left, right) => left.hash.localeCompare(right.hash));
 }
 
-export function restoredState(epoch, observations, definition, asOf) {
+export function restoredState(epoch, observations, definition, asOf, { nativeRemote = false } = {}) {
   if (!epoch) return { suspended: false, needed: [] };
   const current = currentObservations(definition, observations, asOf);
-  const needed = ['target', 'authority', 'tasks', 'schedule'].filter(category => !current.some(observation => observation.category === category && observation.homeEpoch === epoch.hash && Date.parse(observation.observedAt) >= Date.parse(epoch.restoredAt) && observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible && (category !== 'target' || !definition.target.executor.startsWith('local-') || observation.origin === 'observed-local') && (category !== 'authority' || observation.authority?.reference === definition.authorityRef.reference && observation.authority?.action === definition.action && observation.authority?.resource === definition.resource && observation.authority?.destination === definition.destination && (!observation.authority.expiresAt || Date.parse(observation.authority.expiresAt) >= Date.parse(asOf)) && authorityStatus(definition, asOf).eligible)));
+  const needed = ['target', 'authority', 'tasks', 'schedule'].filter(category => !current.some(observation => observation.category === category && observation.homeEpoch === epoch.hash && Date.parse(observation.observedAt) >= Date.parse(epoch.restoredAt) && observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible && (category !== 'target' || !definition.target.executor.startsWith('local-') || observation.origin === 'observed-local' || nativeRemote && observation.origin === 'reported' && observation.evidenceRefs.length > 0) && (category !== 'authority' || observation.authority?.reference === definition.authorityRef.reference && observation.authority?.action === definition.action && observation.authority?.resource === definition.resource && observation.authority?.destination === definition.destination && (!observation.authority.expiresAt || Date.parse(observation.authority.expiresAt) >= Date.parse(asOf)) && authorityStatus(definition, asOf).eligible)));
   return { suspended: needed.length > 0, needed, epoch: epoch.hash };
 }
 
