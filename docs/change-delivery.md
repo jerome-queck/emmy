@@ -12,7 +12,35 @@ The task carries the goal, source context, exact target/revision, authority, fin
 
 Project `.codex/config.toml` supplies new-session Sol High and helper Sol Medium defaults through [supported native keys](https://learn.chatgpt.com/docs/config-file/config-reference). Defaults are not enforcement or proof of a run's model. Read back resolved configuration separately from requested settings and actual execution. Calendar app work follows [the delivered calendar procedure](operating-brief.md#plan-and-maintain-calendar-tasks) in Emmy's cloud browser when connectors lack the needed Task fields.
 
-Emmy can check progress and send authorized follow-ups through the native task service. The CLI's proposals are not dispatched tasks. The actual native identifier and product readback establish dispatch.
+Emmy owns coordination and authorized follow-ups. The CLI's proposals are not dispatched tasks. The actual native identifier and product readback establish dispatch.
+
+## Create through the native host service
+
+Discover the current tool catalog and saved projects on the designated Mac. When available, use `mcp__codex_app__list_projects`, then `mcp__codex_app__create_thread` with the returned native project ID and a local environment:
+
+```json
+{
+  "target": {
+    "type": "project",
+    "projectId": "<discovered-native-project-id>",
+    "environment": { "type": "local" }
+  },
+  "model": "gpt-6.1-sol",
+  "thinking": "high",
+  "title": "<project> · <objective> 🟡",
+  "prompt": "<resolved skill invocation followed by the authorized task and correlation marker>"
+}
+```
+
+The example explicitly requests the ordinary-session minimum. Apply stronger scoped human settings when specified. A connected host's `local` environment means that project's saved checkout on that host. Rediscover its identity rather than copying a project ID between environments.
+
+The inspected native create schema exposes no permission profile, approval policy, sandbox, or Full Access field. The inspected native catalog also exposes no per-thread access-mode setter. Native creation therefore cannot promise approval-free execution or enforce Full Access. Keep the current permissions, report a concrete blocked action when exposed, and use the product's supported user-controlled permission setting for any separately authorized change. Do not invent creation parameters or alter global/project security settings to compensate. Recheck future supported catalogs before treating this observed limitation as permanent.
+
+`cloud_threads.create` creates cloud-managed durable tasks. A repository path or project parameter in that request does not establish native host creation. Moving an existing durable task is a separate association attempt and cannot pass direct native creation acceptance. A delegation sender label alone cannot identify the backend. Inspect the actual operation and its native readbacks.
+
+If Emmy lacks the native operations directly, use an existing authorized control bridge that exposes them on the designated Mac. The bridge performs the native create above. Do not substitute another durable coding create. If neither direct tools nor that bridge are available, report native creation unavailable and describe the supported fallback without claiming native success.
+
+Emmy retains ownership through that bridge. Keep the ready native ID and actual host ID, then request supported `read_thread` detail or bounded `wait_threads` progress through the bridge. Retain cursors as `afterCursor`, back off on unchanged state, and read back completion. Do not depend on the ordinary coding chat waking or messaging Emmy. No new schedule or polling service is required. Follow-ups still need the human's authorization for that objective.
 
 ## Verify the created thread's project membership
 
@@ -22,7 +50,9 @@ After creation, use a supported native listing or thread/project readback that e
 
 If the existing thread lacks membership, attach that same ID through the supported native project operation and read back the saved association. If current membership is already correct, preserve that current observation without claiming it was correct at creation. Retain the owner's contrary observation. No direct native database edit is part of this procedure.
 
-For pending creation, wait for a ready native ID or rediscover the attempted launch. For uncertain creation or association, recover the existing task before retrying. Missing or conflicting readback stays unverified. Do not launch another task to repair an uncertain project association. Retain the create receipt, membership readback, any correction, actual verification time, and limitations privately.
+For pending creation, retain `clientThreadId` and resolve it through supported native discovery. Never pass it to an operation requiring a ready `threadId`. Correlate the eventual ready ID with the original request before continuing. For uncertain creation or association, recover the existing task before retrying. Missing or conflicting readback stays unverified. Do not launch another task to repair an uncertain project association. Retain the create receipt, membership readback, any correction, actual verification time, and limitations privately.
+
+Reopen the ready thread through the supported native service. Verify saved membership through an explicit native listing when the detail read omits it. Read session model and effort only through supported exposed readbacks. Requested fields and project configuration are separate evidence. If no session readback is exposed, retain that gap. Provider execution, visibility from another device, and later ordinary-turn adoption each require their own observations.
 
 ## Quality belongs to the repository
 
