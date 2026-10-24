@@ -4,6 +4,8 @@ The repository's CLI tests cannot prove Dot access, cloud persistence, delegatio
 
 ## Record a result
 
+For the standing thread/model policy and persistent calendar planning, use the dedicated contract below. Record unavailable native steps as pending. Repository fixtures do not establish native adoption.
+
 Keep private raw results under `.local/probe-evidence/`; the legacy `.local/probes/` directory is reserved for immutable records. Each result needs a probe ID, fresh nonce, observation time, executor, source, actual task or schedule identity if created, artifact or output, result, and limitations. Classify it as passed, failed, blocked, or unverified. A self-report of capability leaves it unverified.
 
 Use an unrelated fresh nonce on a later readback. A failed read should stay failed. Preserve its output before cleanup. Store sanitized summaries in the public capability register only when they add reusable evidence.
@@ -68,3 +70,18 @@ Hashes establish byte identity. Semantic source checking, actual note recovery, 
 ## Current boundary
 
 Direct Computer Use access to the ChatGPT app was denied during setup. No Dot browser was available to this session. These prompts were prepared, not executed. Emmy's installed instructions, native task reach, autonomous wake, cloud runtime, and schedules remain unverified until these records exist.
+
+## Verify persistent calendar planning and standing policy
+
+Use one authorized synthetic Task and no recurrence. The executor is Emmy's cloud Calendar UI when connectors lack Task timing fields. A local Mac browser is a separate environment. Event-only connectors cannot substitute an Event for this test. Stop native writes at authentication or missing authorization and retain the exact pending step.
+
+Required inputs are the target account and Task list, planning date and window, IANA timezone, initial duration, resized duration, and the single coordinated identity. The setup coordinator reserves the name and native ID. Search for that identity before creating anything. With ambiguous or partial discovery, retain the gap and rediscover rather than create.
+
+1. Load current guidance through the trusted installed runner. Retain its actual public revision and digest. Verify that the returned operating brief contains the standing thread/model policy and complete calendar routine. This is guidance loading only.
+2. Capture requested models separately from native resolved configuration. A new ordinary project session resolves Sol High, and a nontrivial helper resolves Sol Medium minimum. A trivial helper may request Luna Max. A heavy-reasoning automation uses Sol High or higher. Inspect existing configuration without creating a schedule. Confirm scoped explicit stronger settings remain honored, existing threads remain unchanged, and a control directory's effective defaults remain unchanged. These are configuration checks until a run's actual model is observed.
+3. Inventory existing Tasks and commitments in the authorized scope. Choose a free slot using the supplied timezone and duration. Create the synthetic Task only after current discovery establishes no match. Reopen the saved Task and retain its native ID, type, title, destination, start, end or duration, timezone, deadline if requested, completion, and recurrence. If the UI does not expose a field or stable ID, record the limitation.
+4. Resize the same native Task ID, reopen it, and retain the second field readback. Move that same ID only within the authorized synthetic scope if a move is part of the test. Search the same covered scope for duplicates. Leave the final synthetic Task incomplete and available for owner inspection. Do not delete real items or use an Event fallback.
+5. Resume planning from the existing private note or responsibility in a later turn. Refresh the same native ID and its saved fields. For an uncertain save, rediscover before retrying. Keep rejected writes, partial inventories, unsupported recurrence duration, and all prior failures visible.
+6. In a later ordinary human turn without a setup reminder, observe current guidance loading and correct thread/model/calendar behavior. A distinct objective creates a fresh project-bound thread. A continuation reuses a thread only when the same objective needs its context. Report this later acceptance separately. A prompted setup rehearsal cannot pass it.
+
+Retain command and native receipts privately with UTC times, actual model evidence, source and installed digests, and the two saved Task readbacks. Published source, installed bytes, loaded guidance, saved project defaults, fixture verification, native execution, and later ordinary-turn adoption are distinct claims.
