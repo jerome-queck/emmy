@@ -19,6 +19,8 @@ Run the installed pstack maintenance workflows when features or covered code cha
 
 Create a fresh project-bound thread for each distinct new objective. Continue an existing thread only when continuing that same objective and its context is needed. A shared repository or topic is insufficient. Rediscover uncertain dispatches before retrying so an ambiguous launch cannot create duplicate work.
 
+Discover the saved native project before dispatch. After creation, read back the returned thread's actual saved project membership and compare its project ID with the intended saved project. A working directory, request parameter, or returned thread ID alone does not prove membership. Retain the native thread ID, project ID, executor/host readback, requested settings, and verification time privately. If membership is missing, attach that same thread through the supported native project operation and read it back. If membership is unavailable or ambiguous, retain it as unverified and rediscover before any retry. Do not create a replacement thread to repair an uncertain association or edit native databases. Preserve contrary owner observations alongside later readbacks. See [the dispatch contract](docs/change-delivery.md#verify-the-created-threads-project-membership).
+
 Use these model choices for Emmy-managed work:
 
 | Role | Model and reasoning effort |
