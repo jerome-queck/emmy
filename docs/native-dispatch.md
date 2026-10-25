@@ -103,6 +103,25 @@ The dispatcher placeholder represents the complete object above. Resolve and has
 
 Omitting `requestedSettings` uses the ordinary Sol High floor. An explicit settings request requires its exact model and effort in child readback. Stronger scoped human settings apply to that objective and its named helpers. A model outside the ordinary default or an effort below its floor needs `scopedOverrideRef`. A later changed request needs that explicit source in a descendant definition. Its dispatcher, correlation key and skill binding stay fixed. Retain the original request and first-turn evidence.
 
+`dispatch.coordinatorRequestedSettings` selects the coordinator policy independently. It is private repository metadata, not a native create argument. Omission preserves legacy records and the ordinary Sol High minimum, accepting stronger recorded effort. Explicit settings require an exact recorded model and effort. A different model or effort below High also requires `scopedOverrideRef` naming the explicit owner source for this objective's coordinator. Child-only settings never lower the coordinator policy; coordinator-only settings never lower the child policy.
+
+```json
+{
+  "coordinatorRequestedSettings": {
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "sourceRef": "Owner's selected coordinator policy",
+    "scopedOverrideRef": "Explicit owner instruction for this objective's coordinator",
+    "scope": { "objectiveId": "the-existing-objective-id", "role": "coordinator" }
+  }
+}
+```
+
+Place this field beside `requestedSettings` inside the existing definition's `dispatch`. `scope.objectiveId` must equal that definition's `id`; `scope.role` must be `coordinator`. Missing or wrong scope is rejected. Sol Medium, Sol Low or Luna Max can be selected only with that scoped owner source. These fields describe intent and cannot authenticate owner authority. Preserve the source evidence privately.
+
+Revise the same objective through `parents`, with an explicit `scopedOverrideRef` for every changed model request. Model policy stays outside the immutable dispatcher, correlation and skill binding. Preserve those identities, the effect key, authority and every launch observation. A revision cannot settle a pending or uncertain launch. Fresh acquisition of the actual coordinator's `recordedSettings`, with its `sourceRef` and `observedAt`, must match the selected policy before new advice. Missing, stale, future, mismatched or pre-restore readbacks still refuse. Requested settings, recorded settings and provider execution remain separate.
+
+
 Retain native evidence through existing `reconcile --import`. Use a `tasks` observation with real evidence paths and digests. Its `dispatch` extension contains `phase`, `correlationKey`, the dispatcher readback, and an `attemptKey` for every phase except initial absence. The create proposal derives a unique attempt key from its objective and pinned discovery and includes it in the child prompt. Retain that key plus `requestDigest`, the SHA-256 of the exact request, in attempted state. Existing `supersedes` links connect observations to that launch. No new record category or private ledger exists.
 
 | Phase | Existing task and effect data | Additional dispatch data |

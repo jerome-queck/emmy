@@ -61,6 +61,41 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   assert.ok(create.nativeCreateRequest.prompt.startsWith(`[$pstack:poteto-mode](${skillPath})\n\n`));
   assert.deepEqual(Object.keys(create.nativeCreateRequest).sort(), ['model', 'prompt', 'target', 'thinking', 'title']);
   assert.equal(create.providerExecution, 'unverified'); assert.equal(create.effectiveChildAccess, 'unverified');
+  const scoped = structuredClone(definition);
+  scoped.id = 'coordinator-override'; scoped.dispatch.correlationKey = 'synthetic-coordinator-override';
+  scoped.dispatch.coordinatorRequestedSettings = { model: 'gpt-6.1-sol', effort: 'medium', sourceRef: 'Synthetic explicit owner coordinator choice', scopedOverrideRef: 'Synthetic owner instruction for this objective coordinator', scope: { objectiveId: scoped.id, role: 'coordinator' } };
+  const scopedAdopted = await adopt(scoped);
+  const mediumReadback = readback(dispatcher.threadId);
+  mediumReadback.recordedSettings.effort = 'medium';
+  await retain(await observation(scopedAdopted, 'absent', null, { dispatcher: mediumReadback }));
+  const scopedAdvice = await advise(0, [], privateHome, scoped.id);
+  assert.equal(scopedAdvice.next, 'create-via-dispatcher');
+  assert.equal(scopedAdvice.coordinatorRequestedSettings.effort, 'medium');
+  assert.deepEqual(scopedAdvice.recordedDispatcherSettings, mediumReadback.recordedSettings);
+  assert.equal(scopedAdvice.nativeCreateRequest.thinking, 'max');
+  for (const [label, change] of [
+    ['missing-scope', value => { delete value.dispatch.coordinatorRequestedSettings.scope; }],
+    ['wrong-objective', value => { value.dispatch.coordinatorRequestedSettings.scope.objectiveId = 'foreign'; }],
+    ['wrong-role', value => { value.dispatch.coordinatorRequestedSettings.scope.role = 'child'; }]
+  ]) {
+    const invalid = structuredClone(scoped); change(invalid);
+    assert.match((await cli(['responsibility', '--file', await file(invalid)], 2)).error, /scope|objective/);
+  }
+  const low = structuredClone(scoped); low.parents = [scopedAdopted.hash]; low.dispatch.coordinatorRequestedSettings.effort = 'low';
+  low.dispatch.coordinatorRequestedSettings.scopedOverrideRef = 'Synthetic explicit later owner correction';
+  const lowAdopted = await adopt(low);
+  const mismatched = await advise(3, [], privateHome, scoped.id);
+  assert.ok(mismatched.reasons.includes('dispatcher-model-mismatch'));
+  assert.ok(!mismatched.reasons.includes('objective-dispatch-binding-conflict'));
+  assert.equal(mismatched.effectKey, scopedAdvice.effectKey);
+  assert.deepEqual(lowAdopted.dispatch.dispatcher, scopedAdopted.dispatch.dispatcher);
+  assert.deepEqual(lowAdopted.authorityRef, scopedAdopted.authorityRef);
+  const lowReadback = structuredClone(mediumReadback); lowReadback.recordedSettings.effort = 'low';
+  const scopedCurrent = (await readStore(privateHome)).records.find(record => record.type === 'observation' && record.responsibilityId === scoped.id && record.category === 'tasks');
+  await retain(await observation(lowAdopted, 'absent', scopedCurrent, { dispatcher: lowReadback }));
+  assert.equal((await advise(0, [], privateHome, scoped.id)).next, 'create-via-dispatcher');
+  const noSource = structuredClone(low); noSource.parents = [lowAdopted.hash]; noSource.dispatch.coordinatorRequestedSettings.effort = 'medium'; delete noSource.dispatch.coordinatorRequestedSettings.scopedOverrideRef;
+  assert.match((await cli(['responsibility', '--file', await file(noSource)], 2)).error, /explicit scoped override/);
   const resolve = (selector, expected = 0, path = discoveryPath) => cli(['dispatch', '--resolve', selector, '--discovery', path, '--as-of', now()], expected);
   const resolution = await resolve('name:Synthetic destination'); assert.equal(resolution.source.target.repository, target.repository); assert.equal(resolution.project, target.projectId);
   assert.equal((await resolve(`path:${target.path}`)).nativeProject.projectId, target.nativeProjectId);
@@ -124,7 +159,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   retainedEffect = await retain(await standalone('absent', retainedEffect));
   assert.equal((await advise(0, ['--context-needed'])).next, 'continue-child');
   const recovered = await cli(['dispatch', '--project', target.projectId, '--as-of', now()]);
-  assert.equal(recovered.dispatcher.threadId, dispatcher.threadId); assert.deepEqual(recovered.jobs[0].readyThreadIds, [child.threadId]);
+  assert.equal(recovered.dispatcher.threadId, dispatcher.threadId); assert.deepEqual(recovered.jobs.find(job => job.id === adopted.id).readyThreadIds, [child.threadId]);
   const advance = async childChange => {
     current = await retain(await observation(adopted, 'ready', current, { child: readback(child.threadId, { correlationKey: adopted.dispatch.correlationKey, ...childChange }) }));
   };
@@ -225,7 +260,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   await writeFile(bindingsPath, JSON.stringify(selectedBindings)); await writeFile(discoveryPath, JSON.stringify({ ...discovery, observedAt: now() }));
   const nonGit = await resolve('name:Synthetic non Git', 3); assert.equal(nonGit.nativeProject.projectId, 'non-git-native'); assert.ok(nonGit.reasons.includes('repository-source-needed'));
   const finalStore = await readStore(privateHome); assert.equal(finalStore.records.some(record => record.hash === attemptHash), true);
-  assert.equal((await cli(['dispatch', '--project', target.projectId, '--as-of', now()])).jobs.length, 4);
+  assert.equal((await cli(['dispatch', '--project', target.projectId, '--as-of', now()])).jobs.length, 5);
   await cli(['maintain', '--write']);
   for (const path of ['docs/cli.md', 'docs/catalog.md', 'docs/briefing-guidance.json', 'docs/verification-index.json']) {
     const publicBytes = await readFile(join(root, path), 'utf8');

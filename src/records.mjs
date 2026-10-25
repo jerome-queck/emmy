@@ -118,14 +118,20 @@ function nativeReadback(value) {
   }
 }
 
-function dispatchDefinition(value) {
+function dispatchDefinition(value, objectiveId) {
   object(value, 'dispatch'); text(value.correlationKey, 'dispatch.correlationKey'); dispatcherBinding(value.dispatcher);
   object(value.skill, 'dispatch.skill'); requireValue(isAbsolute(value.skill.path ?? ''), 'dispatch.skill.path must be absolute'); hash(value.skill.sha256, 'dispatch.skill.sha256');
-  if (value.requestedSettings !== undefined) {
-    object(value.requestedSettings, 'dispatch.requestedSettings');
-    for (const field of ['model', 'effort', 'sourceRef']) text(value.requestedSettings[field], `requestedSettings.${field}`);
-    choice(value.requestedSettings.effort, dispatchEfforts, 'requestedSettings.effort');
-    if (value.requestedSettings.scopedOverrideRef !== undefined) text(value.requestedSettings.scopedOverrideRef, 'scopedOverrideRef');
+  for (const field of ['requestedSettings', 'coordinatorRequestedSettings']) {
+    const settings = value[field];
+    if (settings === undefined) continue;
+    object(settings, `dispatch.${field}`);
+    for (const key of ['model', 'effort', 'sourceRef']) text(settings[key], `${field}.${key}`);
+    choice(settings.effort, dispatchEfforts, `${field}.effort`);
+    if (settings.scopedOverrideRef !== undefined) text(settings.scopedOverrideRef, `${field}.scopedOverrideRef`);
+    if (field === 'coordinatorRequestedSettings') {
+      object(settings.scope, `${field}.scope`);
+      requireValue(settings.scope.objectiveId === objectiveId && settings.scope.role === 'coordinator', 'Coordinator settings require this objective and coordinator role scope');
+    }
   }
 }
 
@@ -180,7 +186,7 @@ export function parseDefinition(input) {
   for (const name of ['goal', 'context', 'action', 'resource', 'destination']) text(input[name], name);
   const target = { ...input.target, executor: input.target?.executor ?? 'local-codex' };
   subject(target); authority(input.authorityRef);
-  if (input.dispatch !== undefined) dispatchDefinition(input.dispatch);
+  if (input.dispatch !== undefined) dispatchDefinition(input.dispatch, input.id);
   array(input.criteria, 'criteria'); input.criteria.forEach(criterion);
   requireValue(new Set(input.criteria.map(item => item.id)).size === input.criteria.length, 'Duplicate criterion ID');
   object(input.freshness, 'freshness');
@@ -405,7 +411,7 @@ export function validateReferences(records) {
     if (parent.dispatch) {
       const stable = value => value && { correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill };
       requireValue(canonical(stable(parent.dispatch)) === canonical(stable(record.dispatch)), 'An objective cannot silently replace its dispatch binding or correlation');
-      if (canonical(parent.dispatch.requestedSettings ?? null) !== canonical(record.dispatch.requestedSettings ?? null)) requireValue(Boolean(record.dispatch.requestedSettings?.scopedOverrideRef), 'A changed model request requires its explicit scoped override source');
+      for (const field of ['requestedSettings', 'coordinatorRequestedSettings']) if (canonical(parent.dispatch[field] ?? null) !== canonical(record.dispatch[field] ?? null)) requireValue(Boolean(record.dispatch[field]?.scopedOverrideRef), 'A changed model request requires its explicit scoped override source');
     }
   }
   for (const record of records.filter(item => item.type === 'observation' && item.supersedes)) {

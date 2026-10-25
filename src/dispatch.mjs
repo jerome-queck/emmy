@@ -67,8 +67,9 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   const target = definition.target; const selected = bindings.projects[target.projectId]?.dispatcher;
   const remote = target.hostId !== bindings.localHostId;
   const requested = spec.requestedSettings ?? ordinarySettings;
+  const coordinatorRequested = spec.coordinatorRequestedSettings ?? ordinarySettings;
   const key = effectKey(definition);
-  Object.assign(result, { correlationKey: spec.correlationKey, effectKey: key, dispatcher: spec.dispatcher, selectedDispatcher: selected ?? null, requestedSettings: requested, childAccessIntent: spec.dispatcher.childAccessIntent, authorityRef: definition.authorityRef });
+  Object.assign(result, { correlationKey: spec.correlationKey, effectKey: key, dispatcher: spec.dispatcher, selectedDispatcher: selected ?? null, requestedSettings: requested, coordinatorRequestedSettings: coordinatorRequested, childAccessIntent: spec.dispatcher.childAccessIntent, authorityRef: definition.authorityRef });
   const stable = value => value && { correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill };
   if (definitions.some(item => item.dispatch && canonical(stable(item.dispatch)) !== canonical(stable(spec)))) result.reasons.push('objective-dispatch-binding-conflict');
   if (records.some(record => record.type === 'definition' && record.id !== id && record.dispatch?.correlationKey === spec.correlationKey)) result.reasons.push('correlation-key-bound-to-another-objective');
@@ -90,6 +91,8 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   if (!remote && !repositoryVerified) result.reasons.push('current-repository-unverified');
   if (definition.lifecycle.status !== 'active') result.reasons.push('objective-inactive');
   if ((requested.model !== ordinarySettings.model || efforts.indexOf(requested.effort) < efforts.indexOf('high')) && !requested.scopedOverrideRef) result.reasons.push('scoped-model-override-needed');
+  if (spec.coordinatorRequestedSettings && (coordinatorRequested.scope?.objectiveId !== id || coordinatorRequested.scope?.role !== 'coordinator')) result.reasons.push('coordinator-model-scope-mismatch');
+  if ((coordinatorRequested.model !== ordinarySettings.model || efforts.indexOf(coordinatorRequested.effort) < efforts.indexOf('high')) && !coordinatorRequested.scopedOverrideRef) result.reasons.push('coordinator-scoped-model-override-needed');
   if (!remote && !skillVerified) result.reasons.push('installed-skill-unverified');
 
   const observations = records.filter(record => record.type === 'observation' && record.responsibilityId === id);
@@ -140,7 +143,7 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   if (!['attempted', 'pending', 'uncertain'].includes(state.phase) && unsettled.size) result.reasons.push(state.phase === 'absent' ? 'prior-launch-no-effect-readback-needed' : 'another-launch-unresolved');
   result.phase = state.phase;
   result.recordedDispatcherSettings = state.dispatcher?.recordedSettings ?? null;
-  result.reasons.push(...readbackReasons(state.dispatcher, spec.dispatcher, ordinarySettings, asOf, definition.freshness.maxAgeMs, 'dispatcher', epoch?.restoredAt));
+  result.reasons.push(...readbackReasons(state.dispatcher, spec.dispatcher, coordinatorRequested, asOf, definition.freshness.maxAgeMs, 'dispatcher', epoch?.restoredAt));
   if (['attempted', 'pending', 'uncertain'].includes(state.phase)) {
     Object.assign(result, { next: state.phase === 'pending' ? 'resolve-pending' : 'rediscover', clientThreadId: state.clientThreadId ?? null, attemptKey: state.attemptKey });
     return stop('native-launch-unresolved');
