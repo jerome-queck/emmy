@@ -74,3 +74,47 @@ The [morning procedure](morning-workflow.md) extends the same fleet journal with
 Delivery targets retain exact scope and authority before an intent. Readbacks require that destination and an acquisition inside the exact attempt interval. Outcome summaries pin reviewed-item states; stale bodies cannot complete current cleanup. Historical classification versions retain stable descriptors and replay dispatch; current new morning writes use version two.
 
 Use explicit morning `refresh` generations to continue late same-day cleanup. Selected-ID full-thread receipts bind new fleet tickets, original timestamps and current before state. Their completeness does not refresh global inbox/calendar/Task inventory. New plans/facts require verified edits on the original delivered message. Unknown effects hold dependent work and verified moves cannot reopen. The [batch procedure](morning-workflow.md#continue-the-same-delivered-run-in-bounded-batches) defines the exact steps and bounds.
+
+## Explicit history archival
+
+`archive` reclaims current projection capacity inside the same immutable controller. It never deletes journal records, evidence, jobs from native products, or account artifacts. It has no timer and performs no native action. The parent first reads `status`, chooses exact closed rows, and retains its attributable archival reason. The envelope uses that exact `expectedHead`; the action also binds `stateDigest` to SHA-256 of canonical `status.state`.
+
+```json
+{
+  "schemaVersion": 1,
+  "responsibilityId": "your-existing-fleet-id",
+  "expectedHead": "<exact status headHash>",
+  "action": {
+    "operation": "archive",
+    "stateDigest": "<digest of exact status state>",
+    "jobKeys": ["<completed job key>"],
+    "runIds": ["<complete resolved morning run ID>"],
+    "alertIds": ["<delivered or dismissed alert ID>"],
+    "groupSendRefs": ["<resolved group whose alerts archive together>"],
+    "entityIds": ["<entity whose older correction history moves out of the projection>"],
+    "policyHistory": true,
+    "sourceRef": "<retained owner audit source>",
+    "reason": "Archive these exact closed rows; retain their original evidence."
+  },
+  "evidence": [{"path": "<absolute audit artifact path>", "sha256": "<artifact digest>", "sourceRef": "<retained owner audit source>"}]
+}
+```
+
+Omit unused selection fields. Jobs must be completed. Queued, attempted, uncertain, retrying, blocked and dead jobs refuse. Retained morning references, including old cleanup generations, protect their completed source jobs. Archive a complete run and its source jobs together. Morning runs require resolved delivery, mail effects and summary, with every selected cleanup ID kept or verified. Uncertain delivery cannot be bypassed by dismissal. Groups cannot detach from retained alerts. Entity compaction retains the latest correction and current expected scope, capture, episode, fingerprint and alert identity. Policy compaction retains the current exact policy/version/digest. Earlier correction sources and policy history remain immutable and applicable historical context; archival does not revoke owner instructions.
+
+The archived step's `parentHash` names the exact immutable snapshot before removal. Retain the archive step hash and that predecessor hash. A parent can reopen its original snapshot and raw evidence named by `record.fileDigests` through the installed source's read-only record reader. With `EMMY_HOME` set to the selected private home and `ARCHIVE_PARENT` to that retained predecessor hash, run this from the matching installed source directory.
+
+```sh
+node --input-type=module <<'JS'
+import { readStore } from './src/records.mjs';
+const { records } = await readStore(process.env.EMMY_HOME);
+const record = records.find(row => row.hash === process.env.ARCHIVE_PARENT);
+if (!record || record.type !== 'fleet-step') throw new Error('Exact retained predecessor missing');
+console.log(JSON.stringify(record));
+console.log(Object.keys(record.fileDigests ?? {}).map(name => `${process.env.EMMY_HOME}/records/${record.hash}/${name}`).join('\n'));
+JS
+```
+
+Stable archived job and run identities are looked up in verified ancestors, outside the bounded current snapshot. Identical requests coalesce without new tickets or active rows; changed requests refuse. Exact old job results coalesce; new results cannot mutate archived work. Historical send/edit references cannot authorize another effect. Missing ancestry refuses integrity/replay, and missing history at the reducer boundary refuses new identity use. Backup copies the same complete immutable record/evidence graph. Restore preserves reclaimed capacity and old identity evidence while requiring the existing fresh-epoch observations and explicit resume.
+
+The 64-job, 32-run, 1 MiB state, freshness, read budgets and authority limits stay unchanged. Archive before another operation would exceed a bound. If unresolved work itself fills a bound, archival refuses and the parent must resolve that work within existing authority. Immutable disk usage and replay cost continue to grow with retained history; this operation bounds current state, not total storage or long-term replay time. No native continuation is proven by fixtures.

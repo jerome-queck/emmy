@@ -86,7 +86,7 @@
     },
     {
       "name": "fleet",
-      "description": "Retain scoped fleet health, parent read admission and pending alert delivery in the responsibility journal.",
+      "description": "Retain scoped fleet health, parent read admission, alert delivery and explicit bounded history archival in the responsibility journal.",
       "options": [
         {
           "name": "file",
@@ -327,11 +327,12 @@
       "source": "src/fleet-state.mjs",
       "functions": [
         "captureCondition",
+        "fleetHistory",
         "fleetTransition",
         "fleetState",
         "fleetView"
       ],
-      "statement": "Scoped attributable health stays age and coverage bounded; stable parent read identities, checkpoints, uncertainty and alert episodes prevent duplicate admission and unchanged notifications."
+      "statement": "Scoped attributable health stays age and coverage bounded; stable parent read identities, checkpoints, uncertainty and alert episodes prevent duplicate admission and unchanged notifications; explicit resolved-row archival preserves immutable ancestry and historical identity guards."
     },
     {
       "id": "process-incarnation",

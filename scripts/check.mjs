@@ -9,7 +9,7 @@ for (const args of [
   ['--test', 'test/markdown-links.test.mjs'],
   ['scripts/agent.mjs', 'maintain', '--check'],
   ['--test', 'test/process-incarnation.test.mjs', 'test/cloud-migration.test.mjs'],
-  ['--test', 'test/fleet.test.mjs', 'test/morning.test.mjs'],
+  ['--test', 'test/fleet.test.mjs', 'test/fleet-history.test.mjs', 'test/morning.test.mjs'],
   ['scripts/verify-behavior.mjs'],
   ['--test', 'test/github-auto-merge.test.mjs'],
   ['scripts/verify-formal.mjs'],

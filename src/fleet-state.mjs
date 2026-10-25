@@ -67,7 +67,37 @@ function evaluate(state, root, at) {
   insist(state.alerts.length <= config.maxAlerts, 'Fleet alert retention bound reached. No state was discarded.');
   return state;
 }
-export function fleetTransition(original, action, root, at, epochHash = original.epochHash) {
+export function fleetHistory(records, head) {
+  const known = records instanceof Map ? records : new Map(records.map(record => [record.hash, record]));
+  const history = { jobs: new Map(), runs: new Map(), sends: new Set() }; const visited = new Set();
+  let current = head;
+  while (current?.type === 'fleet-step') {
+    insist(!visited.has(current.hash), 'Fleet ancestry cycle'); visited.add(current.hash);
+    for (const job of current.state.jobs) if (!history.jobs.has(job.key)) history.jobs.set(job.key, job);
+    for (const run of current.state.morningRuns ?? []) {
+      if (!history.runs.has(run.id)) history.runs.set(run.id, run);
+      for (const ref of [run.delivery?.sendRef, run.summary?.delivery?.editRef]) if (ref) history.sends.add(ref);
+    }
+    for (const row of [...current.state.alerts, ...(current.state.deliveryGroups ?? [])]) if (row.sendRef) history.sends.add(row.sendRef);
+    const parent = known.get(current.parentHash); insist(parent && (parent.type === 'fleet-root' ? parent.hash === current.rootHash : parent.rootHash === current.rootHash), 'Fleet history requires complete scoped ancestry'); current = parent;
+  }
+  return history;
+}
+function archiveState(state, action, at) {
+  insist(action.stateDigest === digest(state), 'Archival state digest differs; reread current head');
+  const select = (rows, ids, key, predicate, message) => {
+    for (const id of ids ?? []) { const row = rows.find(row => row[key] === id); insist(row && predicate(row), message); }
+    return rows.filter(row => !(ids ?? []).includes(row[key]));
+  };
+  state.morningRuns = select(state.morningRuns ?? [], action.runIds, 'id', run => { const view = morningView([run], at)[0]; return view.status === 'complete' && (view.cleanup?.selectedIds ?? []).every(item => ['kept', 'verified'].includes(item.state)); }, 'Archival requires a complete resolved morning run');
+  state.jobs = select(state.jobs, action.jobKeys, 'key', job => job.status === 'completed' && !(state.morningRuns ?? []).some(run => JSON.stringify(run).includes(job.key) || job.input.kind === 'briefing-source-read' && (job.input.occurrence === run.id || job.input.occurrence.startsWith(`${run.id}/refresh/`))), 'Archival requires completed work without retained morning dependencies');
+  state.deliveryGroups = select(state.deliveryGroups ?? [], action.groupSendRefs, 'sendRef', group => group.status !== 'uncertain' && group.alertIds.every(id => action.alertIds?.includes(id) || !state.alerts.some(alert => alert.id === id)), 'Archival cannot detach a delivery group from retained alerts');
+  state.alerts = select(state.alerts, action.alertIds, 'id', alert => alert.delivery !== 'uncertain' && (alert.disposition || alert.delivery === 'delivered') && !(state.deliveryGroups ?? []).some(group => group.alertIds.includes(alert.id)), 'Archival requires a resolved delivered or dismissed alert');
+  for (const id of action.entityIds ?? []) { const row = state.entities.find(row => row.expected.id === id); insist(row, 'Unknown archive entity'); row.corrections = row.corrections.slice(-1); }
+  if (action.policyHistory) state.policyHistory = [];
+  state.archived = true;
+}
+export function fleetTransition(original, action, root, at, epochHash = original.epochHash, history = null) {
   actionInput(action); const state = structuredClone(original); const config = fleetConfig(root.action.config);
   let outcome = 'retained'; let ticket = null;
   const entity = id => { const value = state.entities.find(row => row.expected.id === id); insist(value, 'Unknown fleet entity'); return value; };
@@ -76,6 +106,7 @@ export function fleetTransition(original, action, root, at, epochHash = original
   else if (action.operation === 'suspend') { state.lifecycle = 'suspended'; }
   else {
     insist(state.lifecycle === 'active' || ['send-ack', 'send-resolve', 'dismiss', 'correct', 'result', 'resolve'].includes(action.operation), 'Fleet is explicitly suspended');
+    if (action.operation === 'archive') { archiveState(state, action, at); outcome = 'archived'; }
     if (action.operation === 'policy-revise') {
       insist(action.version === (state.policy?.version ?? 0) + 1 && action.previousDigest === (state.policy?.digest ?? null), 'Policy revision must name exact previous version and digest');
       insist(action.entities.length === state.entities.length, 'Policy revision must retain every existing exact scope');
@@ -83,11 +114,23 @@ export function fleetTransition(original, action, root, at, epochHash = original
       state.policyHistory ??= []; if (state.policy) state.policyHistory.push(state.policy);
       state.policy = { ...action, at, digest: digest(action) };
     }
-    if (action.operation === 'morning') outcome = morningTransition(state, action.command, root, at);
+    if (action.operation === 'morning') {
+      if (state.archived && ['send-intent', 'edit-intent'].includes(action.command.step)) {
+        insist(history, 'Archived identity lookup requires verified ancestry');
+        const ref = action.command.sendRef ?? action.command.editRef;
+        insist(!history.sends.has(ref), 'Historical morning send or edit reference cannot be reused');
+      }
+      if (action.command.step === 'open' && state.archived) insist(history, 'Archived identity lookup requires verified ancestry');
+      const old = action.command.step === 'open' && !state.morningRuns?.some(run => run.id === action.command.runId) ? history?.runs.get(action.command.runId) : null;
+      if (old) { insist(old.specification === digest(action.command), 'Conflicting archived morning identity'); outcome = 'coalesced'; }
+      else outcome = morningTransition(state, action.command, root, at);
+    }
     if (action.operation.startsWith('group-send-')) {
       const ids = [...action.alertIds].sort(); const rows = ids.map(alert);
       state.deliveryGroups ??= [];
       if (action.operation === 'group-send-intent') {
+        insist(!state.archived || history, 'Archived identity lookup requires verified ancestry');
+        insist(!state.archived || !history?.sends.has(action.sendRef), 'Historical send reference cannot be reused');
         insist(rows.every(row => !row.disposition && row.delivery === 'pending'), 'Group contains an already attempted, delivered or dismissed episode');
         insist(!state.deliveryGroups.some(group => group.sendRef === action.sendRef) && !state.alerts.some(row => row.sendRef === action.sendRef), 'Group send reference already retained; inspect actual conversation');
         const group = { ...(action.delivery ? { delivery: action.delivery } : {}), alertIds: ids, bodyDigest: action.bodyDigest, sendRef: action.sendRef, status: 'uncertain', at }; state.deliveryGroups.push(group);
@@ -124,7 +167,8 @@ export function fleetTransition(original, action, root, at, epochHash = original
     if (action.operation === 'submit') {
       const input = jobInput(action.job, config); input.entityIds.forEach(entity);
       const key = digest({ effectKey: root.effectKey, kind: input.kind, occurrence: input.occurrence, id: input.id });
-      const inputDigest = digest(input); const existing = state.jobs.find(job => job.key === key);
+      insist(!state.archived || history, 'Archived identity lookup requires verified ancestry');
+      const inputDigest = digest(input); const existing = state.jobs.find(job => job.key === key) ?? history?.jobs.get(key);
       if (existing) { insist(existing.inputDigest === inputDigest, 'Conflicting request under a stable job identity'); outcome = 'coalesced'; }
       else {
         const pending = state.jobs.filter(unfinished); const bytes = pending.reduce((sum, job) => sum + Buffer.byteLength(canonical(job.input)), 0);
@@ -146,10 +190,11 @@ export function fleetTransition(original, action, root, at, epochHash = original
     }
     if (['result', 'resolve'].includes(action.operation)) {
       evaluate(state, root, at);
-      const job = state.jobs.find(job => job.key === action.jobKey); insist(job && job.ticket === action.ticket, 'Result does not match the retained attempt ticket');
+      const currentJob = state.jobs.find(job => job.key === action.jobKey); const job = currentJob ?? history?.jobs.get(action.jobKey); insist(job && job.ticket === action.ticket, 'Result does not match the retained attempt ticket');
       const resultDigest = digest(action);
       if (job.resultDigests.includes(resultDigest)) outcome = 'coalesced';
       else {
+        insist(currentJob, 'Archived work is immutable; no new result or attempt');
         insist(action.operation === 'resolve' ? job.status === 'uncertain' : job.status === 'attempted', 'Uncertain or terminal work requires exact reconciliation. No duplicate execution.');
         insist(job.input.entityIds.some(id => canonical(entity(id).expected.scope) === canonical(action.receipt.scope)), 'Result crosses admitted source scope');
         insist(Date.parse(action.receipt.observedAt) <= Date.parse(action.receipt.capturedAt) && Date.parse(action.receipt.capturedAt) <= Date.parse(at) && Date.parse(action.receipt.capturedAt) >= Date.parse(job.deadline) - config.attemptMs, 'Result acquisition is outside this attempt window');
@@ -174,6 +219,8 @@ export function fleetTransition(original, action, root, at, epochHash = original
     if (action.operation === 'correct') { const row = entity(action.entityId); insist(row.corrections.length < config.maxAlerts, 'Correction retention bound reached'); row.corrections.push({ sourceRef: action.sourceRef, reason: action.reason, at }); }
     if (action.operation === 'dismiss') { const row = alert(action.alertId); row.disposition = { sourceRef: action.sourceRef, reason: action.reason, at }; }
     if (action.operation === 'send-intent') {
+      insist(!state.archived || history, 'Archived identity lookup requires verified ancestry');
+      insist(!state.archived || !history?.sends.has(action.sendRef), 'Historical send reference cannot be reused');
       insist(!state.deliveryGroups?.some(group => group.sendRef === action.sendRef), 'A retained group send cannot be reused for another alert');
       const row = alert(action.alertId); insist(!row.disposition && row.delivery === 'pending', 'Alert send already attempted or dismissed. Inspect the actual conversation before retry.');
       row.delivery = 'uncertain'; row.bodyDigest = action.bodyDigest; row.sendRef = action.sendRef;
