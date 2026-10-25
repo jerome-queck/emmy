@@ -74,6 +74,17 @@
       "feature": "routing"
     },
     {
+      "name": "calendar",
+      "description": "Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "evidence"
+    },
+    {
       "name": "briefing",
       "description": "Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown.",
       "options": [
@@ -183,7 +194,8 @@
       "title": "Reconciliation and correction",
       "commands": [
         "reconcile",
-        "briefing"
+        "briefing",
+        "calendar"
       ],
       "scenarios": [
         "self-check-repair",
@@ -194,7 +206,8 @@
         "trigger-evolution",
         "briefing-guidance",
         "briefing-draft",
-        "briefing-boundaries"
+        "briefing-boundaries",
+        "calendar-acceptance"
       ],
       "properties": [
         "observation-gates",

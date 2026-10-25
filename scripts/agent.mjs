@@ -9,6 +9,7 @@ import { backupHome, digest, historicalFiles, publishRecord, readBindings, readJ
 import { adoptResponsibility, inspectHome, reconcile } from '../src/responsibilities.mjs';
 import { briefing } from '../src/briefing.mjs';
 import { dispatch } from '../src/dispatch.mjs';
+import { calendar } from '../src/calendar.mjs';
 
 const args = process.argv.slice(2);
 const commandName = args.shift() ?? 'help';
@@ -48,6 +49,9 @@ try {
     case 'briefing':
       data = await briefing(home, { file: options.file ? resolve(options.file) : null });
       exitCode = data.mode === 'guidance' ? (data.guidance.state === 'current' ? 0 : 3) : (data.status === 'checked' ? 0 : 3); break;
+    case 'calendar':
+      data = await calendar({ file: resolve(options.file) });
+      exitCode = data.status === 'checked' ? 0 : 3; break;
     case 'dispatch':
       data = await dispatch(home, { id: options.id, project: options.project, resolve: options.resolve, discoveryFile: options.discovery ? resolve(options.discovery) : null, asOf: timestamp(options['as-of'], 'as-of'), contextNeeded: Boolean(options['context-needed']), catalog });
       exitCode = ['advice-ready', 'recovered', 'resolved'].includes(data.status) ? 0 : 3; break;

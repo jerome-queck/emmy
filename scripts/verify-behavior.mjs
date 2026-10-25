@@ -12,7 +12,7 @@ import { inspectRepository, replayReview } from '../src/responsibilities.mjs';
 import { commands, verification } from '../src/metadata.mjs';
 import { driveBriefing } from '../verification/briefing-drive.mjs';
 import { driveDispatch } from '../verification/dispatch-drive.mjs';
-import { driveCalendar } from '../verification/calendar-drive.mjs';
+import { driveCalendar, verifyCalendarRetention } from '../verification/calendar-drive.mjs';
 
 const sourceRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const evidenceDir = join(sourceRoot, '.local/verification', `behavior-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 8)}`);
@@ -600,7 +600,7 @@ try {
     try { await cp(join(home, name), join(evidenceDir, name), { recursive: true }); report[name] = join(evidenceDir, name); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.dispatchCopyError = error.message; process.exitCode = 1; } }
   }
   try { await cp(join(home, 'briefing'), join(evidenceDir, 'briefing'), { recursive: true }); report.retainedBriefing = join(evidenceDir, 'briefing'); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.briefingCopyError = error.message; process.exitCode = 1; } }
-  try { await cp(join(home, 'calendar'), join(evidenceDir, 'calendar'), { recursive: true }); } catch (error) { if (error.code !== 'ENOENT') report.calendarCopyError = error.message; }
+  try { await cp(join(home, 'calendar'), join(evidenceDir, 'calendar'), { recursive: true, filter: path => path !== join(home, 'calendar', 'fifo') }); } catch (error) { if (error.code !== 'ENOENT' || report.calendar) { report.status = 'failed'; report.calendarCopyError = error.message; process.exitCode = 1; } }
   await rm(root, { recursive: true, force: true }); report.cleaned = !await readdir(tmpdir()).then(names => names.includes(basename(root)));
   if (report.dispatch && report.retainedDispatch) {
     try {
@@ -615,6 +615,10 @@ try {
       report.retainedCheckedBody = join(report.retainedBriefing, 'runs', basename(report.briefing.checked), 'body.md');
       assert.equal(digest(await readFile(report.retainedCheckedBody)), report.briefing.bodyDigest, 'Exact emitted body survives temporary-root cleanup');
     } catch (error) { report.status = 'failed'; report.briefingCopyError = error.message; process.exitCode = 1; }
+  }
+  if (report.calendar) {
+    try { await verifyCalendarRetention(join(evidenceDir, 'calendar'), report.calendar.retainedFiles); report.retainedCalendar = join(evidenceDir, 'calendar'); }
+    catch (error) { report.status = 'failed'; report.calendarRetentionError = error.message; process.exitCode = 1; }
   }
   await writeFile(join(evidenceDir, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
   process.stdout.write(`${JSON.stringify({ status: report.status, scenarios: report.scenarios.length, commands: report.commands.length, cleaned: report.cleaned, evidence: join(evidenceDir, 'report.json'), error: report.error?.message })}\n`);
