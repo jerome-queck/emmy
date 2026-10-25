@@ -18,7 +18,7 @@ test('compact seal on the same open run removes diagnostic machinery while retai
 test('compact grouped coverage preserves material gaps, distinct omitted items and global versus selected ranges', () => {
   const f = setup(); f.run.sources[0].capture.messageIds.push('private-unreviewed-A', 'private-unreviewed-B'); f.run.sources[2].capture.resourceIds.push('private-calendar-A');
   f.command('seal', compactAssessments()); send(f); const batch = refreshMorning(f); f.command('summary', {}, batch.at); const body = f.run.summary.body;
-  assert.match(body, /unreviewed Gmail message 1/); assert.match(body, /unreviewed Gmail message 2/); assert.match(body, /calendar 2/); assert.doesNotMatch(body, /private-unreviewed|private-calendar/);
+  assert.match(body, /Gmail: 2 inventory entries lack full-context review/); assert.match(body, /Calendars: 1 listed calendar not acquired/); assert.doesNotMatch(body, /private-unreviewed|private-calendar/);
   assert.match(body, /global reads .*09:00/); assert.match(body, /selected-message reads .*09:06/); assert.match(body, /not whole-source coverage/); assert.match(body, /historical assessment/);
   assert.equal((body.match(/Coverage Gmail(?:,|:)/g) ?? []).length, 1); assert.ok(f.run.summary.diagnostic.body.includes('Global')); assert.equal(f.run.summary.presentation, 'compact-v1');
 });
@@ -50,4 +50,11 @@ test('compact deduplicates repeated gaps while retaining unknown material gaps a
   const f = setup(); const input = compactAssessments(); input.briefing.input.coverage.gaps = ['Unknown provider restriction remains unresolved.', 'Only the primary calendar was accessible.']; input.briefing.inputReceipt.sha256 = digest(JSON.stringify(input.briefing.input)); input.briefing.assessment.inputDigest = input.briefing.inputReceipt.sha256; const assessed = assessBriefingDraft(input.briefing.input, input.briefing.result.guidance, morningAt); input.briefing.result.body = renderBriefing(assessed); input.briefing.result.bodyDigest = digest(input.briefing.result.body); input.briefing.assessment.bodyDigest = input.briefing.result.bodyDigest;
   f.command('seal', input); const original = f.run.sealed; assert.match(original.body, /Unknown provider restriction remains unresolved/); assert.match(original.body, /Only the primary calendar was accessible/); assert.equal(original.diagnostic.assessment.checkedAt, morningAt);
   send(f); refreshMorning(f); f.run.cleanup.globalGaps.push('Initial delivered coverage gap. gmail stale source', 'gmail stale source'); f.command('summary', {}, '2026-10-25T01:06:00.001Z'); assert.equal((f.run.summary.body.match(/Gmail stale source/g) ?? []).length, 1); assert.equal(f.run.sealed.diagnostic.assessment.checkedAt, morningAt);
+});
+test('large unreviewed inventories group known causes by family and exact count, leaving identities in audit', () => {
+  const f = setup(); f.run.sources[1].capture.messageIds.push(...Array.from({ length: 37 }, (_, index) => `opaque-unreviewed-${index}`)); f.run.sources[2].capture.resourceIds.push('opaque-calendar-extra-A', 'opaque-calendar-extra-B');
+  f.command('seal', compactAssessments());
+  assert.match(f.run.sealed.body, /School Outlook: 37 inventory entries lack full-context review/); assert.match(f.run.sealed.body, /Calendars: 2 listed calendars not acquired/);
+  assert.doesNotMatch(f.run.sealed.body, /unreviewed School Outlook message|opaque-unreviewed|opaque-calendar/);
+  assert.match(f.run.sealed.diagnostic.body, /opaque\\-unreviewed\\-36/); assert.ok(f.run.sealed.gaps.length >= 39);
 });

@@ -48,7 +48,17 @@ export function renderCompactMorning(run, assessment, { at, gaps = [], summary =
     lines.push(`${groups[item.adapter]}: ${publicText(item.before.sender)}; ${publicText(item.before.subject)}; ${disposition}${stale && !verified && !item.correction ? '; earlier review, reacquire before cleanup' : ''}.`);
     for (const fact of item.facts) lines.push(`Fact: ${publicText(fact)}`);
   }
-  const translatedGaps = unique([...gaps.map(gap => gap.replace(/^(?:Initial delivered coverage gap\.\s*)+/, '').replace(/\bstale global source\b/g, 'stale source')), ...assessment.coverage.gaps, ...assessment.sources.flatMap(({ source, qualifications }) => [...source.coverage.gaps, ...qualifications.map(reason => `${source.id}: ${reason}`)]), ...assessment.limits.filter(limit => limit.kind === 'correction').map(limit => `Correction recovery ${limit.state}; persistence unverified`)]).map(readable);
+  const rawGaps = unique([...gaps.map(gap => gap.replace(/^(?:Initial delivered coverage gap\.\s*)+/, '').replace(/\bstale global source\b/g, 'stale source')), ...assessment.coverage.gaps, ...assessment.sources.flatMap(({ source, qualifications }) => [...source.coverage.gaps, ...qualifications.map(reason => `${source.id}: ${reason}`)]), ...assessment.limits.filter(limit => limit.kind === 'correction').map(limit => `Correction recovery ${limit.state}; persistence unverified`)]);
+  const groupedGaps = new Map(); const ungroupedGaps = [];
+  for (const gap of rawGaps) {
+    const mailSource = run.sources.find(source => ['gmail', 'outlook'].includes(source.role) && gap.startsWith(`${source.id} unreviewed ID `));
+    const missing = /^(calendar|tasks) inventory resource (.+) not acquired$/.exec(gap);
+    const key = mailSource ? `${groups[mailSource.role]}:unreviewed` : missing ? `${missing[1]}:missing` : null;
+    if (!key) { ungroupedGaps.push(gap); continue; }
+    const ids = groupedGaps.get(key) ?? new Set(); ids.add(mailSource ? gap.slice(`${mailSource.id} unreviewed ID `.length) : missing[2]); groupedGaps.set(key, ids);
+  }
+  const groupedReasons = [...groupedGaps].map(([key, ids]) => key.endsWith(':unreviewed') ? `${key.slice(0, -11)}: ${ids.size} inventory entries lack full-context review` : key.startsWith('calendar:') ? `Calendars: ${ids.size} listed calendar${ids.size === 1 ? '' : 's'} not acquired` : `Tasks: ${ids.size} listed Task list${ids.size === 1 ? '' : 's'} not acquired`);
+  const translatedGaps = [...ungroupedGaps.map(readable), ...groupedReasons];
   const signature = values => unique(values.filter(Boolean)).sort().join('|');
   const describe = (observed, fetched, day) => `${range(observed, day)}; fetched ${signature(observed) === signature(fetched) ? 'same' : range(fetched, day)}`;
   lines.push(`Coverage day view: content ${describe(assessment.sources.map(({ source }) => source.contentAt), assessment.sources.map(({ source }) => source.retrievedAt), historical ? null : run.day)}.`);

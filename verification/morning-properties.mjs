@@ -1,7 +1,7 @@
 import { compactAssessments } from './morning-compact-fixtures.mjs';
 import { canonical, digest } from '../src/records.mjs';
 import { morningAssessments, morningCommand, morningDelivery, morningAt, morningEntities, morningItem, morningOpen, morningReceipt, morningRoot, morningWindow } from './morning-fixtures.mjs';
-export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 70, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
+export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 71, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
 export function verifyMorningPolicy({ morning, fleet }, check) {
   let cases = 0;
   const expect = (name, value, message) => { cases++; check('morning-contract', { case: name }, value, message); };
@@ -113,10 +113,14 @@ export function verifyMorningPolicy({ morning, fleet }, check) {
   expect('ordinary/authority', rejects(() => fixture.step('source', { ...acquired, acquisition: { ...acquired.acquisition, ownerRef: 'other-owner' } })), 'Ordinary intake cannot change owner authority.');
   fixture.step('source', acquired); expect('ordinary/intake', fixture.run.sources[0].capture.jobKey === null && fixture.run.sources[0].captureHistory[0]?.jobKey !== null && fixture.run.sources[0].captureHistory[0]?.sourceId === acquired.sourceId, 'Ordinary intake retains provenance/history without a fabricated ticket.');
   fixture.step('source', { ...acquired, messageIds: [] }); fixture.step('seal', compactAssessments()); expect('ordinary/missing-current', fixture.run.sealed.gaps.some(gap => gap.includes('not in current mail inventory')) && fixture.run.sealed.body.includes('actor unknown'), 'Previously reviewed IDs omitted from current ordinary inventory remain held without inferred actor.');
+  fixture = prepare(); fixture.run.sources[1].capture.messageIds.push(...Array.from({ length: 37 }, (_, index) => `unreviewed-${index}`)); fixture.step('seal', compactAssessments());
+  expect('compact/group-known-gaps', fixture.run.sealed.body.includes('School Outlook: 37 inventory entries lack full-context review') && !fixture.run.sealed.body.includes('unreviewed School Outlook message') && fixture.run.sealed.diagnostic.body.includes('unreviewed'), 'Known repeated inventory review gaps group by exact source-family count while full identity audit remains private.');
   return { cases };
 }
 const mutant = (id, before, after, counterexample) => ({ id: `morning-${id}`, source: 'src/morning.mjs', property: 'morning-contract', edits: [[before, after]], counterexample });
 export const morningMutations = [
+  { id: 'compact-gap-count', source: 'src/morning-presentation.mjs', property: 'morning-contract', edits: [['${ids.size} inventory entries lack full-context review', '${ids.size + 1} inventory entries lack full-context review']], counterexample: 'compact/group-known-gaps' },
+
   mutant('compact-no-selector', "command.presentation === 'compact-v1' ? assessBriefingPresentation", "false ? assessBriefingPresentation", 'compact/plain'),
   mutant('ordinary-owner-bypass', 'command.acquisition.ownerRef === run.ownerRef', 'true', 'ordinary/authority'),
   mutant('ordinary-drop-history', 'source.captureHistory.push(source.capture)', 'source.captureHistory.push(null)', 'ordinary/intake'),
