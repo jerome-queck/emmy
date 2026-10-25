@@ -169,3 +169,10 @@ test('refreshed edits replace old mail plans and expose current batch holds inde
   assert.doesNotMatch(fixture.run.summary.body, /## Mail review/); assert.match(fixture.run.summary.body, /dismissed/); assert.equal((fixture.run.summary.body.match(/gmail\\-one/g) ?? []).length, 1);
   const selected = morningView(fixture.state.morningRuns, batch.at)[0].cleanup.selectedIds[0]; assert.equal(selected.state, 'kept'); assert.equal(morningView(fixture.state.morningRuns, batch.at)[0].cleanup.globalCoverage, 'degraded');
 });
+
+test('selected refresh never erases original missing calendar resources or unreviewed mail gaps', () => {
+  const fixture = morningFixture({ cleanupMode: 'batched-v1' }); fixture.command('review', { items: [morningItem(), morningItem('outlook')] }); fixture.run.sources.find(source => source.role === 'gmail').capture.messageIds.push('unreviewed-extra-id'); fixture.run.sources.find(source => source.role === 'calendar-inventory').capture.resourceIds.push('missing-calendar-id'); fixture.deliver(); const original = structuredClone(fixture.run.sealed);
+  const batch = refreshMorning(fixture, { openedAt: '2026-10-25T01:00:01.000Z', acquiredAt: '2026-10-25T01:00:01.001Z' }); fixture.command('summary', {}, batch.at);
+  for (const id of ['unreviewed-extra-id', 'missing-calendar-id']) { assert.ok(fixture.run.cleanup.globalGaps.some(gap => gap.includes(id))); assert.ok(fixture.run.summary.body.includes(id.replaceAll('-', '\\-'))); }
+  assert.deepEqual(fixture.run.cleanup.globalGapProvenance, { bodyDigest: original.bodyDigest, sealedAt: original.at, gaps: original.gaps }); assert.equal(morningView(fixture.state.morningRuns, batch.at)[0].cleanup.globalCoverage, 'degraded');
+});

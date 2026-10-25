@@ -33,7 +33,7 @@ const planDigest = item => digest({ before: item.before, context: item.context, 
 const planMap = run => Object.fromEntries(run.items.map(item => [item.key, planDigest(item)]));
 const uncertainRun = run => run.delivery?.status === 'uncertain' || run.summary?.delivery?.status === 'uncertain' || run.items.some(item => item.attempts.at(-1)?.status === 'uncertain');
 const terminalItem = item => item.attempts.some(attempt => attempt.status === 'verified');
-const globalGaps = (run, at) => run.sources.flatMap(source => !source.capture ? [`${source.id} missing global acquisition`] : [!source.capture.paginationComplete || source.capture.cached || !source.capture.receipt.coverage.complete || source.capture.receipt.coverage.gaps.length ? `${source.id} incomplete global coverage` : null, Date.parse(at) - Date.parse(source.capture.receipt.observedAt) > 300000 ? `${source.id} stale global source` : null].filter(Boolean));
+const globalGaps = (run, at) => [...(run.sealed?.gaps ?? []).map(gap => `Initial delivered coverage gap. ${gap}`), ...run.sources.flatMap(source => !source.capture ? [`${source.id} missing global acquisition`] : [!source.capture.paginationComplete || source.capture.cached || !source.capture.receipt.coverage.complete || source.capture.receipt.coverage.gaps.length ? `${source.id} incomplete global coverage` : null, Date.parse(at) - Date.parse(source.capture.receipt.observedAt) > 300000 ? `${source.id} stale global source` : null].filter(Boolean))];
 const outcomeDigest = run => digest(run.items.map(item => ({ key: item.key, correction: item.correction, outcome: item.attempts.at(-1)?.status ?? 'not-attempted' })));
 export function mailSnapshot(value, adapter) {
   shape(value, adapter === 'gmail' ? ['nativeId', 'threadId', 'subject', 'sender', 'unread', 'labels'] : ['nativeId', 'threadId', 'subject', 'sender', 'unread', 'folder', 'folderId'], 'mail snapshot');
@@ -154,7 +154,7 @@ export function morningTransition(state, command, root, at) {
     insist(command.generation === (run.cleanup?.generation ?? 0) + 1, 'Refresh must advance the exact cleanup generation');
     for (const selected of command.items) { const item = run.items.find(row => row.key === itemKey(selected.adapter, selected.nativeId)); insist(!item || !terminalItem(item), 'Verified moves are terminal and cannot be refreshed or repeated'); }
     run.cleanupHistory ??= []; if (run.cleanup) run.cleanupHistory.push(run.cleanup);
-    run.cleanup = { kind: 'selected-mail-batch-v1', generation: command.generation, openedAt: at, sourceRef: command.sourceRef, reason: command.reason, items: command.items, acquisitions: [], globalGaps: globalGaps(run, at), deliveredPlans: run.cleanup?.deliveredPlans ?? planMap(run), deliveryBodyDigest: run.cleanup?.deliveryBodyDigest ?? run.delivery.bodyDigest };
+    run.cleanup = { kind: 'selected-mail-batch-v1', generation: command.generation, openedAt: at, sourceRef: command.sourceRef, reason: command.reason, items: command.items, acquisitions: [], globalGapProvenance: { bodyDigest: run.sealed.bodyDigest, sealedAt: run.sealed.at, gaps: [...run.sealed.gaps] }, globalGaps: globalGaps(run, at), deliveredPlans: run.cleanup?.deliveredPlans ?? planMap(run), deliveryBodyDigest: run.cleanup?.deliveryBodyDigest ?? run.delivery.bodyDigest };
   }
   if (command.step === 'source') {
     if (run.delivery) {

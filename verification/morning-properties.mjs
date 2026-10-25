@@ -1,6 +1,6 @@
 import { canonical, digest } from '../src/records.mjs';
 import { morningAssessments, morningCommand, morningDelivery, morningAt, morningEntities, morningItem, morningOpen, morningReceipt, morningRoot, morningWindow } from './morning-fixtures.mjs';
-export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 62, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
+export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 63, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
 export function verifyMorningPolicy({ morning, fleet }, check) {
   let cases = 0;
   const expect = (name, value, message) => { cases++; check('morning-contract', { case: name }, value, message); };
@@ -100,10 +100,14 @@ export function verifyMorningPolicy({ morning, fleet }, check) {
   const olderReceipt = { ...morningReceipt('gmail', '2026-10-25T01:05:59.999Z'), capturedAt: readAt }; const oldJob = digest('old-source-new-fetch'); fixture.state.jobs.push({ key: oldJob, status: 'completed', input: { kind: 'briefing-source-read', occurrence: `${morningOpen.runId}/refresh/1`, entityIds: ['gmail'] }, receipts: [olderReceipt] });
   expect('refresh/new-source-time', rejects(() => fixture.step('source', { generation: 1, sourceId: 'gmail', jobKey: oldJob, receipt: olderReceipt, paginationComplete: true, cached: false, resourceIds: [], messageIds: ['gmail-one'], window: null }, readAt)), 'A new ticket and fetch time cannot refresh old pre-generation content.');
   expect('refresh/missing-context', rejects(() => fixture.step('action-intent', { generation: 1, adapter: 'gmail', nativeId: 'gmail-one', action: 'trash', before: morningItem().before, receipt: morningReceipt('gmail', readAt), destination: null }, readAt)), 'A selected ID remains held until complete fresh context is reviewed.');
+  fixture = prepare(); fixture.run.sources[0].capture.messageIds.push('unreviewed-global-id'); fixture.run.sources[2].capture.resourceIds.push('omitted-global-calendar'); fixture.deliver();
+  fixture.step('refresh', { generation: 1, items: [{ adapter: 'gmail', nativeId: 'gmail-one' }], sourceRef: 'owner', reason: 'Selected reads cannot repair missing global inventories.' }, morningAt); fixture.step('summary');
+  expect('refresh/preserve-global-gaps', fixture.run.cleanup.globalGaps.some(gap => gap.includes('unreviewed-global-id')) && fixture.run.cleanup.globalGaps.some(gap => gap.includes('omitted-global-calendar')) && fixture.run.summary.body.includes('unreviewed\\-global\\-id') && fixture.run.cleanup.globalGapProvenance.bodyDigest === fixture.run.sealed.bodyDigest, 'Original missing-resource and unreviewed-ID gaps retain initial body provenance through selected refresh.');
   return { cases };
 }
 const mutant = (id, before, after, counterexample) => ({ id: `morning-${id}`, source: 'src/morning.mjs', property: 'morning-contract', edits: [[before, after]], counterexample });
 export const morningMutations = [
+  mutant('refresh-erase-global-gaps', '...(run.sealed?.gaps ?? []).map(gap => `Initial delivered coverage gap. ${gap}`)', '...[]', 'refresh/preserve-global-gaps'),
   mutant('refresh-undelivered-plan', 'run.cleanup.deliveredPlans[item.key] === planDigest(item)', 'true', 'refresh/changed-plan'),
   mutant('refresh-erase-correction', 'Object.assign(existing, review, { reviewDigest:', 'Object.assign(existing, review, { correction: null, reviewDigest:', 'refresh/correction'),
   mutant('refresh-repeat-verified', '!item || !terminalItem(item)', 'true', 'refresh/terminal'),
