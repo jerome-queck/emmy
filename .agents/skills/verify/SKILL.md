@@ -27,6 +27,8 @@ Use `node scripts/verify-behavior.mjs --focus calendar` for the declared accepta
 
 Use `node scripts/verify-behavior.mjs --focus cloud` for cooperative admission. It drives the two-phase twelve-job standard-library workload in genuinely separate acceptance processes and fresh CLI children. The single home-wide queue exercises reserved priorities, pressure deferral/resume, backpressure, in-flight duplicates, retries, explicit suspension, measured local capacity and pending monitoring/sign-in escalation. Isolated stopped writers test exact-token abandoned-turn and initial-configuration recovery without deleting claims or signalling unowned processes. Backup must refuse unresolved claims. Restore must remain suspended. Retained state participates in reconciliation and replay. All fault pressure and sign-in cases are synthetic. Actual parent cloud execution and Dot delivery remain separate.
 
+The fleet focus also drives the morning extension in fresh processes. Exact context and assessor-output bytes, full-day inventories, unread-preserved reversible outcomes, duplicate-safe send intent and same-native-message summary edit receipts remain synthetic. Preserve `retainedMorning` after teardown. Parent acceptance and the real existing schedule remain separate.
+
 ## Evidence and teardown
 
 Full and failed runs retain `.local/verification/behavior-*/report.json` plus immutable synthetic records/evidence. The report survives temporary-repository cleanup. Check that named path exists. Failed command and assertion output remains available even when the driver exits nonzero.

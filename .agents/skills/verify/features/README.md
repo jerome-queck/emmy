@@ -4,7 +4,7 @@ Generated from `src/metadata.mjs`. Read [the driver skill](../SKILL.md) before a
 
 | Feature | Commands | Scenarios | Bounded properties |
 | --- | --- | --- | --- |
-| [Fleet health and sign-in recovery](fleet.md) | fleet, signin | fleet-health, signin-recovery | fleet-contract |
+| [Fleet health and sign-in recovery](fleet.md) | fleet, signin | fleet-health, signin-recovery, morning-run | fleet-contract, morning-contract |
 | [Cooperative cloud admission](cloud.md) | cloud | cloud-admission | cloud-admission, process-incarnation, legacy-baseline |
 | [Orientation and private integrity](orientation.md) | help, doctor, catalog | orientation | Public derivation is exercised behaviorally |
 | [Responsibilities and proposals](routing.md) | responsibility, dispatch, probe | persistent-context, binding-boundaries, native-effect-correlation, native-dispatch, probe-packet, definition-concurrency | exact-binding, branch-blocking, effect-stability, authority-scope, native-uncertainty, dispatch-recovery |

@@ -28,6 +28,8 @@ The standing [thread and model policy](AGENTS.md#standing-thread-and-model-polic
 
 [`fleet --file <private-envelope.json>`](docs/fleet-health.md) retains executable scoped health, corrections, alert episodes, and bounded parent-owned read tickets in the same responsibility journal. Parent performs actual app/native/schedule reads and separate alert send/readback. [`signin`](.agents/skills/sign-in/SKILL.md) chooses a secure recovery handoff without accepting secrets. Browser and connector recovery remain separate.
 
+[One morning run](docs/morning-workflow.md) adds fresh fleet-backed source acquisition, conservative versioned mail judgments, exact delivery-before-cleanup and same-message outcome edits to that journal. Actual mail, Slack and schedules remain parent-owned.
+
 [`calendar --file <private-envelope.json>`](docs/calendar.md) checks declared current intent, exact saved fields, complete inventory, allocations, and retained attempts without native execution or journal writes. Its result cannot authenticate a save or stop an external queue.
 
 A responsibility retains its goal, context, exact repository/host/path/revision, authority reference, finish criteria, source age, next review, feature, and lifecycle. `reconcile` imports optional evidence and reads actual local bytes and git identity. It preserves contradictions, failed repairs, and original reviews. Imported text stays reported. Required independent review stays an external gate.

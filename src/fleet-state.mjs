@@ -1,3 +1,4 @@
+import { morningTransition, morningView, deliveryReadback } from './morning.mjs';
 import { canonical, digest } from './records.mjs';
 import { actionInput, fleetConfig, insist, jobInput, priorities } from './fleet-schema.mjs';
 
@@ -14,7 +15,7 @@ export function captureCondition(entity, capture, state, config, at) {
   const receipt = capture.receipt;
   if (state.resumedAt && Date.parse(receipt.observedAt) < Date.parse(state.resumedAt)) return result('unknown', 'restore-needs-fresh-read', 'Parent must reacquire this exact source after resume.');
   if (Date.parse(receipt.capturedAt) > Date.parse(at) || ageMs < 0 || Date.parse(receipt.observedAt) > Date.parse(receipt.capturedAt)) return result('unknown', 'future-source', 'Reacquire source timestamps in the actual executor.');
-  if (ageMs > (entity.expected.maxAgeMs ?? config.maxAgeMs)) return result('stale-source', 'source-age', 'Parent must refresh this source in its actual environment.');
+  if (ageMs > Math.min(state.policy?.entities.find(row => row.entityId === entity.expected.id)?.maxAgeMs ?? entity.expected.maxAgeMs ?? config.maxAgeMs, entity.expected.maxAgeMs ?? 86400000)) return result('stale-source', 'source-age', 'Parent must refresh this source in its actual environment.');
   if (bad(capture.condition)) return result(capture.condition, capture.issueKey, capture.nextAction);
   if (!receipt.coverage.complete || receipt.coverage.gaps.length) return result('unknown', 'coverage-gap', 'Parent must obtain complete scoped coverage or retain the exact gap.');
   const identity = [['expectedDigest', 'actualDigest'], ['expectedRevision', 'actualRevision']].filter(([expected]) => entity.expected[expected]);
@@ -75,6 +76,35 @@ export function fleetTransition(original, action, root, at, epochHash = original
   else if (action.operation === 'suspend') { state.lifecycle = 'suspended'; }
   else {
     insist(state.lifecycle === 'active' || ['send-ack', 'send-resolve', 'dismiss', 'correct', 'result', 'resolve'].includes(action.operation), 'Fleet is explicitly suspended');
+    if (action.operation === 'policy-revise') {
+      insist(action.version === (state.policy?.version ?? 0) + 1 && action.previousDigest === (state.policy?.digest ?? null), 'Policy revision must name exact previous version and digest');
+      insist(action.entities.length === state.entities.length, 'Policy revision must retain every existing exact scope');
+      for (const window of action.entities) insist(canonical(entity(window.entityId).expected.scope) === canonical(window.scope), 'Policy revision cannot rebind an entity scope');
+      state.policyHistory ??= []; if (state.policy) state.policyHistory.push(state.policy);
+      state.policy = { ...action, at, digest: digest(action) };
+    }
+    if (action.operation === 'morning') outcome = morningTransition(state, action.command, root, at);
+    if (action.operation.startsWith('group-send-')) {
+      const ids = [...action.alertIds].sort(); const rows = ids.map(alert);
+      state.deliveryGroups ??= [];
+      if (action.operation === 'group-send-intent') {
+        insist(rows.every(row => !row.disposition && row.delivery === 'pending'), 'Group contains an already attempted, delivered or dismissed episode');
+        insist(!state.deliveryGroups.some(group => group.sendRef === action.sendRef) && !state.alerts.some(row => row.sendRef === action.sendRef), 'Group send reference already retained; inspect actual conversation');
+        const group = { ...(action.delivery ? { delivery: action.delivery } : {}), alertIds: ids, bodyDigest: action.bodyDigest, sendRef: action.sendRef, status: 'uncertain', at }; state.deliveryGroups.push(group);
+        for (const row of rows) { row.delivery = 'uncertain'; row.bodyDigest = action.bodyDigest; row.sendRef = action.sendRef; }
+      } else {
+        const group = state.deliveryGroups.find(row => row.sendRef === action.sendRef);
+        insist(group?.status === 'uncertain' && group.bodyDigest === action.bodyDigest && canonical(group.alertIds) === canonical(ids) && rows.every(row => row.delivery === 'uncertain' && row.sendRef === action.sendRef && row.bodyDigest === action.bodyDigest), 'Group acknowledgement must preserve every exact episode and send');
+        if (group.delivery) deliveryReadback(action, { scope: group.delivery.scope, at: group.at }, at);
+        if (action.operation === 'group-send-ack') {
+          insist(action.readbackRef !== action.sendRef && action.deliveredBodyDigest === action.bodyDigest, 'Group delivery requires separate exact-body readback'); group.status = 'delivered'; group.readbackRef = action.readbackRef; group.nativeId = action.nativeId;
+          for (const row of rows) { row.delivery = 'delivered'; row.readbackRef = action.readbackRef; }
+        } else {
+          group.status = 'known-unexecuted'; group.resolution = action;
+          for (const row of rows) { row.delivery = 'pending'; row.reconciliation = { sourceRef: action.sourceRef, reason: action.reason, at }; }
+        }
+      }
+    }
     if (action.operation === 'inventory') {
       for (const expected of action.entities) {
         insist((expected.maxAgeMs ?? config.maxAgeMs) <= config.maxAgeMs, 'Entity age cannot weaken configured freshness');
@@ -144,14 +174,17 @@ export function fleetTransition(original, action, root, at, epochHash = original
     if (action.operation === 'correct') { const row = entity(action.entityId); insist(row.corrections.length < config.maxAlerts, 'Correction retention bound reached'); row.corrections.push({ sourceRef: action.sourceRef, reason: action.reason, at }); }
     if (action.operation === 'dismiss') { const row = alert(action.alertId); row.disposition = { sourceRef: action.sourceRef, reason: action.reason, at }; }
     if (action.operation === 'send-intent') {
+      insist(!state.deliveryGroups?.some(group => group.sendRef === action.sendRef), 'A retained group send cannot be reused for another alert');
       const row = alert(action.alertId); insist(!row.disposition && row.delivery === 'pending', 'Alert send already attempted or dismissed. Inspect the actual conversation before retry.');
       row.delivery = 'uncertain'; row.bodyDigest = action.bodyDigest; row.sendRef = action.sendRef;
     }
     if (action.operation === 'send-ack') {
+      insist(!state.deliveryGroups?.some(group => group.status === 'uncertain' && group.alertIds.includes(action.alertId)), 'Atomic group cannot be acknowledged or resolved one episode at a time');
       const row = alert(action.alertId); insist(row.delivery === 'uncertain' && row.bodyDigest === action.bodyDigest && row.sendRef === action.sendRef && action.readbackRef !== action.sendRef, 'Send/readback does not match the exact pending attempt');
       row.delivery = 'delivered'; row.readbackRef = action.readbackRef;
     }
     if (action.operation === 'send-resolve') {
+      insist(!state.deliveryGroups?.some(group => group.status === 'uncertain' && group.alertIds.includes(action.alertId)), 'Atomic group cannot be acknowledged or resolved one episode at a time');
       const row = alert(action.alertId); insist(row.delivery === 'uncertain' && row.bodyDigest === action.bodyDigest && row.sendRef === action.sendRef, 'Send reconciliation crosses alert or attempt');
       row.delivery = 'pending'; row.reconciliation = { sourceRef: action.sourceRef, reason: action.reason, at };
     }
@@ -178,5 +211,5 @@ export function fleetView(records, responsibilityId, at) {
   const restored = Boolean(epoch && state.epochHash !== epoch.hash);
   const inventory = state.entities.map(entity => ({ ...entity, ...captureCondition(entity, entity.capture, state, config, at), assurance: 'reported', sourceAgeMs: entity.capture ? Date.parse(at) - Date.parse(entity.capture.receipt.observedAt) : null, capturedAt: entity.capture?.receipt.capturedAt ?? null, coverage: entity.capture?.receipt.coverage ?? { complete: false, gaps: ['No source receipt'] }, ...(restored ? { condition: 'unknown', issueKey: 'restore-needs-fresh-read' } : {}) }));
   const needsAssessment = inventory.some(entity => digest({ condition: entity.condition, issueKey: entity.issueKey, nextAction: entity.nextAction }) !== state.entities.find(row => row.expected.id === entity.expected.id).fingerprint) || state.jobs.some(job => job.status === 'attempted' && Date.parse(at) > Date.parse(job.deadline));
-  return { status: restored || state.lifecycle === 'suspended' ? 'suspended' : inventory.some(row => bad(row.condition)) || needsAssessment || state.alerts.some(alert => !alert.disposition && alert.delivery !== 'delivered') || state.jobs.some(job => ['uncertain', 'blocked', 'dead'].includes(job.status)) ? 'needs-attention' : 'ready', responsibilityId, rootHash: root.hash, headHash: head.hash, state, inventory, needsAssessment, pendingAlerts: state.alerts.filter(alert => !alert.disposition && alert.delivery === 'pending'), uncertainAlerts: state.alerts.filter(alert => !alert.disposition && alert.delivery === 'uncertain'), delivery: 'parent-owned', assurance: 'reported', limits: ['Receipts are attributable parent claims. Code does not authenticate their truth or own connectors, browsers, schedules or Dot sends.', 'A completed read is not delivery. No provider-wide admission, automatic retry of uncertain actions or total-dormancy detection.'] };
+  return { status: restored || state.lifecycle === 'suspended' ? 'suspended' : inventory.some(row => bad(row.condition)) || needsAssessment || state.alerts.some(alert => !alert.disposition && alert.delivery !== 'delivered') || state.jobs.some(job => ['uncertain', 'blocked', 'dead'].includes(job.status)) || state.morningRuns?.some(run => morningView([run], at)[0].status !== 'complete') ? 'needs-attention' : 'ready', responsibilityId, rootHash: root.hash, headHash: head.hash, state, inventory, needsAssessment, ...(state.morningRuns ? { morning: morningView(state.morningRuns, at) } : {}), pendingAlerts: state.alerts.filter(alert => !alert.disposition && alert.delivery === 'pending'), uncertainAlerts: state.alerts.filter(alert => !alert.disposition && alert.delivery === 'uncertain'), delivery: 'parent-owned', assurance: 'reported', limits: ['Receipts are attributable parent claims. Code does not authenticate their truth or own connectors, browsers, schedules or Dot sends.', 'A completed read is not delivery. No provider-wide admission, automatic retry of uncertain actions or total-dormancy detection.'] };
 }

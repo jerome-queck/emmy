@@ -103,3 +103,41 @@ test('sign-in chooses secure form, matching one-use OTP, scoped retry and protec
   assert.equal(signinDecision({ ...denied, retry: { ...retry, count: 1 } }, fleetTime).status, 'denied-stop');
   assert.equal(signinDecision({ ...denied, denial: { ...denied.denial, persistent: true }, retry }, fleetTime).status, 'denied-stop');
 });
+test('audited policy revisions preserve original receipts, stale episodes and exact scopes', () => {
+  let state = healthy(); const at = '2026-10-25T12:06:00.000Z';
+  state = fleetTransition(state, { operation: 'assess', captures: [] }, fleetRoot, at).state;
+  const oldAlerts = structuredClone(state.alerts); const oldReceipts = state.entities.map(row => row.capture);
+  const policy = { operation: 'policy-revise', version: 1, previousDigest: null, maxAgeMs: 86400000, entities: fleetEntities.map(row => ({ entityId: row.id, scope: row.scope, maxAgeMs: row.kind === 'authentication' ? 3600000 : 86400000 })), sourceRef: 'synthetic-owner-window-revision', reason: 'Version exact observation scopes without backdating.' };
+  const revised = fleetTransition(state, policy, fleetRoot, at).state;
+  assert.deepEqual(revised.alerts.slice(0, oldAlerts.length), oldAlerts); assert.deepEqual(revised.entities.map(row => row.capture), oldReceipts); assert.equal(revised.entities[1].condition, 'healthy');
+  assert.throws(() => fleetTransition(revised, policy, fleetRoot, at), /previous version/);
+  assert.throws(() => fleetTransition(state, { ...policy, entities: policy.entities.slice(1) }, fleetRoot, at), /every existing/);
+  assert.throws(() => fleetTransition(state, { ...policy, entities: policy.entities.map((row, index) => index === 0 ? { ...row, scope: { ...row.scope, resource: 'other' } } : row) }, fleetRoot, at), /rebind/);
+  const tightened = fleetTransition(revised, { operation: 'inventory', entities: [{ ...fleetEntities[1], maxAgeMs: 1000 }], sourceRef: 'synthetic-owner-tighten', reason: 'Tighten this exact explicit source.' }, fleetRoot, at).state;
+  assert.equal(tightened.entities[1].condition, 'stale-source');
+  const added = fleetTransition(revised, { operation: 'inventory', entities: [{ id: 'new-scope', kind: 'cloud-job', scope: { ...fleetEntities[0].scope, resource: 'new-scope' } }], sourceRef: 'synthetic-owner-new-scope', reason: 'Separate new scope keeps original inherited bound.' }, fleetRoot, at).state;
+  const capture = { ...fleetCapture('monitor'), entityId: 'new-scope', receipt: { ...fleetReceipt('monitor'), scope: added.entities.at(-1).expected.scope } };
+  const assessed = fleetTransition(added, { operation: 'assess', captures: [capture] }, fleetRoot, at).state;
+  assert.equal(assessed.entities.at(-1).condition, 'stale-source');
+});
+test('one grouped send/readback covers exact pending episodes atomically without expanding prior delivery', () => {
+  let state = fleetTransition(healthy(), { operation: 'assess', captures: [fleetCapture('protected', 'login-expired', '2026-10-25T12:00:01.000Z'), fleetCapture('routine', 'workflow-failed', '2026-10-25T12:00:01.000Z')] }, fleetRoot, '2026-10-25T12:00:01.000Z').state;
+  const ids = state.alerts.map(row => row.id); assert.ok(ids.length >= 2);
+  const intent = { operation: 'group-send-intent', alertIds: ids, bodyDigest: 'a'.repeat(64), sendRef: 'synthetic-one-send' };
+  state = fleetTransition(state, intent, fleetRoot, fleetTime).state;
+  assert.throws(() => fleetTransition(state, intent, fleetRoot, fleetTime), /already attempted/);
+  const ack = { ...intent, operation: 'group-send-ack', readbackRef: 'synthetic-readback', deliveredBodyDigest: intent.bodyDigest, nativeId: 'synthetic-message' };
+  assert.throws(() => fleetTransition(state, { ...ack, alertIds: ids.slice(1) }, fleetRoot, fleetTime), /every exact episode/);
+  assert.throws(() => fleetTransition(state, { operation: 'send-ack', alertId: ids[0], bodyDigest: intent.bodyDigest, sendRef: intent.sendRef, readbackRef: ack.readbackRef }, fleetRoot, fleetTime), /Atomic group/);
+  assert.throws(() => fleetTransition(state, { ...ack, deliveredBodyDigest: 'b'.repeat(64) }, fleetRoot, fleetTime), /exact-body/);
+  const delivered = fleetTransition(state, ack, fleetRoot, fleetTime).state;
+  assert.equal(delivered.deliveryGroups.length, 1); assert.equal(delivered.deliveryGroups[0].status, 'delivered'); assert.ok(delivered.alerts.filter(row => ids.includes(row.id)).every(row => row.delivery === 'delivered')); assert.ok(delivered.alerts.filter(row => !ids.includes(row.id)).every(row => row.delivery === 'pending'));
+});
+
+test('a historical single-alert delivery cannot be retroactively expanded into a grouped send', () => {
+  let state = fleetTransition(fleetInitial(fleetRoot), { operation: 'assess', captures: [] }, fleetRoot, fleetTime).state;
+  const first = state.alerts[0].id; const single = { operation: 'send-intent', alertId: first, bodyDigest: 'a'.repeat(64), sendRef: 'historical-one-send' };
+  state = fleetTransition(state, single, fleetRoot, fleetTime).state; state = fleetTransition(state, { ...single, operation: 'send-ack', readbackRef: 'historical-one-readback' }, fleetRoot, fleetTime).state;
+  assert.throws(() => fleetTransition(state, { operation: 'group-send-intent', alertIds: state.alerts.filter(row => row.id !== first).map(row => row.id), bodyDigest: single.bodyDigest, sendRef: single.sendRef }, fleetRoot, fleetTime), /already retained/);
+  assert.equal(state.alerts.filter(row => row.delivery === 'delivered').length, 1);
+});

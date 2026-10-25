@@ -193,10 +193,12 @@
       ],
       "scenarios": [
         "fleet-health",
-        "signin-recovery"
+        "signin-recovery",
+        "morning-run"
       ],
       "properties": [
-        "fleet-contract"
+        "fleet-contract",
+        "morning-contract"
       ]
     },
     {
@@ -308,6 +310,18 @@
     }
   ],
   "properties": [
+    {
+      "id": "morning-contract",
+      "source": "src/morning.mjs",
+      "functions": [
+        "classifyMail",
+        "morningTransition",
+        "renderMorning",
+        "morningView",
+        "deliveryReadback"
+      ],
+      "statement": "Versioned conservative mail judgments, fleet-backed fresh Singapore-day source acquisitions, complete reviewed-ID accounting, exact delivered-body gates, unread-preserved reversible outcomes and same-message edits retain scoped provenance without claiming native truth."
+    },
     {
       "id": "fleet-contract",
       "source": "src/fleet-state.mjs",

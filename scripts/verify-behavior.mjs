@@ -14,6 +14,7 @@ import { driveBriefing } from '../verification/briefing-drive.mjs';
 import { driveDispatch } from '../verification/dispatch-drive.mjs';
 import { driveCloud } from '../verification/cloud-drive.mjs';
 import { driveCalendar, verifyCalendarRetention } from '../verification/calendar-drive.mjs';
+import { driveMorning } from '../verification/morning-drive.mjs';
 import { driveFleet } from '../verification/fleet-drive.mjs';
 
 const sourceRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -62,6 +63,7 @@ try {
   if (!['self-check-repair', 'briefing', 'calendar', 'cloud', 'fleet'].includes(report.focus)) await driveDispatch({ root, home, run, scenario, report, bindings, target });
   if (!report.focus || report.focus === 'cloud') await driveCloud({ sourceRoot, root, home, run, scenario, report, children, evidenceDir });
   if (!report.focus || report.focus === 'calendar') await driveCalendar({ home, run, scenario, report });
+  if (!report.focus || report.focus === 'fleet') await driveMorning({ home, bindings, target, run, scenario, report });
   if (!report.focus || report.focus === 'fleet') await driveFleet({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir, children });
   if (!['briefing', 'dispatch', 'calendar', 'cloud', 'fleet'].includes(report.focus)) {
   const artifact = join(home, 'artifact.txt'); const original = 'Expected fixture bytes\n'; await writeFile(artifact, original);
@@ -605,8 +607,8 @@ try {
   }
   try { await cp(join(home, 'briefing'), join(evidenceDir, 'briefing'), { recursive: true }); report.retainedBriefing = join(evidenceDir, 'briefing'); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.briefingCopyError = error.message; process.exitCode = 1; } }
   try { await cp(join(home, 'calendar'), join(evidenceDir, 'calendar'), { recursive: true, filter: path => path !== join(home, 'calendar', 'fifo') }); } catch (error) { if (error.code !== 'ENOENT' || report.calendar) { report.status = 'failed'; report.calendarCopyError = error.message; process.exitCode = 1; } }
-  for (const [source, destination] of [['fleet-drive', 'fleet'], ['fleet-staleness', 'fleet-staleness'], ['fleet-restored', 'fleet-restored'], ['fleet-timeout', 'fleet-timeout']]) {
-    try { await cp(join(home, source), join(evidenceDir, destination), { recursive: true }); if (destination === 'fleet') report.retainedFleet = join(evidenceDir, destination); }
+  for (const [source, destination] of [['morning-drive', 'morning'], ['fleet-drive', 'fleet'], ['fleet-staleness', 'fleet-staleness'], ['fleet-restored', 'fleet-restored'], ['fleet-timeout', 'fleet-timeout']]) {
+    try { await cp(join(home, source), join(evidenceDir, destination), { recursive: true }); if (destination === 'morning') report.retainedMorning = join(evidenceDir, destination); if (destination === 'fleet') report.retainedFleet = join(evidenceDir, destination); }
     catch (error) { if (error.code !== 'ENOENT' || report.fleet) { report.status = 'failed'; report.fleetCopyError = error.message; process.exitCode = 1; } }
   }
   await rm(root, { recursive: true, force: true }); report.cleaned = !await readdir(tmpdir()).then(names => names.includes(basename(root)));

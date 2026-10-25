@@ -1,7 +1,7 @@
 import { digest } from '../src/records.mjs';
 import { fleetCapture, fleetEntities, fleetJob, fleetReceipt, fleetRoot, fleetTime } from './fleet-fixtures.mjs';
 
-export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 77, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
+export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 87, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
 export function verifyFleetPolicy({ fleet }, check) {
   let cases = 0;
   const expect = (name, ok, message) => { cases++; check('fleet-contract', { case: name }, ok, message); };
@@ -100,5 +100,24 @@ export function verifyFleetPolicy({ fleet }, check) {
   const restored = fleet.fleetView([root, head, { type: 'epoch', hash: digest('epoch'), restoredAt: fleetTime }], root.responsibilityId, fleetTime);
   expect('journal/restore', restored.status === 'suspended' && restored.inventory.every(row => row.condition === 'unknown'), 'Restored old receipts cannot establish current health.');
   expect('journal/permutation', JSON.stringify(fleet.fleetState([head, root], root.responsibilityId)) === JSON.stringify(fleet.fleetState([root, head], root.responsibilityId)), 'Projection is independent of input order.');
+  const agedAt = '2026-10-25T12:07:03.430Z';
+  const aged = transition(green(), { operation: 'assess', captures: [] }, agedAt).state;
+  const policy = { operation: 'policy-revise', version: 1, previousDigest: null, maxAgeMs: 86400000, entities: fleetEntities.map(row => ({ entityId: row.id, scope: row.scope, maxAgeMs: row.kind === 'authentication' ? 3600000 : 86400000 })), sourceRef: 'owner-policy-revision', reason: 'Audited exact scope windows.' };
+  const revised = transition(aged, policy, agedAt).state;
+  expect('policy/age', revised.entities[1].condition === 'healthy', 'Audited policy may change current eligibility without changing source age.');
+  expect('policy/timestamps', JSON.stringify(revised.entities.map(row => row.capture)) === JSON.stringify(aged.entities.map(row => row.capture)), 'Policy revision cannot refresh original captures.');
+  expect('policy/failures', JSON.stringify(revised.alerts.slice(0, aged.alerts.length)) === JSON.stringify(aged.alerts), 'All historical stale episodes remain intact.');
+  expect('policy/version', rejects(() => transition(revised, policy, agedAt)), 'Revision must name exact prior policy version and digest.');
+  expect('policy/scope', rejects(() => transition(aged, { ...policy, entities: policy.entities.map((row, index) => index === 0 ? { ...row, scope: { ...row.scope, resource: 'other' } } : row) }, agedAt)), 'An audited policy cannot rebind scope.');
+  const tight = transition(revised, { operation: 'inventory', entities: [{ ...fleetEntities[1], maxAgeMs: 1000 }], sourceRef: 'owner', reason: 'Tighten only this source.' }, agedAt).state;
+  expect('policy/tightening', tight.entities[1].condition === 'stale-source', 'A later explicit tighter constraint wins over the named policy window.');
+  const groupStart = transition(initial(), { operation: 'assess', captures: [] }).state;
+  const groupIntent = { operation: 'group-send-intent', alertIds: groupStart.alerts.map(row => row.id), sendRef: 'group-send', bodyDigest: digest('group-body') };
+  const grouped = transition(groupStart, groupIntent).state;
+  const groupAck = { ...groupIntent, operation: 'group-send-ack', deliveredBodyDigest: groupIntent.bodyDigest, nativeId: 'message', readbackRef: 'group-readback' };
+  expect('group/no-split', rejects(() => transition(grouped, { ...groupAck, alertIds: groupAck.alertIds.slice(1) })), 'One send acknowledgement must retain the whole exact episode set.');
+  expect('group/no-single', rejects(() => transition(grouped, { operation: 'send-ack', alertId: groupAck.alertIds[0], bodyDigest: groupAck.bodyDigest, sendRef: groupAck.sendRef, readbackRef: groupAck.readbackRef })), 'Single-alert API cannot split an atomic group.');
+  expect('group/body', rejects(() => transition(grouped, { ...groupAck, deliveredBodyDigest: digest('different') })), 'A group acknowledgement must bind the exact delivered body.');
+  expect('group/one-send', transition(grouped, groupAck).state.deliveryGroups.length === 1, 'Many episode acknowledgements remain one actual reported send.');
   return { cases };
 }
