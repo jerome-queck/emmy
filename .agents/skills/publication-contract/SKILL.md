@@ -39,12 +39,12 @@ The reviewed source commit is recorded in `verification/publication/coverage.jso
 
 | Model action or property | Production owner |
 | --- | --- |
-| Symbolic requested hashes and matching completed bytes | `recordPayload`, lines 283-294 |
-| `CreatePending`, four `WriteFile` stages, `Rename` | `publishRecord`, lines 296-308 |
-| `ReadRecord`, `ReadEvidence`, `Cleanup`, `Reply` | `publishRecord`, lines 309-314, and `readRecord`, lines 316-333 |
-| `ObserveList`, `ObserveChoose`, `ObserveRecord`, `ObserveEvidence`, `ObserveValidate` | `readStore`, lines 335-345, and `readRecord`, lines 316-333 |
-| `ImportNext`, retry plan, `ImportPrefixSafe` | `retainImport`, lines 422-443, `references`, lines 347-358, and `importOrder`, lines 581-591 |
-| `Crash`, `Retry`, orphan existence | Process interruption between the mapped awaits and a fresh call using the same input. Real markers are in `publicationBoundary`, lines 276-281. |
+| Symbolic requested hashes and matching completed bytes | `recordPayload`, lines 289-300 |
+| `CreatePending`, four `WriteFile` stages, `Rename` | `publishRecord`, lines 302-314 |
+| `ReadRecord`, `ReadEvidence`, `Cleanup`, `Reply` | `publishRecord`, lines 315-320, and `readRecord`, lines 322-339 |
+| `ObserveList`, `ObserveChoose`, `ObserveRecord`, `ObserveEvidence`, `ObserveValidate` | `readStore`, lines 341-351, and `readRecord`, lines 322-339 |
+| `ImportNext`, retry plan, `ImportPrefixSafe` | `retainImport`, lines 428-449, `references`, lines 353-364, and `importOrder`, lines 587-597 |
+| `Crash`, `Retry`, orphan existence | Process interruption between the mapped awaits and a fresh call using the same input. Real markers are in `publicationBoundary`, lines 282-287. |
 
 Dispatch metadata adds pure validation and immutable lineage guards. The cross-project extension adds optional remote authority, creator and destination skill validation plus a separate parsed project-discovery input. All remain pure boundaries with no publication await or graph-reference change. It adds no publication await or reference edge. The import model starts after full bundle preparation and reference validation. It includes one dependency edge, not every record-type validation rule. Writer 2 has no dependencies. The observer's reads are deliberately not one atomic `readStore` action. Symbolic hash order and conservative list subsets overapproximate the configured callers.
 
@@ -77,3 +77,5 @@ Run the existing command before editing coverage and retain its refusal or failu
 Update the verification from that source reading. Never weaken a promise to accept a current bug. Replay any failure against actual copied production bytes and retain a filesystem witness. Rerun the two paired mutants and restored baselines. Then refresh verification digests. Advance the source commit only after reviewing its covered diff and running the updated mapping. The generator and runner never advance it automatically.
 
 Use the installed `pstack:maintain-formal-verification-skill` workflow for this pass. Keep product fixes separate. Independent source review remains the coordinator's gate.
+
+Coordinator settings add synchronous objective/role validation and descendant source checks only. The canonical publication awaits and reference graph remain unchanged. Model-policy semantics are covered by the finite dispatch property and CLI controls, outside TLC.
