@@ -24,6 +24,7 @@ export function verifyCloudPolicy({ cloud }, check) {
   }
   for (const status of cloudBounds.duplicateStatuses) for (const conflict of [false, true]) {
     const initial = submit(fresh(), job()).state; initial.jobs[0].status = status;
+    if (status === 'finished') { initial.jobs[0].completedUnits = initial.jobs[0].input.units; initial.jobs[0].output = initial.jobs[0].accumulator; }
     const duplicate = submit(initial, { ...job(), ...(conflict ? { payload: 'changed' } : {}) });
     verify(`duplicate/${status}/${conflict}`, duplicate.outcome === (conflict ? 'identity-conflict' : 'coalesced') && duplicate.state.jobs.length === 1 && duplicate.state.jobs[0].status === status);
   }
