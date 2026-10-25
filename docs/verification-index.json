@@ -172,7 +172,9 @@
         "cloud-admission"
       ],
       "properties": [
-        "cloud-admission"
+        "cloud-admission",
+        "process-incarnation",
+        "legacy-baseline"
       ]
     },
     {
@@ -269,6 +271,27 @@
     }
   ],
   "properties": [
+    {
+      "id": "process-incarnation",
+      "source": "src/process-incarnation.mjs",
+      "functions": [
+        "parseProcStat",
+        "parseProcStatus",
+        "parseProcMount",
+        "validIncarnation",
+        "compareIncarnations",
+        "ownerDecision"
+      ],
+      "statement": "Validated kernel witnesses distinguish process incarnations while missing, incomparable or unrooted namespace evidence leaves owner absence unknown."
+    },
+    {
+      "id": "legacy-baseline",
+      "source": "src/cloud-migration.mjs",
+      "functions": [
+        "assessLegacyAttestation"
+      ],
+      "statement": "Exact legacy checkpoint/report bindings, distinct attributable calls and declared review establish reported historical evidence only; fresh observed baseline and later restart remain separate live gates."
+    },
     {
       "id": "cloud-admission",
       "source": "src/cloud.mjs",

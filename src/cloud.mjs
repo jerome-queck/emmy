@@ -1,3 +1,4 @@
+import { captureProcessIncarnation, inspectOwnerIncarnation } from './process-incarnation.mjs';
 import { hostname, loadavg, availableParallelism, freemem } from 'node:os';
 import { lstat, readFile, mkdir, writeFile, statfs, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -110,16 +111,17 @@ async function ownerAt(path) {
   try { await lstat(path); } catch (error) { if (error.code === 'ENOENT') return { status: 'not-claimed' }; throw error; }
   try {
     insist((await lstat(path)).isDirectory() && !(await lstat(path)).isSymbolicLink(), 'Cloud turn claim is not an ordinary directory');
-    const file = join(path, 'owner.json'); insist((await lstat(file)).isFile() && !(await lstat(file)).isSymbolicLink(), 'Cloud turn owner is not an ordinary file');
+    const file = join(path, 'owner.json'); const info = await lstat(file); insist(info.isFile() && !info.isSymbolicLink() && info.size > 0 && info.size <= 65536, 'Cloud turn owner is not a bounded ordinary file');
     const owner = JSON.parse(await readFile(file, 'utf8'));
     insist(owner.schemaVersion === 1 && /^[a-f0-9]{64}$/.test(owner.token) && Number.isSafeInteger(owner.pid) && owner.pid > 0 && typeof owner.host === 'string' && owner.host && typeof owner.at === 'string', 'Invalid cloud turn owner'); timestamp(owner.at);
     return owner;
   } catch (error) { return { status: 'unknown', error: error.code ?? error.message }; }
 }
-function ownerStatus(owner) {
-  if (owner.status === 'unknown' || owner.host !== hostname()) return 'unknown';
-  try { process.kill(owner.pid, 0); return 'alive'; } catch (error) { return error.code === 'ESRCH' ? 'absent' : 'unknown'; }
+async function ownerStatus(owner) {
+  if (owner.status === 'unknown' || !owner.incarnation || owner.incarnation.status === 'observed' && owner.incarnation.pid !== owner.pid) return { status: 'unknown', reason: 'legacy-or-incomplete-owner-incarnation' };
+  return inspectOwnerIncarnation(owner.incarnation);
 }
+
 const limits = ['Only Emmy-owned cooperative work participates. No provider-wide enforcement or quota proof.', 'A running job is a logical checkpointed workload, not an OS process-state claim. Sleeping is not suspension.', 'Only the built-in pure sha256-chain workload executes. No network, browser, subprocess, native job or process cleanup.', 'One committed terminal effect is retained. Pure uncommitted computation may repeat after a crash. No arbitrary external exactly-once guarantee.', 'Escalations are durable pending delivery. Output is not a delivered Dot notification.', 'Fresh-process recovery is not whole-provider or power-loss durability.'];
 function view(projected, extra = {}) {
   const state = projected.state; const jobs = state?.jobs ?? [];
@@ -145,13 +147,13 @@ export async function cloud(home, { file }) {
   }
   const claimKey = projected.head?.hash ?? 'configure';
   const claimPath = join(home, 'cloud-turns', claimKey); await mkdir(join(home, 'cloud-turns'), { recursive: true });
-  const owner = { schemaVersion: 1, responsibilityId: input.responsibilityId, host: hostname(), pid: process.pid, token: randomBytes(32).toString('hex'), at, ...(input.operation === 'configure' ? { config: cloudConfig(input.config), definitionHash: scoped.definition.hash, effectKey: effectKey(scoped.definition) } : {}) };
+  const owner = { schemaVersion: 1, responsibilityId: input.responsibilityId, host: hostname(), pid: process.pid, incarnation: await captureProcessIncarnation(), token: randomBytes(32).toString('hex'), at, ...(input.operation === 'configure' ? { config: cloudConfig(input.config), definitionHash: scoped.definition.hash, effectKey: effectKey(scoped.definition) } : {}) };
   let recovered = null;
   try { await mkdir(claimPath); await writeFile(join(claimPath, 'owner.json'), canonical(owner), { flag: 'wx' }); }
   catch (error) {
     if (error.code !== 'EEXIST') throw error;
-    const prior = await ownerAt(claimPath); const status = ownerStatus(prior);
-    if (input.operation !== 'recover' || status !== 'absent' || input.expectedOwnerToken !== prior.token) return view(projected, { status: status === 'alive' ? 'busy' : 'unknown', outcome: 'turn-unresolved', turn: { status, owner: prior }, pendingEscalation: { id: digest({ claimKey, code: 'turn-unresolved' }), code: 'turn-unresolved', delivery: 'pending', storage: 'immutable-owned-turn-claim' } });
+    const prior = await ownerAt(claimPath); const inspection = await ownerStatus(prior); const status = inspection.status;
+    if (input.operation !== 'recover' || status !== 'absent' || input.expectedOwnerToken !== prior.token) return view(projected, { status: status === 'alive' ? 'busy' : 'unknown', outcome: 'turn-unresolved', turn: { status, owner: prior, inspection }, pendingEscalation: { id: digest({ claimKey, code: 'turn-unresolved' }), code: 'turn-unresolved', delivery: 'pending', storage: 'immutable-owned-turn-claim' } });
     if (projected.status === 'unconfigured') insist(prior.responsibilityId === input.responsibilityId && prior.config && prior.definitionHash && prior.effectKey === effectKey(scoped.definition), 'Abandoned configure lacks matching retained configuration');
     recovered = prior;
   }
@@ -205,9 +207,9 @@ export async function cloudStatus(home, records, id) {
     if (restore.suspended || epoch && projected.state.epochHash !== epoch.hash) statusView = { ...statusView, status: 'suspended', restore, outcome: 'restored-controller-needs-resume' };
   }
   if (owner.status === 'not-claimed') return { ...statusView, turn: { status: 'available' } };
-  const state = ownerStatus(owner); const status = state === 'alive' ? 'busy' : 'unknown';
+  const inspection = await ownerStatus(owner); const state = inspection.status; const status = state === 'alive' ? 'busy' : 'unknown';
   const escalation = { id: digest({ claimKey, code: 'turn-unresolved' }), code: 'turn-unresolved', scope: id, firstAt: owner.at ?? null, delivery: 'pending', storage: 'immutable-owned-turn-claim' };
-  return { ...statusView, status, turn: { status: state === 'absent' ? 'abandoned' : state === 'alive' ? 'busy' : 'unknown', owner }, pendingEscalations: [...(projected.state?.escalations ?? []), ...(state === 'alive' ? [] : [escalation])], outcome: 'turn-unresolved' };
+  return { ...statusView, status, turn: { status: state === 'absent' ? 'abandoned' : state === 'alive' ? 'busy' : 'unknown', owner, inspection }, pendingEscalations: [...(projected.state?.escalations ?? []), ...(state === 'alive' ? [] : [escalation])], outcome: 'turn-unresolved' };
 }
 export async function cloudHealth(home, records) {
   const ids = new Set(records.filter(record => record.type === 'cloud-request').map(record => record.responsibilityId));

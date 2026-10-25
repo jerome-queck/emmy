@@ -16,7 +16,7 @@ const evidenceDir = join(root, '.local/verification', `formal-${new Date().toISO
 await mkdir(evidenceDir, { recursive: true });
 const scratch = await mkdtemp(join(tmpdir(), 'emmy-formal-'));
 const report = { runtime: process.version, tool: 'Bounded enumeration and temporal traces of actual production functions', bounds, mutations: [], status: 'running', sourceReviewGate: !process.argv.includes('--development') };
-const modules = async path => ({ work: await import(pathToFileURL(join(path, 'src/work.mjs'))), responsibilities: await import(pathToFileURL(join(path, 'src/responsibilities.mjs'))), records: await import(pathToFileURL(join(path, 'src/records.mjs'))), dispatch: await import(pathToFileURL(join(path, 'src/dispatch.mjs'))), cloud: await import(pathToFileURL(join(path, 'src/cloud.mjs'))), calendar: await import(pathToFileURL(join(path, 'src/calendar.mjs'))) });
+const modules = async path => ({ work: await import(pathToFileURL(join(path, 'src/work.mjs'))), responsibilities: await import(pathToFileURL(join(path, 'src/responsibilities.mjs'))), records: await import(pathToFileURL(join(path, 'src/records.mjs'))), dispatch: await import(pathToFileURL(join(path, 'src/dispatch.mjs'))), cloud: await import(pathToFileURL(join(path, 'src/cloud.mjs'))), incarnation: await import(pathToFileURL(join(path, 'src/process-incarnation.mjs'))), migration: await import(pathToFileURL(join(path, 'src/cloud-migration.mjs'))), calendar: await import(pathToFileURL(join(path, 'src/calendar.mjs'))) });
 try {
   assert.ok(process.argv.length === 2 || process.argv.length === 3 && process.argv[2] === '--development', 'Use no arguments or --development');
   if (report.sourceReviewGate) {
@@ -34,7 +34,7 @@ try {
   assert.deepEqual(Object.keys(report.baseline.counts).sort(), verification.properties.map(value => value.id).sort(), 'Every metadata property executes');
   for (const mutation of mutations) {
     const candidateRoot = join(scratch, mutation.id); await mkdir(join(candidateRoot, 'src'), { recursive: true });
-    for (const name of ['records.mjs', 'work.mjs', 'responsibilities.mjs', 'dispatch.mjs', 'calendar.mjs', 'cloud.mjs', 'cloud-schema.mjs']) await cp(join(root, 'src', name), join(candidateRoot, 'src', name));
+    for (const name of ['records.mjs', 'work.mjs', 'responsibilities.mjs', 'dispatch.mjs', 'calendar.mjs', 'cloud.mjs', 'cloud-schema.mjs', 'process-incarnation.mjs', 'cloud-migration.mjs']) await cp(join(root, 'src', name), join(candidateRoot, 'src', name));
     const target = join(candidateRoot, mutation.source); let source = await readFile(target, 'utf8');
     for (const [find, replacement] of mutation.edits) { assert.equal(source.split(find).length, 2, `Mutant ${mutation.id} must target one production expression`); source = source.replace(find, replacement); }
     await writeFile(target, source); const candidate = await modules(candidateRoot); let counterexample;
