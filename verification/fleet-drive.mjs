@@ -1,0 +1,107 @@
+import assert from 'node:assert/strict';
+import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { digest, readStore } from '../src/records.mjs';
+import { replayReview } from '../src/responsibilities.mjs';
+import { spawn } from 'node:child_process';
+import { fleetCapture, fleetEntities, fleetJob } from './fleet-fixtures.mjs';
+
+export async function driveFleet({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir, children }) {
+  const selectedHome = join(home, 'fleet-drive'); await mkdir(selectedHome, { recursive: true }); await writeFile(join(selectedHome, 'bindings.json'), JSON.stringify(bindings));
+  const fixture = async (name, value) => { const path = join(selectedHome, `${name}.json`); await writeFile(path, JSON.stringify(value)); return path; };
+  const now = () => new Date().toISOString();
+  const definition = { id: 'fixture-fleet', parents: [], goal: 'Retain synthetic fleet health and bounded parent reads.', context: 'Explicitly synthetic receipts. No real account or parent acceptance.', workClass: 'coordination', action: 'monitor', resource: target.projectId, destination: 'fixture-parent', target, authorityRef: { reference: 'Synthetic owner campaign', action: 'monitor', resource: target.projectId, destination: 'fixture-parent' }, criteria: [{ id: 'receipts', evidence: 'reported-check', description: 'Parent receipt remains separately reported.' }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'fixture-fleet', method: 'Retain scoped parent receipts.', intendedEffect: 'Retain synthetic fleet outcomes.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' } };
+  await run(['responsibility', '--file', await fixture('definition', definition)], 0, selectedHome);
+  let last; let ordinal = 0;
+  const call = async (action, expected = 3, evidence = [], overrides = {}) => {
+    const input = { schemaVersion: 1, responsibilityId: definition.id, ...(last?.headHash && action.operation !== 'configure' ? { expectedHead: last.headHash } : {}), action, evidence, ...overrides };
+    const file = await fixture(`input-${ordinal++}`, input); const result = await run(['fleet', '--file', file], expected, selectedHome); if (result.headHash) last = result; return { result, file, input };
+  };
+  const receipts = async captures => {
+    const evidence = [];
+    for (const capture of captures) { const bytes = Buffer.from(JSON.stringify({ synthetic: true, capture: { ...capture, receipt: undefined } })); const path = join(selectedHome, `receipt-${ordinal++}.json`); await writeFile(path, bytes); capture.receipt.sha256 = digest(bytes); evidence.push({ path, sha256: digest(bytes), sourceRef: capture.receipt.sourceRef }); }
+    return evidence;
+  };
+  const assess = async (captures, expected = 3) => call({ operation: 'assess', captures }, expected, await receipts(captures));
+  const currentCapture = (id, condition = 'healthy', changes = {}) => fleetCapture(id, condition, now(), changes);
+  await call({ operation: 'configure', config: { retryMs: 1 }, entities: fleetEntities.map(entity => ({ ...entity, ...(entity.dueAt ? { dueAt: new Date(Date.now() - 1000).toISOString() } : {}) })) });
+  await assess(fleetEntities.map(entity => currentCapture(entity.id)), 0); assert.equal(last.pendingAlerts.length, 0);
+  const interruptionInput = { schemaVersion: 1, responsibilityId: definition.id, expectedHead: last.headHash, action: { operation: 'assess', captures: [] } };
+  const interruptionFile = await fixture('interruption-input', interruptionInput); const markerPath = join(selectedHome, 'interruption-marker.json');
+  const args = ['fleet', '--file', interruptionFile, '--root', root, '--home', selectedHome];
+  const child = spawn(process.execPath, [join(sourceRoot, 'scripts/agent.mjs'), ...args], { env: { ...process.env, EMMY_VERIFY_BOUNDARY: 'record:created', EMMY_VERIFY_BOUNDARY_FILE: markerPath } }); children.add(child);
+  const interrupted = { args, home: selectedHome, stdout: '', stderr: '', synthetic: true }; child.stdout.on('data', bytes => { interrupted.stdout += bytes; }); child.stderr.on('data', bytes => { interrupted.stderr += bytes; });
+  const completion = new Promise((resolve, reject) => { child.on('error', reject); child.on('close', (code, signal) => { children.delete(child); Object.assign(interrupted, { code, signal }); resolve(); }); });
+  try {
+    const deadline = Date.now() + 10000; let marker;
+    while (!marker && Date.now() < deadline) { try { const bytes = await readFile(markerPath, 'utf8'); if (bytes.endsWith('\n')) marker = JSON.parse(bytes); } catch (error) { if (error.code !== 'ENOENT') throw error; } if (!marker) await new Promise(resolve => setTimeout(resolve, 10)); }
+    assert.equal(marker?.boundary, 'record:created'); child.kill('SIGKILL'); await completion; assert.equal(interrupted.signal, 'SIGKILL');
+    report.fleetInterruption = { marker, intentWasDurable: true, parentReadExecuted: false }; report.commands.push(interrupted);
+    const blockedBackup = await run(['backup', '--to', join(root, 'fleet-interrupted-backup')], 2, selectedHome); assert.match(blockedBackup.error, /unresolved fleet journal turn/);
+    const resumed = await run(['fleet', '--file', interruptionFile], 0, selectedHome); assert.equal(resumed.outcome, 'reconciled-publication'); assert.equal(resumed.ticket, null); last = resumed;
+  } finally { if (children.has(child)) { child.kill('SIGKILL'); await completion; } }
+  const healthyHead = last.headHash;
+  const first = await assess([currentCapture('protected', 'login-expired')]); const failureId = last.pendingAlerts[0].id; const failureCount = last.state.alerts.length;
+  await run(['fleet', '--file', first.file], 3, selectedHome); assert.equal((await readStore(selectedHome)).records.filter(row => row.type === 'fleet-step' && row.parentHash === healthyHead).length, 1);
+  await assess([currentCapture('protected', 'login-expired')]); assert.equal(last.state.alerts.length, failureCount, 'Refreshed same failure creates no new alert');
+  const correctionBytes = Buffer.from('Synthetic owner corrected this exact source and dismissed its old episode.'); const correctionPath = join(selectedHome, 'owner-correction.txt'); await writeFile(correctionPath, correctionBytes); const correctionEvidence = [{ path: correctionPath, sha256: digest(correctionBytes), sourceRef: 'fixture-owner-correction' }];
+  await call({ operation: 'correct', entityId: 'protected', sourceRef: 'fixture-owner-correction', reason: 'Use the exact browser account and preserve connector coverage separately.' }, 3, correctionEvidence);
+  await call({ operation: 'dismiss', alertId: failureId, sourceRef: 'fixture-owner-correction', reason: 'Dismiss only this retained episode.' }, 3, correctionEvidence);
+  assert.equal(last.pendingAlerts.some(alert => alert.id === failureId), false); assert.equal(last.inventory.find(row => row.expected.id === 'protected').condition, 'login-expired');
+  await call({ operation: 'dismiss', alertId: 'f'.repeat(64), sourceRef: 'fixture-owner-correction', reason: 'Invalid cross-episode dismissal.' }, 2, correctionEvidence);
+  await assess([currentCapture('protected')]); assert.equal(last.state.alerts.at(-1).condition, 'recovered');
+  await assess([currentCapture('protected', 'login-expired')]); assert.notEqual(last.state.alerts.at(-1).id, failureId);
+  const stale = currentCapture('protected'); stale.receipt.observedAt = new Date(Date.now() - 300001).toISOString();
+  await assess([stale], 2);
+  const staleHome = join(home, 'fleet-staleness'); await mkdir(staleHome, { recursive: true }); await writeFile(join(staleHome, 'bindings.json'), JSON.stringify(bindings));
+  await run(['responsibility', '--file', await fixture('stale-definition', definition)], 0, staleHome);
+  const staleConfigured = await run(['fleet', '--file', await fixture('stale-configure', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'configure', entities: [fleetEntities[0]] } })], 3, staleHome);
+  const staleMonitor = currentCapture('monitor'); staleMonitor.receipt.observedAt = new Date(Date.now() - 300001).toISOString(); const staleEvidence = await receipts([staleMonitor]);
+  const staleResult = await run(['fleet', '--file', await fixture('stale-assess', { schemaVersion: 1, responsibilityId: definition.id, expectedHead: staleConfigured.headHash, action: { operation: 'assess', captures: [staleMonitor] }, evidence: staleEvidence })], 3, staleHome);
+  assert.equal(staleResult.inventory[0].condition, 'stale-source'); assert.equal(staleResult.pendingAlerts[0].condition, 'stale-source'); await cp(staleHome, join(evidenceDir, 'fleet-staleness'), { recursive: true });
+  await assess([currentCapture('monitor', 'monitoring-failed'), currentCapture('protected')]); assert.equal(last.inventory.find(row => row.expected.id === 'protected').condition, 'unknown');
+  await assess([currentCapture('monitor'), currentCapture('protected'), currentCapture('routine', 'healthy', { enabled: false })]); assert.equal(last.inventory.find(row => row.expected.id === 'routine').issueKey, 'disabled-run');
+  const captureWithGap = currentCapture('protected'); captureWithGap.receipt.coverage = { complete: false, gaps: ['missing protected account read'] };
+  await assess([captureWithGap]); assert.equal(last.inventory.find(row => row.expected.id === 'protected').condition, 'unknown');
+  const body = Buffer.from('Synthetic meaningful failure. Parent must inspect the exact blocked source.'); const bodyPath = join(selectedHome, 'message-body.txt'); await writeFile(bodyPath, body); const alertId = last.pendingAlerts[0].id;
+  const send = { operation: 'send-intent', alertId, bodyDigest: digest(body), sendRef: 'fixture-parent-send' };
+  const sending = await call(send, 3, [{ path: bodyPath, sha256: digest(body), sourceRef: 'fixture-message-body' }]); assert.equal(last.uncertainAlerts.some(alert => alert.id === alertId), true);
+  await run(['fleet', '--file', sending.file], 3, selectedHome); await call(send, 2, [{ path: bodyPath, sha256: digest(body), sourceRef: 'fixture-message-body' }]);
+  const readbackBytes = Buffer.from('Synthetic separate parent conversation readback, not real delivery.'); const readbackPath = join(selectedHome, 'message-readback.txt'); await writeFile(readbackPath, readbackBytes);
+  await call({ ...send, operation: 'send-ack', readbackRef: 'fixture-separate-readback' }, 3, [{ path: readbackPath, sha256: digest(readbackBytes), sourceRef: 'fixture-separate-readback' }]); assert.equal(last.state.alerts.find(alert => alert.id === alertId).delivery, 'delivered');
+  await assess([currentCapture('protected'), currentCapture('routine')]);
+  const job = fleetJob(); await call({ operation: 'submit', job }); await call({ operation: 'submit', job }); assert.equal(last.state.jobs.length, 1);
+  await call({ operation: 'submit', job: { ...job, maxReads: 2 } }, 2);
+  const admission = await call({ operation: 'claim', ownerRef: 'fixture-parent' }); const ticket = admission.result.ticket; assert.ok(ticket); assert.equal(ticket.input.maxReads, 1);
+  const repeatedAdmission = await run(['fleet', '--file', admission.file], 3, selectedHome); assert.equal(repeatedAdmission.ticket, null);
+  const capture = currentCapture('protected'); const evidence = await receipts([capture]);
+  await call({ operation: 'result', jobKey: ticket.key, ticket: ticket.ticket, checkpoint: 0, outcome: 'uncertain', usage: { reads: 1, bytes: 4096 }, receipt: capture.receipt }, 3, evidence);
+  await call({ operation: 'claim', ownerRef: 'fixture-parent' }); assert.equal(last.outcome, 'reconcile-before-admission'); assert.equal(last.ticket, null);
+  const resolution = { operation: 'resolve', jobKey: ticket.key, ticket: ticket.ticket, checkpoint: 1, outcome: 'completed', usage: { reads: 1, bytes: 4096 }, receipt: capture.receipt, reason: 'Inspected the actual synthetic read receipt after a lost response.' };
+  const resolved = await call(resolution, 3, evidence); assert.equal(last.state.jobs[0].status, 'completed'); await run(['fleet', '--file', resolved.file], 3, selectedHome);
+  await call({ operation: 'submit', job }); assert.equal(last.state.jobs.length, 1);
+  await call({ operation: 'submit', job: fleetJob('heavy-one', 'heavy') });
+  await call({ operation: 'submit', job: fleetJob('heavy-two', 'heavy') });
+  await call({ operation: 'submit', job: fleetJob('heavy-overflow', 'heavy') }); assert.equal(last.outcome, 'backpressure');
+  await call({ operation: 'submit', job: fleetJob('morning', 'morning') });
+  await call({ operation: 'submit', job: fleetJob('interactive', 'interactive') }); assert.equal(last.state.jobs.filter(row => row.status === 'queued').length, 4);
+  await assess([currentCapture('monitor', 'resource-pressure')]); await call({ operation: 'claim', ownerRef: 'fixture-parent' }); assert.equal(last.ticket, null); assert.equal(last.outcome, 'resource-pressure');
+  const review = await run(['reconcile', '--id', definition.id, '--as-of', now()], 3, selectedHome); const stored = (await readStore(selectedHome)).records; const retainedReview = review.responsibilities[0].record;
+  assert.deepEqual(replayReview(retainedReview, stored).fleet, retainedReview.fleet);
+  assert.equal((await run(['doctor'], 3, selectedHome)).store.fleetNeedsAttention, true);
+  const archive = join(root, 'fleet-archive'); await run(['backup', '--to', archive], 0, selectedHome);
+  const restored = join(home, 'fleet-restored'); await run(['restore', '--from', archive, '--into', restored], 0, selectedHome);
+  const restoredStatusFile = await fixture('restored-status', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'status' } });
+  const restoredView = await run(['fleet', '--file', restoredStatusFile], 3, restored); assert.equal(restoredView.status, 'suspended'); assert.ok(restoredView.inventory.every(row => row.condition === 'unknown'));
+  await run(['fleet', '--file', await fixture('restore-claim', { schemaVersion: 1, responsibilityId: definition.id, expectedHead: restoredView.headHash, action: { operation: 'claim', ownerRef: 'fixture-parent' } })], 2, restored);
+  const signinBase = { schemaVersion: 1, service: 'fixture-service', account: 'fixture-owner', provider: 'fixture-provider', environment: 'fixture-parent', surface: 'browser', sourceRef: 'fixture-protected-login', observedAt: now(), state: 'password', secureForm: true };
+  assert.equal((await run(['signin', '--file', await fixture('signin-form', signinBase)], 3, selectedHome)).status, 'secure-form-needed');
+  assert.equal((await run(['signin', '--file', await fixture('signin-wrong-issuer', { ...signinBase, state: 'mfa', mfa: 'otp', issuingService: 'other-service' })], 3, selectedHome)).status, 'issuer-mismatch-stop');
+  assert.equal((await run(['signin', '--file', await fixture('signin-protected', { ...signinBase, state: 'authenticated', protectedAccount: signinBase.account, protectedContent: true })], 0, selectedHome)).status, 'recovered');
+  const secretFile = join(selectedHome, 'rejected-secret.json'); await writeFile(secretFile, JSON.stringify({ ...signinBase, password: 'synthetic-rejected-field' })); await run(['signin', '--file', secretFile], 2, selectedHome);
+  report.retainedFleet = join(evidenceDir, 'fleet'); await cp(selectedHome, report.retainedFleet, { recursive: true });
+  assert.equal((await readStore(report.retainedFleet)).records.filter(row => row.type === 'fleet-step').length, stored.filter(row => row.type === 'fleet-step').length);
+  report.fleet = { synthetic: true, records: stored.length, jobs: last.state.jobs.length, alerts: last.state.alerts.length, liveToolsInvoked: false, actualDotDelivery: 'not-tested', retainedHome: report.retainedFleet };
+  scenario('fleet-health', 'Fresh-process CLI health, scoped failure/recovery/recurrence, stale and partial coverage, monitor failure, durable corrections/dismissals, interrupted pure-publication replay and backup refusal, parent admission/uncertainty/checkpoint/result dedup, reservations, pressure, reported send/readback, replay, archive and restore.');
+  scenario('signin-recovery', 'Real CLI decision path selects secure form, rejects mismatched OTP issuer and secret fields, and requires protected same-account proof. No login performed.');
+}

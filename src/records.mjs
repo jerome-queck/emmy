@@ -1,4 +1,7 @@
 import { parseCloudRecord } from './cloud-schema.mjs';
+import { parseFleetRecord } from './fleet-schema.mjs';
+import { fleetInitial, fleetTransition } from './fleet-state.mjs';
+import { effectKey } from './work.mjs';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, readdir, rename, rm, writeFile, lstat } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
@@ -267,7 +270,7 @@ export function parseImport(input) {
   });
 }
 
-const recordTypes = ['definition', 'observation', 'repair', 'review', 'feature-review', 'probe', 'epoch', 'cloud-request', 'cloud-step'];
+const recordTypes = ['definition', 'observation', 'repair', 'review', 'feature-review', 'probe', 'epoch', 'cloud-request', 'cloud-step', 'fleet-root', 'fleet-step'];
 export const publicationBoundaries = ['record:created', 'record:files-written', 'record:published', 'archive:created', 'archive:files-written', 'archive:published', 'restore:created', 'restore:files-written', 'restore:published'];
 
 export async function publicationBoundary(boundary) {
@@ -280,6 +283,7 @@ export async function publicationBoundary(boundary) {
 export function recordPayload(payload, extraFiles = {}) {
   requireValue(recordTypes.includes(payload.type), 'Unknown record type');
   if (payload.type.startsWith('cloud-')) parseCloudRecord(payload);
+  if (payload.type.startsWith('fleet-')) parseFleetRecord(payload);
   requireValue(!Object.hasOwn(payload, 'hash') && !Object.hasOwn(payload, 'fileDigests'), 'Payload uses reserved record metadata');
   const fileDigests = Object.fromEntries(Object.entries(extraFiles).map(([name, bytes]) => {
     requireValue(/^[a-z][a-z0-9.-]*$/.test(name) && name !== 'record.json', 'Invalid record filename');
@@ -317,6 +321,7 @@ export async function readRecord(home, reference) {
   const { hash: storedHash, ...body } = record;
   requireValue(storedHash === reference && digest(body) === reference && recordTypes.includes(record.type), 'Immutable record digest mismatch');
   if (record.type.startsWith('cloud-')) parseCloudRecord(record);
+  if (record.type.startsWith('fleet-')) parseFleetRecord(record);
   const files = record.fileDigests ?? {};
   requireValue(canonical((await readdir(directory)).sort()) === canonical(['record.json', ...Object.keys(files)].sort()), 'Immutable record has unexpected or missing files');
   for (const [name, expected] of Object.entries(files)) {
@@ -347,6 +352,8 @@ export function references(record) {
   if (record.type === 'epoch') return record.priorHashes;
   if (record.type === 'cloud-request') return [record.definitionHash];
   if (record.type === 'cloud-step') return [...new Set([record.definitionHash, record.rootHash, record.parentHash, ...(record.state.epochHash ? [record.state.epochHash] : [])])];
+  if (record.type === 'fleet-root') return [record.definitionHash, ...(record.epochHash ? [record.epochHash] : [])];
+  if (record.type === 'fleet-step') return [...new Set([record.definitionHash, record.rootHash, record.parentHash, ...(record.epochHash ? [record.epochHash] : [])])];
   return [];
 }
 
@@ -355,6 +362,19 @@ export function validateReferences(records) {
   for (const record of records) for (const ref of references(record)) requireValue(known.has(ref), `Missing referenced record ${ref}`);
   const responsibilityIds = new Set(records.filter(record => record.type === 'definition').map(record => record.id));
   for (const record of records.filter(record => record.responsibilityId)) requireValue(responsibilityIds.has(record.responsibilityId), 'Record names an undefined responsibility');
+  for (const record of records.filter(record => record.type.startsWith('fleet-'))) {
+    parseFleetRecord(record); const definition = known.get(record.definitionHash);
+    requireValue(definition.type === 'definition' && definition.id === record.responsibilityId && effectKey(definition) === record.effectKey, 'Fleet definition or effect crosses responsibility');
+    if (record.epochHash) requireValue(known.get(record.epochHash).type === 'epoch', 'Fleet epoch is not an epoch');
+    for (const receipt of [...(record.action.captures ?? []).map(capture => capture.receipt), ...(record.action.receipt ? [record.action.receipt] : [])]) requireValue(Object.values(record.fileDigests ?? {}).includes(receipt.sha256), 'Fleet receipt bytes are not retained by this event');
+    if (record.type === 'fleet-root') continue;
+    const root = known.get(record.rootHash); const parent = known.get(record.parentHash);
+    requireValue(root.type === 'fleet-root' && root.responsibilityId === record.responsibilityId && root.effectKey === record.effectKey && parent.responsibilityId === record.responsibilityId && (parent.hash === root.hash || parent.type === 'fleet-step' && parent.rootHash === root.hash), 'Fleet lineage crosses controller scope');
+    requireValue(record.seq === (parent.seq ?? 0) + 1 && Date.parse(record.at) >= Date.parse(parent.at), 'Fleet sequence or clock is not a direct successor');
+    requireValue(record.action.operation === 'resume' || record.epochHash === parent.epochHash, 'Fleet epoch requires explicit resume');
+    const transition = fleetTransition(parent.type === 'fleet-root' ? fleetInitial(root) : parent.state, record.action, root, record.at, record.epochHash);
+    requireValue(canonical(transition.state) === canonical(record.state) && transition.outcome === record.outcome, 'Fleet state differs from deterministic retained transition');
+  }
   for (const record of records.filter(record => record.type.startsWith('cloud-'))) {
     parseCloudRecord(record);
     const definition = known.get(record.definitionHash);
@@ -503,6 +523,13 @@ async function exists(path) {
 export async function backupHome(home, destination) {
   requireValue(resolve(home) !== resolve(destination) && !within(home, destination) && !within(destination, home), 'Backup destination must be separate from the private home');
   const snapshot = await readStore(home);
+  let fleetTurns = [];
+  try { fleetTurns = (await readdir(join(home, 'fleet-turns'))).filter(name => name.endsWith('.json')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  for (const name of fleetTurns) {
+    const turn = await readJson(join(home, 'fleet-turns', name));
+    const planned = recordPayload(turn.payload, Object.fromEntries(Object.entries(turn.files).map(([key, bytes]) => [key, Buffer.from(bytes, 'base64')])));
+    requireValue(snapshot.records.some(record => record.hash === planned.hash), 'Backup refuses an unresolved fleet journal turn. Repeat its exact retained input first.');
+  }
   const cloudRoots = snapshot.records.filter(record => record.type === 'cloud-request');
   const cloudParents = new Set(snapshot.records.filter(record => record.type === 'cloud-step').map(record => record.parentHash));
   const cloudHeads = snapshot.records.filter(record => record.type.startsWith('cloud-') && !cloudParents.has(record.hash));
