@@ -71,6 +71,22 @@ test('strict boundaries reject duplicate keys, secrets, unsupported work and rec
   assert.throws(() => actionInput({ operation: 'submit', job: fleetJob(), captures: [{ password: 'synthetic-unused-secret-field' }] }), /fields/);
   assert.throws(() => actionInput({ operation: 'configure', entities: [{ ...fleetEntities[0], monitorId: 'other' }] }), /monitor/);
   assert.throws(() => signinDecision({ password: 'synthetic-never-a-real-secret' }, fleetTime), /fields/);
+  const signin = { schemaVersion: 1, service: 'fixture', account: 'owner', provider: 'fixture', environment: 'fixture', surface: 'browser', sourceRef: 'fixture', observedAt: fleetTime, state: 'password', secureForm: true };
+  assert.throws(() => signinDecision({ ...signin, denial: { password: 'synthetic-unused-secret' } }, fleetTime), /Denial metadata/);
+  assert.throws(() => signinDecision({ ...signin, mfa: { password: 'synthetic-unused-secret' } }, fleetTime), /MFA metadata/);
+  assert.throws(() => signinDecision({ ...signin, observedAt: '2026-10-25T10:00:00.000Z', state: 'denied', denial: { password: 'synthetic-stale-secret-field' } }, fleetTime), /fields/);
+  assert.throws(() => signinDecision({ ...signin, observedAt: '2026-10-25T10:00:00.000Z', state: 'mfa', mfa: { password: 'synthetic-stale-secret-field' } }, fleetTime), /MFA handoff/);
+});
+test('successful acquisitions stay inside the ticket interval; delayed reconciliation does not refresh old work', () => {
+  let state = fleetTransition(healthy(), { operation: 'submit', job: fleetJob() }, fleetRoot, fleetTime).state;
+  state = fleetTransition(state, { operation: 'claim', ownerRef: 'fixture-parent' }, fleetRoot, fleetTime).state;
+  const job = state.jobs[0]; const late = '2026-10-25T12:05:00.001Z';
+  const result = { operation: 'resolve', jobKey: job.key, ticket: job.ticket, checkpoint: 1, outcome: 'completed', reason: 'Inspect original receipt.', usage: { reads: 1, bytes: 4096 }, receipt: fleetReceipt('protected', late) };
+  assert.throws(() => fleetTransition(state, result, fleetRoot, late), /after the ticket deadline/);
+  const oldSource = fleetReceipt('protected', fleetTime, { observedAt: '2026-10-25T11:00:00.000Z' });
+  assert.equal(fleetTransition(state, { ...result, receipt: oldSource }, fleetRoot, late).state.jobs[0].status, 'completed');
+  const noEffect = { ...result, checkpoint: 0, outcome: 'known-unexecuted', usage: { reads: 0, bytes: 32 } };
+  assert.equal(fleetTransition(state, noEffect, fleetRoot, late).state.jobs[0].status, 'retry-wait');
 });
 test('sign-in chooses secure form, matching one-use OTP, scoped retry and protected account verification', () => {
   const input = { schemaVersion: 1, service: 'fixture-service', account: 'fixture-owner', provider: 'fixture-provider', environment: 'fixture-parent', surface: 'browser', sourceRef: 'fixture-current-login', observedAt: fleetTime, state: 'password', secureForm: true, authHandoff: true };

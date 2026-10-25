@@ -16,5 +16,6 @@ export const fleetMutations = [
   mutant('rebind-inventory', 'existing.expected.kind === expected.kind && canonical(existing.expected.scope) === canonical(expected.scope)', 'true', 'inventory/scope'),
   mutant('weaken-inventory-age', "insist((expected.maxAgeMs ?? config.maxAgeMs) <= config.maxAgeMs, 'Entity age cannot weaken configured freshness');", "insist(true, 'Entity age cannot weaken configured freshness');", 'inventory/freshness'),
   mutant('borrow-old-run', '|| capture.runDueAt !== entity.expected.dueAt', '|| false', 'schedule/window'),
-  mutant('ignore-source-identity', 'identity.some(([expected, actual]) => entity.expected[expected] !== capture[actual])', 'false', 'source/digest-drift')
+  mutant('ignore-source-identity', 'identity.some(([expected, actual]) => entity.expected[expected] !== capture[actual])', 'false', 'source/digest-drift'),
+  mutant('ignore-acquisition-deadline', "!['completed', 'checkpoint'].includes(action.outcome) || Date.parse(action.receipt.capturedAt) <= Date.parse(job.deadline)", 'true', 'job/window/late-capture')
 ];

@@ -92,6 +92,19 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   await call({ operation: 'claim', ownerRef: 'fixture-parent' }); assert.equal(last.outcome, 'reconcile-before-admission'); assert.equal(last.ticket, null);
   const resolution = { operation: 'resolve', jobKey: ticket.key, ticket: ticket.ticket, checkpoint: 1, outcome: 'completed', usage: { reads: 1, bytes: 4096 }, receipt: capture.receipt, reason: 'Inspected the actual synthetic read receipt after a lost response.' };
   const resolved = await call(resolution, 3, evidence); assert.equal(last.state.jobs[0].status, 'completed'); await run(['fleet', '--file', resolved.file], 3, selectedHome);
+  const timeoutHome = join(home, 'fleet-timeout'); await mkdir(timeoutHome, { recursive: true }); await writeFile(join(timeoutHome, 'bindings.json'), JSON.stringify(bindings));
+  await run(['responsibility', '--file', await fixture('timeout-definition', definition)], 0, timeoutHome);
+  let timeoutView = await run(['fleet', '--file', await fixture('timeout-configure', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'configure', config: { attemptMs: 2000 }, entities: fleetEntities.slice(0, 2) } })], 3, timeoutHome);
+  const timeoutCall = async (name, action, expected = 3, evidence = []) => { const data = await run(['fleet', '--file', await fixture(name, { schemaVersion: 1, responsibilityId: definition.id, expectedHead: timeoutView.headHash, action, evidence })], expected, timeoutHome); if (data.headHash) timeoutView = data; return data; };
+  await timeoutCall('timeout-submit', { operation: 'submit', job: fleetJob('deadline-read') });
+  const timeoutAdmission = await timeoutCall('timeout-claim', { operation: 'claim', ownerRef: 'fixture-parent' }); const deadlineTicket = timeoutAdmission.ticket; assert.ok(deadlineTicket, 'A fresh admission ticket must actually be returned before this timeout control.');
+  const acquiredInside = currentCapture('protected'); acquiredInside.receipt.observedAt = new Date(Date.now() - 3600000).toISOString(); const insideEvidence = await receipts([acquiredInside]);
+  while (Date.now() <= Date.parse(deadlineTicket.deadline)) await new Promise(resolve => setTimeout(resolve, Math.min(25, Math.max(1, Date.parse(deadlineTicket.deadline) - Date.now() + 1))));
+  const acquiredLate = currentCapture('protected'); const lateEvidence = await receipts([acquiredLate]);
+  const deadlineResult = { operation: 'resolve', jobKey: deadlineTicket.key, ticket: deadlineTicket.ticket, checkpoint: 1, outcome: 'completed', reason: 'Inspect the actual synthetic acquisition time.', usage: { reads: 1, bytes: 4096 }, receipt: acquiredLate.receipt };
+  const refusedLate = await timeoutCall('timeout-late-result', deadlineResult, 2, lateEvidence); assert.match(refusedLate.error, /after the ticket deadline/);
+  await timeoutCall('timeout-inside-result', { ...deadlineResult, receipt: acquiredInside.receipt }, 3, insideEvidence); assert.equal(timeoutView.state.jobs[0].status, 'completed');
+  report.fleetTimeout = { synthetic: true, freshTicketReturned: true, lateAcquisitionRefused: true, delayedInWindowAcquisitionAccepted: true, underlyingOldSourceRemainsReported: true };
   await call({ operation: 'submit', job }); assert.equal(last.state.jobs.length, 1);
   await call({ operation: 'submit', job: fleetJob('heavy-one', 'heavy') });
   await call({ operation: 'submit', job: fleetJob('heavy-two', 'heavy') });
@@ -112,6 +125,8 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   assert.equal((await run(['signin', '--file', await fixture('signin-wrong-issuer', { ...signinBase, state: 'mfa', mfa: 'otp', issuingService: 'other-service' })], 3, selectedHome)).status, 'issuer-mismatch-stop');
   assert.equal((await run(['signin', '--file', await fixture('signin-protected', { ...signinBase, state: 'authenticated', protectedAccount: signinBase.account, protectedContent: true })], 0, selectedHome)).status, 'recovered');
   const secretFile = join(selectedHome, 'rejected-secret.json'); await writeFile(secretFile, JSON.stringify({ ...signinBase, password: 'synthetic-rejected-field' })); await run(['signin', '--file', secretFile], 2, selectedHome);
+  for (const [name, extra] of [['denial', { denial: { password: 'synthetic-unused-secret-field' } }], ['mfa', { mfa: { password: 'synthetic-unused-secret-field' } }]]) await run(['signin', '--file', await fixture(`rejected-unused-${name}`, { ...signinBase, ...extra })], 2, selectedHome);
+  for (const state of ['denied', 'mfa']) await run(['signin', '--file', await fixture(`rejected-stale-${state}`, { ...signinBase, observedAt: new Date(Date.now() - 300001).toISOString(), state, [state === 'denied' ? 'denial' : 'mfa']: { password: 'synthetic-stale-secret-field' } })], 2, selectedHome);
   report.retainedFleet = join(evidenceDir, 'fleet'); await cp(selectedHome, report.retainedFleet, { recursive: true });
   assert.equal((await readStore(report.retainedFleet)).records.filter(row => row.type === 'fleet-step').length, stored.filter(row => row.type === 'fleet-step').length);
   report.fleet = { synthetic: true, records: stored.length, jobs: last.state.jobs.length, alerts: last.state.alerts.length, liveToolsInvoked: false, actualDotDelivery: 'not-tested', retainedHome: report.retainedFleet };

@@ -605,7 +605,7 @@ try {
   }
   try { await cp(join(home, 'briefing'), join(evidenceDir, 'briefing'), { recursive: true }); report.retainedBriefing = join(evidenceDir, 'briefing'); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.briefingCopyError = error.message; process.exitCode = 1; } }
   try { await cp(join(home, 'calendar'), join(evidenceDir, 'calendar'), { recursive: true, filter: path => path !== join(home, 'calendar', 'fifo') }); } catch (error) { if (error.code !== 'ENOENT' || report.calendar) { report.status = 'failed'; report.calendarCopyError = error.message; process.exitCode = 1; } }
-  for (const [source, destination] of [['fleet-drive', 'fleet'], ['fleet-staleness', 'fleet-staleness'], ['fleet-restored', 'fleet-restored']]) {
+  for (const [source, destination] of [['fleet-drive', 'fleet'], ['fleet-staleness', 'fleet-staleness'], ['fleet-restored', 'fleet-restored'], ['fleet-timeout', 'fleet-timeout']]) {
     try { await cp(join(home, source), join(evidenceDir, destination), { recursive: true }); if (destination === 'fleet') report.retainedFleet = join(evidenceDir, destination); }
     catch (error) { if (error.code !== 'ENOENT' || report.fleet) { report.status = 'failed'; report.fleetCopyError = error.message; process.exitCode = 1; } }
   }

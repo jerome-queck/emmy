@@ -60,7 +60,7 @@ Backup checks for unresolved current/configuration claims before selecting archi
 
 Fleet adds definition/root/parent/epoch reference edges and synchronous replay validation through `fleet-schema.mjs`, `fleet-state.mjs` and `work.mjs`. The copied-source filesystem driver includes this dependency closure. Canonical publisher, rename, per-file readback, pending cleanup and importer awaits retain their mapped operations. The same one-edge import and canonical byte-publication model remains unchanged.
 
-The complete per-head hard-linked fleet intent, its exclusive selection, bounded real input reads, external parent tickets, health classification, send/readback semantics and backup preflight remain outside TLC. Actual stopped-writer replay and backup refusal are CLI controls. The 73 finite fleet predicates and seventeen paired mutants cover their declared pure domain. None establishes native source truth, actual tools, account recovery, message delivery or external exactly-once behavior.
+The complete per-head hard-linked fleet intent, its exclusive selection, bounded real input reads, external parent tickets, health classification, send/readback semantics and backup preflight remain outside TLC. Actual stopped-writer replay and backup refusal are CLI controls. The 77 finite fleet predicates and eighteen paired mutants cover their declared pure domain. None establishes native source truth, actual tools, account recovery, message delivery or external exactly-once behavior.
 
 ## Replay a counterexample
 

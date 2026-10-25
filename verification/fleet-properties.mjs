@@ -1,7 +1,7 @@
 import { digest } from '../src/records.mjs';
 import { fleetCapture, fleetEntities, fleetJob, fleetReceipt, fleetRoot, fleetTime } from './fleet-fixtures.mjs';
 
-export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 73, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
+export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 77, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
 export function verifyFleetPolicy({ fleet }, check) {
   let cases = 0;
   const expect = (name, ok, message) => { cases++; check('fleet-contract', { case: name }, ok, message); };
@@ -70,6 +70,12 @@ export function verifyFleetPolicy({ fleet }, check) {
   const completed = transition(admitted.state, completion).state;
   expect('job/terminal', completed.jobs[0].status === 'completed' && transition(completed, request).state.jobs.length === 1, 'Terminal acquisition and effect identity survive repeat submit.');
   expect('job/result-dedup', transition(completed, completion).outcome === 'coalesced', 'Identical terminal results coalesce.');
+  const lateAt = '2026-10-25T12:05:00.001Z';
+  const lateResult = { ...completion, operation: 'resolve', reason: 'Inspect original acquisition.', receipt: fleetReceipt('protected', lateAt) };
+  expect('job/window/late-capture', rejects(() => transition(admitted.state, lateResult, lateAt)), 'A newly acquired post-deadline read cannot complete the expired ticket.');
+  expect('job/window/delayed-result', transition(admitted.state, { ...lateResult, receipt: fleetReceipt() }, lateAt).state.jobs[0].status === 'completed', 'Delayed reconciliation can retain a genuine in-window acquisition.');
+  expect('job/window/old-source', transition(admitted.state, { ...lateResult, receipt: fleetReceipt('protected', fleetTime, { observedAt: '2026-10-25T11:00:00.000Z' }) }, lateAt).state.jobs[0].status === 'completed', 'Acquiring old source content does not refresh its underlying source time.');
+  expect('job/window/no-effect', transition(admitted.state, { ...lateResult, checkpoint: 0, outcome: 'known-unexecuted', usage: { reads: 0, bytes: 32 } }, lateAt).state.jobs[0].status === 'retry-wait', 'Post-timeout no-effect inspection can reconcile uncertainty without claiming successful work.');
   const pressure = green(); pressure.entities[0].capture = fleetCapture('monitor', 'resource-pressure'); pressure.jobs = queued.jobs;
   expect('job/pressure', transition(pressure, { operation: 'claim', ownerRef: 'parent' }).ticket === null, 'Explicit pressure defers monitoring reads.');
   let priority = transition(green(), { operation: 'submit', job: fleetJob('heavy', 'heavy') }).state;

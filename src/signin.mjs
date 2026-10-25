@@ -8,6 +8,14 @@ export function signinDecision(input, at) {
   for (const field of ['account', 'provider', 'loginService', 'issuingService', 'protectedAccount']) if (input[field] !== undefined) insist(text(input[field]), `Invalid ${field}`);
   for (const field of ['secureForm', 'authHandoff', 'protectedContent']) if (input[field] !== undefined) insist(typeof input[field] === 'boolean', `Invalid ${field}`);
   insist(['login-required', 'password', 'mfa', 'verify', 'authenticated', 'denied', 'uncertain', 'unavailable'].includes(input.state), 'Invalid sign-in state');
+  insist(input.state === 'denied' || input.denial === undefined && input.retry === undefined, 'Denial metadata requires the denied state');
+  insist(input.state === 'mfa' || input.mfa === undefined && input.issuingService === undefined && input.loginService === undefined, 'MFA metadata requires the mfa state');
+  if (input.state === 'mfa') insist(['otp', 'number-matching', 'owner-approval'].includes(input.mfa), 'Unsupported MFA handoff');
+  if (input.state === 'denied') {
+    shape(input.denial, ['sourceRef', 'scope', 'knownUnexecuted', 'persistent'], 'denial');
+    insist(text(input.denial.sourceRef) && text(input.denial.scope) && typeof input.denial.knownUnexecuted === 'boolean' && typeof input.denial.persistent === 'boolean', 'Retain exact denied action scope');
+    if (input.retry !== undefined) { shape(input.retry, ['count', 'authorizationRef', 'scope', 'materialChange'], 'retry'); insist(Number.isSafeInteger(input.retry.count) && input.retry.count >= 0 && input.retry.count <= 1 && text(input.retry.scope) && text(input.retry.authorizationRef) && text(input.retry.materialChange), 'Invalid bounded retry authorization'); }
+  }
   const common = { service: input.service, account: input.account ?? null, environment: input.environment, surface: input.surface, sourceRef: input.sourceRef, persistence: 'No secrets accepted or retained. Decision output is advisory.', assurance: 'reported', otherSurface: 'unverified' };
   const result = (status, nextAction, prompt = null) => ({ ...common, status, nextAction, prompt });
   const age = Date.parse(at) - Date.parse(input.observedAt);
@@ -15,9 +23,6 @@ export function signinDecision(input, at) {
   if (input.state === 'uncertain') return result('inspect-before-retry', 'Inspect the actual outcome before repeating any action.');
   if (input.state === 'unavailable') return result('unavailable-tool', 'Tell the owner which supported sign-in tool or handoff is unavailable and the exact next action.');
   if (input.state === 'denied') {
-    shape(input.denial, ['sourceRef', 'scope', 'knownUnexecuted', 'persistent'], 'denial');
-    insist(text(input.denial.sourceRef) && text(input.denial.scope) && typeof input.denial.knownUnexecuted === 'boolean' && typeof input.denial.persistent === 'boolean', 'Retain exact denied action scope');
-    if (input.retry !== undefined) { shape(input.retry, ['count', 'authorizationRef', 'scope', 'materialChange'], 'retry'); insist(Number.isSafeInteger(input.retry.count) && input.retry.count >= 0 && input.retry.count <= 1 && text(input.retry.scope) && text(input.retry.authorizationRef) && text(input.retry.materialChange), 'Invalid bounded retry authorization'); }
     const retry = input.retry;
     if (input.denial.persistent || !input.denial.knownUnexecuted || !retry || retry.count !== 0 || retry.scope !== input.denial.scope || retry.authorizationRef === input.denial.sourceRef) return result('denied-stop', 'Stop this exact denied scope. Preserve the denial and promptly tell the owner the required action.');
     return result('one-bounded-retry', 'Retain the materially relevant new scoped authorization. Attempt this known-unexecuted action once, then inspect its result. A persistent denial stops this scope.');
@@ -29,9 +34,8 @@ export function signinDecision(input, at) {
   }
   if (input.state === 'verify') return result('verification-needed', 'Read protected same-account content through this surface and retain a nonsecret readback.');
   if (input.state === 'mfa') {
-    insist(['otp', 'number-matching', 'owner-approval'].includes(input.mfa), 'Unsupported MFA handoff');
     if (!input.loginService || input.issuingService !== input.loginService || ![input.service, input.provider].includes(input.loginService)) return result('issuer-mismatch-stop', 'Do not use or replay this challenge. Reinspect the matching issuing-service login.');
-    if (input.mfa === 'number-matching') return result('owner-mfa-needed', 'Show the current Microsoft number matching challenge for owner approval. Do not approve it yourself.', `Approve the current ${input.service} sign-in for ${input.account} in your authenticator. Check its displayed number.`);
+    if (input.mfa === 'number-matching') return result('owner-mfa-needed', 'Show the current number matching challenge from the verified issuing service for owner approval. Do not approve it yourself.', `Approve the current ${input.loginService} sign-in for ${input.account}, for access to ${input.service}, in your authenticator. Check its displayed number.`);
     if (input.mfa === 'otp') return result('current-otp-needed', 'Prompt the owner here for the current ordinary Authenticator OTP. Use it once only at this matching issuing-service login. Never save or replay it.', `The current ${input.loginService} login for ${input.account}, for access to ${input.service}, needs your Authenticator code here. I will use it once at that login.`);
     return result('owner-mfa-needed', 'Prompt the owner here to approve the current service challenge.', `Approve the current ${input.service} sign-in for ${input.account}.`);
   }

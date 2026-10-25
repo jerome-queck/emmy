@@ -122,7 +122,8 @@ export function fleetTransition(original, action, root, at, epochHash = original
       else {
         insist(action.operation === 'resolve' ? job.status === 'uncertain' : job.status === 'attempted', 'Uncertain or terminal work requires exact reconciliation. No duplicate execution.');
         insist(job.input.entityIds.some(id => canonical(entity(id).expected.scope) === canonical(action.receipt.scope)), 'Result crosses admitted source scope');
-        insist(Date.parse(action.receipt.observedAt) <= Date.parse(action.receipt.capturedAt) && Date.parse(action.receipt.capturedAt) <= Date.parse(at) && Date.parse(action.receipt.observedAt) >= Date.parse(job.deadline) - config.attemptMs, 'Result receipt is outside this attempt window');
+        insist(Date.parse(action.receipt.observedAt) <= Date.parse(action.receipt.capturedAt) && Date.parse(action.receipt.capturedAt) <= Date.parse(at) && Date.parse(action.receipt.capturedAt) >= Date.parse(job.deadline) - config.attemptMs, 'Result acquisition is outside this attempt window');
+        insist(!['completed', 'checkpoint'].includes(action.outcome) || Date.parse(action.receipt.capturedAt) <= Date.parse(job.deadline), 'Successful read acquisition occurred after the ticket deadline');
         insist(action.checkpoint === job.checkpoint + (['completed', 'checkpoint'].includes(action.outcome) ? 1 : 0), 'Result skips or rewinds a checkpoint');
         insist(action.checkpoint <= job.input.steps && (action.outcome !== 'completed' || action.checkpoint === job.input.steps) && (action.outcome !== 'checkpoint' || action.checkpoint < job.input.steps), 'Invalid final checkpoint');
         insist(!['completed', 'checkpoint'].includes(action.outcome) || action.receipt.coverage.complete && action.receipt.coverage.gaps.length === 0, 'Partial source coverage cannot complete a parent read');
