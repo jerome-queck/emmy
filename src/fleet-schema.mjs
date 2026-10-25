@@ -1,3 +1,4 @@
+import { morningInput } from './morning.mjs';
 export const insist = (ok, message) => { if (!ok) throw new Error(message); };
 export const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 export const text = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 4096;
@@ -66,8 +67,19 @@ export function jobInput(value, config) {
   return value;
 }
 export function actionInput(value) {
-  const fields = { configure: ['config', 'entities'], inventory: ['entities', 'sourceRef', 'reason'], assess: ['captures'], submit: ['job'], claim: ['ownerRef'], result: ['jobKey', 'ticket', 'checkpoint', 'outcome', 'receipt', 'usage', 'reason', 'sourceRef'], resolve: ['jobKey', 'ticket', 'checkpoint', 'outcome', 'receipt', 'usage', 'reason', 'sourceRef'], dismiss: ['alertId', 'sourceRef', 'reason'], correct: ['entityId', 'sourceRef', 'reason'], 'send-intent': ['alertId', 'bodyDigest', 'sendRef'], 'send-ack': ['alertId', 'bodyDigest', 'sendRef', 'readbackRef'], 'send-resolve': ['alertId', 'bodyDigest', 'sendRef', 'sourceRef', 'reason', 'outcome'], suspend: ['sourceRef', 'reason'], resume: ['sourceRef', 'reason'], status: [] };
+  const fields = { morning: ['command'], 'policy-revise': ['version', 'previousDigest', 'maxAgeMs', 'entities', 'sourceRef', 'reason'], 'group-send-intent': ['alertIds', 'bodyDigest', 'sendRef'], 'group-send-ack': ['alertIds', 'bodyDigest', 'sendRef', 'readbackRef', 'deliveredBodyDigest', 'nativeId'], 'group-send-resolve': ['alertIds', 'bodyDigest', 'sendRef', 'sourceRef', 'reason', 'outcome'], configure: ['config', 'entities'], inventory: ['entities', 'sourceRef', 'reason'], assess: ['captures'], submit: ['job'], claim: ['ownerRef'], result: ['jobKey', 'ticket', 'checkpoint', 'outcome', 'receipt', 'usage', 'reason', 'sourceRef'], resolve: ['jobKey', 'ticket', 'checkpoint', 'outcome', 'receipt', 'usage', 'reason', 'sourceRef'], dismiss: ['alertId', 'sourceRef', 'reason'], correct: ['entityId', 'sourceRef', 'reason'], 'send-intent': ['alertId', 'bodyDigest', 'sendRef'], 'send-ack': ['alertId', 'bodyDigest', 'sendRef', 'readbackRef'], 'send-resolve': ['alertId', 'bodyDigest', 'sendRef', 'sourceRef', 'reason', 'outcome'], suspend: ['sourceRef', 'reason'], resume: ['sourceRef', 'reason'], status: [] };
   insist(object(value) && Object.hasOwn(fields, value.operation), 'Invalid fleet operation'); shape(value, ['operation', ...fields[value.operation]], 'fleet action');
+  if (value.operation === 'morning') morningInput(value.command);
+  if (value.operation === 'policy-revise') {
+    insist(integer(value.version, 1, 1024) && (value.previousDigest === null || hash(value.previousDigest)) && integer(value.maxAgeMs, 1, 86400000) && text(value.sourceRef) && text(value.reason), 'Invalid audited policy revision');
+    insist(Array.isArray(value.entities) && value.entities.length > 0 && value.entities.length <= defaults.maxEntities && new Set(value.entities.map(row => row.entityId)).size === value.entities.length, 'Invalid policy scope set');
+    for (const row of value.entities) { shape(row, ['entityId', 'scope', 'maxAgeMs'], 'policy scope'); insist(id(row.entityId) && object(row.scope) && integer(row.maxAgeMs, 1, value.maxAgeMs), 'Invalid policy scope window'); }
+  }
+  if (value.operation.startsWith('group-send-')) {
+    insist(Array.isArray(value.alertIds) && value.alertIds.length > 0 && value.alertIds.length <= 64 && value.alertIds.every(hash) && new Set(value.alertIds).size === value.alertIds.length && hash(value.bodyDigest) && text(value.sendRef), 'Invalid atomic alert group');
+    if (value.operation === 'group-send-ack') insist(text(value.readbackRef) && hash(value.deliveredBodyDigest) && text(value.nativeId), 'Group delivery requires separate readback');
+    if (value.operation === 'group-send-resolve') insist(value.outcome === 'known-unexecuted' && text(value.sourceRef) && text(value.reason), 'Group uncertainty requires no-effect reconciliation');
+  }
   if (['configure', 'inventory'].includes(value.operation)) {
     const config = fleetConfig(value.operation === 'configure' ? value.config : {}); insist(Array.isArray(value.entities) && value.entities.length > 0 && value.entities.length <= config.maxEntities, 'Invalid inventory bound'); value.entities.forEach(entityInput);
     insist(new Set(value.entities.map(entity => entity.id)).size === value.entities.length, 'Duplicate entity');

@@ -25,7 +25,7 @@ export const briefingGuidance = {
 
 export const verification = {
   features: [
-    { id: 'fleet', title: 'Fleet health and sign-in recovery', commands: ['fleet', 'signin'], scenarios: ['fleet-health', 'signin-recovery'], properties: ['fleet-contract'] },
+    { id: 'fleet', title: 'Fleet health and sign-in recovery', commands: ['fleet', 'signin'], scenarios: ['fleet-health', 'signin-recovery', 'morning-run'], properties: ['fleet-contract', 'morning-contract'] },
     { id: 'cloud', title: 'Cooperative cloud admission', commands: ['cloud'], scenarios: ['cloud-admission'], properties: ['cloud-admission', 'process-incarnation', 'legacy-baseline'] },
     { id: 'orientation', title: 'Orientation and private integrity', commands: ['help', 'doctor', 'catalog'], scenarios: ['orientation'], properties: [] },
     { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'dispatch', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'native-effect-correlation', 'native-dispatch', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope', 'native-uncertainty', 'dispatch-recovery'] },
@@ -33,6 +33,7 @@ export const verification = {
     { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore'], scenarios: ['archive-recovery', 'cloud-recovery', 'restored-current-context', 'publication-interruption', 'derived-boundaries'], properties: ['restore-suspension', 'import-prefix'] }
   ],
   properties: [
+    { id: 'morning-contract', source: 'src/morning.mjs', functions: ['classifyMail', 'morningTransition', 'renderMorning', 'morningView'], statement: 'Versioned conservative mail judgments, fleet-backed fresh Singapore-day source acquisitions, complete reviewed-ID accounting, exact delivered-body gates, unread-preserved reversible outcomes and same-message edits retain scoped provenance without claiming native truth.' },
     { id: 'fleet-contract', source: 'src/fleet-state.mjs', functions: ['captureCondition', 'fleetTransition', 'fleetState', 'fleetView'], statement: 'Scoped attributable health stays age and coverage bounded; stable parent read identities, checkpoints, uncertainty and alert episodes prevent duplicate admission and unchanged notifications.' },
     { id: 'process-incarnation', source: 'src/process-incarnation.mjs', functions: ['parseProcStat', 'parseProcStatus', 'parseProcMount', 'validIncarnation', 'compareIncarnations', 'ownerDecision'], statement: 'Validated kernel witnesses distinguish process incarnations while missing, incomparable or unrooted namespace evidence leaves owner absence unknown.' },
     { id: 'legacy-baseline', source: 'src/cloud-migration.mjs', functions: ['assessLegacyAttestation'], statement: 'Exact legacy checkpoint/report bindings, distinct attributable calls and declared review establish reported historical evidence only; fresh observed baseline and later restart remain separate live gates.' },

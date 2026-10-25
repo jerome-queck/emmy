@@ -9,7 +9,7 @@ description: Check Emmy's bounded responsibility, dispatch, calendar acceptance,
 
 Run `node scripts/verify-formal.mjs` with Node 24 or later for the responsibility checker. It requires no package install, solver, service, or account. `npm run verify:formal` also runs the merge-policy enumeration and the [publication model](../publication-contract/SKILL.md), which requires Java 21 and a hash-pinned TLC jar.
 
-The checker calls the actual mapped production functions. It checks 8,121 predicates across twenty-three named properties, kills 146 paired mutations of those actual source files, then reruns unchanged production. Earlier responsibility, dispatch, calendar, cloud and incarnation domains retain their promises. These are finite checks, not a universal proof.
+The checker calls the actual mapped production functions. It checks 8,227 predicates across twenty-four named properties, kills 166 paired mutations of those actual source files, then reruns unchanged production. Earlier responsibility, dispatch, calendar, cloud and incarnation domains retain their promises. These are finite checks, not a universal proof.
 
 Read each failed counterexample under `.local/verification/formal-*/`. A mutant counts only if it imports successfully and its designated property rejects the intended behavioral disagreement. Syntax/import errors, ambiguous edit anchors, unrelated exceptions, and surviving mutants fail verification. Failed attempts remain retained.
 
@@ -108,3 +108,11 @@ Fleet adds canonical definition/root/parent/epoch edges and validates each repla
 ### Scoped coordinator settings
 
 `dispatch-recovery` now executes 534 predicates, comprising 160 state combinations and 107 targeted cases, each in original and reversed record order. The added 28 targeted cases cover separately scoped coordinator intent, Medium/Low/Luna/stronger exact matching, owner-source and objective/role refusal, current recorded settings, child/coordinator separation, default High floor, immutable identity exclusion and preserved attempted/pending/uncertain launches. Five additional source mutants hard-code High, borrow child policy, omit owner source or scope, or freeze model policy into immutable identity. All previous domains remain unchanged. Repository scope metadata and source references remain reported intent, not authenticated owner authority or native model execution.
+
+### Morning extension and audited fleet policy
+
+`morning-contract` maps `src/morning.mjs` classification, run transitions, exact rendering and actionable status. It has 40 finite predicates and eleven paired actual-source mutants. Domains include fifteen protected/unsafe context branches, exact/suffix sender comparisons, self notification markers, missing narrow authority and useful facts, delivery/uncertainty, same-ID unread-preserved readback, cache/omitted inventory/unaccounted IDs, stale sends, scoped completion and same-message edits. Full context/rule false positives and actual evidence-byte boundaries also run behaviorally.
+
+The fleet partition extends to 87 predicates and 22 mutants. New cases keep policy scope/version exact, timestamps and failure prefixes unchanged, later explicit tighter windows effective, and grouped alert ID/body/readback acknowledgement atomic. New scopes remain on the original inherited bound unless explicitly revised. A policy-only current projection is not a fresh source read. Original owner/process recovery, publication and other bounds stay unchanged.
+
+These checks assume honest parsed parent declarations and completed fleet acquisition receipts. They cannot authenticate source truth, mail semantics, owner authority, browser/connector state, Slack delivery, omitted-source completeness, a native exactly-once effect or scheduled adoption. Strict source maps include the new parser/replay dependency. The publication model adds that dependency to its reviewed closure without changing canonical publication awaits or TLC bounds.

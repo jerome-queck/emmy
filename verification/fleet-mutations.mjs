@@ -1,6 +1,10 @@
 const mutant = (id, before, after, counterexample) => ({ id: `fleet-${id}`, source: 'src/fleet-state.mjs', property: 'fleet-contract', edits: [[before, after]], counterexample });
 export const fleetMutations = [
-  mutant('ignore-source-age', 'ageMs > (entity.expected.maxAgeMs ?? config.maxAgeMs)', 'false', 'age/300001/true'),
+  mutant('policy-rebind', 'canonical(entity(window.entityId).expected.scope) === canonical(window.scope)', 'true', 'policy/scope'),
+  mutant('policy-version', 'action.version === (state.policy?.version ?? 0) + 1 && action.previousDigest === (state.policy?.digest ?? null)', 'true', 'policy/version'),
+  mutant('group-split', 'canonical(group.alertIds) === canonical(ids)', 'true', 'group/no-split'),
+  mutant('group-borrow-body', 'action.deliveredBodyDigest === action.bodyDigest', 'true', 'group/body'),
+  mutant('ignore-source-age', 'ageMs > Math.min(state.policy?.entities.find(row => row.entityId === entity.expected.id)?.maxAgeMs ?? entity.expected.maxAgeMs ?? config.maxAgeMs, entity.expected.maxAgeMs ?? 86400000)', 'false', 'age/300001/true'),
   mutant('ignore-coverage', '!receipt.coverage.complete || receipt.coverage.gaps.length', 'false', 'age/0/false'),
   mutant('ignore-monitor-failure', 'if (entity.expected.monitorId) {', 'if (false) {', 'monitor/failure'),
   mutant('ignore-delivery', 'entity.expected.requiresDelivery && !capture.deliveryRef', 'false', 'schedule/delivery-unverified'),
@@ -10,7 +14,7 @@ export const fleetMutations = [
   mutant('retry-uncertain', "['attempted', 'uncertain'].includes(job.status)", "['attempted'].includes(job.status)", 'job/uncertain'),
   mutant('skip-checkpoint', "action.checkpoint === job.checkpoint + (['completed', 'checkpoint'].includes(action.outcome) ? 1 : 0)", 'true', 'job/checkpoint'),
   mutant('borrow-result-scope', 'job.input.entityIds.some(id => canonical(entity(id).expected.scope) === canonical(action.receipt.scope))', 'true', 'job/result-scope'),
-  mutant('borrow-send-readback', 'action.readbackRef !== action.sendRef', 'true', 'send/readback'),
+  mutant('borrow-send-readback', "&& action.readbackRef !== action.sendRef, 'Send/readback", "&& true, 'Send/readback", 'send/readback'),
   mutant('restore-old-green', 'Boolean(epoch && state.epochHash !== epoch.hash)', 'false', 'journal/restore'),
   mutant('ignore-parent-budgets', 'job.usedReads + readDelta <= job.input.maxReads && job.usedBytes + byteDelta <= job.input.maxBytes', 'true', 'job/budget/reads'),
   mutant('rebind-inventory', 'existing.expected.kind === expected.kind && canonical(existing.expected.scope) === canonical(expected.scope)', 'true', 'inventory/scope'),

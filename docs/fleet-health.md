@@ -64,3 +64,9 @@ A denied state requires `denial: {sourceRef, scope, knownUnexecuted, persistent}
 Run `node scripts/verify-behavior.mjs --focus fleet`, the focused unit controls, and the bounded formal fleet cases/mutations. Run the full aggregate and independent exact-head review before protected release. Retain any red evidence.
 
 After publication, verify installed source and launcher bytes, then acquire `briefing` through the actual installed route and inspect the loaded skill text. Parent next performs a safe real fresh native/app/schedule round trip, invokes this release, inspects pending alerts, sends meaningful findings once, and retains separate send/readback acknowledgment. Fixtures, loaded guidance, parent acceptance, actual delivery, and later ordinary-turn adoption are separate claims.
+
+## One morning run and audited revisions
+
+The [morning procedure](morning-workflow.md) extends the same fleet journal with `morning` commands. `src/morning.mjs` owns explicit run, reviewed-item, delivery, mail-intent and same-message-edit states. Acquisition jobs still use the existing fleet queue. Every source, complete inventory, context artifact, exact assessment output and delivered-body readback remains attributable parent evidence. Native I/O and schedules stay parent-owned. Status exposes unfinished and uncertain morning work as needing attention.
+
+`policy-revise` appends a version/digest, exact entity scopes, windows and owner source. It preserves original captures, timestamps and stale/failure episodes. A policy-only eligibility change is distinct from fresh recovery. Later explicit tighter limits win; new unaudited entities keep the root default. `group-send-intent`, `group-send-ack` and `group-send-resolve` retain one atomic set of pending alert IDs and one exact send/body/readback. A historical single-alert send cannot be reused or expanded into a group. No owner/process-recovery rule is relaxed.

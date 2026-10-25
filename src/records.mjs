@@ -1,3 +1,4 @@
+import { morningEvidence } from './morning.mjs';
 import { parseCloudRecord } from './cloud-schema.mjs';
 import { parseFleetRecord } from './fleet-schema.mjs';
 import { fleetInitial, fleetTransition } from './fleet-state.mjs';
@@ -372,8 +373,10 @@ export function validateReferences(records) {
     parseFleetRecord(record); const definition = known.get(record.definitionHash);
     requireValue(definition.type === 'definition' && definition.id === record.responsibilityId && effectKey(definition) === record.effectKey, 'Fleet definition or effect crosses responsibility');
     if (record.epochHash) requireValue(known.get(record.epochHash).type === 'epoch', 'Fleet epoch is not an epoch');
-    for (const receipt of [...(record.action.captures ?? []).map(capture => capture.receipt), ...(record.action.receipt ? [record.action.receipt] : [])]) requireValue(Object.values(record.fileDigests ?? {}).includes(receipt.sha256), 'Fleet receipt bytes are not retained by this event');
+    const morning = record.action.operation === 'morning' ? morningEvidence(record.action.command) : { receipts: [] };
+    for (const receipt of [...morning.receipts, ...(record.action.captures ?? []).map(capture => capture.receipt), ...(record.action.receipt ? [record.action.receipt] : [])]) requireValue(Object.values(record.fileDigests ?? {}).includes(receipt.sha256), 'Fleet receipt bytes are not retained by this event');
     for (const capture of record.action.captures ?? []) if (capture.actualDigest) requireValue(Object.values(record.fileDigests ?? {}).includes(capture.actualDigest), 'Fleet actual source bytes are not retained by this event');
+    if (record.action.operation === 'morning' && record.action.command.step === 'review') for (const item of record.action.command.items) requireValue(Object.values(record.fileDigests ?? {}).includes(item.context.threadDigest), 'Morning context bytes are not retained by this event');
     if (record.type === 'fleet-root') continue;
     const root = known.get(record.rootHash); const parent = known.get(record.parentHash);
     requireValue(root.type === 'fleet-root' && root.responsibilityId === record.responsibilityId && root.effectKey === record.effectKey && parent.responsibilityId === record.responsibilityId && (parent.hash === root.hash || parent.type === 'fleet-step' && parent.rootHash === root.hash), 'Fleet lineage crosses controller scope');
