@@ -39,12 +39,12 @@ The reviewed source commit is recorded in `verification/publication/coverage.jso
 
 | Model action or property | Production owner |
 | --- | --- |
-| Symbolic requested hashes and matching completed bytes | `recordPayload`, lines 280-290 |
-| `CreatePending`, four `WriteFile` stages, `Rename` | `publishRecord`, lines 292-304 |
-| `ReadRecord`, `ReadEvidence`, `Cleanup`, `Reply` | `publishRecord`, lines 305-310, and `readRecord`, lines 312-328 |
-| `ObserveList`, `ObserveChoose`, `ObserveRecord`, `ObserveEvidence`, `ObserveValidate` | `readStore`, lines 330-340, and `readRecord`, lines 312-328 |
-| `ImportNext`, retry plan, `ImportPrefixSafe` | `retainImport`, lines 401-422, `references`, lines 342-351, and `importOrder`, lines 553-563 |
-| `Crash`, `Retry`, orphan existence | Process interruption between the mapped awaits and a fresh call using the same input. Real markers are in `publicationBoundary`, lines 273-278. |
+| Symbolic requested hashes and matching completed bytes | `recordPayload`, lines 283-294 |
+| `CreatePending`, four `WriteFile` stages, `Rename` | `publishRecord`, lines 296-308 |
+| `ReadRecord`, `ReadEvidence`, `Cleanup`, `Reply` | `publishRecord`, lines 309-314, and `readRecord`, lines 316-333 |
+| `ObserveList`, `ObserveChoose`, `ObserveRecord`, `ObserveEvidence`, `ObserveValidate` | `readStore`, lines 335-345, and `readRecord`, lines 316-333 |
+| `ImportNext`, retry plan, `ImportPrefixSafe` | `retainImport`, lines 422-443, `references`, lines 347-358, and `importOrder`, lines 581-591 |
+| `Crash`, `Retry`, orphan existence | Process interruption between the mapped awaits and a fresh call using the same input. Real markers are in `publicationBoundary`, lines 276-281. |
 
 Dispatch metadata adds pure validation and immutable lineage guards. The cross-project extension adds optional remote authority, creator and destination skill validation plus a separate parsed project-discovery input. All remain pure boundaries with no publication await or graph-reference change. It adds no publication await or reference edge. The import model starts after full bundle preparation and reference validation. It includes one dependency edge, not every record-type validation rule. Writer 2 has no dependencies. The observer's reads are deliberately not one atomic `readStore` action. Symbolic hash order and conservative list subsets overapproximate the configured callers.
 
@@ -60,7 +60,7 @@ Backup checks for unresolved current/configuration claims before selecting archi
 
 Fleet adds definition/root/parent/epoch reference edges and synchronous replay validation through `fleet-schema.mjs`, `fleet-state.mjs` and `work.mjs`. The copied-source filesystem driver includes this dependency closure. Canonical publisher, rename, per-file readback, pending cleanup and importer awaits retain their mapped operations. The same one-edge import and canonical byte-publication model remains unchanged.
 
-The complete per-head hard-linked fleet intent, its exclusive selection, bounded real input reads, external parent tickets, health classification, send/readback semantics and backup preflight remain outside TLC. Actual stopped-writer replay and backup refusal are CLI controls. The 64 finite fleet predicates and thirteen paired mutants cover their declared pure domain. None establishes native source truth, actual tools, account recovery, message delivery or external exactly-once behavior.
+The complete per-head hard-linked fleet intent, its exclusive selection, bounded real input reads, external parent tickets, health classification, send/readback semantics and backup preflight remain outside TLC. Actual stopped-writer replay and backup refusal are CLI controls. The 73 finite fleet predicates and seventeen paired mutants cover their declared pure domain. None establishes native source truth, actual tools, account recovery, message delivery or external exactly-once behavior.
 
 ## Replay a counterexample
 

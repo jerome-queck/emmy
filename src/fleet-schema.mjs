@@ -18,7 +18,7 @@ export function fleetConfig(value = {}) {
   return config;
 }
 export function entityInput(value) {
-  shape(value, ['id', 'kind', 'scope', 'maxAgeMs', 'monitorId', 'requiresDelivery', 'dueAt'], 'fleet entity');
+  shape(value, ['id', 'kind', 'scope', 'maxAgeMs', 'monitorId', 'requiresDelivery', 'dueAt', 'expectedDigest', 'expectedRevision'], 'fleet entity');
   insist(id(value.id) && ['repository', 'installed', 'native-job', 'cloud-job', 'schedule', 'authentication', 'monitor'].includes(value.kind), 'Invalid fleet entity identity');
   shape(value.scope, ['service', 'account', 'environment', 'surface', 'resource'], 'entity scope');
   for (const key of ['service', 'environment', 'surface', 'resource']) insist(text(value.scope[key]), `Missing scope ${key}`);
@@ -30,6 +30,8 @@ export function entityInput(value) {
   insist(value.kind !== 'monitor' || value.monitorId === undefined, 'A monitor cannot depend on another monitor');
   if (value.requiresDelivery !== undefined) insist(typeof value.requiresDelivery === 'boolean', 'Invalid delivery requirement');
   if (value.dueAt !== undefined) insist(stamp(value.dueAt), 'Invalid due time');
+  if (value.expectedDigest !== undefined) insist(['repository', 'installed'].includes(value.kind) && hash(value.expectedDigest), 'Invalid expected source digest');
+  if (value.expectedRevision !== undefined) insist(['repository', 'installed'].includes(value.kind) && /^[a-f0-9]{40}$/.test(value.expectedRevision), 'Invalid expected source revision');
   return value;
 }
 export function receiptInput(value) {
@@ -43,12 +45,15 @@ export function receiptInput(value) {
   return value;
 }
 export function captureInput(value) {
-  shape(value, ['entityId', 'condition', 'issueKey', 'nextAction', 'receipt', 'execution', 'enabled', 'runRef', 'outcomeRef', 'deliveryRef', 'protectedContent', 'authResponse'], 'capture');
+  shape(value, ['entityId', 'condition', 'issueKey', 'nextAction', 'receipt', 'execution', 'enabled', 'runRef', 'runDueAt', 'outcomeRef', 'deliveryRef', 'protectedContent', 'authResponse', 'actualDigest', 'actualRevision'], 'capture');
   insist(id(value.entityId) && conditions.includes(value.condition) && !['recovered', 'stale-source'].includes(value.condition) && text(value.issueKey) && text(value.nextAction), 'Invalid capture condition');
   receiptInput(value.receipt);
   if (value.execution !== undefined) insist(['configured', 'running', 'completed', 'suspended', 'unknown'].includes(value.execution), 'Invalid execution state');
   for (const key of ['enabled', 'protectedContent']) if (value[key] !== undefined) insist(typeof value[key] === 'boolean', `Invalid ${key}`);
   for (const key of ['runRef', 'outcomeRef', 'deliveryRef', 'authResponse']) if (value[key] !== undefined) insist(text(value[key]), `Invalid ${key}`);
+  if (value.runDueAt !== undefined) insist(stamp(value.runDueAt), 'Invalid declared run window');
+  if (value.actualDigest !== undefined) insist(hash(value.actualDigest), 'Invalid actual source digest');
+  if (value.actualRevision !== undefined) insist(/^[a-f0-9]{40}$/.test(value.actualRevision), 'Invalid actual source revision');
   insist(value.condition !== 'login-expired' || text(value.authResponse), 'Expired login needs an attributable authentication response');
   return value;
 }
@@ -61,19 +66,19 @@ export function jobInput(value, config) {
   return value;
 }
 export function actionInput(value) {
-  const fields = { configure: ['config', 'entities'], assess: ['captures'], submit: ['job'], claim: ['ownerRef'], result: ['jobKey', 'ticket', 'checkpoint', 'outcome', 'receipt', 'usage', 'reason', 'sourceRef'], resolve: ['jobKey', 'ticket', 'checkpoint', 'outcome', 'receipt', 'usage', 'reason', 'sourceRef'], dismiss: ['alertId', 'sourceRef', 'reason'], correct: ['entityId', 'sourceRef', 'reason'], 'send-intent': ['alertId', 'bodyDigest', 'sendRef'], 'send-ack': ['alertId', 'bodyDigest', 'sendRef', 'readbackRef'], 'send-resolve': ['alertId', 'bodyDigest', 'sendRef', 'sourceRef', 'reason', 'outcome'], suspend: ['sourceRef', 'reason'], resume: ['sourceRef', 'reason'], status: [] };
+  const fields = { configure: ['config', 'entities'], inventory: ['entities', 'sourceRef', 'reason'], assess: ['captures'], submit: ['job'], claim: ['ownerRef'], result: ['jobKey', 'ticket', 'checkpoint', 'outcome', 'receipt', 'usage', 'reason', 'sourceRef'], resolve: ['jobKey', 'ticket', 'checkpoint', 'outcome', 'receipt', 'usage', 'reason', 'sourceRef'], dismiss: ['alertId', 'sourceRef', 'reason'], correct: ['entityId', 'sourceRef', 'reason'], 'send-intent': ['alertId', 'bodyDigest', 'sendRef'], 'send-ack': ['alertId', 'bodyDigest', 'sendRef', 'readbackRef'], 'send-resolve': ['alertId', 'bodyDigest', 'sendRef', 'sourceRef', 'reason', 'outcome'], suspend: ['sourceRef', 'reason'], resume: ['sourceRef', 'reason'], status: [] };
   insist(object(value) && Object.hasOwn(fields, value.operation), 'Invalid fleet operation'); shape(value, ['operation', ...fields[value.operation]], 'fleet action');
-  if (value.operation === 'configure') {
-    const config = fleetConfig(value.config); insist(Array.isArray(value.entities) && value.entities.length > 0 && value.entities.length <= config.maxEntities, 'Invalid inventory bound'); value.entities.forEach(entityInput);
+  if (['configure', 'inventory'].includes(value.operation)) {
+    const config = fleetConfig(value.operation === 'configure' ? value.config : {}); insist(Array.isArray(value.entities) && value.entities.length > 0 && value.entities.length <= config.maxEntities, 'Invalid inventory bound'); value.entities.forEach(entityInput);
     insist(new Set(value.entities.map(entity => entity.id)).size === value.entities.length, 'Duplicate entity');
-    for (const entity of value.entities) if (entity.monitorId) insist(value.entities.some(monitor => monitor.id === entity.monitorId && monitor.kind === 'monitor'), 'Unknown monitor');
+    if (value.operation === 'configure') for (const entity of value.entities) { insist((entity.maxAgeMs ?? config.maxAgeMs) <= config.maxAgeMs, 'Entity age cannot weaken configured freshness'); if (entity.monitorId) insist(value.entities.some(monitor => monitor.id === entity.monitorId && monitor.kind === 'monitor'), 'Unknown monitor'); }
   }
   if (value.operation === 'assess') { insist(Array.isArray(value.captures) && value.captures.length <= defaults.maxEntities && new Set(value.captures.map(capture => capture.entityId)).size === value.captures.length, 'Invalid capture set'); value.captures.forEach(captureInput); }
   if (value.operation === 'submit') jobInput(value.job, defaults);
   if (['result', 'resolve'].includes(value.operation)) { insist(hash(value.jobKey) && hash(value.ticket), 'Invalid parent result binding'); receiptInput(value.receipt); insist(integer(value.checkpoint, 0, 16), 'Invalid parent checkpoint'); shape(value.usage, ['reads', 'bytes'], 'parent usage'); insist(integer(value.usage.reads, 0, 32) && integer(value.usage.bytes, 1, 262144), 'Invalid cumulative attempt usage'); }
   if (value.operation === 'result') insist(['completed', 'checkpoint', 'known-unexecuted', 'uncertain', 'blocked'].includes(value.outcome), 'Invalid parent outcome');
   if (value.operation === 'resolve') insist(['completed', 'checkpoint', 'known-unexecuted', 'blocked'].includes(value.outcome) && text(value.reason), 'Invalid reconciliation');
-  if (['dismiss', 'correct', 'suspend', 'resume'].includes(value.operation)) insist(text(value.sourceRef) && text(value.reason), 'A scoped source and reason are required');
+  if (['inventory', 'dismiss', 'correct', 'suspend', 'resume'].includes(value.operation)) insist(text(value.sourceRef) && text(value.reason), 'A scoped source and reason are required');
   if (value.operation === 'dismiss') insist(hash(value.alertId), 'Invalid dismissed episode');
   if (value.operation === 'correct') insist(id(value.entityId), 'Invalid correction scope');
   if (['send-intent', 'send-ack', 'send-resolve'].includes(value.operation)) insist(hash(value.alertId) && hash(value.bodyDigest) && text(value.sendRef), 'Invalid send binding');

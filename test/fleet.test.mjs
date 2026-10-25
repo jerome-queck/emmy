@@ -48,6 +48,13 @@ test('parent reads commit admission; uncertain attempts block duplicates and req
 test('completed runs need actual outcome and delivery; disabled and missed monitoring are loud', () => {
   const state = healthy(); const row = state.entities[2];
   for (const [overrides, issue] of [[{ enabled: false }, 'disabled-run'], [{ runRef: undefined }, 'missed-run'], [{ outcomeRef: undefined }, 'outcome-missing'], [{ deliveryRef: undefined }, 'delivery-unverified']]) assert.equal(captureCondition(row, fleetCapture('routine', 'healthy', fleetTime, overrides), state, { maxAgeMs: 1000 }, fleetTime).issueKey, issue);
+  assert.equal(captureCondition(row, fleetCapture('routine', 'healthy', fleetTime, { runDueAt: '2026-10-25T10:00:00.000Z' }), state, { maxAgeMs: 1000 }, fleetTime).issueKey, 'missed-run');
+});
+test('inventory revisions stay in one controller and preserve exact scope and freshness', () => {
+  const action = { operation: 'inventory', entities: [{ ...fleetEntities[1], maxAgeMs: 1000 }], sourceRef: 'current-owner-source', reason: 'Tighten the same protected account.' };
+  const revised = fleetTransition(healthy(), action, fleetRoot, fleetTime).state; assert.equal(revised.entities[1].expected.maxAgeMs, 1000); assert.equal(revised.entities[1].corrections.length, 1);
+  assert.throws(() => fleetTransition(healthy(), { ...action, entities: [{ ...fleetEntities[1], scope: { ...fleetEntities[1].scope, account: 'other' } }] }, fleetRoot, fleetTime), /rebind/);
+  assert.throws(() => fleetTransition(healthy(), { ...action, entities: [{ ...fleetEntities[1], maxAgeMs: 300001 }] }, fleetRoot, fleetTime), /freshness/);
 });
 test('message send and separate readback are distinct; uncertain sends never replay automatically', () => {
   let state = fleetTransition(healthy(), { operation: 'assess', captures: [fleetCapture('protected', 'denied-action', '2026-10-25T12:00:01.000Z')] }, fleetRoot, '2026-10-25T12:00:01.000Z').state;

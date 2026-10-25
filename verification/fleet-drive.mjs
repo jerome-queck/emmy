@@ -23,8 +23,9 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
     return evidence;
   };
   const assess = async (captures, expected = 3) => call({ operation: 'assess', captures }, expected, await receipts(captures));
-  const currentCapture = (id, condition = 'healthy', changes = {}) => fleetCapture(id, condition, now(), changes);
-  await call({ operation: 'configure', config: { retryMs: 1 }, entities: fleetEntities.map(entity => ({ ...entity, ...(entity.dueAt ? { dueAt: new Date(Date.now() - 1000).toISOString() } : {}) })) });
+  const scheduleDueAt = new Date(Date.now() - 1000).toISOString();
+  const currentCapture = (id, condition = 'healthy', changes = {}) => fleetCapture(id, condition, now(), { ...(id === 'routine' ? { runDueAt: scheduleDueAt } : {}), ...changes });
+  await call({ operation: 'configure', config: { retryMs: 1 }, entities: fleetEntities.map(entity => ({ ...entity, ...(entity.dueAt ? { dueAt: scheduleDueAt } : {}) })) });
   await assess(fleetEntities.map(entity => currentCapture(entity.id)), 0); assert.equal(last.pendingAlerts.length, 0);
   const interruptionInput = { schemaVersion: 1, responsibilityId: definition.id, expectedHead: last.headHash, action: { operation: 'assess', captures: [] } };
   const interruptionFile = await fixture('interruption-input', interruptionInput); const markerPath = join(selectedHome, 'interruption-marker.json');
@@ -37,7 +38,7 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
     while (!marker && Date.now() < deadline) { try { const bytes = await readFile(markerPath, 'utf8'); if (bytes.endsWith('\n')) marker = JSON.parse(bytes); } catch (error) { if (error.code !== 'ENOENT') throw error; } if (!marker) await new Promise(resolve => setTimeout(resolve, 10)); }
     assert.equal(marker?.boundary, 'record:created'); child.kill('SIGKILL'); await completion; assert.equal(interrupted.signal, 'SIGKILL');
     report.fleetInterruption = { marker, intentWasDurable: true, parentReadExecuted: false }; report.commands.push(interrupted);
-    const blockedBackup = await run(['backup', '--to', join(root, 'fleet-interrupted-backup')], 2, selectedHome); assert.match(blockedBackup.error, /unresolved fleet journal turn/);
+    const blockedBackup = await run(['backup', '--to', join(root, 'bin', 'fleet-interrupted-backup')], 2, selectedHome); assert.match(blockedBackup.error, /unresolved fleet journal turn/);
     const resumed = await run(['fleet', '--file', interruptionFile], 0, selectedHome); assert.equal(resumed.outcome, 'reconciled-publication'); assert.equal(resumed.ticket, null); last = resumed;
   } finally { if (children.has(child)) { child.kill('SIGKILL'); await completion; } }
   const healthyHead = last.headHash;
@@ -46,6 +47,18 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   await assess([currentCapture('protected', 'login-expired')]); assert.equal(last.state.alerts.length, failureCount, 'Refreshed same failure creates no new alert');
   const correctionBytes = Buffer.from('Synthetic owner corrected this exact source and dismissed its old episode.'); const correctionPath = join(selectedHome, 'owner-correction.txt'); await writeFile(correctionPath, correctionBytes); const correctionEvidence = [{ path: correctionPath, sha256: digest(correctionBytes), sourceRef: 'fixture-owner-correction' }];
   await call({ operation: 'correct', entityId: 'protected', sourceRef: 'fixture-owner-correction', reason: 'Use the exact browser account and preserve connector coverage separately.' }, 3, correctionEvidence);
+  await call({ operation: 'inventory', entities: [{ ...fleetEntities[1], maxAgeMs: 300000 }], sourceRef: 'fixture-owner-correction', reason: 'Explicit same-scope inventory revision.' }, 3, correctionEvidence);
+  await call({ operation: 'inventory', entities: [{ ...fleetEntities[1], scope: { ...fleetEntities[1].scope, account: 'other-account' } }], sourceRef: 'fixture-owner-correction', reason: 'Invalid cross-account replacement.' }, 2, correctionEvidence);
+  const artifactBytes = Buffer.from('Synthetic reviewed installed guidance bytes.'); const artifactPath = join(selectedHome, 'installed-artifact.txt'); await writeFile(artifactPath, artifactBytes);
+  const installed = { id: 'installed', kind: 'installed', scope: { ...fleetEntities[0].scope, surface: 'installed', resource: 'fixture-installed-guidance' }, expectedDigest: digest(artifactBytes) };
+  await call({ operation: 'inventory', entities: [installed], sourceRef: 'fixture-owner-correction', reason: 'Add installed guidance to the same inventory.' }, 3, correctionEvidence);
+  const installedCapture = { ...currentCapture('monitor'), entityId: installed.id, receipt: { ...currentCapture('monitor').receipt, scope: installed.scope, sourceRef: 'fixture-installed-readback' }, actualDigest: digest(artifactBytes) };
+  const installedEvidence = await receipts([installedCapture]);
+  await call({ operation: 'assess', captures: [installedCapture] }, 2, installedEvidence);
+  await call({ operation: 'assess', captures: [installedCapture] }, 3, [...installedEvidence, { path: artifactPath, sha256: digest(artifactBytes), sourceRef: 'fixture-installed-artifact' }]); assert.equal(last.inventory.find(row => row.expected.id === 'installed').condition, 'healthy');
+  const oldArtifact = Buffer.from('Synthetic stale installed guidance bytes.'); const oldArtifactPath = join(selectedHome, 'old-installed-artifact.txt'); await writeFile(oldArtifactPath, oldArtifact);
+  const drift = { ...installedCapture, receipt: { ...installedCapture.receipt, observedAt: now(), capturedAt: now() }, actualDigest: digest(oldArtifact) }; const driftEvidence = await receipts([drift]);
+  await call({ operation: 'assess', captures: [drift] }, 3, [...driftEvidence, { path: oldArtifactPath, sha256: digest(oldArtifact), sourceRef: 'fixture-old-installed-artifact' }]); assert.equal(last.inventory.find(row => row.expected.id === 'installed').condition, 'stale-source');
   await call({ operation: 'dismiss', alertId: failureId, sourceRef: 'fixture-owner-correction', reason: 'Dismiss only this retained episode.' }, 3, correctionEvidence);
   assert.equal(last.pendingAlerts.some(alert => alert.id === failureId), false); assert.equal(last.inventory.find(row => row.expected.id === 'protected').condition, 'login-expired');
   await call({ operation: 'dismiss', alertId: 'f'.repeat(64), sourceRef: 'fixture-owner-correction', reason: 'Invalid cross-episode dismissal.' }, 2, correctionEvidence);
@@ -89,7 +102,7 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   const review = await run(['reconcile', '--id', definition.id, '--as-of', now()], 3, selectedHome); const stored = (await readStore(selectedHome)).records; const retainedReview = review.responsibilities[0].record;
   assert.deepEqual(replayReview(retainedReview, stored).fleet, retainedReview.fleet);
   assert.equal((await run(['doctor'], 3, selectedHome)).store.fleetNeedsAttention, true);
-  const archive = join(root, 'fleet-archive'); await run(['backup', '--to', archive], 0, selectedHome);
+  const archive = join(root, 'bin', 'fleet-archive'); await run(['backup', '--to', archive], 0, selectedHome);
   const restored = join(home, 'fleet-restored'); await run(['restore', '--from', archive, '--into', restored], 0, selectedHome);
   const restoredStatusFile = await fixture('restored-status', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'status' } });
   const restoredView = await run(['fleet', '--file', restoredStatusFile], 3, restored); assert.equal(restoredView.status, 'suspended'); assert.ok(restoredView.inventory.every(row => row.condition === 'unknown'));

@@ -17,6 +17,10 @@ export function captureCondition(entity, capture, state, config, at) {
   if (ageMs > (entity.expected.maxAgeMs ?? config.maxAgeMs)) return result('stale-source', 'source-age', 'Parent must refresh this source in its actual environment.');
   if (bad(capture.condition)) return result(capture.condition, capture.issueKey, capture.nextAction);
   if (!receipt.coverage.complete || receipt.coverage.gaps.length) return result('unknown', 'coverage-gap', 'Parent must obtain complete scoped coverage or retain the exact gap.');
+  const identity = [['expectedDigest', 'actualDigest'], ['expectedRevision', 'actualRevision']].filter(([expected]) => entity.expected[expected]);
+  if (['repository', 'installed'].includes(entity.expected.kind) && identity.length === 0) return result('unknown', 'expected-source-identity-needed', 'Parent must bind the intended published revision or installed artifact digest.');
+  if (identity.some(([, actual]) => !capture[actual])) return result('unknown', 'source-identity-needed', 'Parent must retain actual source bytes or the current repository revision.');
+  if (identity.some(([expected, actual]) => entity.expected[expected] !== capture[actual])) return result('stale-source', 'source-identity-drift', 'Parent must reconcile published and installed source identity before claiming current guidance.');
   if (entity.expected.monitorId) {
     const monitor = state.entities.find(row => row.expected.id === entity.expected.monitorId);
     const monitored = captureCondition(monitor, monitor.capture, state, config, at);
@@ -26,7 +30,7 @@ export function captureCondition(entity, capture, state, config, at) {
   if (capture.enabled === false) return result(entity.expected.kind === 'monitor' ? 'monitoring-failed' : 'workflow-failed', 'disabled-run', 'Parent must inspect the disabled schedule and obtain scoped owner direction.');
   if (entity.expected.dueAt && Date.parse(at) > Date.parse(entity.expected.dueAt)) {
     if (Date.parse(receipt.observedAt) < Date.parse(entity.expected.dueAt)) return result('unknown', 'post-window-coverage-needed', 'Acquire a complete read after the expected run window.');
-    if (!capture.runRef) return result(entity.expected.kind === 'monitor' ? 'monitoring-failed' : 'workflow-failed', 'missed-run', 'Parent must inspect the expected run and retain its actual outcome.');
+    if (!capture.runRef || capture.runDueAt !== entity.expected.dueAt) return result(entity.expected.kind === 'monitor' ? 'monitoring-failed' : 'workflow-failed', 'missed-run', 'Parent must inspect this exact expected run window and retain its actual outcome.');
   }
   if (capture.execution === 'configured') return result('pending', 'configuration-only', 'Parent must inspect actual execution and outcome receipts.');
   if (capture.execution === 'suspended' || capture.execution === 'unknown') return result(capture.execution, 'execution-unverified', 'Inspect executor state. A live PID or quiet stdout does not establish progress or failure.');
@@ -71,6 +75,15 @@ export function fleetTransition(original, action, root, at, epochHash = original
   else if (action.operation === 'suspend') { state.lifecycle = 'suspended'; }
   else {
     insist(state.lifecycle === 'active' || ['send-ack', 'send-resolve', 'dismiss', 'correct', 'result', 'resolve'].includes(action.operation), 'Fleet is explicitly suspended');
+    if (action.operation === 'inventory') {
+      for (const expected of action.entities) {
+        insist((expected.maxAgeMs ?? config.maxAgeMs) <= config.maxAgeMs, 'Entity age cannot weaken configured freshness');
+        const existing = state.entities.find(row => row.expected.id === expected.id);
+        if (existing) { insist(existing.expected.kind === expected.kind && canonical(existing.expected.scope) === canonical(expected.scope), 'Inventory revision cannot rebind an entity scope or kind'); insist(existing.corrections.length < config.maxAlerts, 'Correction retention bound reached'); existing.corrections.push({ sourceRef: action.sourceRef, reason: action.reason, at, priorExpected: existing.expected }); existing.expected = expected; }
+        else { insist(state.entities.length < config.maxEntities, 'Fleet inventory retention bound reached'); state.entities.push({ expected, capture: null, condition: 'unknown', issueKey: 'not-checked', episode: 0, fingerprint: null, alertId: null, corrections: [{ sourceRef: action.sourceRef, reason: action.reason, at }] }); }
+      }
+      for (const row of state.entities) if (row.expected.monitorId) insist(state.entities.some(monitor => monitor.expected.id === row.expected.monitorId && monitor.expected.kind === 'monitor'), 'Unknown revised monitor');
+    }
     if (action.operation === 'assess') for (const capture of action.captures) {
       const row = entity(capture.entityId);
       insist(canonical(row.expected.scope) === canonical(capture.receipt.scope), 'Capture crosses exact source, account or environment scope');

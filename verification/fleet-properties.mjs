@@ -1,7 +1,7 @@
 import { digest } from '../src/records.mjs';
 import { fleetCapture, fleetEntities, fleetJob, fleetReceipt, fleetRoot, fleetTime } from './fleet-fixtures.mjs';
 
-export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 64, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
+export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 73, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
 export function verifyFleetPolicy({ fleet }, check) {
   let cases = 0;
   const expect = (name, ok, message) => { cases++; check('fleet-contract', { case: name }, ok, message); };
@@ -21,6 +21,18 @@ export function verifyFleetPolicy({ fleet }, check) {
   }
   const monitor = green(); monitor.entities[0].capture = fleetCapture('monitor', 'monitoring-failed');
   expect('monitor/failure', fleet.captureCondition(monitor.entities[1], monitor.entities[1].capture, monitor, { maxAgeMs: 300000 }, fleetTime).condition === 'unknown', 'A failed monitor cannot establish dependent health.');
+  const revision = { operation: 'inventory', entities: [{ ...fleetEntities[1], maxAgeMs: 1000 }], sourceRef: 'owner', reason: 'Tighten this exact source.' };
+  expect('inventory/revise', transition(green(), revision).state.entities[1].expected.maxAgeMs === 1000, 'Explicit inventory revisions preserve the same controller.');
+  expect('inventory/scope', rejects(() => transition(green(), { ...revision, entities: [{ ...fleetEntities[1], scope: { ...fleetEntities[1].scope, account: 'other' } }] })), 'An inventory ID cannot be rebound to another account.');
+  expect('inventory/freshness', rejects(() => transition(green(), { ...revision, entities: [{ ...fleetEntities[1], maxAgeMs: 300001 }] })), 'Entity freshness cannot weaken controller age.');
+  expect('schedule/window', fleet.captureCondition(green().entities[2], fleetCapture('routine', 'healthy', fleetTime, { runDueAt: '2026-10-25T11:00:00.000Z' }), green(), { maxAgeMs: 300000 }, fleetTime).issueKey === 'missed-run', 'A previous run cannot satisfy the current expected window.');
+  const source = { ...green().entities[0], expected: { ...fleetEntities[0], kind: 'installed', expectedDigest: digest('artifact') } };
+  const sourceCapture = { ...fleetCapture('monitor'), actualDigest: digest('artifact') };
+  expect('source/digest-match', fleet.captureCondition(source, sourceCapture, green(), { maxAgeMs: 300000 }, fleetTime).condition === 'healthy', 'Matching declared source bytes establish only their scoped reported health.');
+  expect('source/digest-drift', fleet.captureCondition(source, { ...sourceCapture, actualDigest: digest('older') }, green(), { maxAgeMs: 300000 }, fleetTime).condition === 'stale-source', 'Installed source identity drift stays stale despite fresh acquisition.');
+  expect('source/missing-actual', fleet.captureCondition(source, fleetCapture('monitor'), green(), { maxAgeMs: 300000 }, fleetTime).condition === 'unknown', 'Missing actual source identity stays unknown.');
+  expect('source/missing-expected', fleet.captureCondition({ ...source, expected: { ...source.expected, expectedDigest: undefined } }, sourceCapture, green(), { maxAgeMs: 300000 }, fleetTime).condition === 'unknown', 'Missing expected source identity stays unknown.');
+  expect('source/revision-drift', fleet.captureCondition({ ...source, expected: { ...source.expected, expectedRevision: 'a'.repeat(40) } }, { ...sourceCapture, actualRevision: 'b'.repeat(40) }, green(), { maxAgeMs: 300000 }, fleetTime).condition === 'stale-source', 'Source revision drift stays separate from source age.');
   for (const [change, issue] of [[{ enabled: false }, 'disabled-run'], [{ runRef: undefined }, 'missed-run'], [{ outcomeRef: undefined }, 'outcome-missing'], [{ deliveryRef: undefined }, 'delivery-unverified']]) {
     const state = green(); expect(`schedule/${issue}`, fleet.captureCondition(state.entities[2], fleetCapture('routine', 'healthy', fleetTime, change), state, { maxAgeMs: 300000 }, fleetTime).issueKey === issue, 'Actual run, outcome and delivery remain independent.');
   }

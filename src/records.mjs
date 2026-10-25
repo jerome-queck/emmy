@@ -367,6 +367,7 @@ export function validateReferences(records) {
     requireValue(definition.type === 'definition' && definition.id === record.responsibilityId && effectKey(definition) === record.effectKey, 'Fleet definition or effect crosses responsibility');
     if (record.epochHash) requireValue(known.get(record.epochHash).type === 'epoch', 'Fleet epoch is not an epoch');
     for (const receipt of [...(record.action.captures ?? []).map(capture => capture.receipt), ...(record.action.receipt ? [record.action.receipt] : [])]) requireValue(Object.values(record.fileDigests ?? {}).includes(receipt.sha256), 'Fleet receipt bytes are not retained by this event');
+    for (const capture of record.action.captures ?? []) if (capture.actualDigest) requireValue(Object.values(record.fileDigests ?? {}).includes(capture.actualDigest), 'Fleet actual source bytes are not retained by this event');
     if (record.type === 'fleet-root') continue;
     const root = known.get(record.rootHash); const parent = known.get(record.parentHash);
     requireValue(root.type === 'fleet-root' && root.responsibilityId === record.responsibilityId && root.effectKey === record.effectKey && parent.responsibilityId === record.responsibilityId && (parent.hash === root.hash || parent.type === 'fleet-step' && parent.rootHash === root.hash), 'Fleet lineage crosses controller scope');

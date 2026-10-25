@@ -52,6 +52,7 @@ export async function fleet(home, { file }) {
   }
   const receipts = [...(input.action.captures ?? []).map(capture => capture.receipt), ...(input.action.receipt ? [input.action.receipt] : [])];
   for (const receipt of receipts) insist(evidence.some(ref => ref.sourceRef === receipt.sourceRef && ref.sha256 === receipt.sha256), 'Every receipt requires exact retained bytes and source attribution');
+  for (const capture of input.action.captures ?? []) if (capture.actualDigest) insist(evidence.some(ref => ref.sha256 === capture.actualDigest), 'Actual source digest requires retained matching artifact bytes');
   for (const key of ['sourceRef', 'readbackRef']) if (input.action[key]) insist(evidence.some(ref => ref.sourceRef === input.action[key]), `Missing attributable ${key} evidence`);
   if (input.action.operation === 'send-intent') insist(evidence.some(ref => ref.sha256 === input.action.bodyDigest), 'Send intent requires the exact message body bytes');
   if (['result', 'resolve'].includes(input.action.operation)) { const job = projected.state?.jobs.find(job => job.key === input.action.jobKey); insist(job && totalBytes <= job.input.maxBytes && totalBytes <= input.action.usage.bytes, 'Parent result exceeds admitted or declared byte budget'); }

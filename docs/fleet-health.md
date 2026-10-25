@@ -12,8 +12,9 @@ Configure entities with these fields:
 
 - `id` is a stable private inventory key. `kind` is `repository`, `installed`, `native-job`, `cloud-job`, `schedule`, `authentication`, or `monitor`.
 - `scope` names `service`, `environment`, `surface`, and exact `resource`. Include the intended `account` for authentication. Surfaces are `repository`, `installed`, `native`, `cloud`, `schedule`, `browser`, or `connector`.
+- Repository and installed entities bind optional `expectedRevision` or `expectedDigest`. Their captures supply `actualRevision` or `actualDigest`. Missing expected or actual identity stays unknown; mismatched identity is stale even with fresh acquisition. Actual digest claims require retained matching artifact bytes. Revision provenance remains reported.
 - Optional `maxAgeMs` tightens source age. Optional `monitorId` names a configured monitor. Monitors cannot depend on other monitors.
-- Optional `dueAt` is the explicit expected run-window end in UTC. The command infers no recurrence or time-zone correction. Update the inventory through a separately reviewed new responsibility/controller when its standing contract changes. Do not manufacture expected windows from a run's configuration.
+- Optional `dueAt` is the explicit expected run-window end in UTC. The command infers no recurrence or time-zone correction. Use an owner-attributed `inventory` revision when the expected window or inventory changes. Do not manufacture expected windows from a run's configuration.
 - Optional `requiresDelivery` requires an actual artifact delivery reference. Completed runs alone cannot satisfy it.
 
 Acquire fresh repository, installed guidance and launcher, native coding jobs, cloud jobs, and actual schedules in the environment that owns each source. Preserve gaps in the returned inventory. Include disabled and failed runs. Inventory the monitoring mechanism itself. Configuration is not execution. A live PID or quiet stdout does not establish progress, suspension, or death. Same-box snapshots do not establish independent backup.
@@ -22,7 +23,7 @@ Supply `action.operation: "assess"` with `captures`. Each capture names `entityI
 
 Conditions are `healthy`, `login-expired`, `denied-action`, `unavailable-tool`, `timeout`, `resource-pressure`, `monitoring-failed`, `workflow-failed`, `suspended`, `unknown`, or `pending`. Expired login requires `authResponse`. The reducer derives `stale-source` and one `recovered` alert per recovery. A healthy authentication capture also requires `protectedContent: true` and the exact intended account scope. Imports remain reported claims, even when their bytes and references match.
 
-Optional capture fields are `execution`, `enabled`, `runRef`, `outcomeRef`, and `deliveryRef`. Execution is `configured`, `running`, `completed`, `suspended`, or `unknown`. Disabled or missed expected runs, missing outcomes, and missing delivery remain distinct issues. Post-window absence requires fresh complete coverage. Missing or failed monitor coverage leaves dependent entities unknown. It never makes them healthy.
+Optional capture fields are `execution`, `enabled`, `runRef`, `runDueAt`, `outcomeRef`, and `deliveryRef`. After an expected window, `runDueAt` must equal that exact expected `dueAt`; an older run cannot satisfy it. Execution is `configured`, `running`, `completed`, `suspended`, or `unknown`. Disabled or missed expected runs, missing outcomes, and missing delivery remain distinct issues. Post-window absence requires fresh complete coverage. Missing or failed monitor coverage leaves dependent entities unknown. It never makes them healthy.
 
 Run an empty `assess` to retain newly stale sources or expired parent attempts. `status` and `doctor` expose `needsAssessment` without pretending they persisted a new alert. They remain read-only. A totally dormant monitor still needs an external parent wakeup.
 
@@ -41,6 +42,8 @@ A lost response, expired attempt, or explicit `uncertain` result stays uncertain
 Mutations publish through one durable per-head pure journal intent. A competing mutation refuses. After an interrupted publication, repeat the exact input to finish that same transition. The command never replays a parent read. Backup refuses an unresolved journal intent. Restore preserves jobs, alerts, receipts and uncertainty, requires the existing fresh responsibility epoch observations, then explicit `resume`. Old captures stay unknown until fresh post-resume reads arrive.
 
 ## Correct findings and deliver meaningful changes
+
+`inventory` requires `entities`, `sourceRef`, and `reason` with retained owner-source evidence. It adds bounded entities or revises existing expectations in the same controller. Existing IDs keep their exact kind, account, environment and resource scope. Entity age cannot exceed the controller freshness bound. Prior expectations remain in correction history. No entity or failure is automatically deleted.
 
 `correct` requires `entityId`, `sourceRef`, and `reason` with retained source evidence. Corrections appear beside that entity on every read. `dismiss` requires the exact `alertId`, `sourceRef`, and `reason`. It suppresses that episode while retaining its failure. Neither operation changes health or supplies recovery proof. A later recurrence creates a fresh episode.
 
