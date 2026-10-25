@@ -74,6 +74,17 @@
       "feature": "routing"
     },
     {
+      "name": "cloud",
+      "description": "Run bounded cooperative cloud jobs with durable checkpoints, priority admission and pending health escalation.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "cloud"
+    },
+    {
       "name": "calendar",
       "description": "Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution.",
       "options": [
@@ -151,6 +162,19 @@
     }
   ],
   "features": [
+    {
+      "id": "cloud",
+      "title": "Cooperative cloud admission",
+      "commands": [
+        "cloud"
+      ],
+      "scenarios": [
+        "cloud-admission"
+      ],
+      "properties": [
+        "cloud-admission"
+      ]
+    },
     {
       "id": "orientation",
       "title": "Orientation and private integrity",
@@ -245,6 +269,16 @@
     }
   ],
   "properties": [
+    {
+      "id": "cloud-admission",
+      "source": "src/cloud.mjs",
+      "functions": [
+        "cloudTransition",
+        "capacityDecision",
+        "cloudState"
+      ],
+      "statement": "Bounded cooperative transitions reserve priority capacity, coalesce stable identities, retain checkpoints, bound retries, defer unavailable capacity and deduplicate pending health escalation."
+    },
     {
       "id": "exact-binding",
       "source": "src/work.mjs",

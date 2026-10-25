@@ -1,10 +1,11 @@
 {
   "schemaVersion": 1,
   "kind": "bounded-tla-publication-safety",
-  "sourceCommit": "1ba92c5dd36a92c892514f9ee32906ddc9bd1c8a",
-  "reviewBasis": "Reviewed the complete src/records.mjs diff from ae743cefe4d4409600716c18a0cdc549f3232581 through e715838bd56a7ceebd272424b1e2eacdd0a0f8d3 and every mapped publication await. Optional dispatcher, requested-settings and task-observation parsing and definition-lineage guards are pure validation before publication. No new record type, graph-reference edge, publication operation, filesystem await, cleanup target or import ordering is added. publishRecord, readRecord, readStore, references, retainImport and importOrder retain their operations and ordering. The model still starts after full preparation/reference validation; its silent pure-validation assumption remains appropriate. Reviewed source-reader reports independently identified the unchanged publisher and the separate dispatch restore-acquisition risk, which was fixed in the advisory owner. Source lines are refreshed for inserted guards. Bounds, model actions, all six safety properties, configs, tool pin, two model mutants and two actual copied-source filesystem witnesses are unchanged. The previous strict source refusal is retained. Advance binds the reviewed product commit, not an inference from generators or passing tests. Fresh independent exact-head review and restored model/filesystem runs remain acceptance gates. Reviewed the full records diff through 1ba92c5dd36a92c892514f9ee32906ddc9bd1c8a. The changes add only parseProjectDiscovery, optional remote authority, creatorThreadId and destinationSkill boundary checks. Every mapped publication await, reference edge, write, import order, readback and archive operation remains unchanged. Independent upkeep source reading confirmed this. Source locations shift by 28 lines. Strict stale-source refusal is retained; unchanged TLC bounds and paired model/filesystem mutants must rerun after this reviewed pin update.",
+  "sourceCommit": "f9798eb7a2dae31f6ddadeccdf15aa194c776201",
+  "reviewBasis": "Reviewed every covered src/records.mjs change from 1ba92c5dd36a92c892514f9ee32906ddc9bd1c8a through f9798eb7a2dae31f6ddadeccdf15aa194c776201 and the new imported cloud-schema owner. Cloud adds two immutable record types and definition/root/parent/epoch references, with synchronous prepublication and read-time validation. Cloud directly validates all dependencies before publication. The actual publishRecord/readRecord/readStore filesystem awaits, atomic rename, pending-only cleanup, retainImport preparation/publication sequence and importOrder are unchanged. Backup adds unresolved-claim preflight reads outside this model. The existing one-edge configured importer remains the dependency claim; cloud lineage/claim/archive semantics are explicitly excluded. The copied-source filesystem driver now copies the schema dependency so mutants must reach their intended actual witnesses rather than fail import. Source mapping lines and dependency hashes refreshed after independent source reading, retained strict refusal and 7927/111 development replay. Model/config/tool/bounds/properties and both model/filesystem mutant promises remain unchanged. Strict TLC and real filesystem restored-baseline replay and independent exact-head release review remain gates.",
   "sourceFiles": {
-    "src/records.mjs": "a1e028abe6b3767ce0731c50e10021e66d18eb307b5dee4a76d5c11aa63770c8"
+    "src/records.mjs": "891d50b6e25017d82b281fdb455dabcc68863c3f461a888818fb5ef3be858a98",
+    "src/cloud-schema.mjs": "2179301f012a5832b597f493f9744df8d86f60427d2bbac0664f4f6fd95853bd"
   },
   "verificationFiles": {
     "verification/publication/RecordPublication.tla": "9570ee406a8ea90a767dc5093186585860f83cbf082b94b9b8e13e67a83d0edb",
@@ -12,10 +13,10 @@
     "verification/publication/distinct-import.cfg": "2e8541dfee1521933f7012664ae951d27ade45b4345c4f43edc7ecacabda0b80",
     "verification/publication/direct-canonical-mutant.cfg": "ac01138937a08ef825759358c3096312c563aaa81213c9395763a3746e8375e2",
     "verification/publication/reversed-import-mutant.cfg": "3d01afb8d826dcaa45673a67cb9391409b9164576d4248a3d5b5ca74fa05e21c",
-    "verification/publication/drive.mjs": "98352f00f228d28443cb13e54f982aa787dccd09e0c3a478a8fae83df34d82c2",
+    "verification/publication/drive.mjs": "c6a261e4775d81f756dab97d4e97bff7389f9a73c03ab4c304038dd9d7bd7d06",
     "verification/publication/worker.mjs": "92ea1c8bb11138b5f2ae32b7465e7e9fc8e9edd688be6bc2062c3a1a0fcb630d",
     "scripts/verify-publication.mjs": "9a34dedf98d2e1a544707f66139b48ebfea185214b5274e05095924333e7f6de",
-    ".agents/skills/publication-contract/SKILL.md": "8f3d079b125ec987936f507a74a5cc7847542abefcdbbb70d888e42149afd9d4"
+    ".agents/skills/publication-contract/SKILL.md": "31309041a9fefcda02c1f4f18fbd1ecf76170f5255b651defa087582fffcba7a"
   },
   "tool": {
     "release": "TLA+ tools 1.7.4",
@@ -134,8 +135,8 @@
         "recordPayload"
       ],
       "lines": [
-        279,
-        288
+        280,
+        290
       ],
       "model": [
         "Hashes",
@@ -150,8 +151,8 @@
         "publishRecord"
       ],
       "lines": [
-        290,
-        308
+        292,
+        310
       ],
       "model": [
         "CreatePending",
@@ -172,8 +173,8 @@
         "validateReferences"
       ],
       "lines": [
-        310,
-        374
+        312,
+        398
       ],
       "model": [
         "ObserveList",
@@ -192,12 +193,12 @@
         "importOrder"
       ],
       "lines": [
-        339,
-        346,
-        377,
-        398,
-        523,
-        532
+        342,
+        351,
+        401,
+        422,
+        553,
+        563
       ],
       "model": [
         "Order",
@@ -215,12 +216,12 @@
         "retainImport"
       ],
       "lines": [
-        272,
-        277,
-        290,
-        308,
-        377,
-        398
+        273,
+        278,
+        292,
+        310,
+        401,
+        422
       ],
       "model": [
         "Crash",
@@ -255,6 +256,8 @@
     "Unbounded retries, fairness, liveness, filesystem flushes and power-loss durability.",
     "Arbitrary I/O errors, cleanup failures and hostile external filesystem mutation.",
     "A globally atomic readStore or responsibility review snapshot.",
-    "Native dispatch, at-most-once execution, provider authentication or authority, accounts, schedules, delivery, merge and deployment."
+    "Native dispatch, at-most-once execution, provider authentication or authority, accounts, schedules, delivery, merge and deployment.",
+    "Cloud lineage and direct cloud caller dependency graph, cooperative admission/retries/checkpoints, turn claim ownership/recovery, telemetry, pending escalation and cloud archive/restore semantics. These have separate finite and CLI controls.",
+    "Atomic exclusion of concurrent cloud claim acquisition during backup; unresolved-claim refusal is a preflight check."
   ]
 }

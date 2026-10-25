@@ -108,6 +108,7 @@ export async function drivePublication(root, evidenceDir) {
     }
     const sourcePath = join(directory, 'records.mjs');
     await writeFile(sourcePath, candidate);
+    await writeFile(join(directory, 'cloud-schema.mjs'), await readFile(join(root, 'src/cloud-schema.mjs')));
     const records = await import(pathToFileURL(sourcePath));
     const home = join(directory, 'home');
     const payload = { type: 'probe', schemaVersion: 1, nonce: 'publication-contract', value: 'a' };

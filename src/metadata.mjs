@@ -5,6 +5,7 @@ export const commands = [
   { name: 'responsibility', description: 'Retain an immutable goal, context, exact target, criteria, authority, feature, and lifecycle definition.', options: [{ name: 'file', required: true }], feature: 'routing' },
   { name: 'reconcile', description: 'Import evidence, inspect current local state, retain findings/repairs, and propose bounded next work.', options: [{ name: 'id' }, { name: 'import' }, { name: 'as-of', required: true }], feature: 'evidence' },
   { name: 'dispatch', description: 'Resolve an explicit saved destination from fresh discovery, recover private bindings, and return read-only native dispatch advice.', options: [{ name: 'id' }, { name: 'project' }, { name: 'resolve' }, { name: 'discovery' }, { name: 'as-of', required: true }, { name: 'context-needed', flag: true }], feature: 'routing' },
+  { name: 'cloud', description: 'Run bounded cooperative cloud jobs with durable checkpoints, priority admission and pending health escalation.', options: [{ name: 'file', required: true }], feature: 'cloud' },
   { name: 'calendar', description: 'Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution.', options: [{ name: 'file', required: true }], feature: 'evidence' },
   { name: 'briefing', description: 'Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown.', options: [{ name: 'file' }], feature: 'evidence' },
   { name: 'probe', description: 'Publish a proposed Dot onboarding packet with eight probes.', options: [{ name: 'id' }, { name: 'nonce', required: true }], feature: 'routing' },
@@ -22,12 +23,14 @@ export const briefingGuidance = {
 
 export const verification = {
   features: [
+    { id: 'cloud', title: 'Cooperative cloud admission', commands: ['cloud'], scenarios: ['cloud-admission'], properties: ['cloud-admission'] },
     { id: 'orientation', title: 'Orientation and private integrity', commands: ['help', 'doctor', 'catalog'], scenarios: ['orientation'], properties: [] },
     { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'dispatch', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'native-effect-correlation', 'native-dispatch', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope', 'native-uncertainty', 'dispatch-recovery'] },
     { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile', 'briefing', 'calendar'], scenarios: ['self-check-repair', 'evidence-boundaries', 'live-cutoff', 'local-check', 'local-check-cleanup', 'trigger-evolution', 'briefing-guidance', 'briefing-draft', 'briefing-boundaries', 'calendar-acceptance'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay', 'current-evidence', 'live-cutoff', 'process-group-cleanup', 'trigger-coverage', 'retirement-closure', 'calendar-acceptance'] },
     { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore'], scenarios: ['archive-recovery', 'cloud-recovery', 'restored-current-context', 'publication-interruption', 'derived-boundaries'], properties: ['restore-suspension', 'import-prefix'] }
   ],
   properties: [
+    { id: 'cloud-admission', source: 'src/cloud.mjs', functions: ['cloudTransition', 'capacityDecision', 'cloudState'], statement: 'Bounded cooperative transitions reserve priority capacity, coalesce stable identities, retain checkpoints, bound retries, defer unavailable capacity and deduplicate pending health escalation.' },
     { id: 'exact-binding', source: 'src/work.mjs', functions: ['routeTarget'], statement: 'Only own project/host bindings with exact target identity establish a local route.' },
     { id: 'branch-blocking', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Concurrent definition heads survive and block action proposals.' },
     { id: 'effect-stability', source: 'src/work.mjs', functions: ['effectKey'], statement: 'Same responsibility, target, effect and occurrence retain the same effect key across review time and definition edits.' },
