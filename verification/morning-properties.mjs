@@ -1,6 +1,6 @@
 import { canonical, digest } from '../src/records.mjs';
 import { morningAssessments, morningCommand, morningDelivery, morningAt, morningEntities, morningItem, morningOpen, morningReceipt, morningRoot, morningWindow } from './morning-fixtures.mjs';
-export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 52, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
+export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 62, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
 export function verifyMorningPolicy({ morning, fleet }, check) {
   let cases = 0;
   const expect = (name, value, message) => { cases++; check('morning-contract', { case: name }, value, message); };
@@ -78,10 +78,38 @@ export function verifyMorningPolicy({ morning, fleet }, check) {
   expect('group-delivery/scope', rejects(() => fleet.fleetTransition(groupedState, { ...groupAck, scope: { ...morningDelivery.scope, resource: 'other' } }, morningRoot, morningAt)), 'Grouped delivery cannot cross recipient scope.');
   expect('group-delivery/old-time', rejects(() => fleet.fleetTransition(groupedState, { ...groupAck, acquiredAt: '2020-01-01T00:00:00.000Z' }, morningRoot, morningAt)), 'Grouped delivery cannot borrow historical readback.');
   expect('group-delivery/current', fleet.fleetTransition(groupedState, groupAck, morningRoot, morningAt).state.deliveryGroups[0].status === 'delivered', 'Current exact-scope group readback remains valid.');
+  const refreshAt = '2026-10-25T01:06:00.000Z'; const readAt = '2026-10-25T01:06:00.001Z';
+  const reacquire = (fixture, reviewed = morningItem()) => {
+    fixture.step('refresh', { generation: 1, items: [{ adapter: 'gmail', nativeId: 'gmail-one' }], sourceRef: 'current-owner', reason: 'Fresh complete selected-ID thread, not global inventory.' }, refreshAt);
+    const receipt = morningReceipt('gmail', readAt); const jobKey = digest('new-generation-acquisition'); fixture.state.jobs.push({ key: jobKey, status: 'completed', input: { kind: 'briefing-source-read', occurrence: `${morningOpen.runId}/refresh/1`, entityIds: ['gmail'] }, receipts: [receipt] });
+    fixture.step('source', { generation: 1, sourceId: 'gmail', jobKey, receipt, paginationComplete: true, cached: false, resourceIds: [], messageIds: ['gmail-one'], window: null }, readAt);
+    fixture.step('review', { generation: 1, items: [{ ...reviewed, receipt }] }, readAt);
+    return { generation: 1, adapter: 'gmail', nativeId: 'gmail-one', action: fixture.run.items[0].classification.action, before: fixture.run.items[0].before, receipt, destination: null };
+  };
+  fixture = prepare(); fixture.deliver(); const initialDelivery = canonical(fixture.run.delivery); const initialSource = canonical(fixture.run.sources[0]); const continuation = reacquire(fixture);
+  fixture.step('action-intent', continuation, readAt); expect('refresh/continuation', fixture.run.items[0].attempts[0].status === 'uncertain' && canonical(fixture.run.delivery) === initialDelivery, 'Fresh selected-ID context continues an expired run without another send.');
+  expect('refresh/global-history', canonical(fixture.run.sources[0]) === initialSource && fixture.run.cleanup.globalGaps.some(gap => gap.includes('stale global')) && fixture.run.items[0].reviewHistory.length === 1, 'Original global acquisitions and prior reviews remain historical, not refreshed by wrapping.');
+  fixture = prepare(); fixture.deliver(); const changedReview = { ...morningItem(), ruleId: null, context: { ...morningItem().context, threadDigest: digest('changed context') } }; const changedIntent = reacquire(fixture, changedReview);
+  expect('refresh/changed-plan', rejects(() => fixture.step('action-intent', changedIntent, readAt)), 'A new or changed action plan requires verified edit of the same delivered message.');
+  fixture = prepare(); fixture.deliver(); reacquire(fixture, { ...morningItem(), context: { ...morningItem().context, actionRequired: true, threadDigest: digest('new action required') } }); expect('refresh/protected-context', fixture.run.items[0].classification.action === 'keep', 'Fresh changed actionable thread must be kept.');
+  fixture = prepare(); fixture.step('correct', { adapter: 'gmail', nativeId: 'gmail-one', disposition: 'dismissed', sourceRef: 'owner', reason: 'Handled.' }); fixture.deliver(); reacquire(fixture); expect('refresh/correction', fixture.run.items[0].correction?.disposition === 'dismissed', 'Owner corrections survive reclassification.');
+  fixture = prepare(); fixture.deliver(); fixture.intent(); fixture.step('action-result', { ...result, intentDigest: fixture.run.items[0].attempts[0].intentDigest }); expect('refresh/terminal', rejects(() => fixture.step('refresh', { generation: 1, items: [{ adapter: 'gmail', nativeId: 'gmail-one' }], sourceRef: 'owner', reason: 'Must not reopen a verified move.' }, refreshAt)), 'Verified moves remain terminal forever.');
+  fixture = prepare(); fixture.deliver(); const exactIntent = reacquire(fixture); expect('refresh/header-wrapper', rejects(() => fixture.step('action-intent', { ...exactIntent, receipt: morningReceipt('gmail', '2026-10-25T01:06:00.002Z') }, '2026-10-25T01:06:00.002Z')), 'Action before state must bind exact fresh full-thread acquisition, not a header wrapper.');
+  fixture.step('summary', {}, readAt); fixture.step('edit-intent', { editRef: 'pending-refresh-edit', nativeId: 'message', bodyDigest: fixture.run.summary.bodyDigest }, readAt); expect('refresh/uncertain-edit', rejects(() => fixture.step('action-intent', exactIntent, readAt)), 'Unknown same-message edit blocks dependent cleanup even for unchanged plans.');
+  fixture = prepare(); fixture.deliver(); fixture.step('refresh', { generation: 1, items: [{ adapter: 'gmail', nativeId: 'gmail-one' }], sourceRef: 'owner', reason: 'Do not borrow a pre-generation acquisition.' }, refreshAt);
+  const olderReceipt = { ...morningReceipt('gmail', '2026-10-25T01:05:59.999Z'), capturedAt: readAt }; const oldJob = digest('old-source-new-fetch'); fixture.state.jobs.push({ key: oldJob, status: 'completed', input: { kind: 'briefing-source-read', occurrence: `${morningOpen.runId}/refresh/1`, entityIds: ['gmail'] }, receipts: [olderReceipt] });
+  expect('refresh/new-source-time', rejects(() => fixture.step('source', { generation: 1, sourceId: 'gmail', jobKey: oldJob, receipt: olderReceipt, paginationComplete: true, cached: false, resourceIds: [], messageIds: ['gmail-one'], window: null }, readAt)), 'A new ticket and fetch time cannot refresh old pre-generation content.');
+  expect('refresh/missing-context', rejects(() => fixture.step('action-intent', { generation: 1, adapter: 'gmail', nativeId: 'gmail-one', action: 'trash', before: morningItem().before, receipt: morningReceipt('gmail', readAt), destination: null }, readAt)), 'A selected ID remains held until complete fresh context is reviewed.');
   return { cases };
 }
 const mutant = (id, before, after, counterexample) => ({ id: `morning-${id}`, source: 'src/morning.mjs', property: 'morning-contract', edits: [[before, after]], counterexample });
 export const morningMutations = [
+  mutant('refresh-undelivered-plan', 'run.cleanup.deliveredPlans[item.key] === planDigest(item)', 'true', 'refresh/changed-plan'),
+  mutant('refresh-erase-correction', 'Object.assign(existing, review, { reviewDigest:', 'Object.assign(existing, review, { correction: null, reviewDigest:', 'refresh/correction'),
+  mutant('refresh-repeat-verified', '!item || !terminalItem(item)', 'true', 'refresh/terminal'),
+  mutant('refresh-header-only', 'same(command.receipt, item.receipt) && same(command.before, item.before)', 'same(command.before, item.before)', 'refresh/header-wrapper'),
+  mutant('refresh-ignore-uncertain-edit', '!uncertainRun(run) && command.generation === run.cleanup.generation && item.cleanupGeneration', 'true && command.generation === run.cleanup.generation && item.cleanupGeneration', 'refresh/uncertain-edit'),
+  mutant('refresh-old-source-new-wrapper', 'Date.parse(command.receipt.observedAt) > Date.parse(run.cleanup.openedAt) && (!source.capture', 'true && (!source.capture', 'refresh/new-source-time'),
   mutant('stale-summary-intent', 'run.summary.outcomeDigest === outcomeDigest(run)', 'true', 'summary/stale-intent'),
   mutant('stale-summary-complete', 'run.summary?.outcomeDigest === outcomeDigest(run)', 'true', 'summary/stale-view'),
   mutant('delivery-wrong-scope', 'same(command.scope, intent.scope)', 'true', 'delivery/scope'),

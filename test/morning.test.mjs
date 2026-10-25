@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { classifyMail, mailRules, morningView, mailPolicies } from '../src/morning.mjs';
 import { fleetInitial, fleetTransition } from '../src/fleet-state.mjs';
 import { digest } from '../src/records.mjs';
-import { morningAssessments, morningAt, morningCommand, morningFixture, morningDelivery, morningItem, morningOpen, morningReceipt, morningRoot } from '../verification/morning-fixtures.mjs';
+import { morningAssessments, morningAt, morningCommand, morningFixture, morningDelivery, morningItem, morningOpen, morningReceipt, morningRoot, refreshMorning } from '../verification/morning-fixtures.mjs';
 const reviewed = () => { const fixture = morningFixture(); fixture.command('review', { items: [morningItem(), morningItem('outlook')] }); return fixture; };
 const intent = (fixture, overrides = {}) => fixture.command('action-intent', { adapter: 'gmail', nativeId: 'gmail-one', action: 'trash', before: morningItem().before, receipt: morningReceipt('gmail'), destination: null, ...overrides });
 test('exact owner rules are conservative across false positives and explicit context overrides', () => {
@@ -128,4 +128,44 @@ test('versioned policy descriptors dispatch historical decisions without source-
   const legacy = classifyMail(unknown, 'owner@example.test', [], 1); const current = classifyMail(unknown, 'owner@example.test', [], 2);
   assert.equal(legacy.action, 'archive'); assert.equal(legacy.policyDigest, '8ad3996a98ab9af02ef02f265365a1300d7e09fc354540527e2b9fdd08db0029'); assert.equal(current.action, 'keep'); assert.equal(current.policyVersion, 2); assert.ok(Object.isFrozen(mailPolicies[1]));
   assert.throws(() => classifyMail(item, 'owner@example.test', [], 99), /Unsupported pinned/);
+});
+test('a delivered same-day run continues after expiry with fresh selected threads and unchanged delivered plans', () => {
+  const fixture = reviewed(); fixture.deliver(); const original = structuredClone(fixture.run.delivery); const initialBody = fixture.run.sealed.body;
+  const batch = refreshMorning(fixture); assert.equal(fixture.run.cleanup.kind, 'selected-mail-batch-v1'); assert.ok(fixture.run.cleanup.globalGaps.some(gap => gap.includes('stale global'))); assert.equal(fixture.run.cleanup.acquisitions[0].coverageKind, 'selected-ids');
+  fixture.command('action-intent', { generation: 1, adapter: 'gmail', nativeId: 'gmail-one', action: 'trash', before: batch.item.before, receipt: batch.item.receipt, destination: null }, batch.at);
+  assert.deepEqual(fixture.run.delivery, original); assert.equal(fixture.run.sealed.body, initialBody); assert.equal(batch.item.reviewHistory.length, 1);
+});
+test('changed actionable context is kept; changed facts require a verified same-message plan edit', () => {
+  const held = reviewed(); held.deliver(); const protectedItem = morningItem(); protectedItem.context.actionRequired = true; protectedItem.context.threadDigest = digest('new actionable thread'); const first = refreshMorning(held, { items: [protectedItem] });
+  assert.equal(first.item.classification.action, 'keep'); assert.throws(() => held.command('action-intent', { generation: 1, adapter: 'gmail', nativeId: 'gmail-one', action: 'trash', before: first.item.before, receipt: first.item.receipt, destination: null }, first.at), /changed cleanup plans|conservative/);
+  const fixture = reviewed(); fixture.deliver(); const changed = morningItem(); changed.context.orderReceipt = true; changed.facts = ['The newly acquired receipt says collect order XYZ on the saved date.']; changed.context.threadDigest = digest('changed receipt context'); const batch = refreshMorning(fixture, { items: [changed] });
+  const action = { generation: 1, adapter: 'gmail', nativeId: 'gmail-one', action: 'archive', before: batch.item.before, receipt: batch.item.receipt, destination: null };
+  assert.throws(() => fixture.command('action-intent', action, batch.at), /verified same-message edit/);
+  fixture.command('summary', {}, batch.at); assert.ok(fixture.run.summary.body.includes(changed.facts[0])); const edit = { editRef: 'fresh-plan-edit', bodyDigest: fixture.run.summary.bodyDigest, nativeId: fixture.run.delivery.nativeId };
+  fixture.command('edit-intent', edit, batch.at); assert.throws(() => fixture.command('action-intent', action, batch.at), /resolved selected-ID/); assert.throws(() => fixture.command('refresh', { generation: 2, items: [{ adapter: 'gmail', nativeId: 'gmail-one' }], sourceRef: 'owner', reason: 'Do not bypass an uncertain edit.' }, batch.at), /resolved delivery/);
+  fixture.command('edit-ack', { ...edit, deliveredBodyDigest: edit.bodyDigest, readbackRef: 'actual-fresh-plan-readback', acquiredAt: batch.at }, batch.at); fixture.command('action-intent', action, batch.at); assert.equal(fixture.run.items[0].attempts.length, 1);
+});
+test('refresh preserves owner corrections and terminal verified moves across later inbox acquisitions', () => {
+  const fixture = reviewed(); fixture.command('correct', { adapter: 'gmail', nativeId: 'gmail-one', disposition: 'dismissed', sourceRef: 'owner-dismissal', reason: 'Handled, do not repeat.' }); fixture.deliver(); const batch = refreshMorning(fixture);
+  assert.equal(batch.item.correction.sourceRef, 'owner-dismissal'); assert.throws(() => fixture.command('action-intent', { generation: 1, adapter: 'gmail', nativeId: 'gmail-one', action: 'trash', before: batch.item.before, receipt: batch.item.receipt, destination: null }, batch.at), /conservative/);
+  fixture.command('correct', { adapter: 'gmail', nativeId: 'gmail-one', disposition: 'complete', sourceRef: 'owner-completion', reason: 'Keep exact completion.' }, batch.at); assert.equal(fixture.run.items[0].correctionHistory.length, 1);
+  const terminal = reviewed(); terminal.deliver(); intent(terminal); const attempt = terminal.run.items[0].attempts[0]; terminal.command('action-result', { adapter: 'gmail', nativeId: 'gmail-one', intentDigest: attempt.intentDigest, after: { ...morningItem().before, labels: ['UNREAD', 'STARRED', 'TRASH'] }, receipt: morningReceipt('gmail'), outcome: 'verified' });
+  assert.throws(() => refreshMorning(terminal), /terminal/); assert.equal(terminal.run.items[0].attempts[0].status, 'verified');
+});
+test('refresh rejects reused timestamps, missing selected context and header-only action wrappers', () => {
+  const fixture = reviewed(); fixture.deliver(); const batch = refreshMorning(fixture);
+  assert.throws(() => fixture.command('review', { generation: 1, items: [{ ...morningItem(), receipt: morningReceipt('gmail') }] }, batch.at), /exact admitted|genuinely new|fresh source/);
+  assert.throws(() => fixture.command('action-intent', { generation: 1, adapter: 'gmail', nativeId: 'gmail-one', action: 'trash', before: batch.item.before, receipt: morningReceipt('gmail', '2026-10-25T01:06:00.002Z'), destination: null }, '2026-10-25T01:06:00.002Z'), /header-only/);
+  assert.throws(() => fixture.command('action-intent', { generation: 1, adapter: 'outlook', nativeId: 'outlook-one', action: 'archive', before: morningItem('outlook').before, receipt: morningReceipt('outlook', batch.at), destination: { folder: 'Archive', folderId: 'archive-native' } }, batch.at), /current resolved selected-ID/);
+});
+
+test('batched initial delivery keeps aged global sources explicit instead of requiring a whole-run sprint', () => {
+  const fixture = morningFixture({ cleanupMode: 'batched-v1' }); fixture.command('review', { items: [morningItem(), morningItem('outlook')] }); const at = '2026-10-25T01:06:00.000Z'; fixture.command('seal', morningAssessments(at), at);
+  assert.ok(fixture.run.sealed.gaps.some(gap => gap.includes('stale source'))); const send = { sendRef: 'degraded-original-send', bodyDigest: fixture.run.sealed.bodyDigest }; fixture.command('send-intent', send, at); fixture.command('send-ack', { ...send, acquiredAt: at, deliveredBodyDigest: send.bodyDigest, nativeId: 'same-original-message', readbackRef: 'actual-original-body-readback' }, at);
+  assert.equal(fixture.run.delivery.status, 'delivered'); assert.throws(() => fixture.command('send-intent', send, at), /no prior uncertain|fresh source/);
+});
+test('refreshed edits replace old mail plans and expose current batch holds independently of global age', () => {
+  const fixture = reviewed(); fixture.command('correct', { adapter: 'gmail', nativeId: 'gmail-one', disposition: 'dismissed', sourceRef: 'owner', reason: 'Already handled.' }); fixture.deliver(); const batch = refreshMorning(fixture); fixture.command('summary', {}, batch.at);
+  assert.doesNotMatch(fixture.run.summary.body, /## Mail review/); assert.match(fixture.run.summary.body, /dismissed/); assert.equal((fixture.run.summary.body.match(/gmail\\-one/g) ?? []).length, 1);
+  const selected = morningView(fixture.state.morningRuns, batch.at)[0].cleanup.selectedIds[0]; assert.equal(selected.state, 'kept'); assert.equal(morningView(fixture.state.morningRuns, batch.at)[0].cleanup.globalCoverage, 'degraded');
 });

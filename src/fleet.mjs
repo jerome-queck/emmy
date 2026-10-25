@@ -38,7 +38,7 @@ export async function fleetPendingTurns(home, records) {
 export async function fleet(home, { file }) {
   const input = await boundedJson(file, 1048576);
   shape(input, ['schemaVersion', 'responsibilityId', 'expectedHead', 'action', 'evidence'], 'fleet envelope');
-  if (input.action?.operation === 'morning' && input.action.command?.step === 'open') insist(input.action.command.policyVersion === 2 && input.action.command.delivery, 'New morning runs require current pinned policy and exact delivery target');
+  if (input.action?.operation === 'morning' && input.action.command?.step === 'open') insist(input.action.command.policyVersion === 2 && input.action.command.delivery && input.action.command.cleanupMode === 'batched-v1', 'New morning runs require current pinned policy and exact delivery target');
   if (input.action?.operation === 'group-send-intent') insist(input.action.delivery, 'New grouped sends require an exact authorized delivery target');
   insist(input.schemaVersion === 1 && typeof input.responsibilityId === 'string', 'Invalid fleet envelope'); actionInput(input.action);
   let { records } = await readStore(home); const at = new Date().toISOString();

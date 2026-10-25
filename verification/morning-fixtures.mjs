@@ -16,11 +16,11 @@ export function morningItem(adapter = 'gmail', overrides = {}) {
   return { adapter, before: { nativeId: `${adapter}-one`, threadId: `${adapter}-thread`, subject: 'A harmless promotion', sender: 'contact@info.foodpanda.sg', unread: true, ...(adapter === 'gmail' ? { labels: ['INBOX', 'UNREAD', 'STARRED'] } : { folder: 'Inbox', folderId: 'inbox-native' }) }, receipt: morningReceipt(adapter), context: { ...context, complete: true, safeUnreadInspection: true, informational: true, category: 'promotion', threadDigest: digest('whole thread') }, facts: [], ruleId: adapter === 'gmail' ? 'foodpanda-promotions' : null, ...overrides };
 }
 export const morningCommand = (step, fields = {}) => ({ step, runId: morningOpen.runId, ...(['send-ack', 'send-resolve', 'edit-ack', 'edit-resolve'].includes(step) ? { scope: morningDelivery.scope, acquiredAt: morningAt } : {}), ...fields });
-export function morningFixture() {
+export function morningFixture({ cleanupMode } = {}) {
   let state = fleetInitial(morningRoot);
   const transition = (action, at = morningAt) => { const result = fleetTransition(state, action, morningRoot, at); state = result.state; return result; };
   const command = (step, fields = {}, at = morningAt) => transition({ operation: 'morning', command: morningCommand(step, fields) }, at);
-  command('open', Object.fromEntries(Object.entries(morningOpen).filter(([key]) => !['step', 'runId'].includes(key))));
+  command('open', { ...Object.fromEntries(Object.entries(morningOpen).filter(([key]) => !['step', 'runId'].includes(key))), ...(cleanupMode ? { cleanupMode } : {}) });
   for (const entity of morningEntities) {
     transition({ operation: 'submit', job: { id: `read-${entity.id}`, kind: 'briefing-source-read', occurrence: morningOpen.runId, priority: 'morning', entityIds: [entity.id], purpose: 'Synthetic acquisition through the actual fleet state machine', maxReads: 1, maxBytes: 4096, steps: 1 } });
     const admitted = transition({ operation: 'claim', ownerRef: 'synthetic-parent' }); const ticket = admitted.ticket;
@@ -37,4 +37,18 @@ export function morningAssessments(at = morningAt, window = morningWindow) {
   const briefingInput = { synthetic: true }; const calendarInput = { intent: { window: { ...window, timeZone: 'Asia/Singapore' } } };
   const briefingInputReceipt = { ...morningReceipt('briefing-input', at), sha256: digest(JSON.stringify(briefingInput)) }; const calendarInputReceipt = { ...morningReceipt('calendar-input', at), sha256: digest(JSON.stringify(calendarInput)) };
   return { briefing: { receipt: morningReceipt('briefing', at), input: briefingInput, inputReceipt: briefingInputReceipt, assessmentReceipt: morningReceipt('briefing-generated-receipt', at), assessment: { schemaVersion: 1, mode: 'draft', status: 'checked', assurance: 'advisory-reported-inputs', checkedAt: at, inputDigest: briefingInputReceipt.sha256, bodyDigest: digest(body) }, result: { mode: 'draft', status: 'checked', body, bodyDigest: digest(body) } }, calendar: { receipt: morningReceipt('calendar-assessment', at), input: calendarInput, inputReceipt: calendarInputReceipt, result: { schemaVersion: 1, ruleVersion: 1, status: 'checked', execution: 'none', assurance: 'declared-calendar-evidence', evaluatedAt: at, inputDigest: calendarInputReceipt.sha256, findings: [], fieldResults: [], inventoryResults: [], morningResults: [] } } };
+}
+export function refreshMorning(fixture, { generation = 1, openedAt = '2026-10-25T01:06:00.000Z', acquiredAt = '2026-10-25T01:06:00.001Z', items = [morningItem()] } = {}) {
+  fixture.command('refresh', { generation, items: items.map(item => ({ adapter: item.adapter, nativeId: item.before.nativeId })), sourceRef: 'synthetic-current-owner', reason: 'Reacquire only these same-day IDs; global sources retain their ages.' }, openedAt);
+  const reviews = [];
+  for (const adapter of ['gmail', 'outlook']) {
+    const selected = items.filter(item => item.adapter === adapter); if (!selected.length) continue;
+    fixture.transition({ operation: 'submit', job: { id: `refresh-${generation}-${adapter}`, kind: 'briefing-source-read', occurrence: `${morningOpen.runId}/refresh/${generation}`, priority: 'morning', entityIds: [adapter], purpose: 'Fresh complete selected-ID full threads and before state only.', maxReads: 1, maxBytes: 4096, steps: 1 } }, acquiredAt);
+    const admitted = fixture.transition({ operation: 'claim', ownerRef: 'synthetic-parent' }, acquiredAt); const ticket = admitted.ticket; const receipt = morningReceipt(adapter, acquiredAt);
+    fixture.transition({ operation: 'result', jobKey: ticket.key, ticket: ticket.ticket, checkpoint: 1, outcome: 'completed', usage: { reads: 1, bytes: 32 }, receipt }, acquiredAt);
+    fixture.command('source', { generation, sourceId: adapter, jobKey: ticket.key, receipt, paginationComplete: true, cached: false, resourceIds: [], messageIds: selected.map(item => item.before.nativeId), window: null }, acquiredAt);
+    reviews.push(...selected.map(item => ({ ...item, receipt })));
+  }
+  fixture.command('review', { generation, items: reviews }, acquiredAt);
+  return { generation, at: acquiredAt, item: fixture.run.items.find(item => item.before.nativeId === reviews[0].before.nativeId && item.adapter === reviews[0].adapter), reviews };
 }
