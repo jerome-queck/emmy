@@ -1,14 +1,15 @@
 {
   "schemaVersion": 1,
   "kind": "bounded-tla-publication-safety",
-  "sourceCommit": "1a1e060e661e2c8a2f81a253c1360549d27dd48c",
-  "reviewBasis": "Reviewed every covered src/records.mjs change from 1ba92c5dd36a92c892514f9ee32906ddc9bd1c8a through f9798eb7a2dae31f6ddadeccdf15aa194c776201 and the new imported cloud-schema owner. Cloud adds two immutable record types and definition/root/parent/epoch references, with synchronous prepublication and read-time validation. Cloud directly validates all dependencies before publication. The actual publishRecord/readRecord/readStore filesystem awaits, atomic rename, pending-only cleanup, retainImport preparation/publication sequence and importOrder are unchanged. Backup adds unresolved-claim preflight reads outside this model. The existing one-edge configured importer remains the dependency claim; cloud lineage/claim/archive semantics are explicitly excluded. The copied-source filesystem driver now copies the schema dependency so mutants must reach their intended actual witnesses rather than fail import. Source mapping lines and dependency hashes refreshed after independent source reading, retained strict refusal and 7927/111 development replay. Model/config/tool/bounds/properties and both model/filesystem mutant promises remain unchanged. Strict TLC and real filesystem restored-baseline replay and independent exact-head release review remain gates. Reviewed full records diff and new fleet schema/state/work dependency closure through c11f811475aeccfe84867d8da0089ddbcac68857. Six feature source readers included an independent upkeep/publication source read. Canonical publisher/importer/write/readback/rename awaits remain unchanged; synchronous schema and deterministic replay validation add definition/root/parent/epoch edges. The complete hard-linked per-head pure intent and backup preflight are new outside-model boundaries. The copied-source filesystem driver now includes every imported dependency. No TLC model, config, tool, bound or existing mutant promise changed. Strict stale-source refusals were retained before this pin. The current one-edge importer and canonical byte-publication scope do not prove the fleet graph, hard-link serialization, parent execution, source truth, call counts, sign-in, delivery or power-loss survival. Actual stopped-writer CLI replay/backup refusal and finite fleet cases complement rather than extend TLC. Independent exact-head review and strict restored-baseline model/filesystem runs remain gates. Reviewed the corrective source through 83f2dd8cba909826ed63db8d99373fb2d278e49f after independent FAIL. Only the imported pure fleet deadline predicate and maintained finite-count prose affect this closure. Canonical record publisher/importer awaits, reference edges, TLC model/config/bounds and filesystem mutants remain unchanged. Existing strict refusal retained before this pin. Parent receipt truth, acquisition clocks, current authority, intent serialization, sign-in, actual delivery and later adoption remain outside TLC; strict full replay and fresh exact-head review remain required. Reviewed coordinator model repair from feec99730bfde69876dfb4d36cbc46560a667581 through 1a1e060e661e2c8a2f81a253c1360549d27dd48c. The only product changes are synchronous settings/scope parsing and descendant source validation in records, plus independent coordinator policy selection in dispatch. Immutable identity, authority, effect keys and launch chains remain unchanged. Canonical publication awaits and reference edges are unchanged. Strict drift refusals were retained before pin advancement. The real CLI reproduced dispatcher-model-mismatch before the fix and passes 150 commands after correction. Finite dispatch expands by 28 targeted cases, with five new paired production mutants; development replay passes 8177 predicates and 151 mutants. Owner references and native settings remain reported evidence. Native retry, provider execution and effective permissions remain separate parent acceptance. Independent exact-head review and strict aggregate remain release gates.",
+  "sourceCommit": "01b3b5f943d37933c5ba84a42f548507fb0f6c27",
+  "reviewBasis": "Reviewed every covered src/records.mjs change from 1ba92c5dd36a92c892514f9ee32906ddc9bd1c8a through f9798eb7a2dae31f6ddadeccdf15aa194c776201 and the new imported cloud-schema owner. Cloud adds two immutable record types and definition/root/parent/epoch references, with synchronous prepublication and read-time validation. Cloud directly validates all dependencies before publication. The actual publishRecord/readRecord/readStore filesystem awaits, atomic rename, pending-only cleanup, retainImport preparation/publication sequence and importOrder are unchanged. Backup adds unresolved-claim preflight reads outside this model. The existing one-edge configured importer remains the dependency claim; cloud lineage/claim/archive semantics are explicitly excluded. The copied-source filesystem driver now copies the schema dependency so mutants must reach their intended actual witnesses rather than fail import. Source mapping lines and dependency hashes refreshed after independent source reading, retained strict refusal and 7927/111 development replay. Model/config/tool/bounds/properties and both model/filesystem mutant promises remain unchanged. Strict TLC and real filesystem restored-baseline replay and independent exact-head release review remain gates. Reviewed full records diff and new fleet schema/state/work dependency closure through c11f811475aeccfe84867d8da0089ddbcac68857. Six feature source readers included an independent upkeep/publication source read. Canonical publisher/importer/write/readback/rename awaits remain unchanged; synchronous schema and deterministic replay validation add definition/root/parent/epoch edges. The complete hard-linked per-head pure intent and backup preflight are new outside-model boundaries. The copied-source filesystem driver now includes every imported dependency. No TLC model, config, tool, bound or existing mutant promise changed. Strict stale-source refusals were retained before this pin. The current one-edge importer and canonical byte-publication scope do not prove the fleet graph, hard-link serialization, parent execution, source truth, call counts, sign-in, delivery or power-loss survival. Actual stopped-writer CLI replay/backup refusal and finite fleet cases complement rather than extend TLC. Independent exact-head review and strict restored-baseline model/filesystem runs remain gates. Reviewed the corrective source through 83f2dd8cba909826ed63db8d99373fb2d278e49f after independent FAIL. Only the imported pure fleet deadline predicate and maintained finite-count prose affect this closure. Canonical record publisher/importer awaits, reference edges, TLC model/config/bounds and filesystem mutants remain unchanged. Existing strict refusal retained before this pin. Parent receipt truth, acquisition clocks, current authority, intent serialization, sign-in, actual delivery and later adoption remain outside TLC; strict full replay and fresh exact-head review remain required. Reviewed coordinator model repair from feec99730bfde69876dfb4d36cbc46560a667581 through 1a1e060e661e2c8a2f81a253c1360549d27dd48c. The only product changes are synchronous settings/scope parsing and descendant source validation in records, plus independent coordinator policy selection in dispatch. Immutable identity, authority, effect keys and launch chains remain unchanged. Canonical publication awaits and reference edges are unchanged. Strict drift refusals were retained before pin advancement. The real CLI reproduced dispatcher-model-mismatch before the fix and passes 150 commands after correction. Finite dispatch expands by 28 targeted cases, with five new paired production mutants; development replay passes 8177 predicates and 151 mutants. Owner references and native settings remain reported evidence. Native retry, provider execution and effective permissions remain separate parent acceptance. Independent exact-head review and strict aggregate remain release gates. Reviewed morning parser/replay dependency closure through 01b3b5f943d37933c5ba84a42f548507fb0f6c27. records validates nested morning receipt/context byte digests; fleet schema/state import morning. New transitions are synchronous and leave canonical publication awaits, rename/readback boundaries, record reference edges, TLC model/config/tool/bounds and existing mutant promises unchanged. Copied-source filesystem witnesses include morning.mjs so intended mutants reach production behavior. Strict source drift refusals were retained before this update. Morning native I/O, authority/semantics, source completeness, schedules and actual delivery remain outside TLC.",
   "sourceFiles": {
-    "src/records.mjs": "7ca3d2952d75cfa48ef72320d665bd1d7238c5d93ae478eb15ec91a1eb5681a8",
+    "src/records.mjs": "c5fed479eac2fdf04a69034552aad6a7aadaeda90ad1fcabe142ffc4cb698045",
     "src/cloud-schema.mjs": "2179301f012a5832b597f493f9744df8d86f60427d2bbac0664f4f6fd95853bd",
-    "src/fleet-schema.mjs": "653004e961595b3c504e84206a51d1e553cdb816844fff7b214bc72905a0c2be",
-    "src/fleet-state.mjs": "99afde5dea08b09d7b3ac1049dc3f3403ec8ae81203467077e8687f84006fffd",
-    "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1"
+    "src/fleet-schema.mjs": "a3d7a270da4c398efc54637ca9f972b25ee5eedfa3de7916769d370f38f4e63d",
+    "src/fleet-state.mjs": "47bab524794e75fb2a8b1d9bca1d6ec46bb3682984d081d45f660cbdc63fba67",
+    "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
+    "src/morning.mjs": "c8aa3d332965a1ff6eded820fd8a9d650d1af226d439050a24bdca0c84932903"
   },
   "verificationFiles": {
     "verification/publication/RecordPublication.tla": "9570ee406a8ea90a767dc5093186585860f83cbf082b94b9b8e13e67a83d0edb",
@@ -16,7 +17,7 @@
     "verification/publication/distinct-import.cfg": "2e8541dfee1521933f7012664ae951d27ade45b4345c4f43edc7ecacabda0b80",
     "verification/publication/direct-canonical-mutant.cfg": "ac01138937a08ef825759358c3096312c563aaa81213c9395763a3746e8375e2",
     "verification/publication/reversed-import-mutant.cfg": "3d01afb8d826dcaa45673a67cb9391409b9164576d4248a3d5b5ca74fa05e21c",
-    "verification/publication/drive.mjs": "44e880befba4d0569250389ad4a2a0bd321a9ef7c1f8c1f60f6f3284b12b7c52",
+    "verification/publication/drive.mjs": "77d299ab67f252a415741b4b68d2af9eb9250630c30c9d385d6cad1d076f4480",
     "verification/publication/worker.mjs": "92ea1c8bb11138b5f2ae32b7465e7e9fc8e9edd688be6bc2062c3a1a0fcb630d",
     "scripts/verify-publication.mjs": "9a34dedf98d2e1a544707f66139b48ebfea185214b5274e05095924333e7f6de",
     ".agents/skills/publication-contract/SKILL.md": "c6f959404b1e7f19e62d39e03eb96be69296ef95ea135f9687603de7e2c54d56"
@@ -138,8 +139,8 @@
         "recordPayload"
       ],
       "lines": [
-        280,
-        290
+        281,
+        291
       ],
       "model": [
         "Hashes",
@@ -154,8 +155,8 @@
         "publishRecord"
       ],
       "lines": [
-        292,
-        310
+        293,
+        311
       ],
       "model": [
         "CreatePending",
@@ -176,8 +177,8 @@
         "validateReferences"
       ],
       "lines": [
-        312,
-        398
+        313,
+        401
       ],
       "model": [
         "ObserveList",
@@ -196,12 +197,12 @@
         "importOrder"
       ],
       "lines": [
-        342,
-        351,
-        401,
-        422,
-        553,
-        563
+        343,
+        352,
+        404,
+        425,
+        556,
+        566
       ],
       "model": [
         "Order",
@@ -219,12 +220,12 @@
         "retainImport"
       ],
       "lines": [
-        273,
-        278,
-        292,
-        310,
-        401,
-        422
+        274,
+        279,
+        293,
+        311,
+        404,
+        425
       ],
       "model": [
         "Crash",
