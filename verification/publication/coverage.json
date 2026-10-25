@@ -1,11 +1,14 @@
 {
   "schemaVersion": 1,
   "kind": "bounded-tla-publication-safety",
-  "sourceCommit": "f9798eb7a2dae31f6ddadeccdf15aa194c776201",
-  "reviewBasis": "Reviewed every covered src/records.mjs change from 1ba92c5dd36a92c892514f9ee32906ddc9bd1c8a through f9798eb7a2dae31f6ddadeccdf15aa194c776201 and the new imported cloud-schema owner. Cloud adds two immutable record types and definition/root/parent/epoch references, with synchronous prepublication and read-time validation. Cloud directly validates all dependencies before publication. The actual publishRecord/readRecord/readStore filesystem awaits, atomic rename, pending-only cleanup, retainImport preparation/publication sequence and importOrder are unchanged. Backup adds unresolved-claim preflight reads outside this model. The existing one-edge configured importer remains the dependency claim; cloud lineage/claim/archive semantics are explicitly excluded. The copied-source filesystem driver now copies the schema dependency so mutants must reach their intended actual witnesses rather than fail import. Source mapping lines and dependency hashes refreshed after independent source reading, retained strict refusal and 7927/111 development replay. Model/config/tool/bounds/properties and both model/filesystem mutant promises remain unchanged. Strict TLC and real filesystem restored-baseline replay and independent exact-head release review remain gates.",
+  "sourceCommit": "c11f811475aeccfe84867d8da0089ddbcac68857",
+  "reviewBasis": "Reviewed every covered src/records.mjs change from 1ba92c5dd36a92c892514f9ee32906ddc9bd1c8a through f9798eb7a2dae31f6ddadeccdf15aa194c776201 and the new imported cloud-schema owner. Cloud adds two immutable record types and definition/root/parent/epoch references, with synchronous prepublication and read-time validation. Cloud directly validates all dependencies before publication. The actual publishRecord/readRecord/readStore filesystem awaits, atomic rename, pending-only cleanup, retainImport preparation/publication sequence and importOrder are unchanged. Backup adds unresolved-claim preflight reads outside this model. The existing one-edge configured importer remains the dependency claim; cloud lineage/claim/archive semantics are explicitly excluded. The copied-source filesystem driver now copies the schema dependency so mutants must reach their intended actual witnesses rather than fail import. Source mapping lines and dependency hashes refreshed after independent source reading, retained strict refusal and 7927/111 development replay. Model/config/tool/bounds/properties and both model/filesystem mutant promises remain unchanged. Strict TLC and real filesystem restored-baseline replay and independent exact-head release review remain gates. Reviewed full records diff and new fleet schema/state/work dependency closure through c11f811475aeccfe84867d8da0089ddbcac68857. Six feature source readers included an independent upkeep/publication source read. Canonical publisher/importer/write/readback/rename awaits remain unchanged; synchronous schema and deterministic replay validation add definition/root/parent/epoch edges. The complete hard-linked per-head pure intent and backup preflight are new outside-model boundaries. The copied-source filesystem driver now includes every imported dependency. No TLC model, config, tool, bound or existing mutant promise changed. Strict stale-source refusals were retained before this pin. The current one-edge importer and canonical byte-publication scope do not prove the fleet graph, hard-link serialization, parent execution, source truth, call counts, sign-in, delivery or power-loss survival. Actual stopped-writer CLI replay/backup refusal and finite fleet cases complement rather than extend TLC. Independent exact-head review and strict restored-baseline model/filesystem runs remain gates.",
   "sourceFiles": {
-    "src/records.mjs": "891d50b6e25017d82b281fdb455dabcc68863c3f461a888818fb5ef3be858a98",
-    "src/cloud-schema.mjs": "2179301f012a5832b597f493f9744df8d86f60427d2bbac0664f4f6fd95853bd"
+    "src/records.mjs": "6bace536f56715ee9bd11d88cb1cd88e185ccb6038c5409f81578b559e2583c6",
+    "src/cloud-schema.mjs": "2179301f012a5832b597f493f9744df8d86f60427d2bbac0664f4f6fd95853bd",
+    "src/fleet-schema.mjs": "653004e961595b3c504e84206a51d1e553cdb816844fff7b214bc72905a0c2be",
+    "src/fleet-state.mjs": "3936019ad33911b6b43939c75913947d17b393f6029ff6ae58ac09a29f81e375",
+    "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1"
   },
   "verificationFiles": {
     "verification/publication/RecordPublication.tla": "9570ee406a8ea90a767dc5093186585860f83cbf082b94b9b8e13e67a83d0edb",
@@ -13,10 +16,10 @@
     "verification/publication/distinct-import.cfg": "2e8541dfee1521933f7012664ae951d27ade45b4345c4f43edc7ecacabda0b80",
     "verification/publication/direct-canonical-mutant.cfg": "ac01138937a08ef825759358c3096312c563aaa81213c9395763a3746e8375e2",
     "verification/publication/reversed-import-mutant.cfg": "3d01afb8d826dcaa45673a67cb9391409b9164576d4248a3d5b5ca74fa05e21c",
-    "verification/publication/drive.mjs": "c6a261e4775d81f756dab97d4e97bff7389f9a73c03ab4c304038dd9d7bd7d06",
+    "verification/publication/drive.mjs": "44e880befba4d0569250389ad4a2a0bd321a9ef7c1f8c1f60f6f3284b12b7c52",
     "verification/publication/worker.mjs": "92ea1c8bb11138b5f2ae32b7465e7e9fc8e9edd688be6bc2062c3a1a0fcb630d",
     "scripts/verify-publication.mjs": "9a34dedf98d2e1a544707f66139b48ebfea185214b5274e05095924333e7f6de",
-    ".agents/skills/publication-contract/SKILL.md": "31309041a9fefcda02c1f4f18fbd1ecf76170f5255b651defa087582fffcba7a"
+    ".agents/skills/publication-contract/SKILL.md": "a4da8cf9b7acbd395b333f32871bcddaffb668129aac01429361d81beb6708b8"
   },
   "tool": {
     "release": "TLA+ tools 1.7.4",
