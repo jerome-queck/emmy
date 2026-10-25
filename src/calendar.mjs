@@ -206,6 +206,12 @@ function stringDelta(expected, actual) {
   let firstDifference = 0; while (firstDifference < Math.min(expected.length, actual.length) && expected[firstDifference] === actual[firstDifference]) firstDifference++;
   return { expectedLength: expected.length, savedLength: actual.length, firstDifference: expected === actual ? null : firstDifference, trailingWhitespaceDelta: (actual.match(/\s*$/u)[0].length - expected.match(/\s*$/u)[0].length) };
 }
+function hasSourceName(title, name) {
+  for (let index = title.indexOf(name); index !== -1; index = title.indexOf(name, index + 1)) {
+    if (!/[\p{L}\p{N}]$/u.test(title.slice(0, index)) && !/^[\p{L}\p{N}]/u.test(title.slice(index + name.length))) return true;
+  }
+  return false;
+}
 
 export function assessCalendar(input, { evaluatedAt, inputDigest }) {
   const { intent, plan } = input; const now = Date.parse(evaluatedAt); const findings = [];
@@ -309,6 +315,7 @@ export function assessCalendar(input, { evaluatedAt, inputDigest }) {
   for (const commitment of inventoryItems.values()) {
     if (commitment.interval !== null && (!zoneMatches(commitment.interval.start, commitment.interval.timeZone) || !zoneMatches(commitment.interval.end, commitment.interval.timeZone))) finding('inventory-zone-mismatch', 'needs-evidence', ['/inventories'], commitment.identity);
     if (commitment.type === 'event' && commitment.transparency === 'unknown') finding('event-transparency-unknown', 'needs-evidence', ['/inventories'], commitment.identity);
+    if (commitment.type === 'event' && commitment.transparency === 'busy' && commitment.interval === null) finding('busy-event-interval-missing', 'needs-evidence', ['/inventories'], commitment.identity);
     if (commitment.type === 'event' && commitment.interval === null && intent.eventConstraints.some(event => event.mandatory && sameIdentity(event.identity, commitment.identity))) finding('mandatory-event-interval-missing', 'needs-evidence', ['/inventories'], commitment.identity);
   }
   const allocations = plan?.allocations ?? []; const conflictResults = []; const sourceResults = []; const budgetResults = []; const morningResults = [];
@@ -354,7 +361,7 @@ export function assessCalendar(input, { evaluatedAt, inputDigest }) {
     if (source.kind === 'whole-source') for (const allocation of matching) {
       const item = intent.items.find(entry => entry.key === allocation.itemKey);
       if (typeof item?.expected.title !== 'string') finding('source-name-unverified', 'needs-evidence', [`/intent/sources/${index}`, '/intent/items'], source.sourceId);
-      else if (!item.expected.title.includes(source.name)) reasons.push('source-name-mismatch');
+      else if (!hasSourceName(item.expected.title, source.name)) reasons.push('source-name-mismatch');
     }
     if (totalMinutes < (source.requiredMinutes ?? 0) || matching.length < (source.requiredSessions ?? 0)) reasons.push('source-minimum');
     sourceResults.push({ sourceId: source.sourceId, name: source.name, kind: source.kind, minutes: totalMinutes, sessions: matching.length, status: reasons.length ? 'revise' : 'covered', reasons, pointer: `/intent/sources/${index}` });

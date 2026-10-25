@@ -364,7 +364,7 @@
       "functions": [
         "assessCalendar"
       ],
-      "statement": "Validated declared calendar envelopes require exact saved fields, current content bindings, complete inventory, compatible allocations and scoped retained history; unresolved clocks and effects cannot establish acceptance."
+      "statement": "Validated declared calendar envelopes require exact saved fields, current content bindings, complete inventory, readable Busy or mandatory Event timing, exact whole-source labels, compatible allocations and scoped retained history; unresolved clocks and effects cannot establish acceptance."
     },
     {
       "id": "trigger-coverage",
