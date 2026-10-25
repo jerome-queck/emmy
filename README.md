@@ -14,7 +14,7 @@ npm run agent -- reconcile --id scratch-watch --as-of <UTC>
 npm run check
 ```
 
-Read [onboarding](docs/onboarding.md) to bind a designated Mac, adopt a responsibility, and recover it from a fresh process. Use [the one-time Dot bootstrap](docs/dot-bootstrap.md) to adopt the routine in Emmy's existing notes. The twelve commands retain local commitments and evidence and provide advisory briefing and dispatch checks. Native products still own execution, permissions, schedules, and delivery.
+Read [onboarding](docs/onboarding.md) to bind a designated Mac, adopt a responsibility, and recover it from a fresh process. Use [the one-time Dot bootstrap](docs/dot-bootstrap.md) to adopt the routine in Emmy's existing notes. The thirteen commands retain local commitments and evidence and provide advisory briefing and dispatch checks. Native products still own native execution, permissions, schedules, and delivery.
 
 [Private dispatch recovery](docs/native-dispatch.md) loads a project's selected native dispatcher and objective bindings from the existing private home. `dispatch --project <project-key> --as-of <UTC>` recovers the selection and jobs. Use `--resolve <explicit-selector> --discovery <private-capture>` for a fresh saved destination. With `--id <objective-id> --discovery <private-capture>`, it validates retained evidence and current source before returning native advice. Coordinator ownership and destination host/project remain separate. Authorized saved remote projects use Studio's native configured-host route, with remote source and installed-skill readbacks; the command runs no remote commands. It writes no records, creates no task and changes no permissions.
 
@@ -23,6 +23,8 @@ Read [onboarding](docs/onboarding.md) to bind a designated Mac, adopt a responsi
 [Change delivery](docs/change-delivery.md) proposes Emmy's native coding route and repository quality gates. Published source, installed runner, loaded guidance and ordinary-turn adoption require separate readbacks. Briefing recovery and output evidence stay private; the human body contains scoped updates, safe source links and material limits.
 
 The standing [thread and model policy](AGENTS.md#standing-thread-and-model-policy) applies to all Emmy work. Project `.codex/config.toml` supplies Sol High session and Sol Medium helper defaults. The [delivered calendar procedure](docs/operating-brief.md#plan-and-maintain-calendar-tasks) finds existing Tasks and maintains their saved slots through native connectors or Emmy's cloud Calendar UI. Existing native items and private notes or responsibilities own persistence. Follow [native acceptance](docs/dot-verification.md#verify-persistent-calendar-planning-and-standing-policy) to verify actual saved behavior separately from this guidance.
+
+[`cloud --file <private-envelope.json>`](docs/cloud-admission.md) executes one bounded cooperative standard-library chunk on the invoking executor. One responsibility-backed queue per private home retains priorities, explicit backpressure, retries, checkpoints and pending health escalation. It cannot enforce provider-wide capacity or deliver a Dot notification. The two-phase acceptance script survives a separate process invocation; parent cloud use remains a separate acceptance stage.
 
 [`calendar --file <private-envelope.json>`](docs/calendar.md) checks declared current intent, exact saved fields, complete inventory, allocations, and retained attempts without native execution or journal writes. Its result cannot authenticate a save or stop an external queue.
 

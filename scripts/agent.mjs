@@ -9,6 +9,7 @@ import { backupHome, digest, historicalFiles, publishRecord, readBindings, readJ
 import { adoptResponsibility, inspectHome, reconcile } from '../src/responsibilities.mjs';
 import { briefing } from '../src/briefing.mjs';
 import { dispatch } from '../src/dispatch.mjs';
+import { cloud } from '../src/cloud.mjs';
 import { calendar } from '../src/calendar.mjs';
 
 const args = process.argv.slice(2);
@@ -39,7 +40,7 @@ try {
     case 'doctor': {
       const bindings = await readBindings(home); const store = await inspectHome(home); const historical = await historicalFiles(home);
       const references = await maintain(root, catalog, false); const runtimeSupported = Number(process.versions.node.split('.')[0]) >= 24;
-      data = { status: runtimeSupported && references.status === 'current' && !store.restoredNeedsFreshObservations ? 'ready' : 'needs-attention', node: process.versions.node, runtimeSupported, projects: catalog.projects.length, boundProjects: Object.keys(bindings.projects).length, store, historicalFiles: historical.length, historicalAssurance: 'reported-only', references, limits: ['Local integrity does not establish Dot access or authenticate native authority.'] };
+      data = { status: runtimeSupported && references.status === 'current' && !store.restoredNeedsFreshObservations && !store.cloudNeedsAttention ? 'ready' : 'needs-attention', node: process.versions.node, runtimeSupported, projects: catalog.projects.length, boundProjects: Object.keys(bindings.projects).length, store, historicalFiles: historical.length, historicalAssurance: 'reported-only', references, limits: ['Local integrity does not establish Dot access or authenticate native authority.'] };
       exitCode = data.status === 'ready' ? 0 : 3; break;
     }
     case 'responsibility': data = await adoptResponsibility(home, await readJson(resolve(options.file))); break;
@@ -49,6 +50,9 @@ try {
     case 'briefing':
       data = await briefing(home, { file: options.file ? resolve(options.file) : null });
       exitCode = data.mode === 'guidance' ? (data.guidance.state === 'current' ? 0 : 3) : (data.status === 'checked' ? 0 : 3); break;
+    case 'cloud':
+      data = await cloud(home, { file: resolve(options.file) });
+      exitCode = ['ready'].includes(data.status) && !['backpressure', 'identity-conflict', 'deferred', 'backoff'].includes(data.outcome) ? 0 : 3; break;
     case 'calendar':
       data = await calendar({ file: resolve(options.file) });
       exitCode = data.status === 'checked' ? 0 : 3; break;

@@ -1,5 +1,6 @@
 import { canonical, digest, parseDefinition, parseObservation, recordPayload } from '../src/records.mjs';
 import { verifyDispatchPolicy } from './dispatch-properties.mjs';
+import { cloudBounds, verifyCloudPolicy } from './cloud-properties.mjs';
 import { calendarBounds, verifyCalendarPolicy } from './calendar-properties.mjs';
 
 const asOf = '2026-10-22T12:00:00.000Z';
@@ -25,6 +26,7 @@ const reviewed = (state, inputs) => recordPayload({ ...state, inputHashes: input
 const permutations = values => values.length < 2 ? [values] : values.flatMap((value, index) => permutations(values.filter((_, candidate) => candidate !== index)).map(rest => [value, ...rest]));
 
 export const bounds = {
+  cloudAdmission: cloudBounds,
   responsibilities: ['watch-alpha', 'watch-beta'],
   targets: subjects,
   revisions: [firstRevision, secondRevision],
@@ -58,7 +60,7 @@ export const bounds = {
   ]
 };
 
-export function verifyProperties({ work, responsibilities, records, dispatch, calendar }, selected = null) {
+export function verifyProperties({ work, responsibilities, records, dispatch, calendar, cloud }, selected = null) {
   const counts = {};
   const check = (property, input, condition, expectation) => {
     if (selected && selected !== property) return;
@@ -403,6 +405,10 @@ export function verifyProperties({ work, responsibilities, records, dispatch, ca
   if (enabled('calendar-acceptance')) {
     const calendarResult = verifyCalendarPolicy({ calendar }, check);
     if (counts['calendar-acceptance'] !== bounds.calendarAcceptance.cases || calendarResult.cases !== counts['calendar-acceptance']) throw new Error('Declared calendar bounds differ from executed predicates');
+  }
+  if (enabled('cloud-admission')) {
+    const result = verifyCloudPolicy({ cloud }, check);
+    if (result.cases !== bounds.cloudAdmission.cases || counts['cloud-admission'] !== result.cases) throw new Error(`Declared cloud bounds differ from executed predicates ${result.cases}`);
   }
   return { counts, checks: Object.values(counts).reduce((sum, count) => sum + count, 0) };
 }
