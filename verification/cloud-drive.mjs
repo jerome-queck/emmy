@@ -92,6 +92,12 @@ export async function driveCloud({ sourceRoot, root, home, run, scenario, report
   await run(['responsibility', '--file', await fixture({ ...faultDefinition, hash: undefined, parents: [faultDefinition.hash], authorityRef: { ...faultDefinition.authorityRef, expiresAt: '2000-01-01T00:00:00Z' } })], 0, homeFor('fault-controller'));
   const revoked = await invoke('fault-controller', 'tick', { capacity: capacity('available') }, 2); assert.match(revoked.error, /unexpired cloud authority/);
   const revokedStatus = await invoke('fault-controller', 'status'); assert.equal(revokedStatus.scope.eligible, false); retain('current-authority-revocation', { status: 'passed' });
+  await create('effect-drift');
+  const effectDefinition = (await readStore(homeFor('effect-drift'))).records.find(record => record.type === 'definition');
+  await run(['responsibility', '--file', await fixture({ ...effectDefinition, hash: undefined, parents: [effectDefinition.hash], feature: { ...effectDefinition.feature, intendedEffect: 'Changed intended effect requires a distinct controller binding.' } })], 0, homeFor('effect-drift'));
+  const driftStatus = await invoke('effect-drift', 'status'); assert.equal(driftStatus.status, 'needs-attention'); assert.equal(driftStatus.scope.eligible, false); assert.match(driftStatus.scope.reason, /stable responsibility effect changed/);
+  const driftDoctor = await run(['doctor'], 3, homeFor('effect-drift')); assert.equal(driftDoctor.status, 'needs-attention'); assert.ok(driftDoctor.store.cloudNeedsAttention);
+  const driftTick = await invoke('effect-drift', 'tick', { capacity: capacity('available') }, 2); assert.match(driftTick.error, /stable responsibility effect changed/); retain('current-effect-identity-drift', { status: 'passed' });
   const review = await run(['reconcile', '--id', 'interrupt-controller', '--as-of', now()], 3, homeFor('interrupt-controller')); const journal = await readStore(homeFor('interrupt-controller')); const result = review.responsibilities[0].record;
   assert.ok(result.inputHashes.some(hash => journal.records.some(record => record.hash === hash && record.type.startsWith('cloud-'))));
   assert.deepEqual(replayReview(result, journal.records).cloud, result.cloud); retain('journal-replay-cloud-context', { status: 'passed', reviewHash: result.hash });

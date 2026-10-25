@@ -195,7 +195,7 @@ export async function cloudStatus(home, records, id) {
   const owner = await ownerAt(join(home, 'cloud-turns', claimKey));
   let statusView = view(projected);
   if (projected.status === 'ready') {
-    try { await currentScope(home, records, id); }
+    try { const scoped = await currentScope(home, records, id); insist(effectKey(scoped.definition) === projected.root.effectKey, 'Cloud stable responsibility effect changed'); }
     catch (error) { statusView = { ...statusView, status: 'needs-attention', scope: { eligible: false, reason: error.message } }; }
   }
   if (projected.status === 'ready') {
