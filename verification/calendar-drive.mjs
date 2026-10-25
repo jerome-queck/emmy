@@ -115,8 +115,12 @@ export async function driveCalendar({ home, run, scenario, report }) {
   for (const status of ['open', 'completed', 'cancelled']) await control(`timed-task-blocks-${status}`, input => { commitment(input, 'task', { status, completed: status === 'completed', synthetic: status !== 'open' }); }, 'calendar-collision');
   const transparent = calendarFixture(); commitment(transparent, 'event', { transparency: 'transparent' });
   await check('optional-transparent-event-overlap', transparent, 0);
+  const transparentUntimed = calendarFixture(); commitment(transparentUntimed, 'event', { transparency: 'transparent', interval: null });
+  await check('optional-transparent-event-no-interval', transparentUntimed, 0, result => assert.deepEqual(result.conflictResults, []));
   await control('busy-event-blocks', input => { commitment(input, 'event'); }, 'calendar-collision');
+  await control('busy-event-no-interval', input => { commitment(input, 'event', { status: 'confirmed', interval: null }); }, 'busy-event-interval-missing');
   await control('mandatory-transparent-event-blocks', input => { const event = commitment(input, 'event', { transparency: 'transparent' }); input.intent.eventConstraints.push({ identity: event.identity, mandatory: true, instruction: 'Synthetic explicit attendance requirement.' }); bindCalendar(input); }, 'calendar-collision');
+  await control('mandatory-transparent-event-no-interval', input => { const event = commitment(input, 'event', { transparency: 'transparent', interval: null }); input.intent.eventConstraints.push({ identity: event.identity, mandatory: true, instruction: 'Synthetic explicit attendance requirement.' }); bindCalendar(input); }, 'mandatory-event-interval-missing');
   await control('unknown-event-transparency', input => { commitment(input, 'event', { transparency: 'unknown' }); }, 'event-transparency-unknown');
   await control('all-day-event-blocks', input => { const date = input.intent.items[0].expected.date; commitment(input, 'event', { interval: { start: `${date}T00:00:00Z`, end: input.intent.window.end, timeZone: 'UTC', allDay: true } }); }, 'calendar-collision');
   await control('allocation-overlap', input => { extraTask(input, { start: input.plan.allocations[0].start, end: input.plan.allocations[0].end }); }, 'allocation-collision');
@@ -137,6 +141,19 @@ export async function driveCalendar({ home, run, scenario, report }) {
   await control('whole-source-name-missing-from-title', input => { input.intent.items[0].expected.title = 'General revision'; input.readbacks[0].fields.title = calendarFields({ title: 'General revision' }).title; input.inventories[0].taskLists[0].items[0].title = 'General revision'; bindCalendar(input); }, 'source-name-mismatch');
   const sourceNamed = calendarFixture(); const namedTitle = `Read ${sourceNamed.intent.sources[0].name}`; sourceNamed.intent.items[0].expected.title = namedTitle; sourceNamed.readbacks[0].fields.title = calendarFields({ title: namedTitle }).title; sourceNamed.inventories[0].taskLists[0].items[0].title = namedTitle; bindCalendar(sourceNamed);
   await check('whole-source-name-in-saved-title', sourceNamed, 0);
+  for (const [name, sourceName, title, expected] of [
+    ['source-name-prefix', 'Lecture 5', 'Lecture 50', 3],
+    ['source-name-letter-continuation', 'Lecture 5', 'Lecture 5a', 3],
+    ['source-name-leading-continuation', 'Lecture 5', 'xLecture 5', 3],
+    ['whole-source-label', 'Lecture 5', 'Read Lecture 5', 0],
+    ['whole-source-group-label', 'Lectures 5-6', 'Read Lectures 5-6', 0],
+    ['whole-source-concise-name', 'L5', 'L5', 0],
+    ['whole-source-literal-punctuation', 'Lecture 5 (A+B)', 'Read Lecture 5 (A+B)', 0],
+    ['whole-source-later-exact-label', 'Lecture 5', 'Lecture 50 / Lecture 5', 0]
+  ]) {
+    const input = calendarFixture(); input.intent.sources[0].name = sourceName; input.intent.items[0].expected.title = title; input.readbacks[0].fields.title = calendarFields({ title }).title; input.inventories[0].taskLists[0].items[0].title = title; bindCalendar(input);
+    await check(name, input, expected, expected === 3 ? expectCode('source-name-mismatch') : result => assert.equal(result.sourceResults[0].status, 'covered'));
+  }
   await control('source-minimum', input => { input.intent.sources[0].requiredMinutes = 90; bindCalendar(input); }, 'source-minimum');
   await control('whole-source-split', input => { extraTask(input, { sourceId: 'source-one' }); }, 'whole-source-continuity');
   await control('unknown-substituted-material', input => { input.plan.allocations[0].sourceId = 'substituted-old-year-source'; }, 'allocation-source-mismatch');

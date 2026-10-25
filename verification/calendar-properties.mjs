@@ -42,7 +42,7 @@ export const calendarBounds = {
     timedTasks: { labels: ['open', 'completed', 'cancelled', 'unknown'], synthetic: [false, true], completed: [false, true], intervals: ['overlap', 'adjacent', 'absent'], cases: 48 },
     events: { transparency: ['busy', 'transparent', 'unknown'], mandatory: [false, true], intervals: ['overlap', 'adjacent', 'absent'], cases: 18 },
     sources: { kinds: ['whole-source', 'ongoing-research'], sessions: [0, 1, 2], minutesPerSession: [30, 60, 90], minimumMinutes: 60, cases: 18 },
-    sourceNames: { modes: ['exact', 'generic', 'research-generic'], cases: 3 },
+    sourceNames: { modes: ['exact', 'generic', 'research-generic', 'prefix'], cases: 4 },
     budgets: { scopes: ['day', 'source', 'campaign'], caps: [30, 60, 90], allocatedMinutes: 60, cases: 9 },
     mornings: { windowMinutes: [60, 90], allocatedMinutes: [60, 90], minimumMinutes: 60, cases: 4 },
     allocation: { cases: targetCases.allocation.length, names: targetCases.allocation },
@@ -201,17 +201,21 @@ export function verifyCalendarPolicy({ calendar }, check) {
   }
   for (const transparency of domain.events.transparency) for (const mandatory of domain.events.mandatory) for (const interval of domain.events.intervals) {
     const input = blocker(fixture(), { type: 'event', transparency, mandatory, interval }); const collision = interval === 'overlap' && (transparency !== 'transparent' || mandatory);
-    run('events', `${transparency}/${mandatory}/${interval}`, input, result => has(result, 'calendar-collision') === collision && has(result, 'event-transparency-unknown') === (transparency === 'unknown') && has(result, 'mandatory-event-interval-missing') === (mandatory && interval === 'absent') && (transparency === 'transparent' && !mandatory ? result.status === 'checked' : true), 'Busy and explicitly mandatory Events block; optional transparent Events remain valid and unknown transparency stays unresolved.');
+    const missingBusyInterval = transparency === 'busy' && interval === 'absent'; const missingMandatoryInterval = mandatory && interval === 'absent';
+    const checked = !collision && transparency !== 'unknown' && !missingBusyInterval && !missingMandatoryInterval;
+    run('events', `${transparency}/${mandatory}/${interval}`, input, result => has(result, 'calendar-collision') === collision && has(result, 'event-transparency-unknown') === (transparency === 'unknown') && has(result, 'busy-event-interval-missing') === missingBusyInterval && has(result, 'mandatory-event-interval-missing') === missingMandatoryInterval && (result.status === 'checked') === checked, 'Busy and explicitly mandatory Events require readable timing; optional transparent Events remain valid and unknown transparency stays unresolved.');
   }
   for (const kind of domain.sources.kinds) for (const count of domain.sources.sessions) for (const duration of domain.sources.minutesPerSession) {
     const input = sessions(kind, count, duration); const covered = (kind === 'ongoing-research' ? count >= 1 : count === 1) && count * duration >= 60;
     run('sources', `${kind}/${count}/${duration}`, input, result => result.sourceResults[0].minutes === count * duration && result.sourceResults[0].sessions === count && (result.sourceResults[0].status === 'covered') === covered && (kind === 'ongoing-research' && count === 2 && duration === 30 ? result.status === 'checked' : true), 'Whole sources occur once continuously with declared minimums; legitimate repeated research can pass.');
   }
   for (const mode of domain.sourceNames.modes) {
-    const input = fixture(); const title = mode === 'exact' ? input.intent.sources[0].name : 'General revision'; input.intent.items[0].expected.title = title; input.readbacks[0].fields.title = capture(title); input.inventories[0].taskLists[0].items[0].title = title;
+    const input = fixture(); if (mode === 'prefix') input.intent.sources[0].name = 'Lecture 5';
+    const title = mode === 'prefix' ? 'Lecture 50' : mode === 'exact' ? input.intent.sources[0].name : 'General revision'; input.intent.items[0].expected.title = title; input.readbacks[0].fields.title = capture(title); input.inventories[0].taskLists[0].items[0].title = title;
     if (mode === 'research-generic') { input.intent.sources[0].kind = 'ongoing-research'; input.plan.allocations[0].sourceKind = 'ongoing-research'; }
     bindCalendar(input);
-    run('sourceNames', mode, input, result => (result.sourceResults[0].status === 'covered') === (mode !== 'generic') && (result.status === 'checked') === (mode !== 'generic'), 'Whole-source saved titles retain the exact declared material name; ongoing research keeps its legitimate title flexibility.');
+    const covered = !['generic', 'prefix'].includes(mode);
+    run('sourceNames', mode, input, result => (result.sourceResults[0].status === 'covered') === covered && (result.status === 'checked') === covered && (mode !== 'prefix' || has(result, 'source-name-mismatch')), 'Whole-source saved titles retain the exact declared material label without letter or digit continuations; ongoing research keeps its legitimate title flexibility.');
   }
   for (const scope of domain.budgets.scopes) for (const cap of domain.budgets.caps) {
     const input = fixture(); input.intent.budgets = [{ scope, key: scope === 'day' ? input.intent.items[0].expected.date : scope === 'source' ? 'source-one' : 'campaign', maxMinutes: cap }]; bindCalendar(input);
