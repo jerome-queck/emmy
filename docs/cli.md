@@ -13,7 +13,7 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 | reconcile | `--id <value>`, `--import <value>`, `--as-of <value>` required | Import evidence, inspect current local state, retain findings/repairs, and propose bounded next work. | evidence |
 | dispatch | `--id <value>`, `--project <value>`, `--resolve <value>`, `--discovery <value>`, `--as-of <value>` required, `--context-needed` | Resolve an explicit saved destination from fresh discovery, recover private bindings, and return read-only native dispatch advice. | routing |
 | cloud | `--file <value>` required | Run bounded cooperative cloud jobs with durable checkpoints, priority admission and pending health escalation. | cloud |
-| fleet | `--file <value>` required | Retain scoped fleet health, parent read admission and pending alert delivery in the responsibility journal. | fleet |
+| fleet | `--file <value>` required | Retain scoped fleet health, parent read admission, alert delivery and explicit bounded history archival in the responsibility journal. | fleet |
 | signin | `--file <value>` required | Choose a scoped sign-in recovery handoff without accepting or retaining secrets. | fleet |
 | calendar | `--file <value>` required | Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution. | evidence |
 | briefing | `--file <value>` | Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown. | evidence |

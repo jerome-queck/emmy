@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { boundedFile, boundedJson } from './bounded-json.mjs';
 import { canonical, digest, publishRecord, readStore, recordPayload, validateReferences } from './records.mjs';
 import { actionInput, hash, insist, shape } from './fleet-schema.mjs';
-import { fleetInitial, fleetState, fleetTransition, fleetView } from './fleet-state.mjs';
+import { fleetHistory, fleetInitial, fleetState, fleetTransition, fleetView } from './fleet-state.mjs';
 import { authorityStatus, definitionHeads, effectKey, restoredState } from './work.mjs';
 
 const epochOf = records => records.filter(record => record.type === 'epoch').sort((a, b) => a.restoredAt.localeCompare(b.restoredAt) || a.hash.localeCompare(b.hash)).at(-1) ?? null;
@@ -48,6 +48,7 @@ export async function fleet(home, { file }) {
   insist(projected.status === 'unconfigured' && input.action.operation === 'configure' || projected.status === 'ready', 'Fleet is unconfigured or has conflicting heads');
   if (projected.root) insist(effectKey(current.definition) === projected.root.effectKey, 'Fleet stable responsibility effect changed');
   if (input.action.operation === 'morning' && !['open', 'status'].includes(input.action.command.step)) insist(projected.state?.morningRuns?.find(run => run.id === input.action.command.runId)?.policyVersion === 2, 'Historical morning policy is replay-only; no new native effects');
+  const history = projected.state?.archived ? fleetHistory(records, projected.head) : null;
   const evidence = input.evidence ?? []; insist(Array.isArray(evidence) && evidence.length <= 64, 'Invalid fleet evidence bound');
   const files = {}; let totalBytes = 0;
   for (const [index, ref] of evidence.entries()) {
@@ -100,7 +101,7 @@ export async function fleet(home, { file }) {
       }
     }
   }
-  if (['result', 'resolve'].includes(input.action.operation)) { const job = projected.state?.jobs.find(job => job.key === input.action.jobKey); insist(job && totalBytes <= job.input.maxBytes && totalBytes <= input.action.usage.bytes, 'Parent result exceeds admitted or declared byte budget'); }
+  if (['result', 'resolve'].includes(input.action.operation)) { const job = projected.state?.jobs.find(job => job.key === input.action.jobKey) ?? history?.jobs.get(input.action.jobKey); insist(job && totalBytes <= job.input.maxBytes && totalBytes <= input.action.usage.bytes, 'Parent result exceeds admitted or declared byte budget'); }
   const requestDigest = digest({ responsibilityId: input.responsibilityId, expectedHead: input.expectedHead ?? null, action: input.action, evidence: evidence.map(ref => ({ sha256: ref.sha256, sourceRef: ref.sourceRef })) });
   const prior = records.find(record => record.type.startsWith('fleet-') && record.requestDigest === requestDigest);
   if (prior) return { ...fleetSummary(records, input.responsibilityId, at)[0], outcome: 'coalesced', ticket: null, nextAction: 'Inspect retained results. A repeated command is not permission to repeat a parent read or send.' };
@@ -109,7 +110,7 @@ export async function fleet(home, { file }) {
     insist(projected.state.epochHash === (current.epoch?.hash ?? null) || input.action.operation === 'resume', 'Restored fleet requires explicit resume');
     insist(input.action.operation !== 'configure', 'Fleet is already configured');
   } else insist(input.expectedHead === undefined && !records.some(record => record.type === 'fleet-root'), 'Only one cooperative fleet controller per private home');
-  const transitioned = projected.root ? fleetTransition(projected.state, input.action, projected.root, at, current.epoch?.hash ?? null) : null;
+  const transitioned = projected.root ? fleetTransition(projected.state, input.action, projected.root, at, current.epoch?.hash ?? null, history) : null;
   const payload = { schemaVersion: 1, type: projected.root ? 'fleet-step' : 'fleet-root', responsibilityId: input.responsibilityId, definitionHash: current.definition.hash, effectKey: effectKey(current.definition), epochHash: current.epoch?.hash ?? null, at, requestDigest, action: input.action, ...(projected.root ? { rootHash: projected.root.hash, parentHash: projected.head.hash, seq: (projected.head.seq ?? 0) + 1, state: transitioned.state, outcome: transitioned.outcome } : {}) };
   if (!projected.root) fleetInitial(payload);
   const turnPath = join(home, 'fleet-turns', `${projected.head?.hash ?? 'configure'}.json`); await mkdir(join(home, 'fleet-turns'), { recursive: true });

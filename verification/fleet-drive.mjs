@@ -92,6 +92,26 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   await call({ operation: 'claim', ownerRef: 'fixture-parent' }); assert.equal(last.outcome, 'reconcile-before-admission'); assert.equal(last.ticket, null);
   const resolution = { operation: 'resolve', jobKey: ticket.key, ticket: ticket.ticket, checkpoint: 1, outcome: 'completed', usage: { reads: 1, bytes: 4096 }, receipt: capture.receipt, reason: 'Inspected the actual synthetic read receipt after a lost response.' };
   const resolved = await call(resolution, 3, evidence); assert.equal(last.state.jobs[0].status, 'completed'); await run(['fleet', '--file', resolved.file], 3, selectedHome);
+  const historyOriginal = structuredClone(last.state); const historyHead = last.headHash;
+  const archiveAction = { operation: 'archive', stateDigest: digest(last.state), jobKeys: [ticket.key], sourceRef: 'fixture-owner-correction', reason: 'Explicitly archive this completed synthetic read; retain all original bytes.' };
+  const historyInput = { schemaVersion: 1, responsibilityId: definition.id, expectedHead: historyHead, action: archiveAction, evidence: correctionEvidence };
+  const historyFile = await fixture('history-archive', historyInput); const historyMarker = join(selectedHome, 'history-archive-boundary.json');
+  const historyChild = spawn(process.execPath, [join(sourceRoot, 'scripts/agent.mjs'), 'fleet', '--file', historyFile, '--root', root, '--home', selectedHome], { env: { ...process.env, EMMY_VERIFY_BOUNDARY: 'record:created', EMMY_VERIFY_BOUNDARY_FILE: historyMarker } }); children.add(historyChild);
+  const historyInterrupted = { args: ['fleet', '--file', historyFile], home: selectedHome, stdout: '', stderr: '', synthetic: true };
+  historyChild.stdout.on('data', bytes => { historyInterrupted.stdout += bytes; }); historyChild.stderr.on('data', bytes => { historyInterrupted.stderr += bytes; });
+  const historyDone = new Promise((resolve, reject) => { historyChild.on('error', reject); historyChild.on('close', (code, signal) => { children.delete(historyChild); Object.assign(historyInterrupted, { code, signal }); resolve(); }); });
+  try {
+    let marker; const limit = Date.now() + 10000;
+    while (!marker && Date.now() < limit) { try { const bytes = await readFile(historyMarker, 'utf8'); if (bytes.endsWith('\n')) marker = JSON.parse(bytes); } catch (error) { if (error.code !== 'ENOENT') throw error; } if (!marker) await new Promise(resolve => setTimeout(resolve, 10)); }
+    assert.equal(marker?.boundary, 'record:created'); historyChild.kill('SIGKILL'); await historyDone; assert.equal(historyInterrupted.signal, 'SIGKILL'); report.commands.push(historyInterrupted);
+    const refusal = await run(['backup', '--to', join(root, 'bin', 'history-interrupted-backup')], 2, selectedHome); assert.match(refusal.error, /unresolved fleet journal turn/);
+    last = await run(['fleet', '--file', historyFile], 3, selectedHome); assert.equal(last.outcome, 'reconciled-publication'); assert.equal(last.ticket, null); assert.equal(last.state.jobs.length, 0);
+  } finally { if (children.has(historyChild)) { historyChild.kill('SIGKILL'); await historyDone; } }
+  await call({ operation: 'submit', job }); assert.equal(last.outcome, 'coalesced'); assert.equal(last.state.jobs.length, 0);
+  await call({ operation: 'submit', job: { ...job, maxReads: 2 } }, 2);
+  await call(resolution, 3, evidence); assert.equal(last.outcome, 'coalesced'); assert.equal(last.state.jobs.length, 0);
+  assert.deepEqual((await readStore(selectedHome)).records.find(row => row.hash === historyHead).state, historyOriginal);
+  report.fleetHistory = { synthetic: true, archivedJob: ticket.key, ancestorHead: historyHead, crashReplay: 'passed', archivedIdentity: 'coalesced-without-reactivation', liveEffects: false };
   const timeoutHome = join(home, 'fleet-timeout'); await mkdir(timeoutHome, { recursive: true }); await writeFile(join(timeoutHome, 'bindings.json'), JSON.stringify(bindings));
   await run(['responsibility', '--file', await fixture('timeout-definition', definition)], 0, timeoutHome);
   let timeoutView = await run(['fleet', '--file', await fixture('timeout-configure', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'configure', config: { attemptMs: 2000 }, entities: fleetEntities.slice(0, 2) } })], 3, timeoutHome);
@@ -105,7 +125,7 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   const refusedLate = await timeoutCall('timeout-late-result', deadlineResult, 2, lateEvidence); assert.match(refusedLate.error, /after the ticket deadline/);
   await timeoutCall('timeout-inside-result', { ...deadlineResult, receipt: acquiredInside.receipt }, 3, insideEvidence); assert.equal(timeoutView.state.jobs[0].status, 'completed');
   report.fleetTimeout = { synthetic: true, freshTicketReturned: true, lateAcquisitionRefused: true, delayedInWindowAcquisitionAccepted: true, underlyingOldSourceRemainsReported: true };
-  await call({ operation: 'submit', job }); assert.equal(last.state.jobs.length, 1);
+  await call({ operation: 'submit', job }); assert.equal(last.state.jobs.length, 0);
   await call({ operation: 'submit', job: fleetJob('heavy-one', 'heavy') });
   await call({ operation: 'submit', job: fleetJob('heavy-two', 'heavy') });
   await call({ operation: 'submit', job: fleetJob('heavy-overflow', 'heavy') }); assert.equal(last.outcome, 'backpressure');
@@ -119,6 +139,8 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   const restored = join(home, 'fleet-restored'); await run(['restore', '--from', archive, '--into', restored], 0, selectedHome);
   const restoredStatusFile = await fixture('restored-status', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'status' } });
   const restoredView = await run(['fleet', '--file', restoredStatusFile], 3, restored); assert.equal(restoredView.status, 'suspended'); assert.ok(restoredView.inventory.every(row => row.condition === 'unknown'));
+  assert.equal(restoredView.state.jobs.some(row => row.key === ticket.key), false);
+  assert.deepEqual((await readStore(restored)).records.find(row => row.hash === historyHead).state, historyOriginal);
   await run(['fleet', '--file', await fixture('restore-claim', { schemaVersion: 1, responsibilityId: definition.id, expectedHead: restoredView.headHash, action: { operation: 'claim', ownerRef: 'fixture-parent' } })], 2, restored);
   const signinBase = { schemaVersion: 1, service: 'fixture-service', account: 'fixture-owner', provider: 'fixture-provider', environment: 'fixture-parent', surface: 'browser', sourceRef: 'fixture-protected-login', observedAt: now(), state: 'password', secureForm: true };
   assert.equal((await run(['signin', '--file', await fixture('signin-form', signinBase)], 3, selectedHome)).status, 'secure-form-needed');

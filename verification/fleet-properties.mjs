@@ -1,7 +1,7 @@
 import { digest } from '../src/records.mjs';
 import { fleetCapture, fleetEntities, fleetJob, fleetReceipt, fleetRoot, fleetTime } from './fleet-fixtures.mjs';
 
-export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 87, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
+export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 101, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
 export function verifyFleetPolicy({ fleet }, check) {
   let cases = 0;
   const expect = (name, ok, message) => { cases++; check('fleet-contract', { case: name }, ok, message); };
@@ -119,5 +119,29 @@ export function verifyFleetPolicy({ fleet }, check) {
   expect('group/no-single', rejects(() => transition(grouped, { operation: 'send-ack', alertId: groupAck.alertIds[0], bodyDigest: groupAck.bodyDigest, sendRef: groupAck.sendRef, readbackRef: groupAck.readbackRef })), 'Single-alert API cannot split an atomic group.');
   expect('group/body', rejects(() => transition(grouped, { ...groupAck, deliveredBodyDigest: digest('different') })), 'A group acknowledgement must bind the exact delivered body.');
   expect('group/one-send', transition(grouped, groupAck).state.deliveryGroups.length === 1, 'Many episode acknowledgements remain one actual reported send.');
+  const finished = transition(admitted.state, completion).state;
+  const archive = fields => ({ operation: 'archive', stateDigest: digest(finished), sourceRef: 'owner-archive', reason: 'Explicit closure preserves ancestor bytes.', ...fields });
+  const archived = transition(finished, archive({ jobKeys: [job.key] })).state;
+  const historicHead = { type: 'fleet-step', hash: digest('historic-completed'), rootHash: fleetRoot.hash, parentHash: fleetRoot.hash, state: finished };
+  const history = fleet.fleetHistory([fleetRoot, historicHead], historicHead);
+  const archivedStep = action => fleet.fleetTransition(archived, action, fleetRoot, fleetTime, null, history);
+  expect('archive/capacity', archived.jobs.length === 0 && finished.jobs.length === 1, 'Explicit archival frees projection capacity while original state remains immutable.');
+  expect('archive/digest', rejects(() => transition(finished, { ...archive({ jobKeys: [job.key] }), stateDigest: digest('wrong-state') })), 'Archival binds the exact predecessor state.');
+  for (const status of ['queued', 'attempted', 'uncertain', 'blocked', 'dead']) {
+    const state = structuredClone(finished); state.jobs[0].status = status;
+    expect(`archive/refuse-${status}`, rejects(() => transition(state, { ...archive({ jobKeys: [job.key] }), stateDigest: digest(state) })), 'Pending, uncertain and failed work cannot retire.');
+  }
+  const dependent = structuredClone(finished); dependent.morningRuns = [{ id: 'active', sources: [{ capture: { jobKey: job.key } }] }];
+  expect('archive/dependency', rejects(() => transition(dependent, { ...archive({ jobKeys: [job.key] }), stateDigest: digest(dependent) })), 'Retained morning dependencies prevent job archival.');
+  expect('archive/duplicate', archivedStep(request).outcome === 'coalesced' && archivedStep(request).state.jobs.length === 0, 'Archived job identity cannot execute again.');
+  expect('archive/conflict', rejects(() => archivedStep({ ...request, job: fleetJob('read-one', 'heavy') })), 'Archived identities retain original request digest.');
+  expect('archive/result', archivedStep(completion).outcome === 'coalesced', 'Exact historical results coalesce without reinstating jobs.');
+  expect('archive/missing-history', rejects(() => transition(archived, request)), 'Missing ancestry cannot authorize an archived identity.');
+  const uncertainAlert = structuredClone(sending);
+  expect('archive/uncertain-alert', rejects(() => transition(uncertainAlert, { ...archive({ alertIds: [uncertainAlert.alerts[0].id] }), stateDigest: digest(uncertainAlert) })), 'Uncertain delivery never archives.');
+  const closed = transition(ack, { operation: 'archive', stateDigest: digest(ack), sourceRef: 'owner', reason: 'Archive delivered episode.', alertIds: [ack.alerts[0].id] }).state;
+  const oldSends = { ...history, sends: new Set([send.sendRef]) };
+  const newer = transition(closed, { operation: 'assess', captures: [fleetCapture('protected', 'denied-action', '2026-10-25T12:00:04.000Z')] }, '2026-10-25T12:00:04.000Z').state;
+  expect('archive/send', rejects(() => fleet.fleetTransition(newer, { ...send, alertId: newer.alerts.at(-1).id }, fleetRoot, '2026-10-25T12:00:04.000Z', null, oldSends)), 'Archived send identities cannot be reused.');
   return { cases };
 }

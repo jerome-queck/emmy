@@ -1,7 +1,7 @@
 import { morningEvidence } from './morning.mjs';
 import { parseCloudRecord } from './cloud-schema.mjs';
 import { parseFleetRecord } from './fleet-schema.mjs';
-import { fleetInitial, fleetTransition } from './fleet-state.mjs';
+import { fleetHistory, fleetInitial, fleetTransition } from './fleet-state.mjs';
 import { effectKey } from './work.mjs';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, readdir, rename, rm, writeFile, lstat } from 'node:fs/promises';
@@ -382,7 +382,7 @@ export function validateReferences(records) {
     requireValue(root.type === 'fleet-root' && root.responsibilityId === record.responsibilityId && root.effectKey === record.effectKey && parent.responsibilityId === record.responsibilityId && (parent.hash === root.hash || parent.type === 'fleet-step' && parent.rootHash === root.hash), 'Fleet lineage crosses controller scope');
     requireValue(record.seq === (parent.seq ?? 0) + 1 && Date.parse(record.at) >= Date.parse(parent.at), 'Fleet sequence or clock is not a direct successor');
     requireValue(record.action.operation === 'resume' || record.epochHash === parent.epochHash, 'Fleet epoch requires explicit resume');
-    const transition = fleetTransition(parent.type === 'fleet-root' ? fleetInitial(root) : parent.state, record.action, root, record.at, record.epochHash);
+    const transition = fleetTransition(parent.type === 'fleet-root' ? fleetInitial(root) : parent.state, record.action, root, record.at, record.epochHash, parent.state?.archived ? fleetHistory(known, parent) : null);
     requireValue(canonical(transition.state) === canonical(record.state) && transition.outcome === record.outcome, 'Fleet state differs from deterministic retained transition');
   }
   for (const record of records.filter(record => record.type.startsWith('cloud-'))) {
