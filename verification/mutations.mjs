@@ -1,3 +1,5 @@
+import { calendarMutations } from './calendar-mutations.mjs';
+
 export const mutations = [
   { id: 'dispatch-ignore-destination-installed-skill', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["!skill || skill.hostId !== target.hostId || skill.path !== spec.skill.path || skill.sha256 !== spec.skill.sha256 || !currentTime(skill.observedAt, asOf, Math.min(definition.freshness.maxAgeMs, 300000)) || epoch && Date.parse(skill.observedAt) < Date.parse(epoch.restoredAt)", "false"]] },
   { id: 'dispatch-newest-remote-report-erases-conflict', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["currentObservations(definition, observations.filter(record => record.category === 'target'), asOf)", "observations.filter(record => record.category === 'target').sort((a, b) => a.observedAt.localeCompare(b.observedAt)).slice(-1)"]] },
@@ -55,5 +57,6 @@ export const mutations = [
   { id: 'restore-from-superseded-history', property: 'restore-suspension', source: 'src/work.mjs', edits: [["const current = currentObservations(definition, observations, asOf);", 'const current = observations;']] },
   { id: 'lend-unavailable-superseded-authority', property: 'restore-suspension', source: 'src/work.mjs', edits: [["if (status.reasons.some(reason => reason !== 'unavailable-observation')) continue;", 'if (!status.eligible) continue;']] },
   { id: 'publish-import-input-order', property: 'import-prefix', source: 'src/records.mjs', edits: [["const ready = [...pending.values()].filter(record => references(record).every(reference => known.has(reference))).sort((left, right) => left.hash.localeCompare(right.hash));", 'const ready = [...pending.values()];']] },
-  { id: 'supersede-foreign-native-schedule', property: 'import-prefix', source: 'src/records.mjs', edits: [["(record.schedule?.nativeId ?? null) === (prior.schedule?.nativeId ?? null)", 'true']] }
+  { id: 'supersede-foreign-native-schedule', property: 'import-prefix', source: 'src/records.mjs', edits: [["(record.schedule?.nativeId ?? null) === (prior.schedule?.nativeId ?? null)", 'true']] },
+  ...calendarMutations
 ];

@@ -1,5 +1,6 @@
 import { canonical, digest, parseDefinition, parseObservation, recordPayload } from '../src/records.mjs';
 import { verifyDispatchPolicy } from './dispatch-properties.mjs';
+import { calendarBounds, verifyCalendarPolicy } from './calendar-properties.mjs';
 
 const asOf = '2026-10-22T12:00:00.000Z';
 const clock = milliseconds => new Date(Date.parse(asOf) + milliseconds).toISOString();
@@ -47,6 +48,7 @@ export const bounds = {
   temporalMaximum: { criteria: 2, criterionObservations: 4, targetObservations: 2, taskObservations: 1, effectObservations: 2, repairs: 2, priorReviews: 3 },
   importGraph: { records: 2, orderings: 2, testedPrefixes: [0, 1, 2], explicitAbstractCycle: true },
   dispatchRecovery: { phases: ['absent', 'attempted', 'pending', 'uncertain', 'ready'], coverage: ['complete', 'partial'], availability: ['available', 'unavailable', 'denied', 'unknown'], agesMs: [-1, 0, 86400000, 86400001], stateCombinations: 160, targetedCases: 79, permutations: ['original', 'reversed'], assumptions: 'Parsed byte-verified journal inputs and symbolic hash identities; native state remains reported.' },
+  calendarAcceptance: calendarBounds,
   assumptions: [
     'These are finite products and targeted temporal traces, not one full Cartesian product of every field.',
     'Active zero-criterion definitions are rejected by the actual boundary parser. Zero criteria cover retired/merged states.',
@@ -56,7 +58,7 @@ export const bounds = {
   ]
 };
 
-export function verifyProperties({ work, responsibilities, records, dispatch }, selected = null) {
+export function verifyProperties({ work, responsibilities, records, dispatch, calendar }, selected = null) {
   const counts = {};
   const check = (property, input, condition, expectation) => {
     if (selected && selected !== property) return;
@@ -397,6 +399,10 @@ export function verifyProperties({ work, responsibilities, records, dispatch }, 
     verifyDispatchPolicy({ dispatch, records, work }, check);
     const domain = bounds.dispatchRecovery;
     if (counts['dispatch-recovery'] !== (domain.stateCombinations + domain.targetedCases) * domain.permutations.length) throw new Error('Declared dispatch bounds differ from executed predicates');
+  }
+  if (enabled('calendar-acceptance')) {
+    const calendarResult = verifyCalendarPolicy({ calendar }, check);
+    if (counts['calendar-acceptance'] !== bounds.calendarAcceptance.cases || calendarResult.cases !== counts['calendar-acceptance']) throw new Error('Declared calendar bounds differ from executed predicates');
   }
   return { counts, checks: Object.values(counts).reduce((sum, count) => sum + count, 0) };
 }

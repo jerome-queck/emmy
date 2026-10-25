@@ -1,6 +1,6 @@
 ---
 name: coordination-contract
-description: Check Emmy's bounded responsibility routing, replay, observation, repair, trigger, lifecycle, import-order, and restore properties after changing their production source, parsers, or verifier.
+description: Check Emmy's bounded responsibility, dispatch, calendar acceptance, replay, repair, lifecycle, import-order, and restore properties after changing their production source, parsers, or verifier.
 ---
 
 # Persistent responsibility contract
@@ -9,7 +9,7 @@ description: Check Emmy's bounded responsibility routing, replay, observation, r
 
 Run `node scripts/verify-formal.mjs` with Node 24 or later for the responsibility checker. It requires no package install, solver, service, or account. `npm run verify:formal` also runs the merge-policy enumeration and the [publication model](../publication-contract/SKILL.md), which requires Java 21 and a hash-pinned TLC jar.
 
-The responsibility checker calls actual functions in `src/work.mjs`, `src/responsibilities.mjs`, `src/records.mjs`, and `src/dispatch.mjs`. It checks 7,391 predicates across eighteen named properties, then kills fifty-five paired mutations of those actual source files, then reruns unchanged production. These are finite checks, not a universal proof.
+The checker calls actual functions in `src/work.mjs`, `src/responsibilities.mjs`, `src/records.mjs`, `src/dispatch.mjs`, and `src/calendar.mjs`. It checks 7,820 predicates across nineteen named properties, kills ninety-seven paired mutations of those actual source files, then reruns unchanged production. The previous 7,391 predicates and fifty-five mutants retain their promises. These are finite checks, not a universal proof.
 
 Read each failed counterexample under `.local/verification/formal-*/`. A mutant counts only if it imports successfully and its designated property rejects the intended behavioral disagreement. Syntax/import errors, ambiguous edit anchors, unrelated exceptions, and surviving mutants fail verification. Failed attempts remain retained.
 
@@ -40,6 +40,18 @@ The pure checks assume honest production local-inspection results. A caller-supp
 `dispatch-recovery` calls the production `dispatchDecision` projection. Its 160 state combinations cover five phases, complete/partial coverage, four availability states and future/current/exact-24-hour/stale ages. Each also reverses input order. Seventy-nine targeted cases and their permutations cover membership, host, model/policy, missing/stale settings, selected pin, authority, source skill, correlation, attempt ancestry, definition conflict, child reuse, continuation, native completion inspection, no-effect resolution, pending state across a revision, attempt masking, dispatcher aliasing and nested restore timestamps, standalone effect uncertainty and legacy objective bindings. These 478 predicates assume parsed, byte-verified journal inputs and symbolic hash identities. CLI controls establish actual parsing, retained bytes, live cutoff, archive and restore behavior.
 
 Nine new actual-source mutants recommend retry after an unresolved launch, ignore native identity, ignore recorded policy, reuse another objective's child, forget a lost response, reuse the dispatcher as a child, borrow native acquisitions from before restore, ignore standalone effects, or ignore legacy objective bindings. Each must fail `dispatch-recovery` with its intended disagreement. This is a bounded local advice claim. Native APIs, capture discipline around external calls, provider execution and effective permissions remain outside it.
+
+### Declared calendar acceptance
+
+`calendar-acceptance` calls the actual `assessCalendar` entry. [The calendar domain](../../../verification/calendar-properties.mjs) exports `calendarBounds` and 429 predicates in seventeen separate partitions. Its supplied clock is fixed at `2026-10-25T12:00:00.000Z`, with a 60,000 ms inclusive freshness limit. It assumes validated envelopes and the caller-supplied input digest.
+
+The products cover six identity variants, six capture origins, four age boundaries, six raw notes strings, four persistence sequences, all eleven requested fields with exact/absent/mismatch captures, four Task status labels, synthetic/completion flags, three interval relations, three Event transparency states, explicit attendance, two source modes, zero-to-two sessions, three session durations, three budget scopes, and full 60/90-minute morning windows. Named cases cover raw extraction, scoped supersession, missing baselines, desired values carrying current tokens, all protected field drift, operation digests, date removal, complete inventory, exact material names, padded allocation pairs, safe-integer buffers, retained history, current attempt bindings, scoped corrections and clocks. Five input-order reversals exercise green, conflicting and historical inputs. Each partition and the aggregate must match its declared executed count.
+
+Forty-two additional copied-source mutants must fail their designated calendar case. They cannot pass through another failing case or an exception. Positive controls detect rejecting optional transparent Events or legitimate repeated ongoing research. Other pairs detect raw normalization, borrowed superseded green, unscoped historical barriers, stale desired fields, completed-work reopening, type conversion, incomplete date removal, missing whole-source names, lost failures, and uncertainty resolved without duplicate discovery. The restored unmodified baseline must pass again.
+
+The finite check does not acquire or authenticate bytes, provider captures, native IDs, complete omitted history, inventory truth or owner instructions. Parsing, extraction offsets, regular-file and UTF-8 boundaries, actual clock acquisition, executor/network refusal and post-cleanup evidence retention require `npm run verify:behavior`. A fabricated complete envelope can pass. Scheduled source coverage proves neither study completion nor mastery.
+
+Calendar adds no canonical record writer, publication await or record-reference edge. The publication and merge-policy source pins remain separate and unchanged. Its declared-evidence property does not extend their promises or establish actual native saving, authority, queue interception or ordinary-turn adoption.
 
 Filesystem bytes/references, actual git identity, local execution, child cleanup, publication interruption, archive traversal/symlinks/corruption, and restore are verified by `npm run verify:behavior`. No formal claim covers arbitrary-size inputs, power-loss durability, hostile detached processes, native at-most-once execution, total dormancy, account access, schedules, delivery, deployment, or hardware-loss recovery.
 
