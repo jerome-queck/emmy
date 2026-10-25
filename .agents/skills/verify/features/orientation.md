@@ -2,7 +2,7 @@
 
 ## User route
 
-Run `help --json`, `catalog`, and `doctor`. Global `--root` selects public source; `--home` selects private state. Default home is the root's ignored `.local/`. Help lists the eleven metadata-defined commands and actual option/exit contracts.
+Run `help --json`, `catalog`, and `doctor`. Global `--root` selects public source; `--home` selects private state. Default home is the root's ignored `.local/`. Help lists the twelve metadata-defined commands and actual option/exit contracts.
 
 Doctor validates bindings, immutable hashes, referenced records/evidence, retained historical records, generated references, and per-responsibility restore suspension. Missing bindings remain an empty local inventory. Native access and global inventory completeness remain unverified.
 

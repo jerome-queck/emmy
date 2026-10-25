@@ -74,6 +74,17 @@
       "feature": "routing"
     },
     {
+      "name": "calendar",
+      "description": "Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "evidence"
+    },
+    {
       "name": "briefing",
       "description": "Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown.",
       "options": [
@@ -183,7 +194,8 @@
       "title": "Reconciliation and correction",
       "commands": [
         "reconcile",
-        "briefing"
+        "briefing",
+        "calendar"
       ],
       "scenarios": [
         "self-check-repair",
@@ -194,7 +206,8 @@
         "trigger-evolution",
         "briefing-guidance",
         "briefing-draft",
-        "briefing-boundaries"
+        "briefing-boundaries",
+        "calendar-acceptance"
       ],
       "properties": [
         "observation-gates",
@@ -206,7 +219,8 @@
         "live-cutoff",
         "process-group-cleanup",
         "trigger-coverage",
-        "retirement-closure"
+        "retirement-closure",
+        "calendar-acceptance"
       ]
     },
     {
@@ -343,6 +357,14 @@
         "dispatchDecision"
       ],
       "statement": "Independent coordinator and destination identities, fresh project/source evidence, exact destination/remote-host scope, recorded settings and creator lineage gate bounded dispatch advice without erasing launch uncertainty or reused child bindings."
+    },
+    {
+      "id": "calendar-acceptance",
+      "source": "src/calendar.mjs",
+      "functions": [
+        "assessCalendar"
+      ],
+      "statement": "Validated declared calendar envelopes require exact saved fields, current content bindings, complete inventory, readable Busy or mandatory Event timing, exact whole-source labels, compatible allocations and scoped retained history; unresolved clocks and effects cannot establish acceptance."
     },
     {
       "id": "trigger-coverage",
