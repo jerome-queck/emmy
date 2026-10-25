@@ -61,6 +61,18 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   assert.ok(create.nativeCreateRequest.prompt.startsWith(`[$pstack:poteto-mode](${skillPath})\n\n`));
   assert.deepEqual(Object.keys(create.nativeCreateRequest).sort(), ['model', 'prompt', 'target', 'thinking', 'title']);
   assert.equal(create.providerExecution, 'unverified'); assert.equal(create.effectiveChildAccess, 'unverified');
+  const scoped = structuredClone(definition);
+  scoped.id = 'coordinator-override'; scoped.dispatch.correlationKey = 'synthetic-coordinator-override';
+  scoped.dispatch.coordinatorRequestedSettings = { model: 'gpt-6.1-sol', effort: 'medium', sourceRef: 'Synthetic explicit owner coordinator choice', scopedOverrideRef: 'Synthetic owner instruction for this objective coordinator', scope: { objectiveId: scoped.id, role: 'coordinator' } };
+  const scopedAdopted = await adopt(scoped);
+  const mediumReadback = readback(dispatcher.threadId);
+  mediumReadback.recordedSettings.effort = 'medium';
+  await retain(await observation(scopedAdopted, 'absent', null, { dispatcher: mediumReadback }));
+  const scopedAdvice = await advise(0, [], privateHome, scoped.id);
+  assert.equal(scopedAdvice.next, 'create-via-dispatcher');
+  assert.equal(scopedAdvice.coordinatorRequestedSettings.effort, 'medium');
+  assert.deepEqual(scopedAdvice.recordedDispatcherSettings, mediumReadback.recordedSettings);
+  assert.equal(scopedAdvice.nativeCreateRequest.thinking, 'max');
   const resolve = (selector, expected = 0, path = discoveryPath) => cli(['dispatch', '--resolve', selector, '--discovery', path, '--as-of', now()], expected);
   const resolution = await resolve('name:Synthetic destination'); assert.equal(resolution.source.target.repository, target.repository); assert.equal(resolution.project, target.projectId);
   assert.equal((await resolve(`path:${target.path}`)).nativeProject.projectId, target.nativeProjectId);
