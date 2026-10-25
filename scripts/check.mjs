@@ -8,6 +8,7 @@ for (const args of [
   ['scripts/check-markdown-links.mjs'],
   ['--test', 'test/markdown-links.test.mjs'],
   ['scripts/agent.mjs', 'maintain', '--check'],
+  ['--test', 'test/process-incarnation.test.mjs', 'test/cloud-migration.test.mjs'],
   ['scripts/verify-behavior.mjs'],
   ['--test', 'test/github-auto-merge.test.mjs'],
   ['scripts/verify-formal.mjs'],

@@ -1,7 +1,9 @@
+import { incarnationMutations } from './incarnation-mutations.mjs';
 import { cloudMutations } from './cloud-mutations.mjs';
 import { calendarMutations } from './calendar-mutations.mjs';
 
 export const mutations = [
+  ...incarnationMutations,
   ...cloudMutations,
   { id: 'dispatch-ignore-destination-installed-skill', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["!skill || skill.hostId !== target.hostId || skill.path !== spec.skill.path || skill.sha256 !== spec.skill.sha256 || !currentTime(skill.observedAt, asOf, Math.min(definition.freshness.maxAgeMs, 300000)) || epoch && Date.parse(skill.observedAt) < Date.parse(epoch.restoredAt)", "false"]] },
   { id: 'dispatch-newest-remote-report-erases-conflict', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["currentObservations(definition, observations.filter(record => record.category === 'target'), asOf)", "observations.filter(record => record.category === 'target').sort((a, b) => a.observedAt.localeCompare(b.observedAt)).slice(-1)"]] },

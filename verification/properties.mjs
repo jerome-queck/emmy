@@ -1,3 +1,4 @@
+import { incarnationBounds, legacyBounds, verifyIncarnationPolicy, verifyLegacyPolicy } from './incarnation-properties.mjs';
 import { canonical, digest, parseDefinition, parseObservation, recordPayload } from '../src/records.mjs';
 import { verifyDispatchPolicy } from './dispatch-properties.mjs';
 import { cloudBounds, verifyCloudPolicy } from './cloud-properties.mjs';
@@ -26,6 +27,8 @@ const reviewed = (state, inputs) => recordPayload({ ...state, inputHashes: input
 const permutations = values => values.length < 2 ? [values] : values.flatMap((value, index) => permutations(values.filter((_, candidate) => candidate !== index)).map(rest => [value, ...rest]));
 
 export const bounds = {
+  processIncarnation: incarnationBounds,
+  legacyBaseline: legacyBounds,
   cloudAdmission: cloudBounds,
   responsibilities: ['watch-alpha', 'watch-beta'],
   targets: subjects,
@@ -60,7 +63,7 @@ export const bounds = {
   ]
 };
 
-export function verifyProperties({ work, responsibilities, records, dispatch, calendar, cloud }, selected = null) {
+export function verifyProperties({ work, responsibilities, records, dispatch, calendar, cloud, incarnation, migration }, selected = null) {
   const counts = {};
   const check = (property, input, condition, expectation) => {
     if (selected && selected !== property) return;
@@ -410,5 +413,7 @@ export function verifyProperties({ work, responsibilities, records, dispatch, ca
     const result = verifyCloudPolicy({ cloud }, check);
     if (result.cases !== bounds.cloudAdmission.cases || counts['cloud-admission'] !== result.cases) throw new Error(`Declared cloud bounds differ from executed predicates ${result.cases}`);
   }
+  if (enabled('process-incarnation')) { const result = verifyIncarnationPolicy({ incarnation }, check); if (result.cases !== bounds.processIncarnation.cases || counts['process-incarnation'] !== result.cases) throw new Error(`Incarnation bounds differ ${result.cases}`); }
+  if (enabled('legacy-baseline')) { const result = verifyLegacyPolicy({ migration }, check); if (result.cases !== bounds.legacyBaseline.cases || counts['legacy-baseline'] !== result.cases) throw new Error(`Legacy bounds differ ${result.cases}`); }
   return { counts, checks: Object.values(counts).reduce((sum, count) => sum + count, 0) };
 }

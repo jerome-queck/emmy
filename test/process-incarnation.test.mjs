@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 const module = () => import('../src/process-incarnation.mjs');
 const namespace = ino => ({ dev: '4', ino });
-const incarnation = (changes = {}) => ({ schemaVersion: 1, kind: 'linux-proc-incarnation', status: 'observed', pid: 2, bootId: '00000000-0000-4000-8000-000000000001', startTicks: '100', pidNamespace: namespace('10'), timeNamespace: namespace('20'), proc: { filesystemType: '40864', selfLink: '2', nspid: [2], pid1Namespace: namespace('10'), rootedInCallerNamespace: true, mount: { mountId: '30', root: '/', mountPoint: '/proc', filesystem: 'proc', hiddenPids: false } }, ...changes });
+const incarnation = (changes = {}) => ({ schemaVersion: 1, kind: 'linux-proc-incarnation', status: 'observed', pid: 2, bootId: '00000000-0000-4000-8000-000000000001', startTicks: '100', pidNamespace: namespace('10'), timeNamespace: namespace('20'), mountNamespace: namespace('30'), proc: { root: { dev: '0', ino: '42' }, filesystemType: '40864', selfLink: '2', nspid: [2], pid1Namespace: namespace('10'), rootedInCallerNamespace: true, mount: { mountId: '30', root: '/', mountPoint: '/proc', filesystem: 'proc', hiddenPids: false } }, ...changes });
 
 test('equal namespace-local PID with a changed kernel start witness is a different incarnation', async () => {
   const api = await module(); assert.equal(api.compareIncarnations(incarnation(), incarnation({ startTicks: '101' })).status, 'different');
@@ -49,4 +49,8 @@ test('actual Linux capture distinguishes same-process and a fresh Node process',
   const api = await module(); const first = await api.captureProcessIncarnation(); const second = await api.captureProcessIncarnation(); assert.equal(first.status, 'observed'); assert.equal(api.compareIncarnations(first, second).status, 'same');
   const { spawnSync } = await import('node:child_process'); const url = new URL('../src/process-incarnation.mjs', import.meta.url).href;
   const child = spawnSync(process.execPath, ['--input-type=module', '-e', `import {captureProcessIncarnation} from ${JSON.stringify(url)}; process.stdout.write(JSON.stringify(await captureProcessIncarnation()));`], { encoding: 'utf8' }); assert.equal(child.status, 0, child.stderr); assert.equal(api.compareIncarnations(first, JSON.parse(child.stdout)).status, 'different');
+});
+test('denied PID1 corroboration retains the independently verified own proc namespace', async () => {
+  const api = await module(); const { procIOFixture } = await import('../verification/process-incarnation-fixtures.mjs');
+  const result = await api.captureProcessIncarnation({ platform: 'linux', pid: 4, io: procIOFixture({ denied: '/proc/1/ns/pid' }) }); assert.equal(result.status, 'observed'); assert.equal(result.proc.pid1Namespace, null); assert.equal(result.proc.pid1NamespaceCheck.error, 'EACCES'); assert.equal(result.acquisition, 'synthetic-fixture');
 });

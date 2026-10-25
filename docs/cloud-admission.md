@@ -11,9 +11,9 @@ node scripts/cloud-acceptance.mjs --home <private-home> --phase prepare
 node scripts/cloud-acceptance.mjs --home <same-private-home> --phase resume
 ```
 
-Run these as separate processes. The first phase adopts its explicitly bounded acceptance responsibility and configures the single queue. A preexisting different controller refuses. Use a fresh isolated home for fixture rehearsal; actual parent use must select its own intended private home. Optional `--id <responsibility-id>` selects the acceptance responsibility on both invocations.
+Run these as separate processes. Freshness uses observed Linux kernel incarnation evidence; numeric PID inequality is insufficient. The first phase adopts its explicitly bounded acceptance responsibility and configures the single queue. A preexisting different controller refuses. Use a fresh isolated home for fixture rehearsal; actual parent use must select its own intended private home. Optional `--id <responsibility-id>` selects the acceptance responsibility on both invocations.
 
-Each phase prints one JSON summary with `status` and a retained report path. `prepare` returns `prepared`, a persisted checkpoint and the next invocation. `resume` requires a different process identity and the same checkpoint. It returns `passed`, twelve unique terminal effects and their digest. Each report retains exact envelopes, CLI stdout, stderr, exits and assertions. A failure keeps its report and exits nonzero.
+Each phase prints one JSON summary with `status` and a retained report path. `prepare` returns `prepared`, a persisted checkpoint and the next invocation. `resume` requires a different observed kernel incarnation and the same checkpoint. An equal PID with a different comparable start witness can pass. Missing or ambiguous evidence refuses before any workload call. macOS currently reports this proof unavailable. A successful supported Linux resume returns `passed`, twelve unique terminal effects and their digest. Each invocation writes its envelopes and report into a unique private run directory. Existing checkpoints use exclusive creation and original reports are never overwritten. Each report retains exact envelopes, CLI stdout, stderr, exits and assertions. A failure keeps its report and exits nonzero.
 
 The workload uses twelve logical job IDs, payloads under 64 KiB, four nonterminal slots and at most one logical active job. Heavy submissions can use two slots; morning work can use three and interactive work all four. It demonstrates synthetic pressure deferral, later eligibility, interactive and morning priority before heavy continuation, overflow backpressure, queued/in-flight/finished duplicate coalescing, bounded transient retries, fresh-process checkpoint recovery and quiet pending health escalation. In-flight means a persisted logical workload between cooperative chunk boundaries. It does not mean an OS process is continuously running.
 
@@ -55,8 +55,72 @@ Every mutation rechecks one current active responsibility definition, exact unex
 
 `health` accepts a reported `issue` with `code` of `signin-blocked`, `monitor-failed` or `work-failed`, a scope and source reference. Pending escalations retain provenance, stable deduplication IDs and `delivery: "pending"`. Repeated identical scope/code issues emit no new escalation. Monitoring failures and exhausted retries use the same pending channel. A bounded overflow sentinel makes escalation-capacity failure visible. No notifier is installed and no output counts as delivered. The parent owns actual Dot delivery and deduplication using these IDs. Healthy unchanged turns have no new escalation.
 
-Each mutating turn atomically claims its current journal head in ignored `cloud-turns/`. The completed successor becomes the next claim key. Claims are retained as evidence; the runner deletes neither claims nor processes. Concurrent writers cannot claim the same head. Unknown, foreign-machine, unreadable or live owners fail closed. PID liveness alone never proves abandonment; explicit recovery requires the exact retained token, the same machine and an ESRCH absence result. PID reuse conservatively prevents recovery.
+Each mutating turn atomically claims its current journal head in ignored `cloud-turns/`. The completed successor becomes the next claim key. Claims are retained as evidence; the runner deletes neither claims nor processes. Concurrent writers cannot claim the same head. Unknown, incomparable, unreadable or live owners fail closed. Explicit recovery requires the exact retained token and comparable observed Linux boot, PID namespace and reader time namespace evidence. The runner reads the target stat through an open descriptor inside verified caller-rooted visible procfs and rechecks its own scope. A missing target or changed start witness proves the old owned incarnation absent under the stated snapshot assumptions. A reused PID never authorizes signalling its current process. Missing legacy identities, inaccessible or changed scope, denied target reads and unsupported platforms remain unknown.
 
 For a stopped writer, inspect `status`, then use `recover` with the returned exact `expectedOwnerToken`. Recovery publishes a deterministic successor while retaining the previous checkpoint and claim. Concurrent recoveries converge on the same content-addressed result. An abandoned initial configuration recovers from its exact retained configuration and definition/effect binding. An incomplete owner marker remains unknown. No permission change, process kill, browser reset or authenticated-session loss occurs.
 
 Backup refuses any unresolved current turn/configuration claim. Recover that same operation first. Completed claims are not needed to restore checkpointed state. Archive restore adds the existing suspension epoch and cannot silently resume executable work. Process restart and these bounded filesystem controls do not prove whole-provider restart or power-loss survival.
+
+## Observe process incarnations
+
+`src/process-incarnation.mjs` supplies the same identity to acceptance checkpoints and turn owners. It reads only bounded fixed Linux proc files, namespace metadata and an explicitly bound owner PID's stat descriptor. The witness contains kernel boot ID, numeric PID, stat field 22 start ticks, followed PID/time namespace device and inode values, mount namespace, proc root identity, proc filesystem type, mount visibility and acquisition scope.
+
+The stat parser starts its fields after the final closing parenthesis of the process name. A verified proc filesystem, matching self symlink/stat PID and a singleton `NSpid` equal to the current PID establish the caller-rooted proc namespace. Linux enumerates `NSpid` from the proc mount's namespace level through the active process namespace level. A readable PID1 namespace corroborates this proof; denial is retained and does not replace the independent proof. A readable contradictory PID1 namespace refuses. Mount options must establish no hidden PIDs before a missing target can imply absence. [Linux proc array code](https://raw.githubusercontent.com/torvalds/linux/master/fs/proc/array.c), [proc namespace and permission code](https://raw.githubusercontent.com/torvalds/linux/master/fs/proc/base.c), and [proc status documentation](https://man7.org/linux/man-pages/man5/proc_pid_status.5.html) describe these boundaries.
+
+Different boot, PID namespace or PID within the same namespace distinguishes acceptance incarnations. A matching PID requires comparable time namespace before start ticks can distinguish them. Equal witnesses mean same or indistinguishable, not proof of a fresh invocation. Owner absence is stricter: different boot or namespaces leave ownership unknown. Process state labels such as sleeping or stopped do not imply suspension or absence. Hostname, process start wall clock, a random token and PID equality/inequality alone prove none of this.
+
+These are bounded nonhostile kernel snapshots. They assume genuine unovermounted proc identity files, honest kernel namespace/inode values and no relevant start-tick collision. They do not establish arbitrary hostile namespace manipulation or provider restart behavior. Target lookup and surrounding captures are sequential, not a universal atomic kernel transaction. Unknown evidence fails closed. macOS has no implemented standard-library equivalent and retains unknown. Ordinary bounded work can still run there; acceptance freshness and abandoned-owner recovery cannot pass.
+
+## Migrate the retained legacy checkpoint
+
+A checkpoint from the PID-only runner lacks the historical kernel witness. Default resume refuses before any work. Preserve the original `checkpoint.json`, successful prepare report and zero-call failed resume report. Obtain their actual bytes on the parent executor. Forwarded prose or reconstructed files do not satisfy this route.
+
+Create an explicit private reviewed attestation with this shape. Replace every placeholder with the original path, computed digest and attributable source reference.
+
+```json
+{
+  "schemaVersion": 1,
+  "kind": "parent-reviewed-legacy-process-attestation",
+  "responsibilityId": "cloud-acceptance",
+  "checkpoint": {
+    "path": "<absolute-original-checkpoint-path>",
+    "sha256": "<original-byte-sha256>",
+    "headHash": "<exact-current-checkpoint-head>",
+    "completedUnits": 1,
+    "terminalEffects": 2
+  },
+  "prepare": {
+    "path": "<absolute-original-prepare-report-path>",
+    "sha256": "<original-byte-sha256>",
+    "toolCallRef": "<attributable-prepare-tool-call>"
+  },
+  "failedResume": {
+    "path": "<absolute-original-failed-resume-report-path>",
+    "sha256": "<original-byte-sha256>",
+    "toolCallRef": "<different-attributable-resume-tool-call>"
+  },
+  "parentReview": {
+    "reference": "<parent-review-source>",
+    "reviewedAt": "<ISO-UTC-review-time>",
+    "statement": "<explicit review of these original files and distinct calls>"
+  }
+}
+```
+
+Run migration against the original private home.
+
+```sh
+node scripts/cloud-acceptance.mjs --home <same-private-home> --phase migrate-legacy --attestation <private-attestation.json>
+```
+
+Migration reads checkpoint/attestation files up to 64 KiB and each original report up to 2 MiB. It verifies exact hashes, responsibility, original guard-trigger PID and host, report chronology, distinct declared tool-call references, checkpoint head/units/terminal count and absence of an unresolved current owner claim. Review and tool-call provenance stay reported and cannot authenticate authority. It captures a new observed Linux incarnation and rechecks the exact journal before and after sidecar publication.
+
+The result is `baseline-established`, never `passed`. It writes only a content-addressed private sidecar under `cloud-acceptance/<id>/legacy-baselines/`; it performs no adoption, configuration, tick, submit or notification. Original checkpoint/report bytes and canonical journal records remain unchanged. Exclusive sidecar writes preserve partial/error evidence. A partial or changed sidecar cannot pass content-address validation; this small sidecar write is outside the canonical journal publication model.
+
+In a later separate invocation, use the returned baseline path.
+
+```sh
+node scripts/cloud-acceptance.mjs --home <same-private-home> --phase resume --baseline <returned-sidecar-path>
+```
+
+Resume rechecks the original bytes, attestation, exact checkpoint and current available claim before work. It must observe an incarnation different from the new baseline. The same logical jobs and terminal effect identities continue. The receipt labels original prepare freshness `reported-parent-attestation`, the new baseline observed, and resume `observed-different-incarnation`. Migration cannot repair the missing historical prepare witness or prove whole-provider restart survival. Unsupported platforms remain unavailable.
