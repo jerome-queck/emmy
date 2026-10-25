@@ -11,6 +11,8 @@ import { briefing } from '../src/briefing.mjs';
 import { dispatch } from '../src/dispatch.mjs';
 import { cloud } from '../src/cloud.mjs';
 import { calendar } from '../src/calendar.mjs';
+import { fleet } from '../src/fleet.mjs';
+import { signin } from '../src/signin.mjs';
 
 const args = process.argv.slice(2);
 const commandName = args.shift() ?? 'help';
@@ -40,7 +42,7 @@ try {
     case 'doctor': {
       const bindings = await readBindings(home); const store = await inspectHome(home); const historical = await historicalFiles(home);
       const references = await maintain(root, catalog, false); const runtimeSupported = Number(process.versions.node.split('.')[0]) >= 24;
-      data = { status: runtimeSupported && references.status === 'current' && !store.restoredNeedsFreshObservations && !store.cloudNeedsAttention ? 'ready' : 'needs-attention', node: process.versions.node, runtimeSupported, projects: catalog.projects.length, boundProjects: Object.keys(bindings.projects).length, store, historicalFiles: historical.length, historicalAssurance: 'reported-only', references, limits: ['Local integrity does not establish Dot access or authenticate native authority.'] };
+      data = { status: runtimeSupported && references.status === 'current' && !store.restoredNeedsFreshObservations && !store.cloudNeedsAttention && !store.fleetNeedsAttention ? 'ready' : 'needs-attention', node: process.versions.node, runtimeSupported, projects: catalog.projects.length, boundProjects: Object.keys(bindings.projects).length, store, historicalFiles: historical.length, historicalAssurance: 'reported-only', references, limits: ['Local integrity does not establish Dot access or authenticate native authority.'] };
       exitCode = data.status === 'ready' ? 0 : 3; break;
     }
     case 'responsibility': data = await adoptResponsibility(home, await readJson(resolve(options.file))); break;
@@ -56,6 +58,12 @@ try {
     case 'calendar':
       data = await calendar({ file: resolve(options.file) });
       exitCode = data.status === 'checked' ? 0 : 3; break;
+    case 'fleet':
+      data = await fleet(home, { file: resolve(options.file) });
+      exitCode = data.status === 'ready' && !['backpressure', 'reconcile-before-admission'].includes(data.outcome) ? 0 : 3; break;
+    case 'signin':
+      data = await signin({ file: resolve(options.file) });
+      exitCode = data.status === 'recovered' ? 0 : 3; break;
     case 'dispatch':
       data = await dispatch(home, { id: options.id, project: options.project, resolve: options.resolve, discoveryFile: options.discovery ? resolve(options.discovery) : null, asOf: timestamp(options['as-of'], 'as-of'), contextNeeded: Boolean(options['context-needed']), catalog });
       exitCode = ['advice-ready', 'recovered', 'resolved'].includes(data.status) ? 0 : 3; break;

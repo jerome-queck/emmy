@@ -6,6 +6,8 @@ export const commands = [
   { name: 'reconcile', description: 'Import evidence, inspect current local state, retain findings/repairs, and propose bounded next work.', options: [{ name: 'id' }, { name: 'import' }, { name: 'as-of', required: true }], feature: 'evidence' },
   { name: 'dispatch', description: 'Resolve an explicit saved destination from fresh discovery, recover private bindings, and return read-only native dispatch advice.', options: [{ name: 'id' }, { name: 'project' }, { name: 'resolve' }, { name: 'discovery' }, { name: 'as-of', required: true }, { name: 'context-needed', flag: true }], feature: 'routing' },
   { name: 'cloud', description: 'Run bounded cooperative cloud jobs with durable checkpoints, priority admission and pending health escalation.', options: [{ name: 'file', required: true }], feature: 'cloud' },
+  { name: 'fleet', description: 'Retain scoped fleet health, parent read admission and pending alert delivery in the responsibility journal.', options: [{ name: 'file', required: true }], feature: 'fleet' },
+  { name: 'signin', description: 'Choose a scoped sign-in recovery handoff without accepting or retaining secrets.', options: [{ name: 'file', required: true }], feature: 'fleet' },
   { name: 'calendar', description: 'Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution.', options: [{ name: 'file', required: true }], feature: 'evidence' },
   { name: 'briefing', description: 'Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown.', options: [{ name: 'file' }], feature: 'evidence' },
   { name: 'probe', description: 'Publish a proposed Dot onboarding packet with eight probes.', options: [{ name: 'id' }, { name: 'nonce', required: true }], feature: 'routing' },
@@ -18,11 +20,12 @@ export const briefingGuidance = {
   schemaVersion: 1,
   checkerVersion: 1,
   path: 'docs/briefing-guidance.json',
-  paths: ['docs/operating-brief.md', 'docs/briefing.md']
+  paths: ['docs/operating-brief.md', 'docs/briefing.md', '.agents/skills/sign-in/SKILL.md']
 };
 
 export const verification = {
   features: [
+    { id: 'fleet', title: 'Fleet health and sign-in recovery', commands: ['fleet', 'signin'], scenarios: ['fleet-health', 'signin-recovery'], properties: ['fleet-contract'] },
     { id: 'cloud', title: 'Cooperative cloud admission', commands: ['cloud'], scenarios: ['cloud-admission'], properties: ['cloud-admission', 'process-incarnation', 'legacy-baseline'] },
     { id: 'orientation', title: 'Orientation and private integrity', commands: ['help', 'doctor', 'catalog'], scenarios: ['orientation'], properties: [] },
     { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'dispatch', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'native-effect-correlation', 'native-dispatch', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope', 'native-uncertainty', 'dispatch-recovery'] },
@@ -30,6 +33,7 @@ export const verification = {
     { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore'], scenarios: ['archive-recovery', 'cloud-recovery', 'restored-current-context', 'publication-interruption', 'derived-boundaries'], properties: ['restore-suspension', 'import-prefix'] }
   ],
   properties: [
+    { id: 'fleet-contract', source: 'src/fleet-state.mjs', functions: ['captureCondition', 'fleetTransition', 'fleetState', 'fleetView'], statement: 'Scoped attributable health stays age and coverage bounded; stable parent read identities, checkpoints, uncertainty and alert episodes prevent duplicate admission and unchanged notifications.' },
     { id: 'process-incarnation', source: 'src/process-incarnation.mjs', functions: ['parseProcStat', 'parseProcStatus', 'parseProcMount', 'validIncarnation', 'compareIncarnations', 'ownerDecision'], statement: 'Validated kernel witnesses distinguish process incarnations while missing, incomparable or unrooted namespace evidence leaves owner absence unknown.' },
     { id: 'legacy-baseline', source: 'src/cloud-migration.mjs', functions: ['assessLegacyAttestation'], statement: 'Exact legacy checkpoint/report bindings, distinct attributable calls and declared review establish reported historical evidence only; fresh observed baseline and later restart remain separate live gates.' },
     { id: 'cloud-admission', source: 'src/cloud.mjs', functions: ['cloudTransition', 'capacityDecision', 'cloudState'], statement: 'Bounded cooperative transitions reserve priority capacity, coalesce stable identities, retain checkpoints, bound retries, defer unavailable capacity and deduplicate pending health escalation.' },

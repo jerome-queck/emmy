@@ -7,7 +7,7 @@ description: Drive Emmy's real CLI after changes to responsibility context, reco
 
 ## Launch and health
 
-Use Node 24 or later. Run `npm ci --ignore-scripts` to install locked verification dependencies. Run `npm run agent -- help --json`. It returns `ok: true` with thirteen commands. Run `npm run agent -- doctor` and `maintain --check`. Doctor checks local runtime, catalog, bindings, store references/evidence, historical records, generated drift, and restored suspension. It does not probe native tools.
+Use Node 24 or later. Run `npm ci --ignore-scripts` to install locked verification dependencies. Run `npm run agent -- help --json`. It returns `ok: true` with the metadata-defined commands. Run `npm run agent -- doctor` and `maintain --check`. Doctor checks local runtime, catalog, bindings, store references/evidence, historical records, generated drift, and restored suspension. It does not probe native tools.
 
 Each driver command starts a fresh Node process. Run `npm run verify:behavior` for the complete mapped drive. It creates and health-checks its own synthetic temporary git repository and private home. After a surprising failure, retain the report and rerun in a new isolated session with doctor. Expected refusal controls are part of the drive.
 
@@ -60,3 +60,5 @@ Diagnostics name the source, parsed destination, and containing block's start li
 Run `npm run check` for Markdown links and their CLI fixtures, generated references, full behavior, existing merge tests, bounded responsibility and calendar properties/mutants, the unchanged merge-policy verifier, and the [publication model](../publication-contract/SKILL.md). The model requires Java 21 and a hash-pinned TLC jar. Apply the installed pstack maintenance workflows after feature changes. Generated indexes do not perform independent source review or advance formal pins.
 
 Cloud restart evidence uses Linux boot/PID namespace/time namespace/start-tick witnesses, never PID inequality alone. `npm run check` runs parser, owner and legacy-file unit controls; supported Linux drives actual same/fresh processes and interrupted owner fixtures. macOS records unsupported evidence explicitly and refuses acceptance resume/recovery without claiming a cloud failure. Ordinary pure work still runs. The legacy migration driver uses labelled synthetic analogues and preserves their original hashes; it cannot substitute for the parent executor's actual retained files.
+
+Use `node scripts/verify-behavior.mjs --focus fleet` and `node --test test/fleet.test.mjs` for [fleet health and sign-in recovery](features/fleet.md). Canonical journal snapshots retain captures, parent read tickets, scoped dispositions and separate pending/send/readback states. Receipts remain reported. No fixture performs authentication, parent app reads or actual Dot delivery.

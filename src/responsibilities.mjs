@@ -1,4 +1,5 @@
 import { cloudSummary, cloudHealth } from './cloud.mjs';
+import { fleetSummary, fleetPendingTurns } from './fleet.mjs';
 import { execFile, spawn } from 'node:child_process';
 import { hostname } from 'node:os';
 import { readFile, realpath } from 'node:fs/promises';
@@ -133,7 +134,7 @@ export async function inspectLocal(definition, { bindings, catalog, machine, asO
   return result;
 }
 
-export function reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews = [], relatedDefinitions = [], relatedReviews = [], cloudRecords = [], epoch = null, bindings, catalog, machine, asOf }) {
+export function reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews = [], relatedDefinitions = [], relatedReviews = [], cloudRecords = [], fleetRecords = [], epoch = null, bindings, catalog, machine, asOf }) {
   definitions = ordered(definitions); observations = ordered(observations); repairs = ordered(repairs); reviews = ordered(reviews);
   const active = definition.lifecycle.status === 'active';
   const diagnostics = ordered(observations).map(observation => ({ ...observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs), category: observation.category }));
@@ -241,7 +242,7 @@ export function reconcileState(definition, { definitions, observations, repairs,
       proposals.push({ type, effectKey: key, definitionHash: definition.hash, target: subjectKey(definition.target), reason: repeated ? repeated.id : open.map(finding => finding.code).join(', '), ...(completed ? { nativeRediscoveryRequired: true, nextStep: 'Read the actual native effect before continuing known work or deciding on another execution.' } : {}), execution: 'proposal-only' });
     }
   }
-  return { schemaVersion: 1, type: 'review', responsibilityId: definition.id, definitionHash: definition.hash, ruleVersion, asOf, goal: definition.goal, context: definition.context, cloud: cloudSummary(cloudRecords, definition.id), target: definition.target, route, authority, restore, heads: heads.map(head => head.hash), observations: diagnostics, criterionResults, findings: retainedFindings.sort((left, right) => left.id.localeCompare(right.id)), repairs: repairResults.sort((left, right) => left.repairHash.localeCompare(right.repairHash)), corrections, proposals, incomingTransfers: incomingTransfers.sort((left, right) => left.findingId.localeCompare(right.findingId)), featureReviews: ordered(featureReviews).map(review => ({ ...review, assurance: 'reported' })), trigger, retirement, lifecycle: definition.lifecycle, reviewAt: definition.reviewAt, limits: ['Proposals are not native execution, permissions, delivery, or authenticated review.', 'Local evidence proves the inspected bytes or bounded command result, not native state.', 'No local process can detect total dormancy without an external wakeup.'] };
+  return { schemaVersion: 1, type: 'review', responsibilityId: definition.id, definitionHash: definition.hash, ruleVersion, asOf, goal: definition.goal, context: definition.context, cloud: cloudSummary(cloudRecords, definition.id), fleet: fleetSummary([...definitions, ...observations, ...fleetRecords, ...(epoch ? [epoch] : [])], definition.id, asOf), target: definition.target, route, authority, restore, heads: heads.map(head => head.hash), observations: diagnostics, criterionResults, findings: retainedFindings.sort((left, right) => left.id.localeCompare(right.id)), repairs: repairResults.sort((left, right) => left.repairHash.localeCompare(right.repairHash)), corrections, proposals, incomingTransfers: incomingTransfers.sort((left, right) => left.findingId.localeCompare(right.findingId)), featureReviews: ordered(featureReviews).map(review => ({ ...review, assurance: 'reported' })), trigger, retirement, lifecycle: definition.lifecycle, reviewAt: definition.reviewAt, limits: ['Proposals are not native execution, permissions, delivery, or authenticated review.', 'Local evidence proves the inspected bytes or bounded command result, not native state.', 'No local process can detect total dormancy without an external wakeup.'] };
 }
 
 export async function adoptResponsibility(home, input) {
@@ -280,13 +281,14 @@ export async function reconcile(home, { id, imports, asOf, catalog }) {
     const relatedReviews = records.filter(record => record.type === 'review' && record.responsibilityId !== responsibilityId);
     const effectiveAsOf = reviewAsOf(asOf, new Date().toISOString(), local.map(item => item.payload.observedAt));
     const cloudRecords = records.filter(record => record.type.startsWith('cloud-'));
-    const state = { ...reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews, relatedDefinitions, relatedReviews, cloudRecords, epoch, bindings, catalog, machine, asOf: effectiveAsOf }), requestedAsOf: asOf };
-    const inputHashes = [...new Set([...definitions, ...observations, ...repairs, ...reviews, ...featureReviews, ...cloudRecords, ...relatedDefinitions, ...relatedReviews, ...(epoch ? [epoch] : [])].map(record => record.hash))].sort();
-    const ruleDigest = digest(await Promise.all(['records.mjs', 'work.mjs', 'responsibilities.mjs', 'cloud.mjs', 'cloud-schema.mjs'].map(name => readFile(new URL(name, import.meta.url), 'utf8'))));
+    const fleetRecords = records.filter(record => record.type.startsWith('fleet-'));
+    const state = { ...reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews, relatedDefinitions, relatedReviews, cloudRecords, fleetRecords, epoch, bindings, catalog, machine, asOf: effectiveAsOf }), requestedAsOf: asOf };
+    const inputHashes = [...new Set([...definitions, ...observations, ...repairs, ...reviews, ...featureReviews, ...cloudRecords, ...fleetRecords, ...relatedDefinitions, ...relatedReviews, ...(epoch ? [epoch] : [])].map(record => record.hash))].sort();
+    const ruleDigest = digest(await Promise.all(['records.mjs', 'work.mjs', 'responsibilities.mjs', 'cloud.mjs', 'cloud-schema.mjs', 'fleet.mjs', 'fleet-state.mjs', 'fleet-schema.mjs', 'bounded-json.mjs'].map(name => readFile(new URL(name, import.meta.url), 'utf8'))));
     const published = await publishRecord(home, { ...state, inputHashes, inputContext: { bindings, catalog, machine }, ruleDigest });
     results.push(published);
   }
-  return { asOf, responsibilities: results, pending, status: results.some(result => result.record.findings.some(finding => finding.status === 'open') || result.record.incomingTransfers.some(item => item.status === 'open')) ? 'actionable' : 'current' };
+  return { asOf, responsibilities: results, pending, status: results.some(result => result.record.findings.some(finding => finding.status === 'open') || result.record.incomingTransfers.some(item => item.status === 'open') || result.record.fleet.some(item => item.status !== 'ready')) ? 'actionable' : 'current' };
 }
 
 export async function inspectHome(home) {
@@ -298,7 +300,8 @@ export async function inspectHome(home) {
     return { responsibilityId: id, ...(heads.length === 1 ? restoredState(epoch, records.filter(record => record.type === 'observation' && record.responsibilityId === id), heads[0], new Date().toISOString()) : { suspended: true, needed: ['definition-conflict'] }) };
   }) : [];
   const cloud = await cloudHealth(home, records);
-  return { cloud, cloudNeedsAttention: cloud.some(item => item.status !== 'ready'), records: records.length, pending, responsibilities: ids.length, restoredEpoch: epoch?.hash ?? null, restoredNeedsFreshObservations: suspension.some(item => item.suspended), suspension };
+  const fleet = fleetSummary(records); const fleetTurns = await fleetPendingTurns(home, records);
+  return { cloud, cloudNeedsAttention: cloud.some(item => item.status !== 'ready'), fleet, fleetTurns, fleetNeedsAttention: fleetTurns.length > 0 || fleet.some(item => item.status !== 'ready'), records: records.length, pending, responsibilities: ids.length, restoredEpoch: epoch?.hash ?? null, restoredNeedsFreshObservations: suspension.some(item => item.suspended), suspension };
 }
 
 export function replayReview(review, records) {
@@ -306,6 +309,6 @@ export function replayReview(review, records) {
   const selected = review.inputHashes.map(hash => { fail(byHash.has(hash), `Missing replay input ${hash}`); return byHash.get(hash); });
   const definition = byHash.get(review.definitionHash);
   fail(definition?.type === 'definition', 'Replay definition is absent');
-  const context = { ...review.inputContext, asOf: review.asOf, definitions: selected.filter(record => record.type === 'definition' && record.id === review.responsibilityId), relatedDefinitions: selected.filter(record => record.type === 'definition' && record.id !== review.responsibilityId), observations: selected.filter(record => record.type === 'observation'), repairs: selected.filter(record => record.type === 'repair'), reviews: selected.filter(record => record.type === 'review' && record.responsibilityId === review.responsibilityId), relatedReviews: selected.filter(record => record.type === 'review' && record.responsibilityId !== review.responsibilityId), featureReviews: selected.filter(record => record.type === 'feature-review'), cloudRecords: selected.filter(record => record.type.startsWith('cloud-')), epoch: latestEpoch(selected) };
+  const context = { ...review.inputContext, asOf: review.asOf, definitions: selected.filter(record => record.type === 'definition' && record.id === review.responsibilityId), relatedDefinitions: selected.filter(record => record.type === 'definition' && record.id !== review.responsibilityId), observations: selected.filter(record => record.type === 'observation'), repairs: selected.filter(record => record.type === 'repair'), reviews: selected.filter(record => record.type === 'review' && record.responsibilityId === review.responsibilityId), relatedReviews: selected.filter(record => record.type === 'review' && record.responsibilityId !== review.responsibilityId), featureReviews: selected.filter(record => record.type === 'feature-review'), cloudRecords: selected.filter(record => record.type.startsWith('cloud-')), fleetRecords: selected.filter(record => record.type.startsWith('fleet-')), epoch: latestEpoch(selected) };
   return reconcileState(definition, context);
 }

@@ -85,6 +85,28 @@
       "feature": "cloud"
     },
     {
+      "name": "fleet",
+      "description": "Retain scoped fleet health, parent read admission and pending alert delivery in the responsibility journal.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "fleet"
+    },
+    {
+      "name": "signin",
+      "description": "Choose a scoped sign-in recovery handoff without accepting or retaining secrets.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "fleet"
+    },
+    {
       "name": "calendar",
       "description": "Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution.",
       "options": [
@@ -162,6 +184,21 @@
     }
   ],
   "features": [
+    {
+      "id": "fleet",
+      "title": "Fleet health and sign-in recovery",
+      "commands": [
+        "fleet",
+        "signin"
+      ],
+      "scenarios": [
+        "fleet-health",
+        "signin-recovery"
+      ],
+      "properties": [
+        "fleet-contract"
+      ]
+    },
     {
       "id": "cloud",
       "title": "Cooperative cloud admission",
@@ -271,6 +308,17 @@
     }
   ],
   "properties": [
+    {
+      "id": "fleet-contract",
+      "source": "src/fleet-state.mjs",
+      "functions": [
+        "captureCondition",
+        "fleetTransition",
+        "fleetState",
+        "fleetView"
+      ],
+      "statement": "Scoped attributable health stays age and coverage bounded; stable parent read identities, checkpoints, uncertainty and alert episodes prevent duplicate admission and unchanged notifications."
+    },
     {
       "id": "process-incarnation",
       "source": "src/process-incarnation.mjs",
