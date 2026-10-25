@@ -5,8 +5,8 @@ const keepContext = item => {
   return `keep${reasons.length ? `; ${reasons.join(', ')}` : fallback[item.classification.reason] ? `; ${fallback[item.classification.reason]}` : ''}`;
 };
 const unique = values => [...new Set(values)];
-const clock = value => new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value));
-const range = values => { const ordered = unique(values.filter(Boolean)).sort(); return ordered.length ? `${clock(ordered[0])}${ordered.at(-1) !== ordered[0] ? ` to ${clock(ordered.at(-1))}` : ''} SGT` : 'not acquired'; };
+const clock = (value, day) => { const sameDay = day && new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value)) === day; return new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', ...(!sameDay ? { day: '2-digit', month: 'short', year: 'numeric' } : {}), hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value)); };
+const range = (values, day) => { const ordered = unique(values.filter(Boolean)).sort(); return ordered.length ? `${clock(ordered[0], day)}${ordered.at(-1) !== ordered[0] ? ` to ${clock(ordered.at(-1), day)}` : ''} SGT` : 'not acquired'; };
 function privateNames(run, assessment, internalIds) {
   const replacements = new Map(internalIds.filter(Boolean).map(id => [id, 'private read reference']));
   for (const [index, item] of run.items.entries()) { for (const id of [item.key, item.reviewDigest, item.receipt.sourceRef, item.receipt.sha256, item.context.threadDigest]) if (id) replacements.set(id, 'private mail evidence'); replacements.set(item.before.nativeId, `mail item ${index + 1}`); replacements.set(item.before.threadId, `mail conversation ${index + 1}`); }
@@ -49,17 +49,24 @@ export function renderCompactMorning(run, assessment, { at, gaps = [], summary =
     for (const fact of item.facts) lines.push(`Fact: ${publicText(fact)}`);
   }
   const translatedGaps = unique([...gaps.map(gap => gap.replace(/^(?:Initial delivered coverage gap\.\s*)+/, '').replace(/\bstale global source\b/g, 'stale source')), ...assessment.coverage.gaps, ...assessment.sources.flatMap(({ source, qualifications }) => [...source.coverage.gaps, ...qualifications.map(reason => `${source.id}: ${reason}`)]), ...assessment.limits.filter(limit => limit.kind === 'correction').map(limit => `Correction recovery ${limit.state}; persistence unverified`)]).map(readable);
-  lines.push(`Coverage day view: content ${range(assessment.sources.map(({ source }) => source.contentAt))}; fetched ${range(assessment.sources.map(({ source }) => source.retrievedAt))}.`);
+  const signature = values => unique(values.filter(Boolean)).sort().join('|');
+  const describe = (observed, fetched, day) => `${range(observed, day)}; fetched ${signature(observed) === signature(fetched) ? 'same' : range(fetched, day)}`;
+  lines.push(`Coverage day view: content ${describe(assessment.sources.map(({ source }) => source.contentAt), assessment.sources.map(({ source }) => source.retrievedAt), historical ? null : run.day)}.`);
+  const coverageGroups = new Map();
   for (const group of unique(Object.values(groups))) {
     const sources = run.sources.filter(source => groups[source.role] === group);
     const selected = (run.cleanup?.acquisitions ?? []).filter(acquisition => sources.some(source => source.id === acquisition.sourceId));
-    lines.push(`Coverage ${group}: global reads ${range(sources.map(source => source.capture?.receipt.observedAt))}; fetched ${range(sources.map(source => source.capture?.receipt.capturedAt))}${selected.length ? `; selected-message reads ${range(selected.map(acquisition => acquisition.receipt.observedAt))}, not whole-source coverage` : ''}.`);
+    const observed = sources.map(source => source.capture?.receipt.observedAt); const fetched = sources.map(source => source.capture?.receipt.capturedAt);
+    const selectedObserved = selected.map(acquisition => acquisition.receipt.observedAt); const selectedFetched = selected.map(acquisition => acquisition.receipt.capturedAt);
+    const key = JSON.stringify([signature(observed), signature(fetched), signature(selectedObserved), signature(selectedFetched)]);
+    const coverage = coverageGroups.get(key) ?? { names: [], observed, fetched, selectedObserved, selectedFetched }; coverage.names.push(group); coverageGroups.set(key, coverage);
   }
+  for (const coverage of coverageGroups.values()) lines.push(`Coverage ${coverage.names.join(', ')}: global reads ${describe(coverage.observed, coverage.fetched, summary ? null : run.day)}${coverage.selectedObserved.length ? `; selected-message reads ${describe(coverage.selectedObserved, coverage.selectedFetched, run.day)}, not whole-source coverage` : ''}.`);
   const gapCounts = new Map(); for (const gap of translatedGaps) gapCounts.set(gap, (gapCounts.get(gap) ?? 0) + 1);
   const materialGaps = [...gapCounts].map(([gap, count]) => `${gap}${count > 1 ? ` (${count} distinct gaps)` : ''}`);
   if (materialGaps.length) lines.push(`Coverage gaps: ${materialGaps.join('; ')}.`);
   const missingLinks = assessment.limits.find(limit => limit.kind === 'source-link'); if (missingLinks) lines.push(`Source links unavailable for ${missingLinks.sourceIds.length} sources; references retained privately.`);
   if (assessment.guidance.state !== 'current') lines.push('Guidance is unavailable or cached; current guidance remains unverified.');
-  if (historical) lines.push(`Day assessment as of ${clock(assessment.checkedAt)} SGT; current commitments are not reacquired by selected mail reads.`);
+  if (historical) lines.push(`Day assessment as of ${clock(assessment.checkedAt, historical ? null : run.day)} SGT; current commitments are not reacquired by selected mail reads.`);
   return `${lines.join('\n')}\n`;
 }

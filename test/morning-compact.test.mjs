@@ -12,7 +12,7 @@ test('compact seal on the same open run removes diagnostic machinery while retai
   assert.doesNotMatch(body, /^\s*(?:#{1,6}\s|```|\|)/m); assert.doesNotMatch(body, /gmail-one|outlook-one|gmail-thread|opaque-source|private-native/);
   for (const item of f.run.items) { assert.ok(body.includes(item.before.sender)); assert.ok(body.includes(item.before.subject)); for (const fact of item.facts) assert.ok(body.includes(fact)); }
   assert.match(body, /archive proposed; not yet verified/); assert.match(body, /Required quiz; completed, reported/); assert.match(body, /Research seminar; cancelled, reported/);
-  assert.match(diagnostic.body, /## Mail review/); assert.match(diagnostic.body, /gmail\\-one/); assert.equal(diagnostic.bodyDigest, digest(diagnostic.body)); assert.ok(diagnostic.assessment.sources.length > 0);
+  assert.equal((body.match(/Coverage Gmail/g) ?? []).length, 1); assert.match(body, /fetched same/); assert.doesNotMatch(body, /25 Oct 2026/); assert.match(diagnostic.body, /## Mail review/); assert.match(diagnostic.body, /gmail\\-one/); assert.equal(diagnostic.bodyDigest, digest(diagnostic.body)); assert.ok(diagnostic.assessment.sources.length > 0);
   assert.equal(f.run.sealed.bodyDigest, digest(body)); send(f); assert.equal(f.run.delivery.bodyDigest, digest(body));
 });
 test('compact grouped coverage preserves material gaps, distinct omitted items and global versus selected ranges', () => {
@@ -20,7 +20,7 @@ test('compact grouped coverage preserves material gaps, distinct omitted items a
   f.command('seal', compactAssessments()); send(f); const batch = refreshMorning(f); f.command('summary', {}, batch.at); const body = f.run.summary.body;
   assert.match(body, /unreviewed Gmail message 1/); assert.match(body, /unreviewed Gmail message 2/); assert.match(body, /calendar 2/); assert.doesNotMatch(body, /private-unreviewed|private-calendar/);
   assert.match(body, /global reads .*09:00/); assert.match(body, /selected-message reads .*09:06/); assert.match(body, /not whole-source coverage/); assert.match(body, /historical assessment/);
-  assert.equal((body.match(/Coverage Gmail:/g) ?? []).length, 1); assert.ok(f.run.summary.diagnostic.body.includes('Global')); assert.equal(f.run.summary.presentation, 'compact-v1');
+  assert.equal((body.match(/Coverage Gmail(?:,|:)/g) ?? []).length, 1); assert.ok(f.run.summary.diagnostic.body.includes('Global')); assert.equal(f.run.summary.presentation, 'compact-v1');
 });
 test('compact summary distinguishes corrections, uncertain effects and verified outcomes without a resend', () => {
   const f = setup(); f.command('correct', { adapter: 'outlook', nativeId: 'outlook-one', disposition: 'dismissed', sourceRef: 'owner', reason: 'Already handled.' }); f.command('seal', compactAssessments()); send(f);
