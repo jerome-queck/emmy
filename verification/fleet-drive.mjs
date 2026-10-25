@@ -125,6 +125,17 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   const refusedLate = await timeoutCall('timeout-late-result', deadlineResult, 2, lateEvidence); assert.match(refusedLate.error, /after the ticket deadline/);
   await timeoutCall('timeout-inside-result', { ...deadlineResult, receipt: acquiredInside.receipt }, 3, insideEvidence); assert.equal(timeoutView.state.jobs[0].status, 'completed');
   report.fleetTimeout = { synthetic: true, freshTicketReturned: true, lateAcquisitionRefused: true, delayedInWindowAcquisitionAccepted: true, underlyingOldSourceRemainsReported: true };
+  await timeoutCall('unknown-submit', { operation: 'submit', job: fleetJob('unknown-byte-read', 'morning', { kind: 'briefing-source-read', maxReads: 32, maxBytes: 262144 }) });
+  const unknownAdmitted = await timeoutCall('unknown-claim', { operation: 'claim', ownerRef: 'fixture-parent' }); const unknownTicket = unknownAdmitted.ticket;
+  const unknownCapture = currentCapture('protected'); unknownCapture.receipt.coverage = { complete: false, gaps: ['One response lost; inventory partial.'] }; const unknownRefs = await receipts([unknownCapture]);
+  while (Date.now() <= Date.parse(unknownTicket.deadline)) await new Promise(resolve => setTimeout(resolve, 25));
+  const proof = { jobKey: unknownTicket.key, ticket: unknownTicket.ticket, actualReadAttempts: 13, knownSerializedResponseBytes: 78082, totalSerializedResponseBytes: null, allReadsEnded: true, readOnly: true, nativeEffects: 'none', mailOpened: false, mailMutations: 0 };
+  const unknownBase = { operation: 'resolve', jobKey: unknownTicket.key, ticket: unknownTicket.ticket, checkpoint: 0, outcome: 'blocked', usage: { reads: 13, bytes: null, knownBytesLowerBound: 78082 }, receipt: unknownCapture.receipt, reason: 'Read-only worker ended after first counter failure.' };
+  const failureEnvelope = async (value, name, expected) => { const path = await fixture(`${name}-proof`, value); const ref = { sourceRef: name, path, sha256: digest(await readFile(path)) }; return timeoutCall(name, { ...unknownBase, failure: { kind: 'read-only-known-ended', sourceRef: ref.sourceRef, sha256: ref.sha256, reason: 'Unknown total; known lower bound only.' } }, expected, [...unknownRefs, ref]); };
+  for (const [field, value] of [['allReadsEnded', false], ['readOnly', false], ['nativeEffects', 'uncertain'], ['mailOpened', true], ['mailMutations', 1]]) await failureEnvelope({ ...proof, [field]: value }, `unknown-negative-${field}`, 2);
+  await failureEnvelope(proof, 'unknown-ended-proof', 3); const unknownJob = timeoutView.state.jobs.find(job => job.key === unknownTicket.key);
+  assert.equal(unknownJob.status, 'blocked'); assert.equal(unknownJob.usedBytes, null); assert.equal(unknownJob.byteAccounting.knownBytesLowerBound, 78082); assert.equal(unknownJob.byteAccounting.budgetCompliance, 'unverified');
+  report.fleetUnknownBytes = { reads: 13, measuredBytes: null, knownBytesLowerBound: 78082, endedReadonlySlotReleased: true, liveClosure: false };
   await call({ operation: 'submit', job }); assert.equal(last.state.jobs.length, 0);
   await call({ operation: 'submit', job: fleetJob('heavy-one', 'heavy') });
   await call({ operation: 'submit', job: fleetJob('heavy-two', 'heavy') });

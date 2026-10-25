@@ -1,6 +1,7 @@
+import { compactAssessments } from './morning-compact-fixtures.mjs';
 import { canonical, digest } from '../src/records.mjs';
 import { morningAssessments, morningCommand, morningDelivery, morningAt, morningEntities, morningItem, morningOpen, morningReceipt, morningRoot, morningWindow } from './morning-fixtures.mjs';
-export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 63, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
+export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 70, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
 export function verifyMorningPolicy({ morning, fleet }, check) {
   let cases = 0;
   const expect = (name, value, message) => { cases++; check('morning-contract', { case: name }, value, message); };
@@ -103,10 +104,24 @@ export function verifyMorningPolicy({ morning, fleet }, check) {
   fixture = prepare(); fixture.run.sources[0].capture.messageIds.push('unreviewed-global-id'); fixture.run.sources[2].capture.resourceIds.push('omitted-global-calendar'); fixture.deliver();
   fixture.step('refresh', { generation: 1, items: [{ adapter: 'gmail', nativeId: 'gmail-one' }], sourceRef: 'owner', reason: 'Selected reads cannot repair missing global inventories.' }, morningAt); fixture.step('summary');
   expect('refresh/preserve-global-gaps', fixture.run.cleanup.globalGaps.some(gap => gap.includes('unreviewed-global-id')) && fixture.run.cleanup.globalGaps.some(gap => gap.includes('omitted-global-calendar')) && fixture.run.summary.body.includes('unreviewed\\-global\\-id') && fixture.run.cleanup.globalGapProvenance.bodyDigest === fixture.run.sealed.bodyDigest, 'Original missing-resource and unreviewed-ID gaps retain initial body provenance through selected refresh.');
+  fixture = prepare(); fixture.step('seal', compactAssessments());
+  expect('compact/plain', !/^\s*(?:#{1,6}\s|```|\|)/m.test(fixture.run.sealed.body) && !fixture.run.sealed.body.includes('gmail-one'), 'Compact body excludes diagnostic markup and raw IDs.');
+  expect('compact/accountability', fixture.run.items.every(item => fixture.run.sealed.body.includes(item.before.sender) && fixture.run.sealed.body.includes(item.before.subject)), 'Every reviewed sender and subject survives compact rendering.');
+  expect('compact/audit', fixture.run.sealed.diagnostic.body.includes('## Mail review') && fixture.run.sealed.diagnostic.bodyDigest === digest(fixture.run.sealed.diagnostic.body), 'Exact full diagnostic packet remains private and byte bound.');
+  expect('compact/selector', rejects(() => fixture.step('seal', { ...compactAssessments(), presentation: 'caller-body' })), 'Only explicit versioned presentation is supported.');
+  fixture = prepare(); const acquired = { ...fixture.run.sources[0].capture, jobKey: null, acquisition: { provenance: 'ordinary-authorized', ownerRef: fixture.run.ownerRef, collectionRef: 'retained-ordinary' } };
+  expect('ordinary/authority', rejects(() => fixture.step('source', { ...acquired, acquisition: { ...acquired.acquisition, ownerRef: 'other-owner' } })), 'Ordinary intake cannot change owner authority.');
+  fixture.step('source', acquired); expect('ordinary/intake', fixture.run.sources[0].capture.jobKey === null && fixture.run.sources[0].captureHistory[0]?.jobKey !== null && fixture.run.sources[0].captureHistory[0]?.sourceId === acquired.sourceId, 'Ordinary intake retains provenance/history without a fabricated ticket.');
+  fixture.step('source', { ...acquired, messageIds: [] }); fixture.step('seal', compactAssessments()); expect('ordinary/missing-current', fixture.run.sealed.gaps.some(gap => gap.includes('not in current mail inventory')) && fixture.run.sealed.body.includes('actor unknown'), 'Previously reviewed IDs omitted from current ordinary inventory remain held without inferred actor.');
   return { cases };
 }
 const mutant = (id, before, after, counterexample) => ({ id: `morning-${id}`, source: 'src/morning.mjs', property: 'morning-contract', edits: [[before, after]], counterexample });
 export const morningMutations = [
+  mutant('compact-no-selector', "command.presentation === 'compact-v1' ? assessBriefingPresentation", "false ? assessBriefingPresentation", 'compact/plain'),
+  mutant('ordinary-owner-bypass', 'command.acquisition.ownerRef === run.ownerRef', 'true', 'ordinary/authority'),
+  mutant('ordinary-drop-history', 'source.captureHistory.push(source.capture)', 'source.captureHistory.push(null)', 'ordinary/intake'),
+  { id: 'compact-hide-sender', source: 'src/morning-presentation.mjs', property: 'morning-contract', edits: [['${publicText(item.before.sender)}; ', '']], counterexample: 'compact/accountability' },
+
   mutant('refresh-erase-global-gaps', '...(run.sealed?.gaps ?? []).map(gap => `Initial delivered coverage gap. ${gap}`)', '...[]', 'refresh/preserve-global-gaps'),
   mutant('refresh-undelivered-plan', 'run.cleanup.deliveredPlans[item.key] === planDigest(item)', 'true', 'refresh/changed-plan'),
   mutant('refresh-erase-correction', 'Object.assign(existing, review, { reviewDigest:', 'Object.assign(existing, review, { correction: null, reviewDigest:', 'refresh/correction'),

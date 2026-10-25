@@ -34,7 +34,7 @@ try {
   assert.deepEqual(Object.keys(report.baseline.counts).sort(), verification.properties.map(value => value.id).sort(), 'Every metadata property executes');
   for (const mutation of mutations) {
     const candidateRoot = join(scratch, mutation.id); await mkdir(join(candidateRoot, 'src'), { recursive: true });
-    for (const name of ['records.mjs', 'work.mjs', 'responsibilities.mjs', 'dispatch.mjs', 'calendar.mjs', 'cloud.mjs', 'cloud-schema.mjs', 'process-incarnation.mjs', 'cloud-migration.mjs', 'fleet.mjs', 'fleet-schema.mjs', 'fleet-state.mjs', 'morning.mjs', 'bounded-json.mjs']) await cp(join(root, 'src', name), join(candidateRoot, 'src', name));
+    for (const name of ['records.mjs', 'work.mjs', 'responsibilities.mjs', 'dispatch.mjs', 'calendar.mjs', 'cloud.mjs', 'cloud-schema.mjs', 'process-incarnation.mjs', 'cloud-migration.mjs', 'fleet.mjs', 'fleet-schema.mjs', 'fleet-state.mjs', 'morning.mjs', 'morning-presentation.mjs', 'morning-collection.mjs', 'briefing.mjs', 'metadata.mjs', 'bounded-json.mjs']) await cp(join(root, 'src', name), join(candidateRoot, 'src', name));
     const target = join(candidateRoot, mutation.source); let source = await readFile(target, 'utf8');
     for (const [find, replacement] of mutation.edits) { assert.equal(source.split(find).length, 2, `Mutant ${mutation.id} must target one production expression`); source = source.replace(find, replacement); }
     await writeFile(target, source); const candidate = await modules(candidateRoot); let counterexample;

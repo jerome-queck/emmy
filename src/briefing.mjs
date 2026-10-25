@@ -343,7 +343,7 @@ function assessDraft(draft, guidance, checkedAt) {
   return { ...assessment, status: limits.some(value => ['guidance', 'correction'].includes(value.kind)) ? 'degraded' : 'checked' };
 }
 
-function renderBriefing(assessment) {
+export function renderBriefing(assessment) {
   const sources = new Map(assessment.sources.map(value => [value.source.id, value]));
   const links = ids => ids.map(id => sources.get(id)).filter(value => value.webReference.kind === 'link').map(value => `[${md(`${value.source.kind} source`)}](<${value.webReference.href.replaceAll('&', '&amp;')}>)`).join('; ');
   const lines = ['# Briefing', '', '## Updates', ''];
@@ -372,6 +372,14 @@ function renderBriefing(assessment) {
   for (const [key, name] of Object.entries(coverageNames)) lines.push(`${name}: ${assessment.coverage[key].length ? `${assessment.coverage[key].length}${links(assessment.coverage[key]) ? ` (${links(assessment.coverage[key])})` : ''}` : 'none'}.`);
   if (assessment.coverage.gaps.length) lines.push(`Gaps: ${assessment.coverage.gaps.map(md).join('; ')}.`);
   return `${lines.join('\n')}\n`;
+}
+
+export function assessBriefingDraft(input, guidance, checkedAt) { return assessDraft(parseDraft(Buffer.from(JSON.stringify(input))), guidance, checkedAt); }
+export function assessBriefingPresentation(input, result, checkedAt) {
+  requireValue(result?.guidance && typeof result.guidance.state === 'string', 'Compact presentation requires actual guidance in the retained briefing result');
+  const assessment = assessBriefingDraft(input, result.guidance, checkedAt);
+  requireValue(assessment.status === result.status && renderBriefing(assessment) === result.body, 'Compact presentation requires the exact existing assessed briefing result');
+  return assessment;
 }
 
 export async function briefing(home, { file = null } = {}) {
