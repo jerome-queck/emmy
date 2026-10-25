@@ -9,7 +9,7 @@ description: Check Emmy's bounded responsibility, dispatch, calendar acceptance,
 
 Run `node scripts/verify-formal.mjs` with Node 24 or later for the responsibility checker. It requires no package install, solver, service, or account. `npm run verify:formal` also runs the merge-policy enumeration and the [publication model](../publication-contract/SKILL.md), which requires Java 21 and a hash-pinned TLC jar.
 
-The checker calls the actual mapped production functions. It checks 8,270 predicates across twenty-four named properties, kills 189 paired mutations of those actual source files, then reruns unchanged production. Earlier responsibility, dispatch, calendar, cloud and incarnation domains retain their promises. These are finite checks, not a universal proof.
+The checker calls the actual mapped production functions. It checks 8,285 predicates across twenty-four named properties, kills 199 paired mutations of those actual source files, then reruns unchanged production. Earlier responsibility, dispatch, calendar, cloud and incarnation domains retain their promises. These are finite checks, not a universal proof.
 
 Read each failed counterexample under `.local/verification/formal-*/`. A mutant counts only if it imports successfully and its designated property rejects the intended behavioral disagreement. Syntax/import errors, ambiguous edit anchors, unrelated exceptions, and surviving mutants fail verification. Failed attempts remain retained.
 

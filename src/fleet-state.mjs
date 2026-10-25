@@ -202,11 +202,20 @@ export function fleetTransition(original, action, root, at, epochHash = original
         insist(action.checkpoint === job.checkpoint + (['completed', 'checkpoint'].includes(action.outcome) ? 1 : 0), 'Result skips or rewinds a checkpoint');
         insist(action.checkpoint <= job.input.steps && (action.outcome !== 'completed' || action.checkpoint === job.input.steps) && (action.outcome !== 'checkpoint' || action.checkpoint < job.input.steps), 'Invalid final checkpoint');
         insist(!['completed', 'checkpoint'].includes(action.outcome) || action.receipt.coverage.complete && action.receipt.coverage.gaps.length === 0, 'Partial source coverage cannot complete a parent read');
+        if (action.usage.bytes === null) {
+          insist(['health-read', 'briefing-source-read'].includes(job.input.kind) && action.outcome === 'blocked' && action.failure.kind === 'read-only-known-ended', 'Unknown measurements can close only a known-ended read-only failure');
+          const readDelta = action.usage.reads - job.attemptReads; const previousBytes = job.usedBytes - job.attemptBytes; const knownBytesLowerBound = previousBytes + action.usage.knownBytesLowerBound;
+          insist(readDelta >= 0 && job.usedReads + readDelta <= job.input.maxReads && action.usage.knownBytesLowerBound >= job.attemptBytes && knownBytesLowerBound <= job.input.maxBytes, 'Known usage rewinds or exceeds original admitted caps');
+          job.usedReads += readDelta; job.attemptReads = action.usage.reads;
+          job.byteAccounting = { measuredTotalBytes: null, knownBytesLowerBound, knownAttemptBytesLowerBound: action.usage.knownBytesLowerBound, previouslyMeasuredBytes: previousBytes, budgetReservedBytes: job.input.maxBytes, reservedUnknownBytes: job.input.maxBytes - knownBytesLowerBound, budgetCompliance: 'unverified', failure: action.failure };
+          job.usedBytes = null; job.attemptBytes = null;
+        } else {
         const readDelta = action.usage.reads - job.attemptReads; const byteDelta = action.usage.bytes - job.attemptBytes;
         insist(readDelta >= 0 && byteDelta >= 0 && job.usedReads + readDelta <= job.input.maxReads && job.usedBytes + byteDelta <= job.input.maxBytes, 'Parent usage rewinds or exceeds the admitted total budget');
         insist(!['completed', 'checkpoint'].includes(action.outcome) || action.usage.reads > 0, 'A successful checkpoint requires a declared actual read');
         insist(action.outcome !== 'known-unexecuted' || action.usage.reads === 0, 'Known-unexecuted evidence cannot erase a declared read');
         job.usedReads += readDelta; job.usedBytes += byteDelta; job.attemptReads = action.usage.reads; job.attemptBytes = action.usage.bytes;
+        }
         job.resultDigests.push(resultDigest); job.receipts.push(action.receipt); job.checkpoint = action.checkpoint;
         if (action.outcome === 'completed') job.status = 'completed';
         else if (action.outcome === 'checkpoint') job.status = 'queued';

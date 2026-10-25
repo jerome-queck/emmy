@@ -1,5 +1,8 @@
 const mutant = (id, before, after, counterexample) => ({ id: `fleet-${id}`, source: 'src/fleet-state.mjs', property: 'fleet-contract', edits: [[before, after]], counterexample });
 export const fleetMutations = [
+  mutant('unknown-total-zero', 'job.usedBytes = null;', 'job.usedBytes = 0;', 'unknown-bytes/accounting'),
+  { id: 'fleet-unknown-numeric-substitute', source: 'src/fleet-schema.mjs', property: 'fleet-contract', edits: [["value.failure === undefined && value.usage.knownBytesLowerBound === undefined", "value.usage.knownBytesLowerBound === undefined"]], counterexample: 'unknown-bytes/no-numeric-substitute' },
+
   mutant('archive-run-closure', "view.status === 'complete' &&", 'true &&', 'archive/run-uncertain'),
   mutant('archive-run-identity', 'old.specification === digest(action.command)', 'true', 'archive/run-conflict'),
   mutant('archive-ancestor-scope', 'let current = head;', 'let current = [...known.values()].at(-1);', 'archive/ancestor-only'),

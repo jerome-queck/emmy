@@ -1,7 +1,9 @@
+import { collectionBegin, collectionCollect, collectionFinish } from '../src/morning-collection.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { digest, readStore, validateReferences } from '../src/records.mjs';
+import { compactAssessments } from './morning-compact-fixtures.mjs';
 import { morningAssessments, morningDelivery, morningEntities, morningItem } from './morning-fixtures.mjs';
 export async function driveMorning({ home, bindings, target, run, scenario, report }) {
   const selected = join(home, 'morning-drive'); await mkdir(selected, { recursive: true }); await writeFile(join(selected, 'bindings.json'), JSON.stringify(bindings));
@@ -31,11 +33,21 @@ export async function driveMorning({ home, bindings, target, run, scenario, repo
   }
   const reviews = []; const reviewRefs = [];
   for (const adapter of ['gmail', 'outlook']) { const item = morningItem(adapter); const captured = await receipt(adapter, { synthetic: true, fullThread: item.before, context: item.context }); item.receipt = captured.receipt; item.context.threadDigest = captured.ref.sha256; reviews.push(item); reviewRefs.push(captured.ref); }
+  const collectionDirectory = join(selected, 'ordinary-collection'); const ordinaryAt = now();
+  collectionBegin(collectionDirectory, { runId: day, sourceId: 'outlook', scope: reviews[1].receipt.scope, ownerRef: owner.sourceRef, provenance: 'ordinary-authorized', jobKey: null, ticket: null });
+  collectionCollect(collectionDirectory, { attempt: 1, observedAt: ordinaryAt, capturedAt: ordinaryAt, outcome: 'returned' }, reviewRefs[1].path);
+  const ordinary = collectionFinish(collectionDirectory, { attempts: 1, coverage: { complete: true, gaps: [] }, paginationComplete: true, cached: false, resourceIds: [], messageIds: ['outlook-one'], window: null });
+  const ordinaryRefs = [owner, ...await Promise.all(ordinary.evidence.map(async ref => ({ ...ref, sha256: digest(await readFile(ref.path)) })))];
+  const ordinaryFields = Object.fromEntries(Object.entries(ordinary.command).filter(([key]) => !['step', 'runId'].includes(key)));
+  await command('source', ordinaryFields, ordinaryRefs.slice(0, 2), 2);
+  await command('source', ordinaryFields, ordinaryRefs); reviews[1].receipt = ordinary.command.receipt;
+  assert.equal(view.state.morningRuns[0].sources.find(source => source.role === 'outlook').capture.jobKey, null);
+  reviewRefs.push(...ordinaryRefs);
   await command('review', { items: reviews.map(item => ({ ...item, context: { ...item.context, threadDigest: 'a'.repeat(64) } })) }, reviewRefs, 2);
   await command('review', { items: reviews }, reviewRefs);
   const baseIntent = { adapter: 'gmail', nativeId: 'gmail-one', action: 'trash', before: reviews[0].before, receipt: reviews[0].receipt, destination: null };
   await command('action-intent', baseIntent, reviewRefs, 2);
-  const assessments = morningAssessments(now(), window); const assessmentRefs = [];
+  const assessments = compactAssessments(now(), window); const assessmentRefs = [];
   for (const key of ['briefing', 'calendar']) {
     const value = assessments[key]; const captured = await receipt(`${key}-assessment`, { ok: true, data: value.result }); value.receipt = { ...captured.receipt, observedAt: key === 'briefing' ? value.assessment.checkedAt : value.result.evaluatedAt }; assessmentRefs.push(captured.ref);
     const inputCapture = await receipt(`${key}-input`, value.input); value.inputReceipt = inputCapture.receipt; assessmentRefs.push(inputCapture.ref);
@@ -45,7 +57,7 @@ export async function driveMorning({ home, bindings, target, run, scenario, repo
   }
   await command('seal', { ...assessments, briefing: { ...assessments.briefing, result: { ...assessments.briefing.result, body: 'changed', bodyDigest: digest('changed') } } }, assessmentRefs, 2);
   await command('seal', assessments, assessmentRefs);
-  const sealed = view.state.morningRuns[0].sealed; assert.equal(sealed.gaps.length, 0); assert.ok(sealed.body.includes('planned trash')); assert.ok(sealed.body.includes('contact@info'));
+  const sealed = view.state.morningRuns[0].sealed; assert.equal(sealed.gaps.length, 0); assert.ok(sealed.body.includes('recoverable Trash proposed')); assert.doesNotMatch(sealed.body, /^#/m); assert.ok(sealed.diagnostic.body.includes('## Mail review')); assert.equal(sealed.diagnostic.bodyDigest, digest(sealed.diagnostic.body)); assert.ok(sealed.body.includes('contact@info'));
   const bodyRef = await evidence('synthetic-body', sealed.body); await writeFile(bodyRef.path, sealed.body); bodyRef.sha256 = digest(sealed.body);
   const send = { sendRef: 'synthetic-send', bodyDigest: sealed.bodyDigest };
   const intentSend = await command('send-intent', send, [bodyRef]); await run(['fleet', '--file', intentSend.path], 3, selected); await command('send-intent', send, [bodyRef], 2);
@@ -83,6 +95,6 @@ export async function driveMorning({ home, bindings, target, run, scenario, repo
   const freshAfter = { ...refreshedItem.before, folder: 'Archive', folderId: 'archive-native' }; const freshAfterReceipt = await receipt('outlook', { synthetic: true, sameNativeIdAfter: freshAfter });
   await command('action-result', { adapter: 'outlook', nativeId: 'outlook-one', intentDigest: refreshedAttempt.intentDigest, receipt: freshAfterReceipt.receipt, after: freshAfter, outcome: 'verified' }, [freshAfterReceipt.ref]);
   assert.deepEqual(view.state.morningRuns[0].delivery, originalIdentity); assert.equal(view.state.morningRuns[0].sealed.body, originalBody); assert.equal(view.state.morningRuns[0].items[1].reviewHistory.length, 1);
-  const retained = await readStore(selected); const corrupted = structuredClone(retained.records); const reviewedRecord = corrupted.find(record => record.action?.operation === 'morning' && record.action.command.step === 'review'); reviewedRecord.fileDigests = {}; assert.throws(() => validateReferences(corrupted), /receipt bytes|context bytes/); report.morning = { synthetic: true, records: retained.records.length, reviewedIds: view.state.morningRuns[0].items.map(row => row.before.nativeId), exactBodyDigest: sealed.bodyDigest, exactSummaryDigest: summary.bodyDigest, nativeToolsInvoked: false, actualDelivery: 'not-tested' };
+  const retained = await readStore(selected); const corrupted = structuredClone(retained.records); const reviewedRecord = corrupted.find(record => record.action?.operation === 'morning' && record.action.command.step === 'review'); reviewedRecord.fileDigests = {}; assert.throws(() => validateReferences(corrupted), /receipt bytes|context bytes/); report.morning = { synthetic: true, records: retained.records.length, reviewedIds: view.state.morningRuns[0].items.map(row => row.before.nativeId), presentation: sealed.presentation, privateDiagnosticDigest: sealed.diagnostic.bodyDigest, exactBodyDigest: sealed.bodyDigest, exactSummaryDigest: summary.bodyDigest, nativeToolsInvoked: false, actualDelivery: 'not-tested' };
   scenario('morning-run', 'Fresh-process fleet-backed morning acquisition, exact context/body bytes, reviewed sender/subject/disposition, send/readback-before-cleanup, unread-preserved same-ID action, duplicate-safe replay exact same-message summary edit and generation-bound selected-ID refresh without replacing original delivery or terminal moves. Synthetic parent declarations only.');
 }

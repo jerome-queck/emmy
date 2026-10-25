@@ -376,6 +376,7 @@ export function validateReferences(records) {
     const morning = record.action.operation === 'morning' ? morningEvidence(record.action.command) : { receipts: [] };
     for (const receipt of [...morning.receipts, ...(record.action.captures ?? []).map(capture => capture.receipt), ...(record.action.receipt ? [record.action.receipt] : [])]) requireValue(Object.values(record.fileDigests ?? {}).includes(receipt.sha256), 'Fleet receipt bytes are not retained by this event');
     for (const capture of record.action.captures ?? []) if (capture.actualDigest) requireValue(Object.values(record.fileDigests ?? {}).includes(capture.actualDigest), 'Fleet actual source bytes are not retained by this event');
+    if (record.action.failure) requireValue(Object.values(record.fileDigests ?? {}).includes(record.action.failure.sha256), 'Known-ended failure proof bytes are not retained by this event');
     if (record.action.operation === 'morning' && record.action.command.step === 'review') for (const item of record.action.command.items) requireValue(Object.values(record.fileDigests ?? {}).includes(item.context.threadDigest), 'Morning context bytes are not retained by this event');
     if (record.type === 'fleet-root') continue;
     const root = known.get(record.rootHash); const parent = known.get(record.parentHash);

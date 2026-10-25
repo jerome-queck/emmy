@@ -2,7 +2,7 @@ import { digest } from '../src/records.mjs';
 import { fleetCapture, fleetEntities, fleetJob, fleetReceipt, fleetRoot, fleetTime } from './fleet-fixtures.mjs';
 import { morningOpen, morningRoot, morningAt } from './morning-fixtures.mjs';
 
-export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 107, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
+export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 110, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
 export function verifyFleetPolicy({ fleet }, check) {
   let cases = 0;
   const expect = (name, ok, message) => { cases++; check('fleet-contract', { case: name }, ok, message); };
@@ -162,5 +162,12 @@ export function verifyFleetPolicy({ fleet }, check) {
   const edit = { operation: 'morning', command: { step: 'edit-intent', runId: run.id, editRef: 'reserved-edit', nativeId: 'same-message', bodyDigest: digest('current-summary') } };
   expect('archive/morning-edit-ref', rejects(() => fleet.fleetTransition(editState, edit, morningRoot, morningAt, null, editHistory)), 'Historical morning edit references cannot authorize new effects.');
   expect('archive/missing-ancestor', rejects(() => fleet.fleetHistory([runHead], runHead)), 'Missing ancestry refuses instead of permitting a new identity.');
+  let unknownState = transition(green(), { operation: 'submit', job: fleetJob('unknown-bytes', 'morning', { kind: 'briefing-source-read', maxReads: 32, maxBytes: 262144 }) }).state;
+  unknownState = transition(unknownState, { operation: 'claim', ownerRef: 'synthetic-parent' }).state; const unknownJob = unknownState.jobs[0]; const unknownAt = '2026-10-25T12:06:00.000Z';
+  const unknownAction = { operation: 'resolve', jobKey: unknownJob.key, ticket: unknownJob.ticket, checkpoint: 0, outcome: 'blocked', usage: { reads: 13, bytes: null, knownBytesLowerBound: 78082 }, receipt: fleetReceipt('protected', unknownAt, { coverage: { complete: false, gaps: ['Incomplete acquisition.'] } }), reason: 'All reads ended.', failure: { kind: 'read-only-known-ended', sourceRef: 'ended-proof', sha256: 'a'.repeat(64), reason: 'First response bytes lost.' } };
+  const unknownResult = transition(unknownState, unknownAction, unknownAt).state.jobs[0];
+  expect('unknown-bytes/accounting', unknownResult.usedBytes === null && unknownResult.usedReads === 13 && unknownResult.byteAccounting.knownBytesLowerBound === 78082 && unknownResult.byteAccounting.budgetReservedBytes === 262144 && unknownResult.byteAccounting.budgetCompliance === 'unverified', 'Unknown measured total remains distinct from known subtotal and conservative reservation.');
+  expect('unknown-bytes/no-success', rejects(() => transition(unknownState, { ...unknownAction, outcome: 'completed', checkpoint: 1 }, unknownAt)), 'Unknown-byte failure cannot be promoted into completed acquisition.');
+  expect('unknown-bytes/no-numeric-substitute', rejects(() => transition(unknownState, { ...unknownAction, usage: { reads: 13, bytes: 78082 } }, unknownAt)), 'Known lower bound cannot substitute for measured total under failure discriminator.');
   return { cases };
 }

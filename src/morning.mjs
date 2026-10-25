@@ -1,3 +1,5 @@
+import { assessBriefingPresentation } from './briefing.mjs';
+import { renderCompactMorning } from './morning-presentation.mjs';
 import { canonical, digest } from './records.mjs';
 import { insist, shape, text, hash, stamp, receiptInput } from './fleet-schema.mjs';
 
@@ -71,7 +73,7 @@ export function classifyMail(review, account, grants, policyVersion = 2) {
   return context.informational ? decision('archive', context.orderReceipt ? 'delivered-useful-receipt' : 'harmless-informational') : keep('insufficient-judgment');
 }
 export function morningInput(command) {
-  const fields = { open: ['day', 'accounts', 'sources', 'rules', 'ownerRef', 'policyVersion', 'delivery', 'cleanupMode'], refresh: ['generation', 'items', 'sourceRef', 'reason'], source: ['sourceId', 'jobKey', 'receipt', 'paginationComplete', 'cached', 'resourceIds', 'messageIds', 'window', 'generation'], review: ['items', 'generation'], correct: ['adapter', 'nativeId', 'sourceRef', 'reason', 'disposition'], seal: ['briefing', 'calendar'], 'send-intent': ['sendRef', 'bodyDigest'], 'send-ack': ['sendRef', 'bodyDigest', 'readbackRef', 'deliveredBodyDigest', 'nativeId', 'scope', 'acquiredAt'], 'send-resolve': ['sendRef', 'bodyDigest', 'sourceRef', 'reason', 'outcome', 'scope', 'acquiredAt'], 'action-intent': ['adapter', 'nativeId', 'action', 'before', 'receipt', 'destination', 'generation'], 'action-result': ['adapter', 'nativeId', 'intentDigest', 'after', 'receipt', 'outcome'], summary: [], 'edit-intent': ['editRef', 'bodyDigest', 'nativeId'], 'edit-ack': ['editRef', 'bodyDigest', 'nativeId', 'readbackRef', 'deliveredBodyDigest', 'scope', 'acquiredAt'], 'edit-resolve': ['editRef', 'bodyDigest', 'nativeId', 'priorBodyDigest', 'readbackRef', 'sourceRef', 'reason', 'outcome', 'scope', 'acquiredAt'], 'edit-gap': ['sourceRef', 'reason'], status: [] };
+  const fields = { open: ['day', 'accounts', 'sources', 'rules', 'ownerRef', 'policyVersion', 'delivery', 'cleanupMode'], refresh: ['generation', 'items', 'sourceRef', 'reason'], source: ['sourceId', 'jobKey', 'receipt', 'paginationComplete', 'cached', 'resourceIds', 'messageIds', 'window', 'generation', 'acquisition'], review: ['items', 'generation'], correct: ['adapter', 'nativeId', 'sourceRef', 'reason', 'disposition'], seal: ['briefing', 'calendar', 'presentation'], 'send-intent': ['sendRef', 'bodyDigest'], 'send-ack': ['sendRef', 'bodyDigest', 'readbackRef', 'deliveredBodyDigest', 'nativeId', 'scope', 'acquiredAt'], 'send-resolve': ['sendRef', 'bodyDigest', 'sourceRef', 'reason', 'outcome', 'scope', 'acquiredAt'], 'action-intent': ['adapter', 'nativeId', 'action', 'before', 'receipt', 'destination', 'generation'], 'action-result': ['adapter', 'nativeId', 'intentDigest', 'after', 'receipt', 'outcome'], summary: [], 'edit-intent': ['editRef', 'bodyDigest', 'nativeId'], 'edit-ack': ['editRef', 'bodyDigest', 'nativeId', 'readbackRef', 'deliveredBodyDigest', 'scope', 'acquiredAt'], 'edit-resolve': ['editRef', 'bodyDigest', 'nativeId', 'priorBodyDigest', 'readbackRef', 'sourceRef', 'reason', 'outcome', 'scope', 'acquiredAt'], 'edit-gap': ['sourceRef', 'reason'], status: [] };
   insist(command && Object.hasOwn(fields, command.step), 'Invalid morning step'); shape(command, ['step', 'runId', ...fields[command.step]], 'morning command'); insist(oneLine(command.runId), 'Invalid morning run identity');
   if (command.step === 'open') {
     insist(command.cleanupMode === undefined || command.cleanupMode === 'batched-v1', 'Unsupported cleanup mode');
@@ -88,7 +90,8 @@ export function morningInput(command) {
   if (command.generation !== undefined) insist(Number.isSafeInteger(command.generation) && command.generation > 0 && command.generation <= 32, 'Invalid cleanup generation');
   if (command.step === 'refresh') { insist(Number.isSafeInteger(command.generation) && command.generation > 0 && command.generation <= 32 && list(command.items, 20) && command.items.length > 0 && oneLine(command.sourceRef) && oneLine(command.reason), 'Invalid bounded refresh'); for (const item of command.items) { shape(item, ['adapter', 'nativeId'], 'refresh item'); insist(['gmail', 'outlook'].includes(item.adapter) && oneLine(item.nativeId), 'Invalid selected refresh ID'); } insist(unique(command.items.map(item => itemKey(item.adapter, item.nativeId))), 'Duplicate selected refresh ID'); }
   if (command.step === 'source') {
-    insist(oneLine(command.sourceId) && hash(command.jobKey), 'Invalid morning source job'); receiptInput(command.receipt);
+    insist(oneLine(command.sourceId) && (hash(command.jobKey) || command.jobKey === null && command.acquisition?.provenance === 'ordinary-authorized'), 'Invalid morning source job');
+    if (command.acquisition !== undefined) { shape(command.acquisition, ['provenance', 'ownerRef', 'collectionRef'], 'source acquisition'); insist(['ordinary-authorized', 'admitted'].includes(command.acquisition.provenance) && oneLine(command.acquisition.ownerRef) && oneLine(command.acquisition.collectionRef), 'Source acquisition requires explicit provenance and retained authority'); } receiptInput(command.receipt);
     insist(typeof command.paginationComplete === 'boolean' && typeof command.cached === 'boolean', 'Missing pagination/cache declaration');
     for (const key of ['resourceIds', 'messageIds']) insist(list(command[key]) && command[key].every(oneLine) && unique(command[key]), 'Invalid acquired source IDs');
     if (command.window !== null) { shape(command.window, ['start', 'end'], 'morning source window'); insist(stamp(command.window.start) && stamp(command.window.end), 'Invalid source window'); }
@@ -96,6 +99,7 @@ export function morningInput(command) {
   if (command.step === 'review') { insist(list(command.items) && command.items.length > 0, 'Invalid reviewed item batch'); command.items.forEach(reviewInput); insist(unique(command.items.map(row => `${row.adapter}:${row.before.nativeId}`)), 'Duplicate reviewed ID'); }
   if (['correct', 'action-intent', 'action-result'].includes(command.step)) insist(['gmail', 'outlook'].includes(command.adapter) && oneLine(command.nativeId), 'Invalid scoped mail item');
   if (command.step === 'correct') insist(['complete', 'dismissed'].includes(command.disposition) && oneLine(command.sourceRef) && oneLine(command.reason), 'Correction requires exact scope and owner source');
+  if (command.step === 'seal') insist(command.presentation === undefined || command.presentation === 'compact-v1', 'Unknown morning presentation version');
   if (command.step === 'seal') for (const key of ['briefing', 'calendar']) { shape(command[key], key === 'briefing' ? ['receipt', 'result', 'inputReceipt', 'input', 'assessmentReceipt', 'assessment'] : ['receipt', 'result', 'inputReceipt', 'input'], `${key} acceptance`); receiptInput(command[key].receipt); receiptInput(command[key].inputReceipt); if (key === 'briefing') receiptInput(command[key].assessmentReceipt); insist(command[key].result && typeof command[key].result === 'object', 'Missing declared assessment'); }
   if (['send-intent', 'send-ack', 'send-resolve'].includes(command.step)) insist(oneLine(command.sendRef) && hash(command.bodyDigest), 'Invalid morning delivery binding');
   if (command.step === 'send-ack') insist(oneLine(command.readbackRef) && hash(command.deliveredBodyDigest) && oneLine(command.nativeId), 'Missing exact delivered message readback');
@@ -112,6 +116,7 @@ export function morningEvidence(command) {
   morningInput(command);
   const receipts = command.receipt ? [command.receipt] : command.step === 'review' ? command.items.map(row => row.receipt) : command.step === 'seal' ? [command.briefing.receipt, command.briefing.inputReceipt, command.briefing.assessmentReceipt, command.calendar.receipt, command.calendar.inputReceipt] : [];
   const refs = command.step === 'open' ? [command.ownerRef, ...(command.delivery ? [command.delivery.ownerRef] : []), ...command.rules.map(rule => rule.ownerRef)] : ['correct', 'send-resolve', 'edit-gap', 'refresh'].includes(command.step) ? [command.sourceRef] : command.step === 'edit-resolve' ? [command.sourceRef, command.readbackRef] : ['send-ack', 'edit-ack'].includes(command.step) ? [command.readbackRef] : [];
+  if (command.step === 'source' && command.acquisition) refs.push(command.acquisition.ownerRef, command.acquisition.collectionRef);
   return { receipts, refs };
 }
 const runWindow = day => { const start = new Date(Date.parse(`${day}T00:00:00.000Z`) - 28800000).toISOString(); return { start, end: new Date(Date.parse(start) + 86400000).toISOString() }; };
@@ -157,22 +162,25 @@ export function morningTransition(state, command, root, at) {
     run.cleanup = { kind: 'selected-mail-batch-v1', generation: command.generation, openedAt: at, sourceRef: command.sourceRef, reason: command.reason, items: command.items, acquisitions: [], globalGapProvenance: { bodyDigest: run.sealed.bodyDigest, sealedAt: run.sealed.at, gaps: [...run.sealed.gaps] }, globalGaps: globalGaps(run, at), deliveredPlans: run.cleanup?.deliveredPlans ?? planMap(run), deliveryBodyDigest: run.cleanup?.deliveryBodyDigest ?? run.delivery.bodyDigest };
   }
   if (command.step === 'source') {
+    const ordinary = command.acquisition?.provenance === 'ordinary-authorized';
+    if (ordinary) insist(command.jobKey === null && command.acquisition.ownerRef === run.ownerRef && !uncertainRun(run) && new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(at)) === run.day, 'Ordinary acquisition requires existing owner scope, same day and resolved effects');
     if (run.delivery) {
       insist(run.delivery.status === 'delivered' && run.cleanup && !uncertainRun(run) && command.generation === run.cleanup.generation, 'Same-run acquisition requires the current resolved refresh generation');
       const source = run.sources.find(row => row.id === command.sourceId); insist(source && ['gmail', 'outlook'].includes(source.role), 'A cleanup batch acquires only explicitly selected mail IDs');
       const job = state.jobs.find(row => row.key === command.jobKey);
-      insist(job?.status === 'completed' && job.input.kind === 'briefing-source-read' && job.input.occurrence === `${run.id}/refresh/${run.cleanup.generation}` && job.input.entityIds.includes(source.entityId) && job.receipts.some(receipt => same(receipt, command.receipt)), 'Refresh requires a new generation-bound completed fleet acquisition');
+      insist(ordinary || job?.status === 'completed' && job.input.kind === 'briefing-source-read' && job.input.occurrence === `${run.id}/refresh/${run.cleanup.generation}` && job.input.entityIds.includes(source.entityId) && job.receipts.some(receipt => same(receipt, command.receipt)), 'Refresh requires a new generation-bound completed fleet acquisition');
       insist(same(command.receipt.scope, entity(source.entityId).scope), 'Refresh source crosses exact account scope'); fresh(command.receipt, run, at);
       insist(Date.parse(command.receipt.observedAt) > Date.parse(run.cleanup.openedAt) && (!source.capture || Date.parse(command.receipt.observedAt) > Date.parse(source.capture.receipt.observedAt)), 'Refresh source must be genuinely newer than original source and generation');
       insist(command.paginationComplete && !command.cached && command.receipt.coverage.complete && !command.receipt.coverage.gaps.length && command.window === null && command.resourceIds.length === 0 && command.messageIds.length > 0 && command.messageIds.every(id => run.cleanup.items.some(item => item.adapter === source.role && item.nativeId === id)), 'Refresh coverage must be complete only for selected IDs, never a new whole-inbox inventory');
-      insist(run.cleanup.acquisitions.length < 64 && !run.cleanup.acquisitions.some(acquisition => acquisition.jobKey === command.jobKey), 'Refresh acquisition is already retained or exceeds its bound');
+      insist(run.cleanup.acquisitions.length < 64 && !run.cleanup.acquisitions.some(acquisition => (ordinary ? acquisition.acquisition?.collectionRef === command.acquisition.collectionRef : acquisition.jobKey === command.jobKey)), 'Refresh acquisition is already retained or exceeds its bound');
       run.cleanup.acquisitions.push({ ...command, coverageKind: 'selected-ids' }); return 'morning-refresh-acquired';
     }
     insist(!run.delivery, 'Delivered or uncertain morning body is immutable; inspect existing delivery'); const source = run.sources.find(row => row.id === command.sourceId); insist(source, 'Unknown morning source');
-    const job = state.jobs.find(row => row.key === command.jobKey); insist(job?.status === 'completed' && job.input.kind === 'briefing-source-read' && job.input.entityIds.includes(source.entityId) && job.receipts.some(receipt => same(receipt, command.receipt)), 'Morning acquisition requires its completed fleet read and exact retained receipt');
+    const job = state.jobs.find(row => row.key === command.jobKey); insist(ordinary || job?.status === 'completed' && job.input.kind === 'briefing-source-read' && job.input.entityIds.includes(source.entityId) && job.receipts.some(receipt => same(receipt, command.receipt)), 'Morning acquisition requires its completed fleet read and exact retained receipt');
     insist(same(command.receipt.scope, entity(source.entityId).scope), 'Morning source crosses fleet scope'); fresh(command.receipt, run, at);
     if (['calendar', 'tasks'].includes(source.role)) insist(same(command.window, runWindow(run.day)), 'Calendar/Task acquisition must cover the full Singapore day');
     insist(!source.capture || Date.parse(source.capture.receipt.observedAt) <= Date.parse(command.receipt.observedAt), 'Morning source cannot rewind');
+    if (ordinary && source.capture) { source.captureHistory ??= []; insist(source.captureHistory.length < 32, 'Source acquisition history bound reached'); source.captureHistory.push(source.capture); }
     source.capture = command; run.sealed = null;
   }
   if (command.step === 'review') {
@@ -195,8 +203,14 @@ export function morningTransition(state, command, root, at) {
     for (const review of command.items) {
       scopeReceipt(review.receipt, review.adapter); fresh(review.receipt, run, at);
       const source = run.sources.find(row => row.role === review.adapter); insist(source.capture?.messageIds.includes(review.before.nativeId), 'Every reviewed ID must belong to acquired mail inventory');
+      if (source.capture?.acquisition?.provenance === 'ordinary-authorized') insist(same(source.capture.receipt, review.receipt), 'Ordinary review must bind current full-thread acquisition receipt');
       const key = itemKey(review.adapter, review.before.nativeId); const existing = run.items.find(row => row.key === key);
-      if (existing) { insist(existing.reviewDigest === digest(review), 'Reviewed mail changed; retain original and inspect same ID rather than overwrite'); continue; }
+      if (existing) {
+        if (existing.reviewDigest === digest(review)) continue;
+        insist(source.capture?.acquisition?.provenance === 'ordinary-authorized' && same(source.capture.receipt, review.receipt) && !terminalItem(existing) && Date.parse(review.receipt.observedAt) > Date.parse(existing.receipt.observedAt), 'Changed unsent review requires genuinely new ordinary acquisition and exact current thread receipt');
+        existing.reviewHistory ??= []; insist(existing.reviewHistory.length < 32, 'Review history bound reached'); existing.reviewHistory.push({ before: existing.before, receipt: existing.receipt, context: existing.context, facts: existing.facts, ruleId: existing.ruleId, classification: existing.classification, reviewDigest: existing.reviewDigest });
+        Object.assign(existing, review, { classification: classifyMail(review, run.accounts[review.adapter].account, run.rules, run.policyVersion), reviewDigest: digest(review) }); continue;
+      }
       insist(run.items.length < 500, 'Morning reviewed-ID bound reached');
       run.items.push({ ...review, key, reviewDigest: digest(review), classification: classifyMail(review, run.accounts[review.adapter].account, run.rules, run.policyVersion ?? 1), correction: null, attempts: [] });
     }
@@ -226,12 +240,14 @@ export function morningTransition(state, command, root, at) {
       if (!source.capture.paginationComplete || source.capture.cached || !source.capture.receipt.coverage.complete || source.capture.receipt.coverage.gaps.length) gaps.push(`${source.id} incomplete pagination, cache, or source coverage`);
       if (['gmail', 'outlook'].includes(source.role)) for (const id of source.capture.messageIds) if (!run.items.some(item => item.adapter === source.role && item.before.nativeId === id)) gaps.push(`${source.id} unreviewed ID ${id}`);
     }
+    for (const item of run.items) { const source = run.sources.find(source => source.role === item.adapter); if (source.capture?.acquisition?.provenance === 'ordinary-authorized') { if (!source.capture.messageIds.includes(item.before.nativeId)) gaps.push(`${item.adapter} ${item.before.nativeId} not in current mail inventory; earlier review held, actor unknown`); else if (!same(source.capture.receipt, item.receipt)) gaps.push(`${item.adapter} ${item.before.nativeId} current full-thread context not reviewed; earlier review held`); } }
     for (const [inventoryRole, sourceRole] of [['calendar-inventory', 'calendar'], ['task-inventory', 'tasks']]) {
       const inventory = run.sources.find(row => row.role === inventoryRole);
       if (inventory.capture) for (const id of inventory.capture.resourceIds) if (!run.sources.some(row => row.role === sourceRole && entity(row.entityId).scope.resource === id && row.capture)) gaps.push(`${sourceRole} inventory resource ${id} not acquired`);
     }
     if (briefing.status !== 'checked' || calendar.status !== 'checked') gaps.push('briefing/calendar declared assessment degraded');
-    const body = renderMorning(run, briefing.body, gaps); run.sealed = { body, bodyDigest: digest(body), gaps, at, briefing: command.briefing, calendar: command.calendar }; return gaps.length ? 'morning-degraded' : 'morning-sealed';
+    const diagnosticBody = renderMorning(run, briefing.body, gaps); const assessed = command.presentation === 'compact-v1' ? assessBriefingPresentation(command.briefing.input, briefing, briefingReceipt.checkedAt) : null;
+    const body = assessed ? renderCompactMorning(run, assessed, { at, gaps, internalIds: state.jobs.flatMap(job => [job.key, job.ticket]) }) : diagnosticBody; insist(Buffer.byteLength(body) <= 131072, 'Morning presentation body exceeds byte bound'); run.sealed = { body, bodyDigest: digest(body), ...(assessed ? { presentation: command.presentation, diagnostic: { body: diagnosticBody, bodyDigest: digest(diagnosticBody), assessment: assessed } } : {}), gaps, at, briefing: command.briefing, calendar: command.calendar }; return gaps.length ? 'morning-degraded' : 'morning-sealed';
   }
   if (command.step === 'send-intent') {
     if (run.sealed) { for (const source of run.sources) if (source.capture) { try { fresh(source.capture.receipt, run, at); } catch (error) { insist(run.cleanupMode === 'batched-v1' && run.sealed.gaps.includes(`${source.id} stale source`), error.message); } } for (const assessment of [run.sealed.briefing, run.sealed.calendar]) fresh(assessment.receipt, run, at); }
@@ -291,8 +307,8 @@ export function morningTransition(state, command, root, at) {
       const rows = run.items.filter(item => item.adapter === adapter && (item.attempts.at(-1)?.status ?? 'not-attempted') === outcome);
       if (rows.length) lines.push(`- ${adapter} ${outcome} (${rows.length}). ${rows.map(item => `${md(item.before.sender)}; ${md(item.before.subject)} [${md(item.before.nativeId)}]`).join('; ')}.`);
     }
-    const body = `${lines.join('\n')}\n`; run.summaryHistory ??= []; if (run.summary) run.summaryHistory.push(run.summary);
-    run.summary = { body, bodyDigest: digest(body), ...(run.policyVersion === 2 ? { outcomeDigest: outcomeDigest(run) } : {}), ...(run.cleanup ? { generation: run.cleanup.generation, plans: planMap(run), planDigest: digest(planMap(run)) } : {}), at, delivery: null, platformGap: null };
+    const diagnosticBody = `${lines.join('\n')}\n`; const body = run.sealed.presentation === 'compact-v1' ? renderCompactMorning(run, run.sealed.diagnostic.assessment, { at, gaps: run.cleanup?.globalGaps ?? run.sealed.gaps, summary: true, internalIds: state.jobs.flatMap(job => [job.key, job.ticket]) }) : diagnosticBody; insist(Buffer.byteLength(body) <= 131072, 'Morning presentation body exceeds byte bound'); run.summaryHistory ??= []; if (run.summary) run.summaryHistory.push(run.summary);
+    run.summary = { body, bodyDigest: digest(body), ...(run.sealed.presentation ? { presentation: run.sealed.presentation, diagnostic: { body: diagnosticBody, bodyDigest: digest(diagnosticBody) } } : {}), ...(run.policyVersion === 2 ? { outcomeDigest: outcomeDigest(run) } : {}), ...(run.cleanup ? { generation: run.cleanup.generation, plans: planMap(run), planDigest: digest(planMap(run)) } : {}), at, delivery: null, platformGap: null };
   }
   if (command.step === 'edit-intent') {
     insist(run.delivery?.status === 'delivered' && run.summary && !run.summary.delivery && command.nativeId === run.delivery.nativeId && command.bodyDigest === run.summary.bodyDigest, 'Edit requires exact rendered cleanup summary on the same delivered native message');
