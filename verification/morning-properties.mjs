@@ -1,8 +1,8 @@
 import { compactAssessments } from './morning-compact-fixtures.mjs';
 import { canonical, digest } from '../src/records.mjs';
 import { morningAssessments, morningCommand, morningDelivery, morningAt, morningEntities, morningItem, morningOpen, morningReceipt, morningRoot, morningWindow } from './morning-fixtures.mjs';
-export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 71, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
-export function verifyMorningPolicy({ morning, fleet }, check) {
+export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 75, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
+export function verifyMorningPolicy({ morning, fleet, collection }, check) {
   let cases = 0;
   const expect = (name, value, message) => { cases++; check('morning-contract', { case: name }, value, message); };
   const rejects = action => { try { action(); return false; } catch { return true; } };
@@ -115,10 +115,18 @@ export function verifyMorningPolicy({ morning, fleet }, check) {
   fixture.step('source', { ...acquired, messageIds: [] }); fixture.step('seal', compactAssessments()); expect('ordinary/missing-current', fixture.run.sealed.gaps.some(gap => gap.includes('not in current mail inventory')) && fixture.run.sealed.body.includes('actor unknown'), 'Previously reviewed IDs omitted from current ordinary inventory remain held without inferred actor.');
   fixture = prepare(); fixture.run.sources[1].capture.messageIds.push(...Array.from({ length: 37 }, (_, index) => `unreviewed-${index}`)); fixture.step('seal', compactAssessments());
   expect('compact/group-known-gaps', fixture.run.sealed.body.includes('School Outlook: 37 inventory entries lack full-context review') && !fixture.run.sealed.body.includes('unreviewed School Outlook message') && fixture.run.sealed.diagnostic.body.includes('unreviewed'), 'Known repeated inventory review gaps group by exact source-family count while full identity audit remains private.');
+  expect('capture/tool-error', collection.parseRawCapture(Buffer.from(JSON.stringify({ isError: true, content: [{ text: 'Stale tab.' }] }))).toolError, 'Explicit tool errors remain counted error responses, not acquisitions or invented denials.');
+  expect('capture/invalid-utf8', rejects(() => collection.parseRawCapture(Buffer.from([123,34,120,34,58,34,255,34,125]))), 'Invalid UTF8 response bytes remain uninterpretable.');
+  expect('capture/duplicate-keys', rejects(() => collection.parseRawCapture(Buffer.from('{"readOnly":false,"readOnly":true}'))), 'Duplicate contradictory raw keys cannot normalize away evidence.');
+  const unicode = JSON.stringify({ text: '你好😀' }); expect('capture/utf8-count', collection.parseRawCapture(Buffer.from(unicode)).bytes === Buffer.byteLength(unicode), 'Portable serialized UTF8 accounting matches retained Unicode JSON bytes.');
   return { cases };
 }
 const mutant = (id, before, after, counterexample) => ({ id: `morning-${id}`, source: 'src/morning.mjs', property: 'morning-contract', edits: [[before, after]], counterexample });
 export const morningMutations = [
+  { id: 'capture-ignore-tool-error', source: 'src/morning-collection.mjs', property: 'morning-contract', edits: [['response?.isError === true', 'false']], counterexample: 'capture/tool-error' },
+  { id: 'capture-replace-invalid-utf8', source: 'src/morning-collection.mjs', property: 'morning-contract', edits: [["export function parseRawCapture(raw) { const response = strictJson(new TextDecoder('utf-8', { fatal: true })", "export function parseRawCapture(raw) { const response = strictJson(new TextDecoder('utf-8', { fatal: false })"]], counterexample: 'capture/invalid-utf8' },
+  { id: 'capture-duplicate-keys', source: 'src/morning-collection.mjs', property: 'morning-contract', edits: [['const response = strictJson(', 'const response = JSON.parse(']], counterexample: 'capture/duplicate-keys' },
+
   { id: 'compact-gap-count', source: 'src/morning-presentation.mjs', property: 'morning-contract', edits: [['${ids.size} inventory entries lack full-context review', '${ids.size + 1} inventory entries lack full-context review']], counterexample: 'compact/group-known-gaps' },
 
   mutant('compact-no-selector', "command.presentation === 'compact-v1' ? assessBriefingPresentation", "false ? assessBriefingPresentation", 'compact/plain'),

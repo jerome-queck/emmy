@@ -3,7 +3,7 @@ import { morningEvidence, deliveryReadback as deliveryReadbackScope } from './mo
 import { link, mkdir, rm, writeFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { boundedFile, boundedJson } from './bounded-json.mjs';
+import { boundedFile, boundedJson, strictJson } from './bounded-json.mjs';
 import { canonical, digest, publishRecord, readStore, recordPayload, validateReferences } from './records.mjs';
 import { actionInput, hash, insist, shape } from './fleet-schema.mjs';
 import { fleetHistory, fleetInitial, fleetState, fleetTransition, fleetView } from './fleet-state.mjs';
@@ -88,8 +88,8 @@ export async function fleet(home, { file }) {
     const command = input.action.command;
     if (command.step === 'source' && command.acquisition) {
       const index = evidence.findIndex(ref => ref.sourceRef === command.acquisition.collectionRef && ref.sha256 === command.receipt.sha256);
-      let packet; try { packet = JSON.parse(files[`evidence-${index}.bin`].toString('utf8')); } catch { throw new Error('Source intake requires retained collection packet bytes'); }
-      validateCollection(packet, command, projected.state.morningRuns.find(run => run.id === command.runId), evidence.map(ref => ref.sha256));
+      let packet; try { packet = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(files[`evidence-${index}.bin`])); } catch { throw new Error('Source intake requires retained collection packet bytes'); }
+      validateCollection(packet, command, projected.state.morningRuns.find(run => run.id === command.runId), new Map(evidence.map((ref, index) => [ref.sha256, files[`evidence-${index}.bin`]])));
     }
     if (command.step === 'review') for (const item of command.items) insist(evidence.some(ref => ref.sha256 === item.context.threadDigest), 'Inspected thread context requires exact retained artifact bytes');
     if (['send-intent', 'edit-intent'].includes(command.step)) insist(evidence.some(ref => ref.sha256 === command.bodyDigest), 'Morning send intent requires exact retained body bytes');
@@ -110,7 +110,7 @@ export async function fleet(home, { file }) {
   if (['result', 'resolve'].includes(input.action.operation)) { const job = projected.state?.jobs.find(job => job.key === input.action.jobKey) ?? history?.jobs.get(input.action.jobKey); insist(job && totalBytes <= job.input.maxBytes && (input.action.usage.bytes === null || totalBytes <= input.action.usage.bytes), 'Parent result exceeds admitted or declared byte budget'); }
   if (['result', 'resolve'].includes(input.action.operation) && input.action.usage.bytes === null) {
     const action = input.action; const index = evidence.findIndex(ref => ref.sourceRef === action.failure.sourceRef && ref.sha256 === action.failure.sha256); let proof;
-    try { proof = JSON.parse(files[`evidence-${index}.bin`].toString('utf8')); } catch { throw new Error('Known-ended failure requires exact retained proof JSON'); }
+    try { proof = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(files[`evidence-${index}.bin`])); } catch { throw new Error('Known-ended failure requires exact retained proof JSON'); }
     const noContradiction = (proof.readOnly === undefined || proof.readOnly === true) && (proof.nativeEffects === undefined || proof.nativeEffects === 'none') && (proof.mailOpened === undefined || proof.mailOpened === false) && (proof.mailMutations === undefined || proof.mailMutations === 0) && (proof.workerStopped === undefined || proof.workerStopped === true);
     const mailRead = ['gmail', 'outlook'].includes(action.receipt.scope.service) && proof.mailOpened === false && proof.mailMutations === 0;
     insist(proof.jobKey === action.jobKey && proof.ticket === action.ticket && proof.actualReadAttempts === action.usage.reads && proof.knownSerializedResponseBytes === action.usage.knownBytesLowerBound && proof.totalSerializedResponseBytes === null && proof.allReadsEnded === true && noContradiction && (proof.readOnly === true && proof.nativeEffects === 'none' || mailRead), 'Known-ended proof must preserve exact read count, known subtotal, unknown total and no native effects');

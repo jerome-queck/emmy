@@ -19,11 +19,11 @@ test('raw response survives malformed JSON and failure after persistence; duplic
 });
 test('ordinary intake continues same open run without fabricating completed ticket and retains prior acquisition', () => {
   const { directory, f } = fixture(); const raw = join(directory, 'supplied'); writeFileSync(raw, '{"messages":["selected"]}'); const saved = collectionCollect(directory, capture(1), raw); const result = collectionFinish(directory, details); const packet = JSON.parse(readFileSync(join(directory, 'packet.json')));
-  validateCollection(packet, result.command, f.run, [saved.sha256]); const prior = f.run.sources[1].capture; const spec = f.run.specification;
+  validateCollection(packet, result.command, f.run, new Map([[saved.sha256, readFileSync(raw)]])); const prior = f.run.sources[1].capture; const spec = f.run.specification;
   f.command('source', Object.fromEntries(Object.entries(result.command).filter(([key]) => !['step','runId'].includes(key))));
   assert.equal(f.run.specification, spec); assert.equal(f.run.sources[1].capture.jobKey, null); assert.deepEqual(f.run.sources[1].captureHistory, [prior]); assert.equal(result.ticketCompleted, false); assert.equal(packet.usage.budgetCompliance, 'unverified');
-  assert.throws(() => validateCollection({ ...packet, outcome: 'denied' }, result.command, f.run, [saved.sha256]), /Denied/);
-  assert.throws(() => validateCollection(packet, result.command, f.run, []), /unretained/);
+  assert.throws(() => validateCollection({ ...packet, outcome: 'denied' }, result.command, f.run, new Map([[saved.sha256, readFileSync(raw)]])), /Denied/);
+  assert.throws(() => validateCollection(packet, result.command, f.run, new Map()), /unretained/);
 });
 test('thirteen attempts retain lost first response and known78082 lower bound as UNKNOWN total', () => {
   const { directory } = fixture(); collectionCollect(directory, { ...capture(1), outcome: 'lost', reason: 'Counter threw before raw response was saved; worker ended.' });
@@ -55,4 +55,36 @@ test('receiving finish emits hashed evidence and directly usable existing-journa
   const owner = join(directory, 'owner.json'); writeFileSync(owner, '{"authority":"existing"}');
   const result = collectionFinish(directory, { ...details, envelope: { responsibilityId: 'existing-responsibility', expectedHead: 'a'.repeat(64), authorityEvidence: [{ sourceRef: f.run.ownerRef, path: owner }] } });
   assert.equal(result.input.action.operation, 'morning'); assert.equal(result.input.action.command.runId, f.run.id); assert.equal(result.input.expectedHead, 'a'.repeat(64)); assert.ok(result.input.evidence.every(ref => /^[a-f0-9]{64}$/.test(ref.sha256))); assert.deepEqual(JSON.parse(readFileSync(result.envelopePath)), result.input);
+});
+test('tool errors are counted and retained, never complete acquisition or invented denial', () => {
+  const { directory } = fixture(); const raw = join(directory, 'supplied'); const value = { isError: true, content: [{ type: 'text', text: 'Stale tab; select the existing authorized tab.' }] }; writeFileSync(raw, JSON.stringify(value));
+  const saved = collectionCollect(directory, capture(1), raw); assert.equal(saved.outcome, 'tool-error'); assert.equal(saved.bytes, Buffer.byteLength(JSON.stringify(value))); assert.equal(saved.requestedOutcome, 'returned');
+  assert.throws(() => collectionFinish(directory, details), /cannot claim complete/);
+  const result = collectionFinish(directory, { ...details, coverage: { complete: false, gaps: ['Stale tab response; source not acquired.'] }, paginationComplete: false }); assert.equal(result.command, null); assert.match(result.intakeHeld, /error|unknown/i);
+});
+test('strict raw parsing preserves invalid UTF8 and duplicate keys as unknown, with original metadata retained', () => {
+  for (const bytes of [Buffer.from([123,34,120,34,58,34,0xff,34,125]), Buffer.from('{"readOnly":false,"readOnly":true}')]) {
+    const { directory } = fixture(); const raw = join(directory, 'supplied'); writeFileSync(raw, bytes); const saved = collectionCollect(directory, capture(1), raw);
+    assert.equal(saved.bytes, null); assert.ok(saved.counterFailure); assert.ok(existsSync(join(directory, '1.input.json'))); assert.deepEqual(readFileSync(join(directory, '1.raw')), bytes);
+    const result = collectionFinish(directory, { ...details, coverage: { complete: false, gaps: ['Raw capture cannot be interpreted.'] }, paginationComplete: false }); assert.equal(result.command, null);
+  }
+});
+test('lost capture allows unknown source time, persists metadata, and finishes held without fake fresh receipt', () => {
+  const { directory } = fixture(); const saved = collectionCollect(directory, { ...capture(1), observedAt: null, outcome: 'lost', reason: 'Original response and source time unavailable.' });
+  assert.equal(saved.observedAt, null); assert.ok(existsSync(join(directory, '1.input.json')));
+  const result = collectionFinish(directory, { ...details, coverage: { complete: false, gaps: ['Original source time unknown.'] }, paginationComplete: false }); assert.equal(result.command, null); assert.match(result.intakeHeld, /unknown/);
+  const packet = JSON.parse(readFileSync(join(directory, 'packet.json'))); assert.equal(packet.captures[0].observedAt, null);
+});
+test('ordinary intake rechecks actual raw error/parsing/accounting even for externally constructed packets', () => {
+  const { directory, f } = fixture(); const raw = join(directory, 'supplied'); writeFileSync(raw, '{"data":"header"}'); const saved = collectionCollect(directory, capture(1), raw); const result = collectionFinish(directory, details); const packet = JSON.parse(readFileSync(join(directory, 'packet.json')));
+  assert.throws(() => validateCollection({ ...packet, captures: [{ ...packet.captures[0], bytes: saved.bytes + 1 }] }, result.command, f.run, new Map([[saved.sha256, readFileSync(raw)]])), /accounting/);
+  for (const bytes of [Buffer.from('{"isError":true}'), Buffer.from('{"x":1,"x":2}'), Buffer.from([123,34,120,34,58,34,255,34,125])]) {
+    const external = { ...packet, captures: [{ ...packet.captures[0], artifactBytes: bytes.length, bytes: bytes.length }] };
+    assert.throws(() => validateCollection(external, result.command, f.run, new Map([[saved.sha256, bytes]])));
+  }
+});
+test('measurable lost/error wrapper does not become successful source acquisition', () => {
+  const { directory } = fixture(); const raw = join(directory, 'supplied'); writeFileSync(raw, '{"diagnostic":"response lost"}'); const saved = collectionCollect(directory, { ...capture(1), outcome: 'lost', reason: 'Original source response lost; diagnostic wrapper only.' }, raw);
+  assert.ok(saved.bytes > 0); assert.equal(saved.outcome, 'lost'); assert.throws(() => collectionFinish(directory, details), /cannot claim complete/);
+  const result = collectionFinish(directory, { ...details, coverage: { complete: false, gaps: ['Original response lost.'] }, paginationComplete: false }); assert.equal(result.command, null);
 });
