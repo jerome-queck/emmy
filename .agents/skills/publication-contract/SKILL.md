@@ -35,18 +35,26 @@ Assume collision-free hashes, fresh unique pending names, correct requested byte
 
 ## Read the source mapping
 
-The reviewed source commit is `1ba92c5dd36a92c892514f9ee32906ddc9bd1c8a`. Only `src/records.mjs` is pinned to that commit. The coverage record also checks current model, config, bridge, runner and skill digests. New verification artifacts are not claimed to exist at that older source commit.
+The reviewed source commit is `f9798eb7a2dae31f6ddadeccdf15aa194c776201`. `src/records.mjs` and its imported `src/cloud-schema.mjs` are pinned to that commit. The coverage record also checks current model, config, bridge, runner and skill digests. New verification artifacts are not claimed to exist at that older source commit.
 
 | Model action or property | Production owner |
 | --- | --- |
-| Symbolic requested hashes and matching completed bytes | `recordPayload`, lines 279-288 |
-| `CreatePending`, four `WriteFile` stages, `Rename` | `publishRecord`, lines 290-302 |
-| `ReadRecord`, `ReadEvidence`, `Cleanup`, `Reply` | `publishRecord`, lines 303-308, and `readRecord`, lines 310-325 |
-| `ObserveList`, `ObserveChoose`, `ObserveRecord`, `ObserveEvidence`, `ObserveValidate` | `readStore`, lines 327-337, and `readRecord`, lines 310-325 |
-| `ImportNext`, retry plan, `ImportPrefixSafe` | `retainImport`, lines 377-398, `references`, lines 339-346, and `importOrder`, lines 523-532 |
-| `Crash`, `Retry`, orphan existence | Process interruption between the mapped awaits and a fresh call using the same input. Real markers are in `publicationBoundary`, lines 272-277. |
+| Symbolic requested hashes and matching completed bytes | `recordPayload`, lines 280-290 |
+| `CreatePending`, four `WriteFile` stages, `Rename` | `publishRecord`, lines 292-304 |
+| `ReadRecord`, `ReadEvidence`, `Cleanup`, `Reply` | `publishRecord`, lines 305-310, and `readRecord`, lines 312-328 |
+| `ObserveList`, `ObserveChoose`, `ObserveRecord`, `ObserveEvidence`, `ObserveValidate` | `readStore`, lines 330-340, and `readRecord`, lines 312-328 |
+| `ImportNext`, retry plan, `ImportPrefixSafe` | `retainImport`, lines 401-422, `references`, lines 342-351, and `importOrder`, lines 553-563 |
+| `Crash`, `Retry`, orphan existence | Process interruption between the mapped awaits and a fresh call using the same input. Real markers are in `publicationBoundary`, lines 273-278. |
 
 Dispatch metadata adds pure validation and immutable lineage guards. The cross-project extension adds optional remote authority, creator and destination skill validation plus a separate parsed project-discovery input. All remain pure boundaries with no publication await or graph-reference change. It adds no publication await or reference edge. The import model starts after full bundle preparation and reference validation. It includes one dependency edge, not every record-type validation rule. Writer 2 has no dependencies. The observer's reads are deliberately not one atomic `readStore` action. Symbolic hash order and conservative list subsets overapproximate the configured callers.
+
+## Cooperative cloud boundary
+
+Cloud records add definition, controller-root, parent and optional epoch references. `cloud` validates the complete proposed record and its already-retained dependencies before calling `publishRecord`. Its schema guards are synchronous. The publisher, per-file readback, rename, pending-only cleanup and import ordering retain their mapped awaits.
+
+The unchanged TLC model covers its configured one-edge importer and canonical byte-publication interleavings. It does not enumerate cloud lineage, controller claims, telemetry, retry policy, cooperative admission or cloud archive/recovery. The imported schema digest binds the copied-source filesystem driver dependency; it does not turn parser validation into a TLC theorem. The separate finite cloud property and real CLI driver cover their named domains.
+
+Backup checks for unresolved current/configuration claims before selecting archive files. That preflight refusal does not atomically exclude concurrent claim acquisition. Completed claims are excluded from the archive; restored executable state still requires fresh responsibility epoch evidence and explicit controller resume. Neither this model nor those controls prove external exactly-once effects or provider restart survival.
 
 ## Replay a counterexample
 
