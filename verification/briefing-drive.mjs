@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { Parser } from 'commonmark';
 import { briefingTransport } from './briefing-fixtures.mjs';
+import { digest } from '../src/records.mjs';
 
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const blobId = bytes => createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
@@ -46,6 +47,26 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
   assert.equal(guidance.mode, 'guidance'); assert.equal(guidance.guidance.state, 'current');
   assert.equal(Object.hasOwn(guidance, 'body'), false); assert.equal(Object.hasOwn(guidance, 'status'), false);
   assert.equal(guidance.guidance.commit, transport.commit); assert.match(guidance.guidance.text, /# Emmy's operating brief/); assert.match(guidance.guidance.text, /# Check a briefing/);
+  const checkCalendarGuidance = text => {
+    const calendarGuidance = text.match(/## Plan and maintain calendar Tasks\n([\s\S]*?)(?=\n## |$)/)?.[1];
+    assert.ok(calendarGuidance, 'Returned operating brief includes its calendar procedure');
+    for (const [requirement, detail] of [
+      [/requested (?:Task )?notes/, 'Retain requested Task notes'],
+      [/exact (?:requested |supplied )?text[\s\S]*meaningful line breaks[\s\S]*source URLs/, 'Preserve notes text, line breaks and source URLs'],
+      [/Save[\s\S]*reload[\s\S]*reopen[\s\S]*same native ID[\s\S]*compare[\s\S]*notes/, 'Compare saved notes after Save, reload and same-ID reopen'],
+      [/actual saved Task notes field[\s\S]*same native ID[\s\S]*exact requested text[\s\S]*meaningful line breaks[\s\S]*source URLs/, 'Compare the same saved Task notes field with the exact requested contents'],
+      [/Generic popup text[\s\S]*Description label[\s\S]*nonempty boilerplate[\s\S]*rendered draft[\s\S]*cannot satisfy this comparison/, 'Reject generic labels, boilerplate and drafts as saved notes evidence'],
+      [/missing, blank, truncated, mismatched, or unavailable[\s\S]*notes acceptance pending/, 'Missing, mismatched or unavailable saved notes cannot pass'],
+      [/Any failed or unreadable requested field keeps overall completion pending/, 'A partial save cannot pass overall completion'],
+      [/Do not create a duplicate Task or substitute an Event/, 'Notes repair preserves Task identity and type'],
+      [/inspect[\s\S]*uncertain[\s\S]*before[\s\S]*retry/, 'Inspect an uncertain draft or save before retrying'],
+      [/visible edit[\s\S]*supported[\s\S]*same[\s\S]*Task/, 'Retry through a supported visible edit on the same Task'],
+      [/visible edit[\s\S]*actual input[\s\S]*blur[\s\S]*Save/, 'Commit a supported visible input before saving'],
+      [/raw intended and actual notes[\s\S]*trailing spaces[\s\S]*not trim or normalize[\s\S]*delta[\s\S]*exact-match acceptance pending/, 'Retain raw notes and explicit deltas without manufacturing exact identity'],
+      [/tim(?:e|ing)[\s\S]*separate[\s\S]*notes/, 'Keep time discrepancies separate from notes acceptance']
+    ]) assert.match(calendarGuidance, requirement, detail);
+  };
+  checkCalendarGuidance(guidance.guidance.text);
   assert.deepEqual(JSON.parse(await readFile(join(guidance.guidance.snapshot, 'bundle.json'), 'utf8')), JSON.parse(bundle));
   const requests = (await readFile(transport.requests, 'utf8')).trim().split('\n').map(line => JSON.parse(line));
   assert.deepEqual(requests.map(value => value.url), [`https://api.github.com/repos/jerome-queck/emmy/commits/main`, `https://api.github.com/repos/jerome-queck/emmy/git/trees/${transport.tree}?recursive=1`, `https://api.github.com/repos/jerome-queck/emmy/git/blobs/${transport.blob}`]);
@@ -53,6 +74,21 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
   assert.equal(recovered.guidance.state, 'current', 'One temporary DNS failure must recover current canonical guidance');
   const retryRequests = (await readFile(transport.requests, 'utf8')).trim().split('\n').slice(requests.length).map(line => JSON.parse(line));
   assert.equal(retryRequests.length, 4);
+  report.calendarGuidanceControls = [];
+  for (const [name, before, after, rejectedRequirement] of [
+    ['generic popup presence', /Compare the actual saved Task notes field[^.]+\./, 'Confirm that the popup contains nonempty text.', 'Compare the same saved Task notes field'],
+    ['generic label accepted', /Generic popup text[^.]+\./, 'A Description label or generic popup boilerplate proves saved notes.', 'Reject generic labels'],
+    ['nonempty contents accepted', /Compare the actual saved Task notes field[^.]+\./, 'Compare the actual saved Task notes field bound to that same native ID with any nonempty text.', 'Compare the same saved Task notes field']
+  ]) {
+    const weakened = JSON.parse(bundle); const document = weakened.documents.find(value => value.path === 'docs/operating-brief.md');
+    const original = document.text; document.text = document.text.replace(before, after); assert.notEqual(document.text, original, name);
+    document.bytes = Buffer.byteLength(document.text); document.sha256 = sha256(document.text); weakened.digest = digest(weakened.documents);
+    const bytes = Buffer.from(`${JSON.stringify(weakened, null, 2)}\n`);
+    const delivered = await invoke(null, 0, { blob: blobId(bytes), bytes: bytes.toString('base64') });
+    assert.equal(delivered.guidance.state, 'current'); assert.ok(delivered.guidance.text.includes(after));
+    assert.throws(() => checkCalendarGuidance(delivered.guidance.text), error => error.code === 'ERR_ASSERTION' && error.message.includes(rejectedRequirement), name);
+    report.calendarGuidanceControls.push({ name, driverRejected: true, scope: 'delivered-guidance-only', evidence: delivered.evidence.directory });
+  }
   const readJson = async path => JSON.parse(await readFile(path, 'utf8'));
   const readRequests = async () => (await readFile(transport.requests, 'utf8')).trim().split('\n').map(line => JSON.parse(line));
   const acquire = async (overrides, expected = 0) => {
