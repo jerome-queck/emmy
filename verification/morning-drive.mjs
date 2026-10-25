@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { digest, readStore, validateReferences } from '../src/records.mjs';
-import { morningAssessments, morningEntities, morningItem } from './morning-fixtures.mjs';
+import { morningAssessments, morningDelivery, morningEntities, morningItem } from './morning-fixtures.mjs';
 export async function driveMorning({ home, bindings, target, run, scenario, report }) {
   const selected = join(home, 'morning-drive'); await mkdir(selected, { recursive: true }); await writeFile(join(selected, 'bindings.json'), JSON.stringify(bindings));
   let ordinal = 0; let view;
@@ -16,7 +16,7 @@ export async function driveMorning({ home, bindings, target, run, scenario, repo
   const command = (step, fields = {}, refs = [], expected = 3) => call({ operation: 'morning', command: { step, runId: day, ...fields } }, refs, expected);
   const receipt = async (id, value) => { const ref = await evidence(`synthetic-${id}-${ordinal}`, value); return { ref, receipt: { sourceRef: ref.sourceRef, sha256: ref.sha256, observedAt: now(), capturedAt: now(), observer: 'Synthetic fresh-process parent harness', scope: morningEntities.find(row => row.id === id)?.scope ?? { service: 'assessment', environment: 'parent-cloud', surface: 'cloud', resource: id }, coverage: { complete: true, gaps: [] } } }; };
   await call({ operation: 'configure', entities: morningEntities });
-  const open = { day, ownerRef: owner.sourceRef, accounts: { gmail: { account: 'owner@example.test', entityId: 'gmail' }, outlook: { account: 'student@example.test', entityId: 'outlook' } }, sources: morningEntities.map(row => ({ id: row.id, role: row.id, entityId: row.id })), rules: [{ id: 'foodpanda-promotions', version: 1, ownerRef: owner.sourceRef }] };
+  const open = { day, policyVersion: 2, delivery: { ...morningDelivery, ownerRef: owner.sourceRef }, ownerRef: owner.sourceRef, accounts: { gmail: { account: 'owner@example.test', entityId: 'gmail' }, outlook: { account: 'student@example.test', entityId: 'outlook' } }, sources: morningEntities.map(row => ({ id: row.id, role: row.id, entityId: row.id })), rules: [{ id: 'foodpanda-promotions', version: 1, ownerRef: owner.sourceRef }] };
   const opened = await command('open', open, [owner]); await run(['fleet', '--file', opened.path], 3, selected); assert.equal(view.state.morningRuns.length, 1);
   const start = new Date(Date.parse(`${day}T00:00:00.000Z`) - 28800000).toISOString(); const window = { start, end: new Date(Date.parse(start) + 86400000).toISOString() };
   const acquisitions = new Map();
@@ -49,9 +49,10 @@ export async function driveMorning({ home, bindings, target, run, scenario, repo
   const bodyRef = await evidence('synthetic-body', sealed.body); await writeFile(bodyRef.path, sealed.body); bodyRef.sha256 = digest(sealed.body);
   const send = { sendRef: 'synthetic-send', bodyDigest: sealed.bodyDigest };
   const intentSend = await command('send-intent', send, [bodyRef]); await run(['fleet', '--file', intentSend.path], 3, selected); await command('send-intent', send, [bodyRef], 2);
-  const ack = { ...send, readbackRef: 'synthetic-readback', deliveredBodyDigest: send.bodyDigest, nativeId: 'synthetic-message' };
-  const wrong = await evidence(ack.readbackRef, { nativeId: ack.nativeId, sendRef: send.sendRef, body: 'wrong body' }); await command('send-ack', ack, [wrong], 2);
-  const readback = await evidence(ack.readbackRef, { synthetic: true, nativeId: ack.nativeId, sendRef: send.sendRef, body: sealed.body }); await command('send-ack', ack, [readback]);
+  const ack = { ...send, readbackRef: 'synthetic-readback', deliveredBodyDigest: send.bodyDigest, nativeId: 'synthetic-message', scope: morningDelivery.scope, acquiredAt: now() };
+  const wrong = await evidence(ack.readbackRef, { nativeId: ack.nativeId, sendRef: send.sendRef, scope: ack.scope, acquiredAt: ack.acquiredAt, body: 'wrong body' }); await command('send-ack', ack, [wrong], 2);
+  const obsolete = await evidence(ack.readbackRef, { nativeId: ack.nativeId, sendRef: send.sendRef, scope: { ...ack.scope, service: 'gmail', resource: 'wrong-recipient' }, acquiredAt: '2020-01-01T00:00:00.000Z', body: sealed.body }); await command('send-ack', { ...ack, scope: { ...ack.scope, service: 'gmail', resource: 'wrong-recipient' }, acquiredAt: '2020-01-01T00:00:00.000Z' }, [obsolete], 2);
+  const readback = await evidence(ack.readbackRef, { synthetic: true, nativeId: ack.nativeId, sendRef: send.sendRef, scope: ack.scope, acquiredAt: ack.acquiredAt, body: sealed.body }); await command('send-ack', ack, [readback]);
   const before = await receipt('gmail', { synthetic: true, sameNativeIdBefore: reviews[0].before });
   await command('action-intent', { ...baseIntent, receipt: before.receipt, before: { ...baseIntent.before, unread: false } }, [before.ref], 2);
   await command('action-intent', { ...baseIntent, receipt: before.receipt }, [before.ref]); const attempt = view.state.morningRuns[0].items[0].attempts[0];
@@ -61,7 +62,7 @@ export async function driveMorning({ home, bindings, target, run, scenario, repo
   await command('action-intent', { ...baseIntent, receipt: before.receipt }, [before.ref], 2);
   await command('summary'); const summary = view.state.morningRuns[0].summary; const summaryRef = await evidence('summary-body', summary.body); await writeFile(summaryRef.path, summary.body); summaryRef.sha256 = digest(summary.body);
   const edit = { editRef: 'synthetic-same-message-edit', bodyDigest: summary.bodyDigest, nativeId: ack.nativeId }; await command('edit-intent', edit, [summaryRef]); await command('edit-intent', edit, [summaryRef], 2);
-  const editAck = { ...edit, readbackRef: 'synthetic-edit-readback', deliveredBodyDigest: summary.bodyDigest }; const editRead = await evidence(editAck.readbackRef, { nativeId: edit.nativeId, sendRef: edit.editRef, body: summary.body }); await command('edit-ack', editAck, [editRead]);
+  const editAck = { ...edit, readbackRef: 'synthetic-edit-readback', deliveredBodyDigest: summary.bodyDigest, scope: morningDelivery.scope, acquiredAt: now() }; const editRead = await evidence(editAck.readbackRef, { nativeId: edit.nativeId, sendRef: edit.editRef, scope: editAck.scope, acquiredAt: editAck.acquiredAt, body: summary.body }); await command('edit-ack', editAck, [editRead]);
   const retained = await readStore(selected); const corrupted = structuredClone(retained.records); const reviewedRecord = corrupted.find(record => record.action?.operation === 'morning' && record.action.command.step === 'review'); reviewedRecord.fileDigests = {}; assert.throws(() => validateReferences(corrupted), /receipt bytes|context bytes/); report.morning = { synthetic: true, records: retained.records.length, reviewedIds: view.state.morningRuns[0].items.map(row => row.before.nativeId), exactBodyDigest: sealed.bodyDigest, exactSummaryDigest: summary.bodyDigest, nativeToolsInvoked: false, actualDelivery: 'not-tested' };
   scenario('morning-run', 'Fresh-process fleet-backed morning acquisition, exact context/body bytes, reviewed sender/subject/disposition, send/readback-before-cleanup, unread-preserved same-ID action, duplicate-safe replay and exact same-message summary edit. Synthetic parent declarations only.');
 }

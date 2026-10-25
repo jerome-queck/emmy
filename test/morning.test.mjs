@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyMail, mailRules } from '../src/morning.mjs';
+import { classifyMail, mailRules, morningView, mailPolicies } from '../src/morning.mjs';
 import { fleetInitial, fleetTransition } from '../src/fleet-state.mjs';
 import { digest } from '../src/records.mjs';
-import { morningAssessments, morningAt, morningCommand, morningFixture, morningItem, morningOpen, morningReceipt, morningRoot } from '../verification/morning-fixtures.mjs';
+import { morningAssessments, morningAt, morningCommand, morningFixture, morningDelivery, morningItem, morningOpen, morningReceipt, morningRoot } from '../verification/morning-fixtures.mjs';
 const reviewed = () => { const fixture = morningFixture(); fixture.command('review', { items: [morningItem(), morningItem('outlook')] }); return fixture; };
 const intent = (fixture, overrides = {}) => fixture.command('action-intent', { adapter: 'gmail', nativeId: 'gmail-one', action: 'trash', before: morningItem().before, receipt: morningReceipt('gmail'), destination: null, ...overrides });
 test('exact owner rules are conservative across false positives and explicit context overrides', () => {
@@ -18,7 +18,7 @@ test('exact owner rules are conservative across false positives and explicit con
     assert.equal(classify(review).action, id === 'successful-login-fyi' ? 'archive' : 'trash', id);
     assert.equal(classify({ ...review, context: { ...review.context, directMessage: true } }).action, 'keep');
     if (id === 'seerr-available') for (const subject of ['[Seerr] queued', 'Request Now Available']) assert.equal(classify({ ...review, before: { ...review.before, subject } }).action, 'archive');
-    if (id === 'successful-login-fyi') assert.equal(classify({ ...review, context: { ...review.context, recognizedLogin: false } }).action, 'archive');
+    if (id === 'successful-login-fyi') assert.equal(classify({ ...review, context: { ...review.context, recognizedLogin: false } }).action, 'keep');
   }
 });
 test('browser-only Outlook unsafe unread inspection remains a kept gap; account surfaces cannot cross', () => {
@@ -86,7 +86,7 @@ test('cleanup summary edits the same native brief; uncertain or failed readbacks
   assert.equal(fixture.run.delivery.nativeId, edit.nativeId);
 });
 test('all conservative classifications retain policy provenance; routine notices favor delivered archive', () => {
-  const item = morningItem(); for (const informational of [true, false]) { const result = classifyMail({ ...item, ruleId: null, context: { ...item.context, informational } }, 'owner@example.test', []); assert.equal(result.policyVersion, 1); assert.match(result.policyDigest, /^[a-f0-9]{64}$/); }
+  const item = morningItem(); for (const informational of [true, false]) { const result = classifyMail({ ...item, ruleId: null, context: { ...item.context, informational } }, 'owner@example.test', []); assert.equal(result.policyVersion, 2); assert.match(result.policyDigest, /^[a-f0-9]{64}$/); }
   const notice = { ...item, ruleId: 'successful-login-fyi', context: { ...item.context, recognizedLogin: true, category: 'successful-login' } };
   assert.equal(classifyMail(notice, 'owner@example.test', []).action, 'keep');
   assert.equal(classifyMail({ ...notice, facts: ['Known account login succeeded; no action is needed.'] }, 'owner@example.test', [{ id: 'successful-login-fyi', version: 1, ownerRef: 'prior-owner-rule' }]).action, 'archive');
@@ -105,4 +105,27 @@ test('fresh wrappers cannot launder stale briefing/calendar assessment source ti
   const fixture = reviewed(); const seal = morningAssessments();
   assert.throws(() => fixture.command('seal', { ...seal, calendar: { ...seal.calendar, result: { ...seal.calendar.result, evaluatedAt: '2026-10-24T01:00:00.000Z' } } }), /evaluation time|fresh source/);
   assert.throws(() => fixture.command('seal', { ...seal, briefing: { ...seal.briefing, assessment: { ...seal.briefing.assessment, checkedAt: '2026-10-24T01:00:00.000Z' } } }), /original assessment time|fresh source/);
+});
+
+test('stale summaries cannot be edited and outcomes changing during an edit require a current summary', () => {
+  const fixture = reviewed(); fixture.command('correct', { adapter: 'outlook', nativeId: 'outlook-one', disposition: 'complete', sourceRef: 'owner', reason: 'Handled.' }); fixture.deliver(); fixture.command('summary');
+  intent(fixture); const attempt = fixture.run.items[0].attempts[0]; const result = { adapter: 'gmail', nativeId: 'gmail-one', intentDigest: attempt.intentDigest, receipt: morningReceipt('gmail'), outcome: 'verified', after: { ...morningItem().before, labels: ['UNREAD', 'STARRED', 'TRASH'] } };
+  fixture.command('action-result', result); const stale = { editRef: 'stale-summary', nativeId: 'synthetic-message', bodyDigest: fixture.run.summary.bodyDigest };
+  assert.throws(() => fixture.command('edit-intent', stale), /summary is stale/);
+  fixture.command('summary'); const current = { ...stale, editRef: 'current-summary', bodyDigest: fixture.run.summary.bodyDigest }; fixture.command('edit-intent', current); fixture.command('edit-ack', { ...current, readbackRef: 'actual-readback', deliveredBodyDigest: current.bodyDigest }); assert.equal(morningView(fixture.state.morningRuns)[0].status, 'complete');
+  const race = reviewed(); race.command('correct', { adapter: 'outlook', nativeId: 'outlook-one', disposition: 'complete', sourceRef: 'owner', reason: 'Handled.' }); race.deliver(); intent(race); race.command('summary'); const old = { editRef: 'pending-edit', nativeId: 'synthetic-message', bodyDigest: race.run.summary.bodyDigest }; race.command('edit-intent', old);
+  race.command('action-result', { ...result, intentDigest: race.run.items[0].attempts[0].intentDigest }); race.command('edit-ack', { ...old, readbackRef: 'actual-old-body-readback', deliveredBodyDigest: old.bodyDigest }); assert.equal(race.run.summary.delivery.status, 'delivered'); assert.equal(morningView(race.state.morningRuns)[0].status, 'needs-summary');
+});
+test('delivery readbacks require intended Slack scope and acquisition inside the exact attempt', () => {
+  const fixture = reviewed(); fixture.seal(); const send = { sendRef: 'send', bodyDigest: fixture.run.sealed.bodyDigest }; fixture.command('send-intent', send);
+  const ack = { ...send, nativeId: 'message', readbackRef: 'readback', deliveredBodyDigest: send.bodyDigest };
+  for (const acquiredAt of ['2020-01-01T00:00:00.000Z', '2027-01-01T00:00:00.000Z']) assert.throws(() => fixture.command('send-ack', { ...ack, acquiredAt }), /acquisition interval/);
+  assert.throws(() => fixture.command('send-ack', { ...ack, scope: { ...morningDelivery.scope, resource: 'wrong-recipient' } }), /exact destination/);
+  assert.equal(fixture.run.delivery.status, 'uncertain'); fixture.command('send-ack', ack); assert.equal(fixture.run.delivery.status, 'delivered');
+});
+test('versioned policy descriptors dispatch historical decisions without source-text hashing', () => {
+  const item = morningItem(); const unknown = { ...item, ruleId: null, context: { ...item.context, category: 'successful-login', recognizedLogin: false } };
+  const legacy = classifyMail(unknown, 'owner@example.test', [], 1); const current = classifyMail(unknown, 'owner@example.test', [], 2);
+  assert.equal(legacy.action, 'archive'); assert.equal(legacy.policyDigest, '8ad3996a98ab9af02ef02f265365a1300d7e09fc354540527e2b9fdd08db0029'); assert.equal(current.action, 'keep'); assert.equal(current.policyVersion, 2); assert.ok(Object.isFrozen(mailPolicies[1]));
+  assert.throws(() => classifyMail(item, 'owner@example.test', [], 99), /Unsupported pinned/);
 });

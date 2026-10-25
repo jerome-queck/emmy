@@ -16,6 +16,20 @@ export const mailRules = {
   'seerr-available': { version: 1, category: 'self-notification' },
   'successful-login-fyi': { version: 1, category: 'successful-login' }
 };
+export const mailPolicies = Object.freeze({
+  1: Object.freeze({ version: 1, name: 'legacy-morning-mail-v1', unknownLogin: 'informational-fallback', digest: '8ad3996a98ab9af02ef02f265365a1300d7e09fc354540527e2b9fdd08db0029' }),
+  2: Object.freeze({ version: 2, name: 'conservative-morning-mail-v2', unknownLogin: 'keep', ruleSetVersion: 1, protectedContextVersion: 1, routineNotice: 'useful-facts-before-archive' })
+});
+export function deliveryInput(value, slackOnly = false) {
+  shape(value, ['scope', 'ownerRef'], 'delivery target'); insist(oneLine(value.ownerRef), 'Delivery target requires retained owner authority');
+  shape(value.scope, ['service', 'account', 'environment', 'surface', 'resource'], 'delivery scope');
+  for (const key of ['service', 'account', 'environment', 'surface', 'resource']) insist(oneLine(value.scope[key]), `Missing exact delivery ${key}`);
+  insist(value.scope.service === 'slack' && value.scope.surface === 'connector' || !slackOnly && value.scope.service === 'chatgpt' && value.scope.surface === 'native', 'Delivery requires an authorized Slack or parent native-message scope');
+}
+export function deliveryReadback(command, intent, at) {
+  insist(intent && intent.scope && command.scope && same(command.scope, intent.scope) && stamp(command.acquiredAt) && Date.parse(command.acquiredAt) >= Date.parse(intent.at) && Date.parse(command.acquiredAt) <= Date.parse(at), 'Delivery readback must match exact destination and acquisition interval');
+}
+const outcomeDigest = run => digest(run.items.map(item => ({ key: item.key, correction: item.correction, outcome: item.attempts.at(-1)?.status ?? 'not-attempted' })));
 export function mailSnapshot(value, adapter) {
   shape(value, adapter === 'gmail' ? ['nativeId', 'threadId', 'subject', 'sender', 'unread', 'labels'] : ['nativeId', 'threadId', 'subject', 'sender', 'unread', 'folder', 'folderId'], 'mail snapshot');
   for (const key of ['nativeId', 'threadId', 'subject', 'sender']) insist(oneLine(value[key]), `Invalid mail ${key}`);
@@ -32,13 +46,15 @@ function reviewInput(value) {
   insist(value.ruleId === null || Object.hasOwn(mailRules, value.ruleId), 'Unknown owner rule');
   insist(list(value.facts, 20) && value.facts.every(oneLine) && unique(value.facts), 'Invalid useful mail facts');
 }
-export function classifyMail(review, account, grants) {
+export function classifyMail(review, account, grants, policyVersion = 2) {
   reviewInput(review); const { context, before, ruleId, adapter } = review;
-  const decision = (action, reason, rule = null) => ({ action, reason, rule, policyVersion: 1, policyDigest: digest({ version: 1, mailRules, protectedFlags, classifier: classifyMail.toString() }) });
+  const policy = mailPolicies[policyVersion]; insist(policy, 'Unsupported pinned classification policy');
+  const decision = (action, reason, rule = null) => ({ action, reason, rule, policyVersion: policy.version, policyDigest: policy.digest ?? digest(policy) });
   const keep = reason => decision('keep', reason);
   if (adapter === 'gmail' ? !before.labels.includes('INBOX') : before.folder !== 'Inbox') return keep('already-outside-inbox');
   if (!context.complete || !context.safeUnreadInspection) return keep('incomplete-or-unsafe-thread-inspection');
   if (protectedFlags.some(key => context[key]) || context.invitation || context.directMessage) return keep('protected-context');
+  if (policy.unknownLogin === 'keep' && context.category === 'successful-login' && !context.recognizedLogin) return keep('unrecognized-successful-login-notice');
   if ((context.orderReceipt || context.recognizedLogin || context.category === 'account-notice') && review.facts.length === 0) return keep('useful-receipt-facts-required');
   const rule = ruleId && mailRules[ruleId]; const grant = rule && grants.find(value => value.id === ruleId && value.version === rule.version);
   if (context.recognizedLogin || context.category === 'account-notice') return context.informational ? decision('archive', 'delivered-routine-account-notice') : keep('insufficient-judgment');
@@ -50,9 +66,10 @@ export function classifyMail(review, account, grants) {
   return context.informational ? decision('archive', context.orderReceipt ? 'delivered-useful-receipt' : 'harmless-informational') : keep('insufficient-judgment');
 }
 export function morningInput(command) {
-  const fields = { open: ['day', 'accounts', 'sources', 'rules', 'ownerRef'], source: ['sourceId', 'jobKey', 'receipt', 'paginationComplete', 'cached', 'resourceIds', 'messageIds', 'window'], review: ['items'], correct: ['adapter', 'nativeId', 'sourceRef', 'reason', 'disposition'], seal: ['briefing', 'calendar'], 'send-intent': ['sendRef', 'bodyDigest'], 'send-ack': ['sendRef', 'bodyDigest', 'readbackRef', 'deliveredBodyDigest', 'nativeId'], 'send-resolve': ['sendRef', 'bodyDigest', 'sourceRef', 'reason', 'outcome'], 'action-intent': ['adapter', 'nativeId', 'action', 'before', 'receipt', 'destination'], 'action-result': ['adapter', 'nativeId', 'intentDigest', 'after', 'receipt', 'outcome'], summary: [], 'edit-intent': ['editRef', 'bodyDigest', 'nativeId'], 'edit-ack': ['editRef', 'bodyDigest', 'nativeId', 'readbackRef', 'deliveredBodyDigest'], 'edit-resolve': ['editRef', 'bodyDigest', 'nativeId', 'priorBodyDigest', 'readbackRef', 'sourceRef', 'reason', 'outcome'], 'edit-gap': ['sourceRef', 'reason'], status: [] };
+  const fields = { open: ['day', 'accounts', 'sources', 'rules', 'ownerRef', 'policyVersion', 'delivery'], source: ['sourceId', 'jobKey', 'receipt', 'paginationComplete', 'cached', 'resourceIds', 'messageIds', 'window'], review: ['items'], correct: ['adapter', 'nativeId', 'sourceRef', 'reason', 'disposition'], seal: ['briefing', 'calendar'], 'send-intent': ['sendRef', 'bodyDigest'], 'send-ack': ['sendRef', 'bodyDigest', 'readbackRef', 'deliveredBodyDigest', 'nativeId', 'scope', 'acquiredAt'], 'send-resolve': ['sendRef', 'bodyDigest', 'sourceRef', 'reason', 'outcome', 'scope', 'acquiredAt'], 'action-intent': ['adapter', 'nativeId', 'action', 'before', 'receipt', 'destination'], 'action-result': ['adapter', 'nativeId', 'intentDigest', 'after', 'receipt', 'outcome'], summary: [], 'edit-intent': ['editRef', 'bodyDigest', 'nativeId'], 'edit-ack': ['editRef', 'bodyDigest', 'nativeId', 'readbackRef', 'deliveredBodyDigest', 'scope', 'acquiredAt'], 'edit-resolve': ['editRef', 'bodyDigest', 'nativeId', 'priorBodyDigest', 'readbackRef', 'sourceRef', 'reason', 'outcome', 'scope', 'acquiredAt'], 'edit-gap': ['sourceRef', 'reason'], status: [] };
   insist(command && Object.hasOwn(fields, command.step), 'Invalid morning step'); shape(command, ['step', 'runId', ...fields[command.step]], 'morning command'); insist(oneLine(command.runId), 'Invalid morning run identity');
   if (command.step === 'open') {
+    insist(command.policyVersion === undefined || Object.hasOwn(mailPolicies, command.policyVersion), 'Unknown pinned mail policy version'); if (command.delivery) deliveryInput(command.delivery, true); insist(command.policyVersion !== 2 || command.delivery, 'Current morning policy requires an exact delivery target');
     insist(/^\d{4}-\d\d-\d\d$/.test(command.day) && new Date(`${command.day}T00:00:00.000Z`).toISOString().startsWith(command.day) && command.runId === command.day, 'One morning run per Singapore day');
     shape(command.accounts, ['gmail', 'outlook'], 'authorized morning accounts');
     for (const adapter of ['gmail', 'outlook']) { shape(command.accounts[adapter], ['account', 'entityId'], 'morning account'); insist(oneLine(command.accounts[adapter]?.account) && oneLine(command.accounts[adapter]?.entityId), 'Both exact authorized accounts are required'); }
@@ -86,7 +103,7 @@ export function morningInput(command) {
 export function morningEvidence(command) {
   morningInput(command);
   const receipts = command.receipt ? [command.receipt] : command.step === 'review' ? command.items.map(row => row.receipt) : command.step === 'seal' ? [command.briefing.receipt, command.briefing.inputReceipt, command.briefing.assessmentReceipt, command.calendar.receipt, command.calendar.inputReceipt] : [];
-  const refs = command.step === 'open' ? [command.ownerRef, ...command.rules.map(rule => rule.ownerRef)] : ['correct', 'send-resolve', 'edit-gap'].includes(command.step) ? [command.sourceRef] : command.step === 'edit-resolve' ? [command.sourceRef, command.readbackRef] : ['send-ack', 'edit-ack'].includes(command.step) ? [command.readbackRef] : [];
+  const refs = command.step === 'open' ? [command.ownerRef, ...(command.delivery ? [command.delivery.ownerRef] : []), ...command.rules.map(rule => rule.ownerRef)] : ['correct', 'send-resolve', 'edit-gap'].includes(command.step) ? [command.sourceRef] : command.step === 'edit-resolve' ? [command.sourceRef, command.readbackRef] : ['send-ack', 'edit-ack'].includes(command.step) ? [command.readbackRef] : [];
   return { receipts, refs };
 }
 const runWindow = day => { const start = new Date(Date.parse(`${day}T00:00:00.000Z`) - 28800000).toISOString(); return { start, end: new Date(Date.parse(start) + 86400000).toISOString() }; };
@@ -117,7 +134,7 @@ export function morningTransition(state, command, root, at) {
     for (const source of command.sources) entity(source.entityId);
     for (const role of ['gmail', 'outlook', 'calendar-inventory', 'task-inventory']) insist(command.sources.filter(row => row.role === role).length === 1, 'Required account and full calendar/Task inventories must be declared once');
     for (const adapter of ['gmail', 'outlook']) insist(command.sources.find(row => row.role === adapter).entityId === command.accounts[adapter].entityId, 'Mail source crosses authorized account');
-    state.morningRuns.push({ id: command.runId, day: command.day, openedAt: at, specification, effectKey: digest({ responsibility: root.effectKey, day: command.day }), accounts: command.accounts, rules: command.rules, ownerRef: command.ownerRef, sources: command.sources.map(row => ({ ...row, capture: null })), items: [], delivery: null, sealed: null });
+    state.morningRuns.push({ id: command.runId, day: command.day, openedAt: at, specification, effectKey: digest({ responsibility: root.effectKey, day: command.day }), accounts: command.accounts, ...(command.policyVersion !== undefined ? { policyVersion: command.policyVersion } : {}), ...(command.delivery ? { deliveryTarget: command.delivery } : {}), rules: command.rules, ownerRef: command.ownerRef, sources: command.sources.map(row => ({ ...row, capture: null })), items: [], delivery: null, sealed: null });
     return 'morning-opened';
   }
   insist(run, 'Morning run is not open'); if (command.step === 'status') return 'retained';
@@ -139,7 +156,7 @@ export function morningTransition(state, command, root, at) {
       const key = itemKey(review.adapter, review.before.nativeId); const existing = run.items.find(row => row.key === key);
       if (existing) { insist(existing.reviewDigest === digest(review), 'Reviewed mail changed; retain original and inspect same ID rather than overwrite'); continue; }
       insist(run.items.length < 500, 'Morning reviewed-ID bound reached');
-      run.items.push({ ...review, key, reviewDigest: digest(review), classification: classifyMail(review, run.accounts[review.adapter].account, run.rules), correction: null, attempts: [] });
+      run.items.push({ ...review, key, reviewDigest: digest(review), classification: classifyMail(review, run.accounts[review.adapter].account, run.rules, run.policyVersion ?? 1), correction: null, attempts: [] });
     }
     run.sealed = null;
   }
@@ -175,10 +192,11 @@ export function morningTransition(state, command, root, at) {
   if (command.step === 'send-intent') {
     if (run.sealed) { for (const source of run.sources) if (source.capture) fresh(source.capture.receipt, run, at); for (const assessment of [run.sealed.briefing, run.sealed.calendar]) fresh(assessment.receipt, run, at); }
     insist(run.sealed && !run.delivery && run.sealed.bodyDigest === command.bodyDigest, 'Send requires exact sealed body and no prior uncertain delivery');
-    run.delivery = { status: 'uncertain', sendRef: command.sendRef, bodyDigest: command.bodyDigest, at, readbackRef: null, nativeId: null };
+    run.delivery = { ...(run.deliveryTarget ? { scope: run.deliveryTarget.scope, ownerRef: run.deliveryTarget.ownerRef } : {}), status: 'uncertain', sendRef: command.sendRef, bodyDigest: command.bodyDigest, at, readbackRef: null, nativeId: null };
   }
   if (['send-ack', 'send-resolve'].includes(command.step)) {
     insist(run.delivery?.status === 'uncertain' && run.delivery.sendRef === command.sendRef && run.delivery.bodyDigest === command.bodyDigest, 'Morning acknowledgement crosses exact send attempt');
+    if (run.deliveryTarget) deliveryReadback(command, run.delivery, at);
     if (command.step === 'send-ack') { insist(command.readbackRef !== command.sendRef && command.deliveredBodyDigest === run.delivery.bodyDigest, 'Delivery requires separate exact-body readback'); Object.assign(run.delivery, { status: 'delivered', readbackRef: command.readbackRef, nativeId: command.nativeId, acknowledgedAt: at }); }
     else { run.deliveryHistory ??= []; run.deliveryHistory.push({ ...run.delivery, resolution: command }); run.delivery = null; }
   }
@@ -214,21 +232,24 @@ export function morningTransition(state, command, root, at) {
       if (rows.length) lines.push(`- ${adapter} ${outcome} (${rows.length}). ${rows.map(item => `${md(item.before.sender)}; ${md(item.before.subject)} [${md(item.before.nativeId)}]`).join('; ')}.`);
     }
     const body = `${lines.join('\n')}\n`; run.summaryHistory ??= []; if (run.summary) run.summaryHistory.push(run.summary);
-    run.summary = { body, bodyDigest: digest(body), at, delivery: null, platformGap: null };
+    run.summary = { body, bodyDigest: digest(body), ...(run.policyVersion === 2 ? { outcomeDigest: outcomeDigest(run) } : {}), at, delivery: null, platformGap: null };
   }
   if (command.step === 'edit-intent') {
     insist(run.delivery?.status === 'delivered' && run.summary && !run.summary.delivery && command.nativeId === run.delivery.nativeId && command.bodyDigest === run.summary.bodyDigest, 'Edit requires exact rendered cleanup summary on the same delivered native message');
+    if (run.policyVersion === 2) insist(run.summary.outcomeDigest === outcomeDigest(run), 'Cleanup summary is stale; render current outcomes before editing');
     insist(!run.summary.editAttempts?.some(attempt => attempt.editRef === command.editRef), 'Retained failed edit reference cannot be replayed');
     const priorBodyDigest = [...(run.summaryHistory ?? [])].reverse().find(summary => summary.delivery?.status === 'delivered')?.bodyDigest ?? run.delivery.bodyDigest;
-    run.summary.delivery = { priorBodyDigest, status: 'uncertain', editRef: command.editRef, nativeId: command.nativeId, bodyDigest: command.bodyDigest, at };
+    run.summary.delivery = { ...(run.deliveryTarget ? { scope: run.deliveryTarget.scope, ownerRef: run.deliveryTarget.ownerRef } : {}), priorBodyDigest, status: 'uncertain', editRef: command.editRef, nativeId: command.nativeId, bodyDigest: command.bodyDigest, at };
   }
   if (command.step === 'edit-ack') {
     const edit = run.summary?.delivery;
+    if (run.deliveryTarget) deliveryReadback(command, edit, at);
     insist(edit?.status === 'uncertain' && edit.nativeId === command.nativeId && edit.editRef === command.editRef && edit.bodyDigest === command.bodyDigest && command.bodyDigest === command.deliveredBodyDigest && command.readbackRef !== command.editRef, 'Edit readback must retain exact same message, edit and body');
     Object.assign(edit, { status: 'delivered', readbackRef: command.readbackRef, acknowledgedAt: at });
   }
   if (command.step === 'edit-resolve') {
     const edit = run.summary?.delivery;
+    if (run.deliveryTarget) deliveryReadback(command, edit, at);
     insist(edit?.status === 'uncertain' && edit.nativeId === command.nativeId && edit.editRef === command.editRef && edit.bodyDigest === command.bodyDigest && edit.priorBodyDigest === command.priorBodyDigest && command.readbackRef !== command.editRef, 'Edit no-effect reconciliation must retain exact prior body and native message');
     run.summary.editAttempts ??= []; run.summary.editAttempts.push({ ...edit, outcome: 'known-unexecuted', resolution: command, resolvedAt: at }); run.summary.delivery = null;
   }
@@ -242,7 +263,8 @@ export function morningView(runs = []) {
   return runs.map(run => {
     const uncertain = run.delivery?.status === 'uncertain' || run.summary?.delivery?.status === 'uncertain' || run.items.some(item => item.attempts.at(-1)?.status === 'uncertain');
     const pending = run.items.filter(item => !item.correction && item.classification.action !== 'keep' && item.attempts.at(-1)?.status !== 'verified').length;
-    const status = uncertain ? 'uncertain' : run.delivery?.status !== 'delivered' ? 'needs-delivery' : run.sealed?.gaps.length ? 'degraded' : pending ? 'needs-cleanup' : run.summary?.delivery?.status === 'delivered' || run.summary?.platformGap ? 'complete' : 'needs-summary';
+    const currentSummary = run.policyVersion === 2 ? run.summary?.outcomeDigest === outcomeDigest(run) : true;
+    const status = uncertain ? 'uncertain' : run.delivery?.status !== 'delivered' ? 'needs-delivery' : run.sealed?.gaps.length ? 'degraded' : pending ? 'needs-cleanup' : currentSummary && (run.summary?.delivery?.status === 'delivered' || run.summary?.platformGap) ? 'complete' : 'needs-summary';
     const nextAction = uncertain ? 'Inspect the same native send, edit or mail ID; never replay uncertain effects.' : status === 'needs-delivery' ? 'Acquire fresh sources, seal and send/read back the exact brief once.' : status === 'degraded' ? 'Retain source gaps; no cleanup permission from this run.' : status === 'needs-cleanup' ? 'Re-fetch each same-ID before state, retain intent, then verify unread-preserved result.' : status === 'needs-summary' ? 'Render cleanup outcomes and edit/read back the same native brief, or retain a platform gap.' : 'Inspect retained outcome evidence; no duplicate run or resend.';
     return { id: run.id, day: run.day, status, reviewed: run.items.length, pending, gaps: run.sealed?.gaps ?? [], delivery: run.delivery?.status ?? 'not-attempted', summary: run.summary?.delivery?.status ?? (run.summary?.platformGap ? 'unsupported' : 'not-attempted'), nextAction, assurance: 'reported-parent-contract' };
   });

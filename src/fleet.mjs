@@ -1,4 +1,4 @@
-import { morningEvidence } from './morning.mjs';
+import { morningEvidence, deliveryReadback as deliveryReadbackScope } from './morning.mjs';
 import { link, mkdir, rm, writeFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -38,6 +38,8 @@ export async function fleetPendingTurns(home, records) {
 export async function fleet(home, { file }) {
   const input = await boundedJson(file, 1048576);
   shape(input, ['schemaVersion', 'responsibilityId', 'expectedHead', 'action', 'evidence'], 'fleet envelope');
+  if (input.action?.operation === 'morning' && input.action.command?.step === 'open') insist(input.action.command.policyVersion === 2 && input.action.command.delivery, 'New morning runs require current pinned policy and exact delivery target');
+  if (input.action?.operation === 'group-send-intent') insist(input.action.delivery, 'New grouped sends require an exact authorized delivery target');
   insist(input.schemaVersion === 1 && typeof input.responsibilityId === 'string', 'Invalid fleet envelope'); actionInput(input.action);
   let { records } = await readStore(home); const at = new Date().toISOString();
   if (input.action.operation === 'status') return fleetSummary(records, input.responsibilityId, at)[0] ?? { status: 'unconfigured' };
@@ -45,6 +47,7 @@ export async function fleet(home, { file }) {
   insist(!current.restore.suspended, 'Fresh exact responsibility epoch observations are required');
   insist(projected.status === 'unconfigured' && input.action.operation === 'configure' || projected.status === 'ready', 'Fleet is unconfigured or has conflicting heads');
   if (projected.root) insist(effectKey(current.definition) === projected.root.effectKey, 'Fleet stable responsibility effect changed');
+  if (input.action.operation === 'morning' && !['open', 'status'].includes(input.action.command.step)) insist(projected.state?.morningRuns?.find(run => run.id === input.action.command.runId)?.policyVersion === 2, 'Historical morning policy is replay-only; no new native effects');
   const evidence = input.evidence ?? []; insist(Array.isArray(evidence) && evidence.length <= 64, 'Invalid fleet evidence bound');
   const files = {}; let totalBytes = 0;
   for (const [index, ref] of evidence.entries()) {
@@ -55,6 +58,7 @@ export async function fleet(home, { file }) {
   const receipts = [...morning.receipts, ...(input.action.captures ?? []).map(capture => capture.receipt), ...(input.action.receipt ? [input.action.receipt] : [])];
   for (const receipt of receipts) insist(evidence.some(ref => ref.sourceRef === receipt.sourceRef && ref.sha256 === receipt.sha256), 'Every receipt requires exact retained bytes and source attribution');
   for (const capture of input.action.captures ?? []) if (capture.actualDigest) insist(evidence.some(ref => ref.sha256 === capture.actualDigest), 'Actual source digest requires retained matching artifact bytes');
+  if (input.action.delivery) insist(evidence.some(ref => ref.sourceRef === input.action.delivery.ownerRef), 'Delivery target requires retained owner authority bytes');
   for (const sourceRef of morning.refs) insist(evidence.some(ref => ref.sourceRef === sourceRef), 'Missing attributable morning owner/readback source');
   for (const key of ['sourceRef', 'readbackRef']) if (input.action[key]) insist(evidence.some(ref => ref.sourceRef === input.action[key]), `Missing attributable ${key} evidence`);
   if (['send-intent', 'group-send-intent'].includes(input.action.operation)) insist(evidence.some(ref => ref.sha256 === input.action.bodyDigest), 'Send intent requires the exact message body bytes');
@@ -62,7 +66,21 @@ export async function fleet(home, { file }) {
   if (deliveryReadback) {
     const index = evidence.findIndex(ref => ref.sourceRef === deliveryReadback.readbackRef); let readback;
     try { readback = JSON.parse(files[`evidence-${index}.bin`].toString('utf8')); } catch { throw new Error('Delivery readback requires retained normalized JSON with nativeId, sendRef and exact body'); }
+    const run = input.action.operation === 'morning' ? projected.state?.morningRuns?.find(row => row.id === input.action.command.runId) : null;
+    const group = input.action.operation === 'group-send-ack' ? projected.state?.deliveryGroups?.find(row => row.sendRef === input.action.sendRef) : null;
+    const pending = group ? { scope: group.delivery?.scope, at: group.at } : ['edit-ack', 'edit-resolve'].includes(deliveryReadback.step) ? run?.summary?.delivery : run?.delivery;
+    deliveryReadbackScope(deliveryReadback, pending, at);
+    insist(canonical(readback.scope) === canonical(deliveryReadback.scope) && readback.acquiredAt === deliveryReadback.acquiredAt, 'Retained readback destination or acquisition time differs');
     insist(readback.nativeId === deliveryReadback.nativeId && readback.sendRef === deliveryReadback.sendRef && typeof readback.body === 'string' && digest(readback.body) === (deliveryReadback.step === 'edit-resolve' ? deliveryReadback.priorBodyDigest : deliveryReadback.bodyDigest), 'Retained delivery readback differs from exact native ID, send or body');
+  }
+  const noEffect = input.action.operation === 'group-send-resolve' ? input.action : input.action.operation === 'morning' && input.action.command.step === 'send-resolve' ? input.action.command : null;
+  if (noEffect) {
+    const group = input.action.operation === 'group-send-resolve' ? projected.state?.deliveryGroups?.find(row => row.sendRef === noEffect.sendRef) : null;
+    const pending = group ? { scope: group.delivery?.scope, at: group.at } : projected.state?.morningRuns?.find(row => row.id === input.action.command.runId)?.delivery;
+    deliveryReadbackScope(noEffect, pending, at);
+    const index = evidence.findIndex(ref => ref.sourceRef === noEffect.sourceRef); let readback;
+    try { readback = JSON.parse(files[`evidence-${index}.bin`].toString('utf8')); } catch { throw new Error('No-effect resolution requires actual retained scoped discovery JSON'); }
+    insist(readback.sendRef === noEffect.sendRef && readback.bodyDigest === noEffect.bodyDigest && readback.outcome === 'known-unexecuted' && readback.acquiredAt === noEffect.acquiredAt && canonical(readback.scope) === canonical(noEffect.scope) && readback.coverage?.complete === true && Array.isArray(readback.coverage.gaps) && readback.coverage.gaps.length === 0, 'No-effect readback must bind exact send/body, current destination and complete discovery');
   }
   if (input.action.operation === 'morning') {
     const command = input.action.command;

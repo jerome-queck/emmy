@@ -1,4 +1,4 @@
-import { morningTransition, morningView } from './morning.mjs';
+import { morningTransition, morningView, deliveryReadback } from './morning.mjs';
 import { canonical, digest } from './records.mjs';
 import { actionInput, fleetConfig, insist, jobInput, priorities } from './fleet-schema.mjs';
 
@@ -90,11 +90,12 @@ export function fleetTransition(original, action, root, at, epochHash = original
       if (action.operation === 'group-send-intent') {
         insist(rows.every(row => !row.disposition && row.delivery === 'pending'), 'Group contains an already attempted, delivered or dismissed episode');
         insist(!state.deliveryGroups.some(group => group.sendRef === action.sendRef) && !state.alerts.some(row => row.sendRef === action.sendRef), 'Group send reference already retained; inspect actual conversation');
-        const group = { alertIds: ids, bodyDigest: action.bodyDigest, sendRef: action.sendRef, status: 'uncertain', at }; state.deliveryGroups.push(group);
+        const group = { ...(action.delivery ? { delivery: action.delivery } : {}), alertIds: ids, bodyDigest: action.bodyDigest, sendRef: action.sendRef, status: 'uncertain', at }; state.deliveryGroups.push(group);
         for (const row of rows) { row.delivery = 'uncertain'; row.bodyDigest = action.bodyDigest; row.sendRef = action.sendRef; }
       } else {
         const group = state.deliveryGroups.find(row => row.sendRef === action.sendRef);
         insist(group?.status === 'uncertain' && group.bodyDigest === action.bodyDigest && canonical(group.alertIds) === canonical(ids) && rows.every(row => row.delivery === 'uncertain' && row.sendRef === action.sendRef && row.bodyDigest === action.bodyDigest), 'Group acknowledgement must preserve every exact episode and send');
+        if (group.delivery) deliveryReadback(action, { scope: group.delivery.scope, at: group.at }, at);
         if (action.operation === 'group-send-ack') {
           insist(action.readbackRef !== action.sendRef && action.deliveredBodyDigest === action.bodyDigest, 'Group delivery requires separate exact-body readback'); group.status = 'delivered'; group.readbackRef = action.readbackRef; group.nativeId = action.nativeId;
           for (const row of rows) { row.delivery = 'delivered'; row.readbackRef = action.readbackRef; }
