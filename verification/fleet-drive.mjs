@@ -142,6 +142,34 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   assert.equal(restoredView.state.jobs.some(row => row.key === ticket.key), false);
   assert.deepEqual((await readStore(restored)).records.find(row => row.hash === historyHead).state, historyOriginal);
   await run(['fleet', '--file', await fixture('restore-claim', { schemaVersion: 1, responsibilityId: definition.id, expectedHead: restoredView.headHash, action: { operation: 'claim', ownerRef: 'fixture-parent' } })], 2, restored);
+  const epoch = (await readStore(restored)).records.find(row => row.type === 'epoch');
+  const observations = ['authority', 'tasks', 'schedule'].map(category => ({ type: 'observation', responsibilityId: definition.id, subject: target, observedAt: now(), observer: 'Synthetic restored fleet acquisition', category, availability: 'available', coverage: { complete: true, gaps: [] }, claims: [], evidenceRefs: [], homeEpoch: epoch.hash, ...(category === 'authority' ? { authority: definition.authorityRef } : category === 'tasks' ? { tasks: [] } : { schedules: [] }) }));
+  const refreshed = await run(['reconcile', '--id', definition.id, '--as-of', now(), '--import', await fixture('restored-observations', { schemaVersion: 1, records: observations })], 3, restored);
+  assert.equal(refreshed.responsibilities[0].record.restore.suspended, false);
+  let restoredLast = restoredView;
+  const restoredCall = async (name, action, expected = 3, evidence = []) => {
+    const value = await run(['fleet', '--file', await fixture(name, { schemaVersion: 1, responsibilityId: definition.id, expectedHead: restoredLast.headHash, action, evidence })], expected, restored);
+    if (value.headHash) restoredLast = value; return value;
+  };
+  await restoredCall('restored-resume', { operation: 'resume', sourceRef: 'fixture-owner-correction', reason: 'Fresh exact epoch observations permit fixture continuation.' }, 3, correctionEvidence);
+  assert.equal(restoredLast.state.epochHash, epoch.hash);
+  await restoredCall('restored-old-submit', { operation: 'submit', job }); assert.equal(restoredLast.outcome, 'coalesced');
+  await restoredCall('restored-old-conflict', { operation: 'submit', job: { ...job, maxReads: 2 } }, 2);
+  const restoredMonitor = currentCapture('monitor');
+  await restoredCall('restored-monitor', { operation: 'assess', captures: [restoredMonitor] }, 3, await receipts([restoredMonitor]));
+  for (let index = 0; index < 4; index++) {
+    await restoredCall(`restored-claim-${index}`, { operation: 'claim', ownerRef: 'fixture-restored-parent' }); const acquired = restoredLast.ticket; assert.ok(acquired);
+    const freshCapture = currentCapture('protected'); const freshEvidence = await receipts([freshCapture]);
+    await restoredCall(`restored-result-${index}`, { operation: 'result', jobKey: acquired.key, ticket: acquired.ticket, checkpoint: 1, outcome: 'completed', usage: { reads: 1, bytes: 4096 }, receipt: freshCapture.receipt }, 3, freshEvidence);
+  }
+  await restoredCall('restored-new-submit', { operation: 'submit', job: fleetJob('post-restore-fresh') });
+  await restoredCall('restored-new-claim', { operation: 'claim', ownerRef: 'fixture-restored-parent' }); assert.equal(restoredLast.ticket.input.id, 'post-restore-fresh');
+  report.fleetHistory.restoredFreshAdmission = true;
+  report.retainedFleetRestored = join(evidenceDir, 'fleet-restored'); await cp(restored, report.retainedFleetRestored, { recursive: true });
+  assert.equal((await readStore(report.retainedFleetRestored)).records.some(row => row.hash === historyHead), true);
+  const corrupt = join(evidenceDir, 'fleet-corrupt-ancestor'); await cp(restored, corrupt, { recursive: true });
+  await writeFile(join(corrupt, 'records', historyHead, 'record.json'), '{}\n');
+  await run(['doctor'], 2, corrupt); report.fleetHistory.corruptAncestorRefused = true;
   const signinBase = { schemaVersion: 1, service: 'fixture-service', account: 'fixture-owner', provider: 'fixture-provider', environment: 'fixture-parent', surface: 'browser', sourceRef: 'fixture-protected-login', observedAt: now(), state: 'password', secureForm: true };
   assert.equal((await run(['signin', '--file', await fixture('signin-form', signinBase)], 3, selectedHome)).status, 'secure-form-needed');
   assert.equal((await run(['signin', '--file', await fixture('signin-wrong-issuer', { ...signinBase, state: 'mfa', mfa: 'otp', issuingService: 'other-service' })], 3, selectedHome)).status, 'issuer-mismatch-stop');

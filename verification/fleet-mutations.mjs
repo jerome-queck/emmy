@@ -1,5 +1,9 @@
 const mutant = (id, before, after, counterexample) => ({ id: `fleet-${id}`, source: 'src/fleet-state.mjs', property: 'fleet-contract', edits: [[before, after]], counterexample });
 export const fleetMutations = [
+  mutant('archive-run-closure', "view.status === 'complete' &&", 'true &&', 'archive/run-uncertain'),
+  mutant('archive-run-identity', 'old.specification === digest(action.command)', 'true', 'archive/run-conflict'),
+  mutant('archive-ancestor-scope', 'let current = head;', 'let current = [...known.values()].at(-1);', 'archive/ancestor-only'),
+  mutant('archive-morning-edit-ref', '!history.sends.has(ref)', 'true', 'archive/morning-edit-ref'),
   mutant('archive-state-binding', 'action.stateDigest === digest(state)', 'true', 'archive/digest'),
   mutant('archive-active-job', "job.status === 'completed' && !(state.morningRuns ?? []).some", "true && !(state.morningRuns ?? []).some", 'archive/refuse-queued'),
   mutant('archive-job-dependency', 'JSON.stringify(run).includes(job.key)', 'false', 'archive/dependency'),

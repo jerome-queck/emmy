@@ -1,7 +1,8 @@
 import { digest } from '../src/records.mjs';
 import { fleetCapture, fleetEntities, fleetJob, fleetReceipt, fleetRoot, fleetTime } from './fleet-fixtures.mjs';
+import { morningOpen, morningRoot, morningAt } from './morning-fixtures.mjs';
 
-export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 101, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
+export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 107, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
 export function verifyFleetPolicy({ fleet }, check) {
   let cases = 0;
   const expect = (name, ok, message) => { cases++; check('fleet-contract', { case: name }, ok, message); };
@@ -143,5 +144,23 @@ export function verifyFleetPolicy({ fleet }, check) {
   const oldSends = { ...history, sends: new Set([send.sendRef]) };
   const newer = transition(closed, { operation: 'assess', captures: [fleetCapture('protected', 'denied-action', '2026-10-25T12:00:04.000Z')] }, '2026-10-25T12:00:04.000Z').state;
   expect('archive/send', rejects(() => fleet.fleetTransition(newer, { ...send, alertId: newer.alerts.at(-1).id }, fleetRoot, '2026-10-25T12:00:04.000Z', null, oldSends)), 'Archived send identities cannot be reused.');
+  const run = { id: morningOpen.runId, day: morningOpen.day, policyVersion: 2, specification: digest(morningOpen), items: [], sources: [], delivery: { status: 'delivered', sendRef: 'old-morning-send', nativeId: 'same-message' }, summary: { outcomeDigest: digest([]), delivery: { status: 'delivered' } } };
+  const runState = { ...fleet.fleetInitial(morningRoot), morningRuns: [run] };
+  const runArchive = { operation: 'archive', stateDigest: digest(runState), runIds: [run.id], sourceRef: 'owner', reason: 'Archive exact completed synthetic run.' };
+  const archivedRun = fleet.fleetTransition(runState, runArchive, morningRoot, morningAt).state;
+  const runHead = { type: 'fleet-step', hash: digest('old-run-head'), rootHash: morningRoot.hash, parentHash: morningRoot.hash, state: runState };
+  const sibling = { ...runHead, hash: digest('unrelated-sibling'), state: { ...runState, morningRuns: [{ ...run, id: 'unrelated-sibling' }] } };
+  const runHistory = fleet.fleetHistory([morningRoot, runHead, sibling], runHead);
+  expect('archive/ancestor-only', runHistory.runs.has(run.id) && !runHistory.runs.has('unrelated-sibling'), 'Historical identity lookup cannot borrow sibling or future records.');
+  const oldOpen = { operation: 'morning', command: morningOpen };
+  expect('archive/run-duplicate', fleet.fleetTransition(archivedRun, oldOpen, morningRoot, morningAt, null, runHistory).outcome === 'coalesced', 'Archived morning identity cannot reopen.');
+  expect('archive/run-conflict', rejects(() => fleet.fleetTransition(archivedRun, { ...oldOpen, command: { ...morningOpen, ownerRef: 'different' } }, morningRoot, morningAt, null, runHistory)), 'Archived morning specification remains exact.');
+  const uncertainRun = structuredClone(runState); uncertainRun.morningRuns[0].delivery.status = 'uncertain';
+  expect('archive/run-uncertain', rejects(() => fleet.fleetTransition(uncertainRun, { ...runArchive, stateDigest: digest(uncertainRun) }, morningRoot, morningAt)), 'Uncertain morning effects never retire.');
+  const editState = structuredClone(runState); editState.archived = true; editState.morningRuns[0].summary.delivery = null; editState.morningRuns[0].summary.bodyDigest = digest('current-summary');
+  const editHistory = { ...runHistory, sends: new Set(['reserved-edit']) };
+  const edit = { operation: 'morning', command: { step: 'edit-intent', runId: run.id, editRef: 'reserved-edit', nativeId: 'same-message', bodyDigest: digest('current-summary') } };
+  expect('archive/morning-edit-ref', rejects(() => fleet.fleetTransition(editState, edit, morningRoot, morningAt, null, editHistory)), 'Historical morning edit references cannot authorize new effects.');
+  expect('archive/missing-ancestor', rejects(() => fleet.fleetHistory([runHead], runHead)), 'Missing ancestry refuses instead of permitting a new identity.');
   return { cases };
 }
