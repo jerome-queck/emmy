@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { boundedJson } from './bounded-json.mjs';
 import { collectCalendarSnapshot } from './calendar-collection.mjs';
 import { assessCalendarRegister, calendarSnapshotDigest, validateCalendarSnapshot } from './calendar-register.mjs';
+import { assessCalendarHandoff } from './calendar-handoff.mjs';
 
 const maxBytes = 32 * 1024 * 1024;
 const requireValue = (condition, message) => { if (!condition) throw new Error(message); };
@@ -53,7 +54,7 @@ export async function createAcademicOsCalendarReader({ academicOsRoot, configFil
 
 export async function calendarRegister(home, { file }) {
   const envelope = await boundedJson(file, 1024 * 1024);
-  requireValue(envelope?.schemaVersion === 1 && ['refresh', 'assess'].includes(envelope.action), 'Use calendar-register schemaVersion 1 with action refresh or assess');
+  requireValue(envelope?.schemaVersion === 1 && ['refresh', 'assess', 'handoff'].includes(envelope.action), 'Use calendar-register schemaVersion 1 with action refresh, assess or handoff');
   if (envelope.action === 'refresh') {
     requireValue(Object.keys(envelope).every(key => ['schemaVersion', 'action', 'scope', 'academicOsRoot', 'configFile'].includes(key)), 'Unsupported refresh option');
     const request = await createAcademicOsCalendarReader(envelope);
@@ -62,8 +63,12 @@ export async function calendarRegister(home, { file }) {
     const complete = ['calendars', 'taskLists'].every(kind => snapshot.discovery[kind].complete && snapshot[kind].every(row => row.collection.complete));
     return { schemaVersion: 1, status: complete ? 'collected' : 'partial', execution: 'provider-reads-only', ...retained, calendarCount: snapshot.calendars.length, taskListCount: snapshot.taskLists.length, taskTiming: 'unsupported-by-rest-needs-native-readback', assurance: 'provider-responses-with-declared-account-scope', limits: ['No module mirror is changed. Existing Academic OS scheduled-read credentials remain on this executor.', 'Collection completeness covers the declared REST query. It cannot prove native Task time, duration, recurrence, all potentially accessible calendars or an atomic account snapshot.'] };
   }
-  requireValue(Object.keys(envelope).every(key => ['schemaVersion', 'action', 'snapshotFile', 'requestFile'].includes(key)) && typeof envelope.snapshotFile === 'string' && typeof envelope.requestFile === 'string', 'Assess requires snapshotFile and requestFile');
+  requireValue(Object.keys(envelope).every(key => ['schemaVersion', 'action', 'snapshotFile', 'requestFile', ...(envelope.action === 'handoff' ? ['packetFile'] : [])].includes(key)) && typeof envelope.snapshotFile === 'string' && typeof envelope.requestFile === 'string', 'Assess requires snapshotFile and requestFile');
   const snapshot = await boundedJson(resolve(envelope.snapshotFile), maxBytes);
   const request = await boundedJson(resolve(envelope.requestFile), maxBytes);
+  if (envelope.action === 'handoff') {
+    requireValue(typeof envelope.packetFile === 'string', 'Handoff requires packetFile');
+    return assessCalendarHandoff(snapshot, request, await boundedJson(resolve(envelope.packetFile), maxBytes), { evaluatedAt: new Date().toISOString() });
+  }
   return assessCalendarRegister(snapshot, request, { evaluatedAt: new Date().toISOString() });
 }

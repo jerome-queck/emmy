@@ -4,6 +4,8 @@
 
 The owner’s broader goal and proposed versioned constraint model are recorded in [Shared Task planning and module convergence](academic-os-alignment.md). That Academic OS handoff covers both access points, automatic provider-to-module propagation and policy validation for creation, edits and rearrangement. The current register does not yet consume that complete policy model.
 
+The separate [typed cloud/local handoff](calendar-handoff.md) reuses this assessor to bind an exact cloud plan, one-operation local preflights, retained receipts and fresh root acceptance. It adds no native writer and does not change generic executor defaults.
+
 ## Refresh
 
 The refresh envelope has these fields.

@@ -182,7 +182,8 @@ function criterion(value) {
 export function parseDefinition(input) {
   object(input, 'definition');
   id(input.id, 'responsibility ID'); hashes(input.parents, 'parents');
-  if (input.workClass !== undefined) choice(input.workClass, ['code', 'academic', 'research', 'coordination'], 'workClass');
+  if (input.workClass !== undefined) choice(input.workClass, ['code', 'academic', 'research', 'coordination', 'calendar-planning'], 'workClass');
+  if (input.workClass === 'calendar-planning') requireValue(input.target?.executor === 'dot-cloud', 'New calendar planning requires explicit target.executor dot-cloud; local tasks implement exact plans only');
   if (input.cloudReason !== undefined) text(input.cloudReason, 'cloudReason');
   for (const name of ['goal', 'context', 'action', 'resource', 'destination']) text(input[name], name);
   const target = { ...input.target, executor: input.target?.executor ?? 'local-codex' };

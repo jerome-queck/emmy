@@ -2,6 +2,8 @@
 
 Owner objective recorded on 27 October 2026. This is the design handoff for the Academic OS project. Its policy bundle, gateway and revised refresh cadence are proposed work, not installed behavior. The [derived register](calendar-register.md) already collects provider state and checks selected planning invariants; it does not yet enforce every rule below or execute changes.
 
+The Emmy source also implements a scoped cloud-planning responsibility class and a [typed handoff validator](calendar-handoff.md). These bind roles, original operations, preflights and reported receipts. They do not install an executor, authenticate native evidence or implement the complete policy model. The separately verified Mini collector installation does not establish handoff installation or adoption.
+
 ## Outcome and ownership
 
 Emmy in the cloud owns timetable planning and policy validation. A local execution task implements the exact approved plan, verifies saved changes, and reports live errors; it does not improvise a replacement timetable. Mini may own collection and register synchronization. The boundary is a versioned snapshot → cloud plan → fresh local preflight → exact-ID application → saved readback receipt. Return stale or conflicting plans to Emmy for replanning. Neither a Mini timer nor a local executor replans autonomously.

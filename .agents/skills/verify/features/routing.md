@@ -6,6 +6,8 @@ Fill private bindings and a definition from [onboarding](../../../../docs/onboar
 
 Active definitions require finish criteria. Exact subject includes project, intended canonical repository, executor, designated host/native project, path, full revision, and dirty digest. Omitted executor defaults to local Codex. Supplied work class and cloud rationale are validated. Nonlocal coding requires a reason and explicit scoped cloud authority. Codex Cloud also requires a prepared environment.
 
+New calendar coordination uses `workClass: "calendar-planning"` with explicit `target.executor: "dot-cloud"`. `parseDefinition` rejects an omitted, local or coding-cloud executor only for that new class. Existing generic coordination defaults, subjects and stable effect keys remain unchanged. The Calendar register CLI drive and handoff units cover this source-parser boundary; this is declared routing, not proof of where a native thread ran.
+
 Definitions name parent hashes. Concurrent heads block proposals until one definition references every head. Native pending or uncertain effects yield rediscovery only across time and revision changes. A native task without an `effectKey` also requires rediscovery and exposes its native ID as uncorrelated. Its completion cannot prove that the current intended effect completed. Effect keys bind responsibility, stable target identity, intended effect, and occurrence. They do not enforce native at-most-once execution.
 
 ## Source and drive
