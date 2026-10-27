@@ -16,6 +16,12 @@ Separate later SHA-256 readbacks found the requested module/research registers b
 
 The existing `tasks_change` schema has no provenance field. Create accepts provenance, and pull preserves existing provenance in the mirror. This gap cannot be repaired by hand-editing a module register contrary to its router.
 
+## Reported cloud read access
+
+A later parent-owned check successfully opened Calendar through normal supported cloud navigation and read ten native Task lists, including active and collapsed completed sections. Calendar settings explicitly showed GMT+08 Singapore. This corrects the earlier inference that the transient origin-review failure prevented cloud access. Cloud write/save behavior and exhaustive completed history were not tested by that check. Exact private account and task readbacks remain outside this repository.
+
+Two same-task comparisons reported Task-list labels one hour earlier than their Calendar intervals despite the explicit Calendar timezone. The cause remains unverified. Preserve both observations and require exact native ID, Calendar or native-detail timing, and explicit timezone before a dependent timed operation. Do not compensate by shifting an item. Active-looking cancelled or superseded rows still require the owner lifecycle overlay.
+
 ## Documented capabilities
 
 | Provider or client | Title | Scheduled day | Start/end/duration | Completion |

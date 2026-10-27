@@ -6,7 +6,7 @@ The Emmy source also implements a scoped cloud-planning responsibility class and
 
 ## Outcome and ownership
 
-Emmy in the cloud owns timetable planning and policy validation. A local execution task implements the exact approved plan, verifies saved changes, and reports live errors; it does not improvise a replacement timetable. Mini may own collection and register synchronization. The boundary is a versioned snapshot → cloud plan → fresh local preflight → exact-ID application → saved readback receipt. Return stale or conflicting plans to Emmy for replanning. Neither a Mini timer nor a local executor replans autonomously.
+Emmy in the cloud owns timetable planning and policy validation. Prefer the supported cloud browser for inspection and use native execution only for capabilities actually verified within the authorized scope. When a required cloud operation is unavailable, a local execution task implements the exact approved plan, verifies saved changes, and reports live errors; it does not improvise a replacement timetable. Mini may own collection and register synchronization. For local delegation, the boundary is a versioned snapshot → cloud plan → fresh local preflight → exact-ID application → saved readback receipt. Return stale or conflicting plans to Emmy for replanning. Neither a Mini timer nor a local executor replans autonomously.
 
 Emmy and module sessions must operate on the same native Google Task identities. A module-side completion must remain completed when Emmy later rearranges work. A direct Google UI edit must reach the relevant module register automatically through the always-on Mini. Neither access point may corrupt source metadata, recreate dismissed work or substitute ordinary Calendar Events for study Tasks.
 
@@ -51,7 +51,7 @@ Both Emmy and module mutations should enter one exact-native-ID gateway with fre
 
 Keep explicit deletion, dismissal, cancellation and supersession evidence separate from native completion. A missing row in a filtered or partial response cannot imply any terminal state. Retain the last good generation after invalid YAML or offline Drive, report the affected module stale, and continue other targets. Publish generation, provider acquisition time, module publication time and content hash so Studio can distinguish remote freshness from delayed Drive propagation.
 
-Desired timing and verified native timing are different fields. Public Tasks APIs cannot read or write start/end/duration or provide a documented Task-to-Event mapping. Exact-ID native timing readbacks remain required. Ordinary Events cannot satisfy a requested study Task. Migration observations remain transitional until the authorized writer supplies final same-ID/type readbacks and explicit mappings; the collector never creates, deletes or migrates those items.
+Desired timing and verified native timing are different fields. Public Tasks APIs cannot read or write start/end/duration or provide a documented Task-to-Event mapping. Exact-ID native timing readbacks with explicit timezone remain required. Task-list date/time labels cannot substitute for saved Calendar timing, and cross-view clock discrepancies remain unresolved until attributable evidence explains them. Ordinary Events cannot satisfy a requested study Task. Migration observations remain transitional until the authorized writer supplies final same-ID/type readbacks and explicit mappings; the collector never creates, deletes or migrates those items.
 
 ## Acceptance
 
