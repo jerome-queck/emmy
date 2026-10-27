@@ -26,6 +26,8 @@ const negative = [
   ['task-stale', input => { input.request.taskSchedules[0].observedAt = '2026-10-26T00:00:00Z'; }, 'task-schedule-unverified'],
   ['task-wrong-id', input => { input.request.taskSchedules[0].identity.nativeId = 'other-task'; }, 'unknown-task-timing'],
   ['task-recurrence-unknown', input => { input.request.taskSchedules[0].recurrenceCovered = false; }, 'task-schedule-unverified'],
+  ['native-recurring-single', input => { input.request.taskSchedules[0].recurrence = 'recurring'; }, 'recurrence-operation-unsupported'],
+  ['native-recurrence-unknown', input => { input.request.taskSchedules[0].recurrence = 'unknown'; }, 'recurrence-operation-unsupported'],
   ['task-raw-changed', input => { input.snapshot.taskLists[0].tasks[0].etag = 'changed-etag'; }, 'task-schedule-unverified'],
   ['wrong-operation-id', input => { input.request.operations[0].identity.nativeId = 'lecture-wrong-id'; }, 'wrong-native-identity'],
   ['wrong-operation-list', input => { input.request.operations[0].identity.containerId = 'wrong-list'; }, 'wrong-native-identity'],
@@ -123,4 +125,5 @@ export const registerMutations = [
   { id: 'register-unbound-query-cursor', property: 'calendar-register', source: 'src/calendar-register.mjs', counterexample: 'page-query-token', edits: [["if (index === 0 ? Object.hasOwn(q, 'pageToken') : q.pageToken !== page.requestToken) add('page-request-token-mismatch', `${kind}/${containerId}`);", "if (false) add('page-request-token-mismatch', `${kind}/${containerId}`);"]] },
   { id: 'register-collide-own-projection', property: 'calendar-register', source: 'src/calendar-register.mjs', counterexample: 'verified-self-projection', edits: [[" && counterparts.get(identityKey(operation.identity)) !== identityKey(blocker.identity)", ""]] },
   { id: 'register-event-date-only', property: 'calendar-register', source: 'src/calendar-register.mjs', counterexample: 'event-date-only', edits: [[" || operation.identity.containerKind === 'calendar' && 'date' in changes", ""]] },
+  { id: 'register-ignore-native-recurrence', property: 'calendar-register', source: 'src/calendar-register.mjs', counterexample: 'native-recurring-single', edits: [["if (task && (scheduled || 'date' in changes) && scheduleById.get(identityKey(operation.identity))?.recurrence !== 'none') refuse('recurrence-operation-unsupported');", "if (false) refuse('recurrence-operation-unsupported');"]] },
 ];

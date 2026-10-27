@@ -48,7 +48,7 @@ The request has these fields.
 | `window`, `workingIntervals` | Offset-bearing start/end instants and the named planning timezone. Working intervals stay inside the collected window. |
 | `maxEvidenceAgeMs` | A positive inclusive age limit, at most 24 hours. Every underlying page and native supplement must qualify. |
 | `mealPolicy` | Exactly `protect-all`. Meal titles and exact `protectedIdentities` block even when Free. An absent protected ID is a coverage gap. |
-| `taskSchedules` | Same-ID native saved readbacks with Task digest, observation time, evidence reference, complete window and recurrence coverage, and zero or more actual intervals. An empty complete readback means observed unscheduled, not an absent API field. |
+| `taskSchedules` | Same-ID native saved readbacks with Task digest, observation time, evidence reference, complete window, explicit recurrence state of `none`, `recurring` or `unknown`, recurrence coverage, and zero or more actual intervals. An empty complete readback means observed unscheduled, not an absent API field. |
 | `mappings` | Exact Task and Event identities, their raw digests, observation time and attributable mapping evidence. Titles never establish a mapping. Duplicate projections and mismatched geometry remain gaps. |
 | `sources` | Stable source ID, exact native `identity`, concise literal `name`, module-file `reference`, exact `range`, `kind`, `actualDurationMinutes`, `dependsOn` and `completed`. |
 | `lifecycle` | Exact dismissed or superseded IDs, original owner evidence/time and replacement identities. Native open status stays unchanged. |
@@ -66,7 +66,7 @@ Scheduled blocks have a 30-minute minimum and round up to 30-minute multiples. `
 
 Every proposed title or interval requires a source mapped to that exact native identity. Its concise source name must appear as a whole label in the Task title. A label such as `Lecture 5` cannot match `Lecture 50`. Source dependencies must be completed or have an earlier valid proposal. A blocked prerequisite blocks its dependent correction. Existing owner-done work cannot reopen. Explicitly dismissed or superseded open Tasks remain in the inventory and cannot be rescheduled or regenerated. An overlay never marks a native Task completed, deletes it or proves an absent interval. Native timing evidence still determines occupancy.
 
-Task REST and Academic OS MCP proposals support title, do-date and completion. They cannot schedule duration. Timed changes use a separately authorized capable native UI. Event REST proposals map a verified complete domain interval to Event start and end; duration is derived. Date-only Event changes and dates outside the collected window are refused. Date-only updates to an already timed Task and ambiguous recurring-Task operations are refused. The command creates no Task, deletes no item and converts no Task to an Event.
+Task REST and Academic OS MCP proposals support title, do-date and completion. They cannot schedule duration. Timed changes use a separately authorized capable native UI. Event REST proposals map a verified complete domain interval to Event start and end; duration is derived. Date-only Event changes and dates outside the collected window are refused. Date-only updates to an already timed Task and recurring or unknown-recurrence Task timing operations are refused even when only one occurrence falls inside the window. The command creates no Task, deletes no item and converts no Task to an Event.
 
 ## Execution boundary
 

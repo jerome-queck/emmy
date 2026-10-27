@@ -27,6 +27,21 @@ test('unknown Task timing never becomes a free interval, even when API due is ab
   const result = assess(input); assert.equal(result.availability.freeIntervals, null); assert.ok(found(result, 'unknown-task-timing'));
 });
 
+test('combined register retains the exact snapshot supplements consumed by assessment', () => {
+  const input = registerFixture(); input.snapshot.taskSchedules = input.request.taskSchedules; input.request.taskSchedules = []; bindRegister(input);
+  const result = assess(input); assert.equal(result.status, 'proposed'); assert.deepEqual(result.register.taskSchedules, input.snapshot.taskSchedules);
+  assert.equal(result.counts.executed, 0);
+});
+
+test('one recurring occurrence or unknown recurrence cannot authorize a Task end-time edit', () => {
+  for (const recurrence of ['recurring', 'unknown']) {
+    const input = registerFixture(); input.request.taskSchedules[0].recurrence = recurrence;
+    input.request.taskSchedules[0].intervals = [{ start: '2026-10-27T09:00:00Z', end: '2026-10-27T10:00:00Z' }];
+    input.request.operations[0].baselineDigest = registerHash({ native: input.snapshot.taskLists[0].tasks[0], intervals: [{ start: '2026-10-27T09:00:00.000Z', end: '2026-10-27T10:00:00.000Z' }] });
+    assert.ok(found(assess(input), 'recurrence-operation-unsupported'));
+  }
+});
+
 test('underlying page timestamps and full query coverage cannot be refreshed by a new wrapper time', () => {
   for (const change of ['stale', 'future', 'assigned', 'filter', 'partial', 'page-chain', 'new-calendar']) {
     const input = registerFixture(); const row = input.snapshot.taskLists[0].collection;
