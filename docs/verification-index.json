@@ -119,7 +119,7 @@
     },
     {
       "name": "calendar-register",
-      "description": "Collect immutable read-only Calendar/Tasks snapshots, assess exact-ID proposals, or validate cloud-plan/local-receipt handoffs without applying them.",
+      "description": "Collect read-only Calendar/Tasks snapshots, assess exact-ID proposals, validate handoffs, or prepare Academic OS API plans and inspect reports without applying them.",
       "options": [
         {
           "name": "file",

@@ -3,6 +3,7 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { digest } from '../src/records.mjs';
 import { bindRegister, refreshRegisterEvidence, registerFixture } from './calendar-register-fixtures.mjs';
+import { academicOsPlanFixture } from './academic-os-plan-fixtures.mjs';
 
 export async function driveCalendarRegister({ home, run, scenario, report }) {
   const directory = join(home, 'calendar/register');
@@ -118,6 +119,36 @@ module.exports.GoogleAuth = class {
   const verifiedReceipt = { ...uncertainReceipt, outcome: 'verified', observedAt: verifiedAt, completedEffectKeys: [operation.effectKey], evidenceRef: 'synthetic-verified-same-attempt', reason: null };
   const accepted = await handoff('root-final-same-id', { ...header, stage: 'accept', executor: 'dot-cloud', plan: cloudPlan.plan, preflights: [preflight.preflight], receipts: [uncertainReceipt, verifiedReceipt] }, 0, savedInput);
   assert.equal(accepted.status, 'accepted-reported'); assert.equal(accepted.reports[0].outcome, 'uncertain'); assert.equal(accepted.assessment.proposals[0].status, 'already-saved');
+  const apiEnvelope = join(directory, 'academic-os.envelope.json');
+  const apiRequest = join(directory, 'academic-os.request.json');
+  await writeFile(apiEnvelope, JSON.stringify({ schemaVersion: 1, action: 'academic-os', requestFile: apiRequest }));
+  const api = async (name, body, expected = 0) => {
+    const bytes = JSON.stringify(body); await writeFile(apiRequest, bytes);
+    const output = await run(['calendar-register', '--file', apiEnvelope], expected);
+    assert.equal(await readFile(apiRequest, 'utf8'), bytes);
+    await writeFile(join(directory, `academic-os-${name}.input.json`), bytes);
+    await writeFile(join(directory, `academic-os-${name}.output.json`), JSON.stringify(output));
+    return output;
+  };
+  let apiPrepared;
+  for (const name of ['create', 'change', 'complete']) {
+    const fixture = academicOsPlanFixture(name);
+    fixture.observation.result = { content: [{ type: 'text', text: JSON.stringify(fixture.observation.result.report) }], isError: false };
+    const output = await api(name, { schemaVersion: 1, stage: 'prepare', intent: fixture.intent, observation: fixture.observation });
+    assert.equal(output.status, 'api-plan-ready-reported'); assert.equal(output.execution, 'none');
+    assert.equal(JSON.parse(output.call.arguments.plan_json).operation.name, name);
+    if (name === 'create') apiPrepared = output.prepared;
+  }
+  const apiAttempt = new Date().toISOString();
+  const apiReply = { attemptedAt: apiAttempt, observedAt: apiAttempt, evidenceRef: 'synthetic-original-api-report', report: { schemaVersion: 1, operationId: apiPrepared.intent.operationId, outcome: 'uncertain', taskId: null, registerFresh: false, code: 'unknown-create-outcome' }, isError: true };
+  const apiUncertain = await api('unknown-create', { schemaVersion: 1, stage: 'receipt', prepared: apiPrepared, receipt: apiReply }, 3);
+  assert.equal(apiUncertain.status, 'reconcile-original-operation'); assert.equal(apiUncertain.call, null); assert.deepEqual(apiUncertain.prepared, apiPrepared);
+  const apiSaved = await api('api-only-applied', { schemaVersion: 1, stage: 'receipt', prepared: apiPrepared, receipt: { attemptedAt: apiAttempt, observedAt: apiAttempt, evidenceRef: 'synthetic-later-api-reconciliation', result: { content: [{ type: 'text', text: JSON.stringify({ schemaVersion: 1, operationId: apiPrepared.intent.operationId, outcome: 'applied', taskId: 'new-exact-task', registerFresh: true }) }], isError: false } } });
+  assert.equal(apiSaved.status, 'api-applied-reported'); assert.equal(apiSaved.nativeVerified, false); assert.deepEqual(apiSaved.completedEffectKeys, []);
+  const apiStale = academicOsPlanFixture('change'); apiStale.observation.result.report.execution.expectedSnapshot = '3'.repeat(64);
+  assert.equal((await api('changed-token', { schemaVersion: 1, stage: 'prepare', intent: apiStale.intent, observation: apiStale.observation }, 3)).call, null);
+  const apiInvalid = academicOsPlanFixture('create'); apiInvalid.intent.operation.doDate = '2026-10-28';
+  await api('unsupported-date', { schemaVersion: 1, stage: 'prepare', intent: apiInvalid.intent, observation: apiInvalid.observation }, 2);
   const partial = await run(['calendar-register', '--file', refreshFile], 3, home, { ...env, EMMY_REGISTER_PROVIDER_FAULT: 'partial' });
   assert.equal(partial.status, 'partial'); assert.notEqual(partial.snapshotDigest, refresh.snapshotDigest);
   await writeFile(join(directory, 'partial-refresh.result.json'), JSON.stringify(partial));

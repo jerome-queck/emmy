@@ -6,6 +6,8 @@ The owner’s broader goal and proposed versioned constraint model are recorded 
 
 The separate [typed cloud/local handoff](calendar-handoff.md) reuses this assessor to bind an exact cloud plan, one-operation local preflights, retained receipts and fresh root acceptance. It adds no native writer and does not change generic executor defaults.
 
+The separate [Academic OS API-plan adapter](academic-os-task-plan.md) uses `action: "academic-os"` to prepare an explicit module or research create/title-change/complete packet, or inspect its original API result. It preserves the official list token separately from this register's native-window digest. It sends no call, provides no timing authorization and cannot turn API application into native acceptance.
+
 ## Refresh
 
 The refresh envelope has these fields.

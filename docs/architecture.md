@@ -2,6 +2,8 @@
 
 The [Calendar register](calendar-register.md) adds derived immutable provider snapshots and a pure proposal assessment. Native products retain authority. Existing responsibilities retain intent, done decisions, original attempts and evidence. `calendar-collection.mjs` owns exhaustive read-only provider acquisition. `calendar-register.mjs` owns identity, coverage, interval and proposal semantics. `calendar-register-io.mjs` owns bounded files, the existing Academic OS read adapter and immutable exports. `calendar-handoff.mjs` reuses the assessor for the [typed cloud/local boundary](calendar-handoff.md): exact original plans, one-operation preflights, retained receipts and fresh root acceptance. There is no new canonical record type, native writer, scheduler or journal publication edge. The existing `calendar` saved-state assessor and its replay rules remain separate.
 
+`academic-os-task-plan.mjs` owns the separate [API wire adapter](academic-os-task-plan.md). It checks an explicit module/research intent against a fresh official list token, preserves exact identities and cloud associations, and assesses reported API results. Its create/title-change/complete subset excludes native timing. It neither invokes Academic OS nor extends the native handoff's acceptance claim.
+
 Selected design, 22 October 2026. This replaces the initial proposal-only registry design. The implementation must satisfy the acceptance cases below before release. Read [the setup critique](research/setup-critique.md) for observed evidence and design judgments.
 
 ## Usage first
