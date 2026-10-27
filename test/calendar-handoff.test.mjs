@@ -125,6 +125,9 @@ test('a two-operation batch retains partial effects and requires fresh serial pr
   input.request.visualReview.observedAt = input.evaluatedAt;
   const firstPreflight = run(input, { ...packet('preflight'), plan, operationDigest: first.operationDigest }).preflight;
   const earlySecond = run(input, { ...packet('preflight'), plan, operationDigest: second.operationDigest }).preflight;
+  const oldInputLater = structuredClone(input); oldInputLater.evaluatedAt = '2026-10-27T00:00:04.000Z';
+  const delayedSecond = run(oldInputLater, { ...packet('preflight'), plan, operationDigest: second.operationDigest }).preflight;
+  assert.equal(delayedSecond.evidenceOldestAt, '2026-10-27T00:00:01.000Z');
   const attemptedAt = '2026-10-27T00:00:02.000Z';
   input.request.attempts = [{ identity: first.prepared.operation.identity, effectKey: first.effectKey, operationDigest: first.operationDigest, prepared: first.prepared, state: 'intent', attemptedAt, evidenceRef: 'first-intent' }];
   input.request.taskSchedules[0].intervals = [{ start: first.prepared.operation.changes.start, end: first.prepared.operation.changes.end }];
@@ -155,6 +158,8 @@ test('a two-operation batch retains partial effects and requires fresh serial pr
   assert.equal(run(complete, acceptedPacket).status, 'accepted-reported');
   const presigned = structuredClone(acceptedPacket); presigned.preflights[1] = earlySecond; presigned.receipts[1].preflightDigest = earlySecond.preflightDigest;
   assert.ok(run(complete, presigned).findings.includes('preflight-predates-prior-local-effect'));
+  const renewedOldInput = structuredClone(acceptedPacket); renewedOldInput.preflights[1] = delayedSecond; renewedOldInput.receipts[1].preflightDigest = delayedSecond.preflightDigest;
+  assert.ok(run(complete, renewedOldInput).findings.includes('preflight-predates-prior-local-effect'));
   const futureCount = structuredClone(acceptedPacket); futureCount.receipts[0].completedEffectKeys.push(second.effectKey);
   assert.ok(run(complete, futureCount).findings.includes('completed-effect-not-yet-verified'));
   complete.request.attempts[0].state = 'uncertain'; complete.request.attempts[0].evidenceRef = 'first-uncertain';

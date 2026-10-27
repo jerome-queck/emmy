@@ -73,7 +73,7 @@ export function assessCalendarHandoff(snapshot, request, packet, { evaluatedAt =
     if (!preflight || Date.parse(receipt.attemptedAt) < Date.parse(preflight.observedAt) || Date.parse(receipt.attemptedAt) > Date.parse(preflight.validUntil)) add('successful-preflight-required');
     if (!request.attempts.some(entry => entry.operationDigest === receipt.operationDigest && entry.attemptedAt === receipt.attemptedAt)) add('original-before-state-attempt-required');
     if (!attemptTimes.has(receipt.operationDigest)) {
-      if (preflight && Date.parse(preflight.observedAt) <= priorReportTime || Date.parse(receipt.attemptedAt) <= priorReportTime) add('preflight-predates-prior-local-effect');
+      if (preflight && (Date.parse(preflight.observedAt) <= priorReportTime || Date.parse(preflight.evidenceOldestAt) <= Math.max(priorReportTime, Date.parse(plan.issuedAt))) || Date.parse(receipt.attemptedAt) <= priorReportTime) add('preflight-predates-prior-local-effect');
       if ([...latest.values()].some(entry => entry.outcome !== 'verified')) add('unresolved-prior-effect-before-attempt');
     }
     if (attemptTimes.has(receipt.operationDigest) && attemptTimes.get(receipt.operationDigest) !== receipt.attemptedAt) add('new-local-attempt-requires-cloud-plan');
