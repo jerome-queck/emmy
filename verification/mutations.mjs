@@ -2,9 +2,11 @@ import { morningMutations } from './morning-properties.mjs';
 import { incarnationMutations } from './incarnation-mutations.mjs';
 import { cloudMutations } from './cloud-mutations.mjs';
 import { calendarMutations } from './calendar-mutations.mjs';
+import { registerMutations } from './calendar-register-properties.mjs';
 import { fleetMutations } from './fleet-mutations.mjs';
 
 export const mutations = [
+  ...registerMutations,
   ...morningMutations,
   { id: 'dispatch-hardcode-coordinator-high', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["spec.coordinatorRequestedSettings ?? ordinarySettings", "ordinarySettings"]] },
   { id: 'dispatch-borrow-child-model-policy', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["spec.coordinatorRequestedSettings ?? ordinarySettings", "spec.coordinatorRequestedSettings ?? requested"]] },

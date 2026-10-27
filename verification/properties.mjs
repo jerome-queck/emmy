@@ -4,6 +4,7 @@ import { canonical, digest, parseDefinition, parseObservation, recordPayload } f
 import { verifyDispatchPolicy } from './dispatch-properties.mjs';
 import { cloudBounds, verifyCloudPolicy } from './cloud-properties.mjs';
 import { calendarBounds, verifyCalendarPolicy } from './calendar-properties.mjs';
+import { registerBounds, verifyRegisterPolicy } from './calendar-register-properties.mjs';
 import { fleetBounds, verifyFleetPolicy } from './fleet-properties.mjs';
 
 const asOf = '2026-10-22T12:00:00.000Z';
@@ -56,6 +57,7 @@ export const bounds = {
   importGraph: { records: 2, orderings: 2, testedPrefixes: [0, 1, 2], explicitAbstractCycle: true },
   dispatchRecovery: { phases: ['absent', 'attempted', 'pending', 'uncertain', 'ready'], coverage: ['complete', 'partial'], availability: ['available', 'unavailable', 'denied', 'unknown'], agesMs: [-1, 0, 86400000, 86400001], stateCombinations: 160, targetedCases: 107, permutations: ['original', 'reversed'], assumptions: 'Parsed byte-verified journal inputs and symbolic hash identities; native state remains reported.' },
   calendarAcceptance: calendarBounds,
+  calendarRegister: registerBounds,
   fleetContract: fleetBounds, morningContract: morningBounds,
   assumptions: [
     'These are finite products and targeted temporal traces, not one full Cartesian product of every field.',
@@ -66,7 +68,7 @@ export const bounds = {
   ]
 };
 
-export function verifyProperties({ work, responsibilities, records, dispatch, calendar, cloud, incarnation, migration, fleet, morning, collection }, selected = null) {
+export function verifyProperties({ work, responsibilities, records, dispatch, calendar, register, cloud, incarnation, migration, fleet, morning, collection }, selected = null) {
   const counts = {};
   const check = (property, input, condition, expectation) => {
     if (selected && selected !== property) return;
@@ -411,6 +413,10 @@ export function verifyProperties({ work, responsibilities, records, dispatch, ca
   if (enabled('calendar-acceptance')) {
     const calendarResult = verifyCalendarPolicy({ calendar }, check);
     if (counts['calendar-acceptance'] !== bounds.calendarAcceptance.cases || calendarResult.cases !== counts['calendar-acceptance']) throw new Error('Declared calendar bounds differ from executed predicates');
+  }
+  if (enabled('calendar-register')) {
+    const result = verifyRegisterPolicy({ register }, check);
+    if (result.cases !== bounds.calendarRegister.cases || counts['calendar-register'] !== result.cases) throw new Error('Declared register bounds differ from executed predicates');
   }
   if (enabled('cloud-admission')) {
     const result = verifyCloudPolicy({ cloud }, check);

@@ -32,6 +32,8 @@ The standing [thread and model policy](AGENTS.md#standing-thread-and-model-polic
 
 [`calendar --file <private-envelope.json>`](docs/calendar.md) checks declared current intent, exact saved fields, complete inventory, allocations, and retained attempts without native execution or journal writes. Its result cannot authenticate a save or stop an external queue.
 
+[`calendar-register --file <private-envelope.json>`](docs/calendar-register.md) refreshes immutable Calendar occurrence and native Task snapshots through existing Academic OS read credentials, or checks deterministic free intervals and exact-ID proposals. Missing native Task timing remains unknown. Meals stay protected even when Free. Actual attempt duration stays separate from rounded scheduled blocks. The [integration findings](docs/research/calendar-tasks-integration.md) distinguish observed Studio MCP setup from unverified collector installation.
+
 A responsibility retains its goal, context, exact repository/host/path/revision, authority reference, finish criteria, source age, next review, feature, and lifecycle. `reconcile` imports optional evidence and reads actual local bytes and git identity. It preserves contradictions, failed repairs, and original reviews. Imported text stays reported. Required independent review stays an external gate.
 
 Use `--home <private-state>` to select one private register. The default is this checkout's ignored `.local/`. `backup` verifies a pinned record/evidence manifest and bindings. `restore` requires a new destination and suspends work until fresh observations name its new epoch. This does not establish hardware-loss recovery.

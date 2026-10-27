@@ -118,6 +118,17 @@
       "feature": "evidence"
     },
     {
+      "name": "calendar-register",
+      "description": "Collect immutable read-only Calendar/Tasks snapshots or assess deterministic free intervals and exact-ID proposals without applying them.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "evidence"
+    },
+    {
       "name": "briefing",
       "description": "Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown.",
       "options": [
@@ -260,7 +271,8 @@
       "commands": [
         "reconcile",
         "briefing",
-        "calendar"
+        "calendar",
+        "calendar-register"
       ],
       "scenarios": [
         "self-check-repair",
@@ -272,7 +284,8 @@
         "briefing-guidance",
         "briefing-draft",
         "briefing-boundaries",
-        "calendar-acceptance"
+        "calendar-acceptance",
+        "calendar-register"
       ],
       "properties": [
         "observation-gates",
@@ -285,7 +298,8 @@
         "process-group-cleanup",
         "trigger-coverage",
         "retirement-closure",
-        "calendar-acceptance"
+        "calendar-acceptance",
+        "calendar-register"
       ]
     },
     {
@@ -477,6 +491,14 @@
         "dispatchDecision"
       ],
       "statement": "Independent coordinator and destination identities, fresh project/source evidence, exact destination/remote-host scope, recorded settings and creator lineage gate bounded dispatch advice without erasing launch uncertainty or reused child bindings."
+    },
+    {
+      "id": "calendar-register",
+      "source": "src/calendar-register.mjs",
+      "functions": [
+        "assessCalendarRegister"
+      ],
+      "statement": "Fresh exhaustive query coverage and exact native Task timing gate deterministic free intervals; protected Free meals, exact identities, baselines, capabilities, source durations, done evidence and uncertain effects gate proposals without execution."
     },
     {
       "id": "calendar-acceptance",

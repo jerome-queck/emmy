@@ -11,6 +11,7 @@ import { briefing } from '../src/briefing.mjs';
 import { dispatch } from '../src/dispatch.mjs';
 import { cloud } from '../src/cloud.mjs';
 import { calendar } from '../src/calendar.mjs';
+import { calendarRegister } from '../src/calendar-register-io.mjs';
 import { fleet } from '../src/fleet.mjs';
 import { signin } from '../src/signin.mjs';
 
@@ -58,6 +59,9 @@ try {
     case 'calendar':
       data = await calendar({ file: resolve(options.file) });
       exitCode = data.status === 'checked' ? 0 : 3; break;
+    case 'calendar-register':
+      data = await calendarRegister(home, { file: resolve(options.file) });
+      exitCode = ['collected', 'proposed'].includes(data.status) ? 0 : 3; break;
     case 'fleet':
       data = await fleet(home, { file: resolve(options.file) });
       exitCode = data.status === 'ready' && !['backpressure', 'reconcile-before-admission'].includes(data.outcome) ? 0 : 3; break;

@@ -14,6 +14,7 @@ import { driveBriefing } from '../verification/briefing-drive.mjs';
 import { driveDispatch } from '../verification/dispatch-drive.mjs';
 import { driveCloud } from '../verification/cloud-drive.mjs';
 import { driveCalendar, verifyCalendarRetention } from '../verification/calendar-drive.mjs';
+import { driveCalendarRegister } from '../verification/calendar-register-drive.mjs';
 import { driveMorning } from '../verification/morning-drive.mjs';
 import { driveFleet } from '../verification/fleet-drive.mjs';
 
@@ -63,6 +64,7 @@ try {
   if (!['self-check-repair', 'briefing', 'calendar', 'cloud', 'fleet'].includes(report.focus)) await driveDispatch({ root, home, run, scenario, report, bindings, target });
   if (!report.focus || report.focus === 'cloud') await driveCloud({ sourceRoot, root, home, run, scenario, report, children, evidenceDir });
   if (!report.focus || report.focus === 'calendar') await driveCalendar({ home, run, scenario, report });
+  if (!report.focus || report.focus === 'calendar') await driveCalendarRegister({ home, run, scenario, report });
   if (!report.focus || report.focus === 'fleet') await driveMorning({ home, bindings, target, run, scenario, report });
   if (!report.focus || report.focus === 'fleet') await driveFleet({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir, children });
   if (!['briefing', 'dispatch', 'calendar', 'cloud', 'fleet'].includes(report.focus)) {
