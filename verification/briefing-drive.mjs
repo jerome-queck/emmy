@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { Parser } from 'commonmark';
 import { briefingTransport } from './briefing-fixtures.mjs';
 import { digest } from '../src/records.mjs';
+import { guidanceReleaseFixture } from './guidance-pin-fixtures.mjs';
 
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const blobId = bytes => createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
@@ -381,5 +382,36 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
   report.briefing.markdown = { parser: 'commonmark@0.31.2', entityLinks, prose: { expected: expectedProse, parsed: parsedProse, evidence: prose.evidence.directory } };
   assert.deepEqual(entityLinks.map(({ name, destinations }) => ({ name, destinations })), entityLinks.map(({ name, reference }) => ({ name, destinations: [reference, reference] })), 'CommonMark link destinations preserve literal entity text');
   for (const expected of expectedProse) assert.ok(parsedProse.includes(expected), `CommonMark prose preserves literal entity text: ${expected}\nParsed text: ${parsedProse}`);
-  scenario('briefing-boundaries', 'Actual CLI controls reject wrong digest/references/schema and arbitrary bodies; qualify stale/future/partial/undated support and newer metadata; retain scoped completion across aging, conflict and capability distinctions; enforce blob/embedded integrity, upgrade refusal, byte/time limits, interrupted/corrupt cache fallback, first-run degradation and unchanged journal.');
+  const pinEvidence = join(home, 'briefing/local-pin-probes'); await mkdir(pinEvidence, { recursive: true });
+  const pinFile = join(pinEvidence, 'request.json');
+  const pinCommand = async (name, request, expected = 0) => {
+    const bytes = JSON.stringify(request); await writeFile(pinFile, bytes);
+    const output = await run(['guidance-pin', '--file', pinFile], expected, home, env);
+    assert.equal(await readFile(pinFile, 'utf8'), bytes);
+    await writeFile(join(pinEvidence, `${name}.request.json`), bytes); await writeFile(join(pinEvidence, `${name}.result.json`), JSON.stringify(output));
+    return output;
+  };
+  const local = await guidanceReleaseFixture(home);
+  const cachedBytes = await readFile(join(seed.guidance.snapshot, 'bundle.json'));
+  const requestsBeforePin = (await readFile(transport.requests, 'utf8')).trim().split('\n').length;
+  assert.equal((await pinCommand('inactive-status', { schemaVersion: 1, action: 'status' })).status, 'remote-default');
+  const activated = await pinCommand('activate', local.request);
+  const pinned = await invoke(null, 0, { unavailable: true }); assert.equal(pinned.guidance.state, 'pinned'); assert.equal(pinned.guidance.digest, local.bundle.digest); assert.equal(pinned.guidance.sourceCheckedAt, undefined);
+  const pinnedDraft = await invoke({ ...draft, authoredUnder: local.bundle.digest }, 0, { unavailable: true });
+  assert.equal(pinnedDraft.status, 'checked'); await exactBody(pinnedDraft);
+  const localAssessment = await readJson(pinnedDraft.evidence.assessment); assert.equal(localAssessment.guidance.source, 'approved-local-release'); assert.equal(localAssessment.guidance.state, 'pinned');
+  assert.equal((await pinCommand('active-status', { schemaVersion: 1, action: 'status' })).pinDigest, activated.pinDigest);
+  await pinCommand('wrong-bundle', { ...local.request, expectedPinDigest: activated.pinDigest, bundleSha256: '0'.repeat(64) }, 2);
+  await writeFile(join(local.root, 'source.txt'), 'synthetic intervening corruption');
+  const invalidPin = await invoke(null, 3); assert.equal(invalidPin.guidance.state, 'unavailable'); assert.equal(invalidPin.guidance.source, 'approved-local-release');
+  assert.equal((await readFile(transport.requests, 'utf8')).trim().split('\n').length, requestsBeforePin, 'Active valid/invalid pins make no canonical requests');
+  assert.deepEqual(await readFile(join(seed.guidance.snapshot, 'bundle.json')), cachedBytes, 'Pin administration does not mutate canonical cached bytes');
+  await pinCommand('deactivate-corrupt-target', { schemaVersion: 1, action: 'deactivate', expectedPinDigest: activated.pinDigest });
+  const unpinned = await invoke(); assert.equal(unpinned.guidance.state, 'current'); assert.equal(unpinned.guidance.commit, transport.commit);
+  assert.equal((await readFile(transport.requests, 'utf8')).trim().split('\n').length, requestsBeforePin + 3, 'Unpinned default resumes the original canonical sequence');
+  await cp(local.root, join(pinEvidence, 'installed-release'), { recursive: true }); await cp(join(home, 'guidance-pins'), join(pinEvidence, 'history'), { recursive: true });
+  await writeFile(join(pinEvidence, 'ordinary-pinned-result.json'), JSON.stringify(pinned)); await writeFile(join(pinEvidence, 'blocked-pinned-result.json'), JSON.stringify(invalidPin)); await writeFile(join(pinEvidence, 'unpinned-result.json'), JSON.stringify(unpinned));
+  assert.deepEqual(await journalBytes(), journalBefore);
+  report.briefing.localPin = { guidanceDigest: local.bundle.digest, pinDigest: activated.pinDigest, pinnedRun: pinned.evidence.directory, invalidRun: invalidPin.evidence.directory, unpinnedRun: unpinned.evidence.directory, canonicalRequestsWhilePinned: 0, journalChanged: false, evidence: pinEvidence };
+  scenario('briefing-boundaries', 'Actual CLI controls cover declared briefing limits and canonical recovery, plus exact local pin activation/status, draft usability, integrity refusal without network/cache fallback, original-state deactivation and restored canonical default. Inputs, source/hash evidence and original pin history survive teardown. No native executor or canonical journal mutation.');
 }

@@ -130,10 +130,21 @@
     },
     {
       "name": "briefing",
-      "description": "Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown.",
+      "description": "Load an explicitly pinned local release or canonical public guidance, check a declared draft, and retain exact advisory Markdown.",
       "options": [
         {
           "name": "file"
+        }
+      ],
+      "feature": "evidence"
+    },
+    {
+      "name": "guidance-pin",
+      "description": "Activate, inspect or deactivate an exact approved installed local guidance release without changing canonical caches.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
         }
       ],
       "feature": "evidence"
@@ -271,6 +282,7 @@
       "commands": [
         "reconcile",
         "briefing",
+        "guidance-pin",
         "calendar",
         "calendar-register"
       ],

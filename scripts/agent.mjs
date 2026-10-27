@@ -7,7 +7,7 @@ import { readCatalog } from '../src/catalog.mjs';
 import { maintain } from '../src/maintenance.mjs';
 import { backupHome, digest, historicalFiles, publishRecord, readBindings, readJson, restoreHome, timestamp } from '../src/records.mjs';
 import { adoptResponsibility, inspectHome, reconcile } from '../src/responsibilities.mjs';
-import { briefing } from '../src/briefing.mjs';
+import { briefing, guidancePin } from '../src/briefing.mjs';
 import { dispatch } from '../src/dispatch.mjs';
 import { cloud } from '../src/cloud.mjs';
 import { calendar } from '../src/calendar.mjs';
@@ -52,7 +52,10 @@ try {
       exitCode = data.status === 'current' ? 0 : 3; break;
     case 'briefing':
       data = await briefing(home, { file: options.file ? resolve(options.file) : null });
-      exitCode = data.mode === 'guidance' ? (data.guidance.state === 'current' ? 0 : 3) : (data.status === 'checked' ? 0 : 3); break;
+      exitCode = data.mode === 'guidance' ? (['current', 'pinned'].includes(data.guidance.state) ? 0 : 3) : (data.status === 'checked' ? 0 : 3); break;
+    case 'guidance-pin':
+      data = await guidancePin(home, { file: resolve(options.file) });
+      exitCode = ['pinned', 'remote-default'].includes(data.status) ? 0 : 3; break;
     case 'cloud':
       data = await cloud(home, { file: resolve(options.file) });
       exitCode = ['ready'].includes(data.status) && !['backpressure', 'identity-conflict', 'deferred', 'backoff'].includes(data.outcome) ? 0 : 3; break;

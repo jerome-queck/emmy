@@ -4,6 +4,8 @@ The [Calendar register](calendar-register.md) adds derived immutable provider sn
 
 `academic-os-task-plan.mjs` owns the separate [API wire adapter](academic-os-task-plan.md). It checks an explicit module/research intent against a fresh official list token, preserves exact identities and cloud associations, and assesses reported API results. Its create/title-change/complete subset excludes native timing. It neither invokes Academic OS nor extends the native handoff's acceptance claim.
 
+`guidance-pin.mjs` owns optional local installed-release selection, integrity checks and reversible administration. `briefing.mjs` supplies the same bundle parser used by canonical acquisition. A valid pin yields an explicit usable `pinned` state; an invalid active selection blocks fallback. Absent selection preserves the remote default. Its configuration/history are separate from canonical caches and journal publication; the publication model covers neither pin administration nor its filesystem races.
+
 Selected design, 22 October 2026. This replaces the initial proposal-only registry design. The implementation must satisfy the acceptance cases below before release. Read [the setup critique](research/setup-critique.md) for observed evidence and design judgments.
 
 ## Usage first

@@ -1,6 +1,6 @@
 # Check a briefing
 
-Run `node scripts/agent.mjs briefing --home <private-home>` before each ordinary work turn, including after resumption, and before each briefing. Read the returned guidance. The command accepts one canonical public-main pin and checks its guidance bundle. It downloads data and never executes fetched code or grants authority.
+Run `node scripts/agent.mjs briefing --home <private-home>` before each ordinary work turn, including after resumption, and before each briefing. Read the returned guidance. By default the command accepts one canonical public-main pin. An explicitly approved [local installed-release pin](guidance-pin.md) takes precedence and verifies its exact bytes on each invocation. Invalid active local pins block remote/cache fallback. Guidance data never executes fetched code or grants authority.
 
 Prepare declared sources, coverage, scoped correction readbacks and structured entries under the existing private home. Set `authoredUnder` to the returned guidance digest. Then run `node scripts/agent.mjs briefing --home <private-home> --file <draft.json>`. Repair revision findings and rerun. Show the returned `body` unchanged. Editing the body requires another check.
 
@@ -8,7 +8,7 @@ Current claims need exact scope, available complete support and content no older
 
 Keep corrections in the existing native note or responsibility register. Read back an opaque note reference when available. Conversation-only corrections still affect the draft with persistence uncertainty. Briefing evidence is never a later correction source.
 
-`checked` with exit 0 means current guidance and consistent declared inputs. `revise` with exit 3 returns findings and guidance without a normal body. `degraded` with exit 3 returns a useful qualified body when guidance or correction recovery is unavailable. Invalid input exits 2. Guidance-only mode reports its availability without claiming a draft check. Hashes prove bytes, not understanding, source truth or native recovery.
+`checked` with exit 0 means usable guidance and consistent declared inputs. Guidance is usable when canonical `current` or verified local `pinned`; local provenance remains explicit. `revise` with exit 3 returns findings and guidance without a normal body. `degraded` with exit 3 returns a useful qualified body when guidance or correction recovery is unavailable. Invalid input exits 2. Guidance-only mode reports its availability without claiming a draft check. Hashes prove bytes, not understanding, source truth or native recovery.
 
 The command retains complete immutable guidance snapshots and exact per-run artifacts under `<private-home>/briefing/`. Failed refresh keeps the original successful main-check time. Pending or corrupt snapshots cannot replace verified guidance. Responsibility backups exclude these disposable caches and briefing evidence. Native adoption, automatic invocation, schedules and later-turn correction recovery require the actual Dot probes.
 

@@ -9,6 +9,7 @@ for (const args of [
   ['--test', 'test/markdown-links.test.mjs'],
   ['scripts/agent.mjs', 'maintain', '--check'],
   ['--test', 'test/calendar-collection.test.mjs', 'test/calendar-register.test.mjs', 'test/calendar-handoff.test.mjs', 'test/academic-os-task-plan.test.mjs'],
+  ['--test', 'test/guidance-pin.test.mjs'],
   ['--test', 'test/process-incarnation.test.mjs', 'test/cloud-migration.test.mjs'],
   ['--test', 'test/fleet.test.mjs', 'test/fleet-history.test.mjs', 'test/morning.test.mjs', 'test/morning-compact.test.mjs', 'test/morning-collection.test.mjs'],
   ['scripts/verify-behavior.mjs'],
