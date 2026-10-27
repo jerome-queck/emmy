@@ -207,11 +207,40 @@ test('title-only saved resolution cannot ignore unrelated schedule drift', () =>
   assert.ok(found(assess(input), 'reconcile-uncertain-effect'));
 });
 
-test('event updatedMin filtering and timezone wall-clock mismatch cannot certify availability', () => {
+test('event updatedMin filtering and invalid timezone cannot certify availability', () => {
   const input = registerFixture(); input.snapshot.calendars[0].collection.pages[0].query.updatedMin = '2026-10-26T00:00:00Z'; bindRegister(input);
   assert.equal(assess(input).availability.freeIntervals, null);
-  const zoneMismatch = registerFixture(); zoneMismatch.snapshot.calendars[0].events[0].start.timeZone = 'Asia/Singapore'; bindRegister(zoneMismatch);
+  const zoneMismatch = registerFixture(); zoneMismatch.snapshot.calendars[0].events[0].start.timeZone = 'Invalid/Zone'; bindRegister(zoneMismatch);
   assert.ok(found(assess(zoneMismatch), 'unreadable-blocking-event'));
+});
+
+test('provider UTC Event instants retain IANA recurrence zones and protect Free meals', () => {
+  const input = registerFixture();
+  input.snapshot.calendars[0].events.push({ id: 'day-boundary', summary: 'Busy', status: 'confirmed', start: { dateTime: '2026-10-27T16:30:00Z' }, end: { dateTime: '2026-10-27T17:30:00Z' } });
+  for (const event of input.snapshot.calendars[0].events) {
+    event.start.timeZone = 'Asia/Singapore';
+    event.end.timeZone = 'Asia/Singapore';
+  }
+  bindRegister(input);
+  const result = assess(input);
+  assert.equal(found(result, 'unreadable-blocking-event'), false);
+  assert.equal(result.availability.complete, true);
+  assert.ok(result.availability.blockers.some(row => row.identity.nativeId === 'meal-one' && row.start === '2026-10-27T12:00:00.000Z' && row.end === '2026-10-27T13:00:00.000Z' && row.reason === 'protected-meal-or-commitment'));
+  assert.equal(result.proposals[0].status, 'proposed');
+  for (const event of input.snapshot.calendars[0].events) for (const endpoint of [event.start, event.end]) endpoint.dateTime = new Date(Date.parse(endpoint.dateTime) + 8 * 3600000).toISOString().replace('Z', '+08:00');
+  bindRegister(input);
+  assert.deepEqual(assess(input).availability.blockers, result.availability.blockers);
+});
+
+test('invalid, offsetless and reversed provider Event endpoints stay unknown', () => {
+  for (const changes of [{ dateTime: 'not-a-date' }, { dateTime: '2026-10-27T10:00:00' }, { dateTime: '2026-10-27T12:00:00Z' }, { timeZone: 'Invalid/Zone' }]) {
+    const input = registerFixture();
+    Object.assign(input.snapshot.calendars[0].events[0].start, changes);
+    bindRegister(input);
+    const result = assess(input);
+    assert.ok(found(result, 'unreadable-blocking-event'));
+    assert.equal(result.availability.freeIntervals, null);
+  }
 });
 
 test('missing protected identities and pre-acquisition offset timestamps hold availability', () => {

@@ -66,7 +66,6 @@ function eventSpan(event, timeZone) {
   if (!stamp(event.start?.dateTime) || !stamp(event.end?.dateTime) || ms(event.start.dateTime) >= ms(event.end.dateTime)) return null;
   for (const endpoint of [event.start, event.end]) {
     if (endpoint.timeZone !== undefined && !zone(endpoint.timeZone)) return null;
-    if (endpoint.timeZone !== undefined && !wallClockMatches(endpoint.dateTime, endpoint.timeZone)) return null;
   }
   return { start: ms(event.start.dateTime), end: ms(event.end.dateTime) };
 }

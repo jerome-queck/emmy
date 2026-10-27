@@ -79,7 +79,7 @@ const negative = [
     refreshRegisterEvidence(input); attempt.resolution = { kind: 'saved', snapshotDigest: input.request.snapshotDigest, evidenceRef: 'title-saved-with-protected-drift' };
   }, 'reconcile-uncertain-effect'],
 ];
-const positives = ['base-40-minute-attempt', 'transparent-optional-class', 'cancelled-occurrence', 'source-permutation', 'verified-self-projection'];
+const positives = ['base-40-minute-attempt', 'transparent-optional-class', 'cancelled-occurrence', 'source-permutation', 'verified-self-projection', 'provider-utc-event-zone'];
 
 export const registerBounds = { evaluatedAt: '2026-10-27T00:00:00Z', maxEvidenceAgeMs: 60000, negativeCases: negative.map(row => row[0]), positiveCases: positives, cases: negative.length + positives.length, assumptions: ['Fixed finite synthetic domain, not an unbounded proof.', 'Provider truth, account identity, owner intent and native visual/schedule captures remain reported.', 'Collection, bounded files, credentials, live clock, immutable exports and real CLI execution are behavioral boundaries.', 'Native writes and automatic invocation are excluded.'] };
 
@@ -98,6 +98,7 @@ export function verifyRegisterPolicy({ register }, check) {
     if (name === 'transparent-optional-class') Object.assign(input.request.operations[0].changes, { start: '2026-10-27T14:00:00Z', end: '2026-10-27T15:00:00Z' });
     if (name === 'cancelled-occurrence') input.snapshot.calendars[0].events.push({ id: 'cancelled-occurrence', status: 'cancelled', recurringEventId: 'series-one', originalStartTime: { dateTime: '2026-10-27T09:00:00Z' } });
     if (name === 'source-permutation') input.snapshot.calendars[0].events.reverse();
+    if (name === 'provider-utc-event-zone') for (const event of input.snapshot.calendars[0].events) for (const endpoint of [event.start, event.end]) endpoint.timeZone = 'Asia/Singapore';
     if (name === 'verified-self-projection') {
       const operation = input.request.operations[0]; const intervals = [{ start: operation.changes.start, end: operation.changes.end }]; const task = input.snapshot.taskLists[0].tasks[0];
       input.request.taskSchedules[0].intervals = intervals;
@@ -113,6 +114,7 @@ export function verifyRegisterPolicy({ register }, check) {
 }
 
 export const registerMutations = [
+  { id: 'register-reject-provider-utc', property: 'calendar-register', source: 'src/calendar-register.mjs', counterexample: 'provider-utc-event-zone', edits: [["if (endpoint.timeZone !== undefined && !zone(endpoint.timeZone)) return null;", "if (endpoint.timeZone !== undefined && !zone(endpoint.timeZone)) return null;\n    if (endpoint.timeZone !== undefined && !wallClockMatches(endpoint.dateTime, endpoint.timeZone)) return null;"]] },
   { id: 'register-free-meals', property: 'calendar-register', source: 'src/calendar-register.mjs', counterexample: 'meal-free-protected', edits: [["const busy = native.transparency !== 'transparent' || protectedMeal;", "const busy = native.transparency !== 'transparent';"]] },
   { id: 'register-forget-task-timing', property: 'calendar-register', source: 'src/calendar-register.mjs', counterexample: 'task-unknown', edits: [["if (!scheduleById.has(identityKey(row.identity))) add('unknown-task-timing', row.identity);", "if (false) add('unknown-task-timing', row.identity);"]] },
   { id: 'register-stale-wrapper', property: 'calendar-register', source: 'src/calendar-register.mjs', counterexample: 'snapshot-stale', edits: [["if (!fresh(snapshot.acquisition.startedAt, evaluatedAt, age) || !fresh(snapshot.acquisition.completedAt, evaluatedAt, age)) add('stale-snapshot');", "if (false) add('stale-snapshot');"]] },

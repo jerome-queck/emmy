@@ -2,6 +2,8 @@
 
 `calendar-register --file <private-envelope.json>` collects Calendar occurrences and native Tasks, or checks a proposed plan. It applies no native changes. All files and provider captures belong under ignored `.local/` or the selected private home.
 
+The owner’s broader goal and proposed versioned constraint model are recorded in [Shared Task planning and module convergence](academic-os-alignment.md). That Academic OS handoff covers both access points, automatic provider-to-module propagation and policy validation for creation, edits and rearrangement. The current register does not yet consume that complete policy model.
+
 ## Refresh
 
 The refresh envelope has these fields.
@@ -62,7 +64,7 @@ The executable [synthetic fixture](../verification/calendar-register-fixtures.mj
 
 The output always has `execution: "none"`. Its versioned `register` combines original provider rows and acquisition metadata with source scopes, exact native schedule/projection evidence, owner history and lifecycle overlays. Native statuses remain separate from the overlay. Its `counts` separate proposed, blocked, already-saved and executed operations; executed is always zero. Availability uses half-open intervals. It sorts and unions blockers, clips them to the window, then subtracts them from working intervals. Busy Events, protected meals and supplied native Task intervals block. Optional Free classes can overlap. Completed or cancelled Tasks are terminal for edits; a supplied surviving interval still blocks. Missing Task timing keeps `freeIntervals` null. A date-only REST response never establishes an untimed Task.
 
-Scheduled blocks have a 30-minute minimum and round up to 30-minute multiples. `actualDurationMinutes` remains source data. A 40-minute paper attempt receives a 60-minute slot with a reported 20-minute rounding allowance. The allowance is not correction work. An explicit 15-minute correction has its own 30-minute block and an attempt dependency. Current 60-minute tests remain 60-minute actual attempts. No generic catch-up, meeting preparation or other obligation is invented.
+Scheduled blocks have a 30-minute minimum and round up to 30-minute multiples. `actualDurationMinutes` remains source data. A 40-minute paper attempt receives a 60-minute slot with a reported 20-minute rounding allowance. The current campaign's owner decision includes corrections inside the rounded paper bookings and withdraws separate correction units. A separately requested correction in another scope can use its own explicit allowance and dependency. Current 60-minute tests remain 60-minute actual attempts. No generic catch-up, meeting preparation or other obligation is invented.
 
 Every proposed title or interval requires a source mapped to that exact native identity. Its concise source name must appear as a whole label in the Task title. A label such as `Lecture 5` cannot match `Lecture 50`. Source dependencies must be completed or have an earlier valid proposal. A blocked prerequisite blocks its dependent correction. Existing owner-done work cannot reopen. Explicitly dismissed or superseded open Tasks remain in the inventory and cannot be rescheduled or regenerated. An overlay never marks a native Task completed, deletes it or proves an absent interval. Native timing evidence still determines occupancy.
 
@@ -79,3 +81,5 @@ Before each action, refresh the affected full window and same native identity. A
 Existing native notes remain untouched. Clearing notes requires its own authorized action. A planning request cannot authorize a notes cleanup.
 
 The checker cannot authenticate reported owner instructions, account identity, native supplements, complete history or visual review. It cannot stop an external executor. Native products remain authoritative. The legacy [`calendar` assessor](calendar.md) retains its version-one saved-state acceptance contract and replay behavior.
+
+Provider Event timestamps with explicit offsets denote absolute instants. A valid IANA endpoint timezone can differ from the returned timestamp offset, such as UTC timestamps beside `Asia/Singapore` recurrence metadata. Preserve that metadata without treating the valid representation as an unreadable commitment. Proposal wall-clock checks and all-day Calendar-zone interpretation remain separate.
