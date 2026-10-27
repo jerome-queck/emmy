@@ -93,12 +93,12 @@ export function validateCalendarSnapshot(snapshot) {
 }
 
 export function validateCalendarRequest(request) {
-  fieldsOnly(request, ['schemaVersion', 'snapshotDigest', 'window', 'workingIntervals', 'maxEvidenceAgeMs', 'mealPolicy', 'protectedIdentities', 'taskSchedules', 'mappings', 'sources', 'ownerDone', 'operations', 'attempts', 'history', 'visualReview'], 'request');
+  fieldsOnly(request, ['schemaVersion', 'snapshotDigest', 'window', 'workingIntervals', 'maxEvidenceAgeMs', 'mealPolicy', 'protectedIdentities', 'taskSchedules', 'mappings', 'sources', 'ownerDone', 'lifecycle', 'operations', 'attempts', 'history', 'visualReview'], 'request');
   fail(request.schemaVersion === 1 && /^[a-f0-9]{64}$/.test(request.snapshotDigest) && windowShape(request.window), 'Invalid request binding or window');
   fail(Number.isSafeInteger(request.maxEvidenceAgeMs) && request.maxEvidenceAgeMs > 0 && request.maxEvidenceAgeMs <= 86400000, 'Evidence age must be 1 ms to 24 hours');
   fail(request.mealPolicy === 'protect-all', 'All meals must be protected');
   fail(array(request.workingIntervals) && request.workingIntervals.every(span), 'Invalid working intervals');
-  for (const name of ['protectedIdentities', 'taskSchedules', 'mappings', 'sources', 'ownerDone', 'operations', 'attempts']) fail(array(request[name]) && request[name].length <= 2000, `Missing or excessive request ${name}`);
+  for (const name of ['protectedIdentities', 'taskSchedules', 'mappings', 'sources', 'ownerDone', 'lifecycle', 'operations', 'attempts']) fail(array(request[name]) && request[name].length <= 2000, `Missing or excessive request ${name}`);
   fail(request.protectedIdentities.every(exactIdentity), 'Invalid protected identity');
   fail(object(request.history) && typeof request.history.complete === 'boolean' && stamp(request.history.completeThrough) && text(request.history.evidenceRef), 'Retained owner-done and attempt history coverage is required');
   for (const row of request.taskSchedules) {
@@ -107,6 +107,10 @@ export function validateCalendarRequest(request) {
   }
   for (const row of request.mappings) fail(exactIdentity(row.taskIdentity) && exactIdentity(row.eventIdentity) && row.taskIdentity.containerKind === 'task-list' && row.eventIdentity.containerKind === 'calendar' && text(row.evidenceRef) && stamp(row.observedAt) && /^[a-f0-9]{64}$/.test(row.taskDigest) && /^[a-f0-9]{64}$/.test(row.eventDigest), 'Invalid native projection mapping');
   for (const row of request.ownerDone) fail(exactIdentity(row.identity) && text(row.evidenceRef) && stamp(row.observedAt), 'Invalid owner-done evidence');
+  for (const row of request.lifecycle) {
+    fieldsOnly(row, ['identity', 'state', 'observedAt', 'evidenceRef', 'replacements'], 'lifecycle overlay');
+    fail(exactIdentity(row.identity) && ['dismissed', 'superseded'].includes(row.state) && stamp(row.observedAt) && text(row.evidenceRef) && array(row.replacements) && row.replacements.every(exactIdentity) && row.replacements.every(identity => !same(identity, row.identity)), 'Invalid owner lifecycle evidence');
+  }
   for (const source of request.sources) {
     fieldsOnly(source, ['id', 'identity', 'name', 'reference', 'range', 'kind', 'actualDurationMinutes', 'dependsOn', 'completed'], 'source');
     fail(text(source.id) && exactIdentity(source.identity) && text(source.name) && text(source.reference) && text(source.range) && ['timed-attempt', 'correction', 'whole-source', 'ongoing-research'].includes(source.kind) && Number.isSafeInteger(source.actualDurationMinutes) && source.actualDurationMinutes > 0 && source.actualDurationMinutes <= 1440 && array(source.dependsOn) && source.dependsOn.every(text) && typeof source.completed === 'boolean', 'Invalid explicit source scope');
@@ -183,6 +187,7 @@ export function assessCalendarRegister(snapshot, request, { evaluatedAt }) {
       if (!object(page.query) || !/^[a-f0-9]{64}$/.test(page.responseDigest ?? '') || page.requestToken !== (index === 0 ? null : collection.pages[index - 1].nextToken) || page.nextToken !== null && (!text(page.nextToken) || tokens.has(page.nextToken))) add('invalid-page-chain', `${kind}/${containerId}`);
       tokens.add(page.nextToken);
       const q = page.query ?? {};
+      if (index === 0 ? Object.hasOwn(q, 'pageToken') : q.pageToken !== page.requestToken) add('page-request-token-mismatch', `${kind}/${containerId}`);
       const allowedQuery = containerId === null ? kind === 'calendars' ? ['maxResults', 'showHidden', 'showDeleted', 'pageToken'] : ['maxResults', 'pageToken'] : kind === 'taskLists' ? ['maxResults', 'showCompleted', 'showDeleted', 'showHidden', 'showAssigned', 'pageToken'] : ['maxResults', 'timeMin', 'timeMax', 'singleEvents', 'showDeleted', 'showHiddenInvitations', 'pageToken'];
       const correct = Object.keys(q).every(key => allowedQuery.includes(key)) && (containerId === null ? kind === 'calendars' ? q.showHidden === true && q.showDeleted === true : true : kind === 'taskLists' ? q.showCompleted === true && q.showDeleted === true && q.showHidden === true && q.showAssigned === true : q.singleEvents === true && q.showDeleted === true && q.showHiddenInvitations === true && q.timeMin === snapshot.scope.window.start && q.timeMax === snapshot.scope.window.end);
       if (!correct) add('query-coverage-mismatch', `${kind}/${containerId}`);
@@ -216,6 +221,7 @@ export function assessCalendarRegister(snapshot, request, { evaluatedAt }) {
   }
   for (const identity of request.protectedIdentities) if (!rows.has(identityKey(identity))) add('protected-identity-missing', identity);
   const ownerDone = [...snapshot.ownerDone, ...request.ownerDone];
+  if (request.lifecycle.some(entry => ms(entry.observedAt) > ms(evaluatedAt))) add('future-lifecycle-evidence');
   for (const evidence of ownerDone) {
     if (!exactIdentity(evidence.identity) || !text(evidence.evidenceRef) || !stamp(evidence.observedAt) || ms(evidence.observedAt) > ms(evaluatedAt)) add('invalid-owner-done', evidence.identity ?? null);
   }
@@ -228,11 +234,11 @@ export function assessCalendarRegister(snapshot, request, { evaluatedAt }) {
     for (const interval of row.intervals) if (overlaps(interval, window)) blockers.push({ ...clipped(interval, window), identity: row.identity, reason: 'native-task-schedule' });
   }
   for (const row of rows.values()) {
-    if (row.kind !== 'task' || row.native.deleted === true || row.native.status === 'completed' || ownerDone.some(entry => same(entry.identity, row.identity))) continue;
+    if (row.kind !== 'task' || row.native.deleted === true) continue;
     if (!['needsAction', 'completed'].includes(row.native.status)) add('unknown-task-status', row.identity);
     if (!scheduleById.has(identityKey(row.identity))) add('unknown-task-timing', row.identity);
   }
-  const mappedTasks = new Set(); const mappedEvents = new Set();
+  const mappedTasks = new Set(); const mappedEvents = new Set(); const counterparts = new Map();
   for (const mapping of [...snapshot.mappings, ...request.mappings]) {
     const taskKey = identityKey(mapping.taskIdentity); const eventKey = identityKey(mapping.eventIdentity);
     const task = rows.get(taskKey); const event = rows.get(eventKey);
@@ -240,6 +246,7 @@ export function assessCalendarRegister(snapshot, request, { evaluatedAt }) {
     mappedTasks.add(taskKey); mappedEvents.add(eventKey);
     if (!task || !event || task.kind !== 'task' || event.kind !== 'event' || task.nativeDigest !== mapping.taskDigest || event.nativeDigest !== mapping.eventDigest || !fresh(mapping.observedAt, evaluatedAt, age) || !text(mapping.evidenceRef)) add('projection-mapping-unverified', mapping.taskIdentity);
     else if (!same(task.intervals, event.intervals)) add('projection-schedule-mismatch', mapping.taskIdentity);
+    else { counterparts.set(taskKey, eventKey); counterparts.set(eventKey, taskKey); }
   }
   const work = request.workingIntervals.map(entry => ({ start: ms(entry.start), end: ms(entry.end) }));
   if (work.some(entry => entry.start < window.start || entry.end > window.end)) add('working-interval-outside-window');
@@ -266,7 +273,7 @@ export function assessCalendarRegister(snapshot, request, { evaluatedAt }) {
     const baseline = row ? { native: row.native, intervals: row.intervals.map(entry => ({ start: iso(entry.start), end: iso(entry.end) })) } : null;
     const baselineDigest = baseline === null ? null : hash(baseline);
     const changes = operation.changes;
-    const scheduled = ['start', 'end', 'durationMinutes', 'timeZone'].some(key => key in changes);
+    const scheduled = ['start', 'end', 'durationMinutes', 'timeZone'].some(key => key in changes) || operation.identity.containerKind === 'calendar' && 'date' in changes;
     const effectKey = hash({ identity: operation.identity, changes, sourceId: operation.sourceId });
     const capturedAt = iso(Math.max(ms(snapshot.acquisition.completedAt), ms(scheduleById.get(identityKey(operation.identity))?.observedAt) || 0));
     const prepared = { snapshotDigest, operation, baseline, capturedAt, intentDigest };
@@ -276,12 +283,15 @@ export function assessCalendarRegister(snapshot, request, { evaluatedAt }) {
     if (!row) refuse('wrong-native-identity');
     if (row && operation.baselineDigest !== baselineDigest) refuse('baseline-mismatch');
     if (row && (row.native.deleted || row.native.status === 'completed' || row.native.status === 'cancelled' || ownerDone.some(entry => same(entry.identity, operation.identity)))) refuse('terminal-or-owner-done');
+    if (request.lifecycle.some(entry => same(entry.identity, operation.identity))) refuse('owner-dismissed-or-superseded');
     if (changes.completed === false) refuse('reopening-not-supported');
     const task = operation.identity.containerKind === 'task-list';
     const supported = task ? operation.transport === 'google-calendar-rest' ? [] : operation.transport === 'calendar-native-ui' ? ['title', 'date', 'start', 'end', 'durationMinutes', 'timeZone', 'completed'] : ['title', 'date', 'completed'] : ['google-calendar-rest', 'calendar-native-ui'].includes(operation.transport) ? ['title', 'date', 'start', 'end', 'durationMinutes', 'timeZone'] : [];
     if (Object.keys(changes).some(key => !supported.includes(key))) refuse('unsupported-provider-operation');
     if (task && scheduled && row?.intervals.length > 1) refuse('recurring-task-operation-unsupported');
     if (task && !scheduled && 'date' in changes && row?.intervals.length > 0) refuse('date-only-timed-task-unsupported');
+    if ('date' in changes && changes.date === null) refuse('unsupported-date-removal');
+    if ('date' in changes && changes.date !== null && (changes.date < localDate(window.start, request.window.timeZone) || changes.date > localDate(window.end - 1, request.window.timeZone))) refuse('date-outside-collected-window');
     let proposed = null;
     if (scheduled) {
       if (!span(changes) || !zone(changes.timeZone) || !Number.isSafeInteger(changes.durationMinutes) || (ms(changes.end) - ms(changes.start)) / 60000 !== changes.durationMinutes) refuse('end-time-duration-mismatch');
@@ -290,7 +300,7 @@ export function assessCalendarRegister(snapshot, request, { evaluatedAt }) {
         proposed = { start: ms(changes.start), end: ms(changes.end) };
         if (!validDate(changes.date) || localDate(proposed.start, changes.timeZone) !== changes.date || changes.timeZone !== request.window.timeZone || !wallClockMatches(changes.start, changes.timeZone) || !wallClockMatches(changes.end, changes.timeZone)) refuse('schedule-date-zone-mismatch');
         if (!work.some(entry => proposed.start >= entry.start && proposed.end <= entry.end)) refuse('outside-working-interval');
-        for (const blocker of blockers) if (!same(blocker.identity, operation.identity) && overlaps(proposed, blocker)) refuse('overlap');
+        for (const blocker of blockers) if (!same(blocker.identity, operation.identity) && counterparts.get(identityKey(operation.identity)) !== identityKey(blocker.identity) && overlaps(proposed, blocker)) refuse('overlap');
         for (const prior of proposedIntervals) if (overlaps(proposed, prior.interval)) { refuse('proposed-overlap'); prior.codes.push('proposed-overlap'); }
       }
     }
@@ -344,5 +354,7 @@ export function assessCalendarRegister(snapshot, request, { evaluatedAt }) {
   if (findings.some(entry => !availabilityCodes.has(canonical(entry)) && entry.code !== 'visual-calendar-review-required')) for (const proposal of proposals) { proposal.status = 'blocked'; proposal.findings.push('global-source-or-evidence-gap'); }
   for (const proposal of proposals) for (const code of proposal.findings) add(code, proposal.id);
   const sortedFindings = findings.sort((a, b) => canonical(a).localeCompare(canonical(b)));
-  return { schemaVersion: 1, ruleVersion: 1, status: sortedFindings.length ? 'needs-evidence-or-revision' : 'proposed', execution: 'none', assurance: 'derived-provider-register-with-declared-supplements', evaluatedAt, snapshotDigest, intentDigest, availability: { complete: availabilityComplete, blockers: blockers.sort((a, b) => a.start - b.start || identityKey(a.identity).localeCompare(identityKey(b.identity))).map(entry => ({ ...entry, start: iso(entry.start), end: iso(entry.end) })), blockedIntervals: renderedIntervals(blockingUnion), freeIntervals: freeIntervals === null ? null : renderedIntervals(freeIntervals), findings: sortedFindings.filter(entry => availabilityCodes.has(canonical(entry))) }, visualReview: visualCurrent ? 'reported-current' : 'required', baselines: [...rows.values()].map(row => ({ identity: row.identity, nativeDigest: row.nativeDigest, baselineDigest: hash({ native: row.native, intervals: row.intervals.map(entry => ({ start: iso(entry.start), end: iso(entry.end) })) }) })).sort((a, b) => identityKey(a.identity).localeCompare(identityKey(b.identity))), proposals, findings: sortedFindings, next: ['Retain the plan and each exact operation intent in the existing private responsibility evidence before any separately authorized native action.', 'Immediately before one action, refresh the entire affected window and compare its snapshot digest, exact native ID and protected baseline. Replan after any change.', 'After Save, close, reload and reopen the same native Task. Compare title, date, start, end, duration and type independently. Verify the Calendar projection and native Task separately.', 'Retain the first outcome. A lost response, interrupted write or mismatched end time stays uncertain. Reconcile by same-ID readback and complete post-attempt discovery before retry.', 'Perform visual Calendar review of the actual saved window and compare numeric intervals. Report proposed, attempted, saved and verified counts separately.'], limits: ['Provider collection is not atomic. New user changes require refresh before action.', 'Tasks REST cannot expose native scheduled times, duration, deadline or recurrence. Missing readbacks keep availability unknown.', 'CalendarList covers listed calendars, not every potentially accessible calendar. Historical deleted resources may have disappeared from Google.', 'Supplements, account scope, owner intent and visual evidence remain reported. This command grants no authority, writes no provider and enforces no external executor.'] };
+  const register = { schemaVersion: 1, kind: 'calendar-planning-register', snapshotDigest, intentDigest, scope: snapshot.scope, acquisition: snapshot.acquisition, discovery: snapshot.discovery, calendars: snapshot.calendars, taskLists: snapshot.taskLists, taskSchedules: request.taskSchedules, mappings: request.mappings, sourceScopes: request.sources, ownerDone, lifecycleOverlay: request.lifecycle, history: request.history };
+  const counts = { calendarOccurrences: snapshot.calendars.reduce((sum, row) => sum + row.events.length, 0), nativeTasks: snapshot.taskLists.reduce((sum, row) => sum + row.tasks.length, 0), proposed: proposals.filter(row => row.status === 'proposed').length, blocked: proposals.filter(row => row.status === 'blocked').length, alreadySaved: proposals.filter(row => row.status === 'already-saved').length, executed: 0 };
+  return { schemaVersion: 1, ruleVersion: 1, status: sortedFindings.length ? 'needs-evidence-or-revision' : 'proposed', execution: 'none', assurance: 'derived-provider-register-with-declared-supplements', evaluatedAt, snapshotDigest, intentDigest, register, counts, availability: { complete: availabilityComplete, blockers: blockers.sort((a, b) => a.start - b.start || identityKey(a.identity).localeCompare(identityKey(b.identity))).map(entry => ({ ...entry, start: iso(entry.start), end: iso(entry.end) })), blockedIntervals: renderedIntervals(blockingUnion), freeIntervals: freeIntervals === null ? null : renderedIntervals(freeIntervals), findings: sortedFindings.filter(entry => availabilityCodes.has(canonical(entry))) }, visualReview: visualCurrent ? 'reported-current' : 'required', baselines: [...rows.values()].map(row => ({ identity: row.identity, nativeDigest: row.nativeDigest, baselineDigest: hash({ native: row.native, intervals: row.intervals.map(entry => ({ start: iso(entry.start), end: iso(entry.end) })) }) })).sort((a, b) => identityKey(a.identity).localeCompare(identityKey(b.identity))), proposals, findings: sortedFindings, next: ['Retain the plan and each exact operation intent in the existing private responsibility evidence before any separately authorized native action.', 'Immediately before one action, refresh the entire affected window and compare its snapshot digest, exact native ID and protected baseline. Replan after any change.', 'After Save, close, reload and reopen the same native Task. Compare title, date, start, end, duration and type independently. Verify the Calendar projection and native Task separately.', 'Retain the first outcome. A lost response, interrupted write or mismatched end time stays uncertain. Reconcile by same-ID readback and complete post-attempt discovery before retry.', 'Perform visual Calendar review of the actual saved window and compare numeric intervals. Report proposed, attempted, saved and verified counts separately.'], limits: ['Provider collection is not atomic. New user changes require refresh before action.', 'Tasks REST cannot expose native scheduled times, duration, deadline or recurrence. Missing readbacks keep availability unknown.', 'CalendarList covers listed calendars, not every potentially accessible calendar. Historical deleted resources may have disappeared from Google.', 'Supplements, account scope, owner intent and visual evidence remain reported. This command grants no authority, writes no provider and enforces no external executor.'] };
 }

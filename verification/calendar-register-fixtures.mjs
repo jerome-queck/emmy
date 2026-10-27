@@ -38,7 +38,7 @@ export function registerFixture(evaluatedAt = registerTime) {
   const request = {
     schemaVersion: 1, snapshotDigest: '', window, workingIntervals: [{ start: window.start, end: window.end }], maxEvidenceAgeMs: 60000, mealPolicy: 'protect-all', protectedIdentities: [],
     taskSchedules: [{ identity: registerIdentity(), taskDigest: registerHash(task), observedAt: acquiredAt, evidenceRef: 'synthetic-exact-id-native-readback', window, complete: true, recurrenceCovered: true, intervals: [] }], mappings: [],
-    sources: [{ id: 'paper-attempt', identity: registerIdentity(), name: 'Paper A attempt', reference: 'synthetic-module-file', range: 'Paper A, actual timed attempt', kind: 'timed-attempt', actualDurationMinutes: 40, dependsOn: [], completed: false }], ownerDone: [],
+    sources: [{ id: 'paper-attempt', identity: registerIdentity(), name: 'Paper A attempt', reference: 'synthetic-module-file', range: 'Paper A, actual timed attempt', kind: 'timed-attempt', actualDurationMinutes: 40, dependsOn: [], completed: false }], ownerDone: [], lifecycle: [],
     operations: [{ id: 'move-one', identity: registerIdentity(), baselineDigest: registerHash({ native: task, intervals: [] }), transport: 'calendar-native-ui', changes: { title: task.title, date: day, start: point('09:00'), end: point('10:00'), durationMinutes: 60, timeZone: 'UTC' }, sourceId: 'paper-attempt' }], attempts: [], history: { complete: true, completeThrough: evaluatedAt, evidenceRef: 'synthetic-complete-existing-responsibility-history' },
     visualReview: { snapshotDigest: '', observedAt: acquiredAt, evidenceRef: 'synthetic-native-calendar-visual-review', window, mealsProtected: true, numericCompared: true },
   };

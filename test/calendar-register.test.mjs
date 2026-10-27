@@ -53,6 +53,31 @@ test('owner-done and native completion/cancellation are preserved across stale o
   }
 });
 
+test('dismissed and superseded open Tasks remain terminal without changing native status', () => {
+  for (const state of ['dismissed', 'superseded']) {
+    const input = registerFixture(); input.request.lifecycle.push({ identity: registerIdentity(), state, observedAt: '2026-10-20T00:00:00Z', evidenceRef: 'durable-owner-decision', replacements: state === 'superseded' ? [registerIdentity('replacement-one')] : [] });
+    const result = assess(input); assert.ok(found(result, 'owner-dismissed-or-superseded')); assert.equal(input.snapshot.taskLists[0].tasks[0].status, 'needsAction');
+    assert.equal(result.proposals[0].status, 'blocked');
+    input.request.taskSchedules = []; assert.equal(assess(input).availability.freeIntervals, null, 'Dismissal cannot prove an absent native interval');
+  }
+});
+
+test('continuation request tokens must match the retained page chain', () => {
+  const input = registerFixture(); const collection = input.snapshot.taskLists[0].collection;
+  collection.pages[0].nextToken = 'next'; collection.pages.push({ ...structuredClone(collection.pages[0]), requestToken: 'next', nextToken: null });
+  bindRegister(input); assert.ok(found(assess(input), 'page-request-token-mismatch'));
+  collection.pages[1].query.pageToken = 'next'; bindRegister(input); assert.equal(assess(input).availability.complete, true);
+});
+
+test('Event date-only changes and Task dates outside collected coverage refuse', () => {
+  const input = registerFixture(); const eventIdentity = registerIdentity('busy-one', 'calendar');
+  const baselineDigest = assess(input).baselines.find(row => row.identity.nativeId === 'busy-one').baselineDigest;
+  input.request.operations = [{ id: 'date-only-event', identity: eventIdentity, baselineDigest, transport: 'google-calendar-rest', changes: { date: '2026-10-28' }, sourceId: null }];
+  assert.ok(found(assess(input), 'end-time-duration-mismatch'));
+  const task = registerFixture(); task.request.operations[0].changes = { date: '2026-10-28' };
+  assert.ok(found(assess(task), 'date-outside-collected-window'));
+});
+
 test('wrong Task ID, changed baseline, unsupported duration and end-time mismatch all refuse', () => {
   for (const [name, mutate, code] of [
     ['wrong ID', input => { input.request.operations[0].identity.nativeId = 'lecture-not-ureca'; }, 'wrong-native-identity'],
@@ -141,6 +166,20 @@ test('same-ID reopened exact schedule resolves once while mismatched saved end r
   assert.equal(assess(input).proposals[0].status, 'already-saved');
   input.request.taskSchedules[0].intervals[0].end = '2026-10-27T10:30:00Z';
   assert.ok(found(assess(input), 'reconcile-uncertain-effect'));
+});
+
+test('verified same-Task projection does not collide with its saved target or move', () => {
+  const input = registerFixture(); const before = assess(input).proposals[0]; input.request.attempts.push(registerAttempt(input, before));
+  input.request.taskSchedules[0].intervals = [{ start: before.changes.start, end: before.changes.end }];
+  const projection = { id: 'task-projection', summary: before.changes.title, status: 'confirmed', start: { dateTime: before.changes.start }, end: { dateTime: before.changes.end } };
+  input.snapshot.calendars[0].events.push(projection); refreshRegisterEvidence(input);
+  input.request.mappings.push({ taskIdentity: before.identity, eventIdentity: registerIdentity(projection.id, 'calendar'), taskDigest: registerHash(input.snapshot.taskLists[0].tasks[0]), eventDigest: registerHash(projection), observedAt: input.evaluatedAt, evidenceRef: 'native-same-task-projection-identity' });
+  input.request.attempts[0].resolution = { kind: 'saved', snapshotDigest: input.request.snapshotDigest, evidenceRef: 'same-id-reopened-and-independent-projection' };
+  assert.equal(assess(input).proposals[0].status, 'already-saved');
+  input.request.attempts = []; input.request.operations[0].baselineDigest = assess(input).baselines.find(row => row.identity.nativeId === 'task-one').baselineDigest;
+  assert.equal(assess(input).proposals[0].status, 'proposed');
+  input.request.mappings = [];
+  assert.ok(found(assess(input), 'overlap'));
 });
 
 test('title-only saved resolution cannot ignore unrelated schedule drift', () => {
