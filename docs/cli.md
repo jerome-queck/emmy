@@ -16,7 +16,7 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 | fleet | `--file <value>` required | Retain scoped fleet health, parent read admission, alert delivery and explicit bounded history archival in the responsibility journal. | fleet |
 | signin | `--file <value>` required | Choose a scoped sign-in recovery handoff without accepting or retaining secrets. | fleet |
 | calendar | `--file <value>` required | Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution. | evidence |
-| calendar-register | `--file <value>` required | Collect immutable read-only Calendar/Tasks snapshots or assess deterministic free intervals and exact-ID proposals without applying them. | evidence |
+| calendar-register | `--file <value>` required | Collect immutable read-only Calendar/Tasks snapshots, assess exact-ID proposals, or validate cloud-plan/local-receipt handoffs without applying them. | evidence |
 | briefing | `--file <value>` | Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown. | evidence |
 | probe | `--id <value>`, `--nonce <value>` required | Publish a proposed Dot onboarding packet with eight probes. | routing |
 | maintain | `--check`, `--write` | Compare or regenerate public references without changing review records. | upkeep |

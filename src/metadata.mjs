@@ -9,7 +9,7 @@ export const commands = [
   { name: 'fleet', description: 'Retain scoped fleet health, parent read admission, alert delivery and explicit bounded history archival in the responsibility journal.', options: [{ name: 'file', required: true }], feature: 'fleet' },
   { name: 'signin', description: 'Choose a scoped sign-in recovery handoff without accepting or retaining secrets.', options: [{ name: 'file', required: true }], feature: 'fleet' },
   { name: 'calendar', description: 'Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution.', options: [{ name: 'file', required: true }], feature: 'evidence' },
-  { name: 'calendar-register', description: 'Collect immutable read-only Calendar/Tasks snapshots or assess deterministic free intervals and exact-ID proposals without applying them.', options: [{ name: 'file', required: true }], feature: 'evidence' },
+  { name: 'calendar-register', description: 'Collect immutable read-only Calendar/Tasks snapshots, assess exact-ID proposals, or validate cloud-plan/local-receipt handoffs without applying them.', options: [{ name: 'file', required: true }], feature: 'evidence' },
   { name: 'briefing', description: 'Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown.', options: [{ name: 'file' }], feature: 'evidence' },
   { name: 'probe', description: 'Publish a proposed Dot onboarding packet with eight probes.', options: [{ name: 'id' }, { name: 'nonce', required: true }], feature: 'routing' },
   { name: 'maintain', description: 'Compare or regenerate public references without changing review records.', options: [{ name: 'check', flag: true }, { name: 'write', flag: true }], feature: 'upkeep' },

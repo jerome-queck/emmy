@@ -119,7 +119,7 @@
     },
     {
       "name": "calendar-register",
-      "description": "Collect immutable read-only Calendar/Tasks snapshots or assess deterministic free intervals and exact-ID proposals without applying them.",
+      "description": "Collect immutable read-only Calendar/Tasks snapshots, assess exact-ID proposals, or validate cloud-plan/local-receipt handoffs without applying them.",
       "options": [
         {
           "name": "file",
