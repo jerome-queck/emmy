@@ -4,6 +4,8 @@ The [Calendar register](calendar-register.md) adds derived immutable provider sn
 
 `academic-os-task-plan.mjs` owns the separate [API wire adapter](academic-os-task-plan.md). It checks an explicit module/research intent against a fresh official list token, preserves exact identities and cloud associations, and assesses reported API results. Its create/title-change/complete subset excludes native timing. It neither invokes Academic OS nor extends the native handoff's acceptance claim.
 
+`calendar-timing.mjs` owns [interface timing](calendar-timing.md). Canonical Singapore intervals remain unchanged while named-zone formatting produces separate editor input. The handoff binds interface/environment selection to the plan, fresh timezone evidence to preflight, and exact submitted fields plus Calendar SGT native-ID readback to acceptance. It supports the evidenced Calendar Singapore and scoped cloud Tasks Bangkok paths. It adds no writer, timezone setting, API or journal publication stage.
+
 `guidance-pin.mjs` owns optional local installed-release selection, integrity checks and reversible administration. `briefing.mjs` supplies the same bundle parser used by canonical acquisition. A valid pin yields an explicit usable `pinned` state; an invalid active selection blocks fallback. Absent selection preserves the remote default. Its configuration/history are separate from canonical caches and journal publication; the publication model covers neither pin administration nor its filesystem races.
 
 Selected design, 22 October 2026. This replaces the initial proposal-only registry design. The implementation must satisfy the acceptance cases below before release. Read [the setup critique](research/setup-critique.md) for observed evidence and design judgments.

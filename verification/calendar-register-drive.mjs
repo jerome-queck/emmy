@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { digest } from '../src/records.mjs';
-import { bindRegister, refreshRegisterEvidence, registerFixture } from './calendar-register-fixtures.mjs';
+import { bindRegister, refreshRegisterEvidence, registerFixture, registerHash } from './calendar-register-fixtures.mjs';
 import { academicOsPlanFixture } from './academic-os-plan-fixtures.mjs';
+import { timingRegisterFixture, syntheticTimingPacket, syntheticTimingReceipt } from './calendar-timing-fixtures.mjs';
 
 export async function driveCalendarRegister({ home, run, scenario, report }) {
   const directory = join(home, 'calendar/register');
@@ -82,9 +83,14 @@ module.exports.GoogleAuth = class {
   const packetFile = join(directory, 'handoff-packet.json');
   const handoffFile = join(directory, 'handoff.json');
   await writeFile(handoffFile, JSON.stringify({ schemaVersion: 1, action: 'handoff', snapshotFile, requestFile, packetFile }));
-  const handoffInput = structuredClone(input);
+  const handoffInput = timingRegisterFixture(new Date().toISOString());
   handoffInput.evaluatedAt = new Date().toISOString(); refreshRegisterEvidence(handoffInput);
-  const handoff = async (name, packet, expected, candidate = handoffInput) => {
+  const handoff = async (name, value, expected, candidate = handoffInput, withTiming = true) => {
+    const packet = { ...value, ...(withTiming ? { timing: value.timing ?? syntheticTimingPacket(candidate, value.plan) } : {}) };
+    if (value.receipts) packet.receipts = value.receipts.map(receipt => {
+      const prepared = value.preflights?.find(row => row.preflightDigest === receipt.preflightDigest)?.timing;
+      return receipt.outcome === 'verified' && prepared && !receipt.timing ? { ...receipt, timing: syntheticTimingReceipt(prepared, receipt.observedAt) } : receipt;
+    });
     await writeFile(snapshotFile, JSON.stringify(candidate.snapshot)); await writeFile(requestFile, JSON.stringify(candidate.request)); await writeFile(packetFile, JSON.stringify(packet));
     const before = await Promise.all([snapshotFile, requestFile, packetFile].map(async file => digest(await readFile(file))));
     const result = await run(['calendar-register', '--file', handoffFile], expected);
@@ -95,6 +101,18 @@ module.exports.GoogleAuth = class {
     return result;
   };
   const header = { schemaVersion: 1, policyDigest: digest('synthetic-owner-policy'), coordinationDefinitionHash: adopted.hash };
+  const missingTiming = await handoff('timing-missing-plan', { ...header, stage: 'plan', executor: 'dot-cloud' }, 3, handoffInput, false);
+  assert.ok(missingTiming.findings.includes('timing-contract-required'));
+  const staleTiming = syntheticTimingPacket(handoffInput);
+  staleTiming.observations[0].zoneObservation.observedAt = new Date(Date.parse(handoffInput.evaluatedAt) - 60001).toISOString();
+  assert.ok((await handoff('timing-stale-zone', { ...header, stage: 'plan', executor: 'dot-cloud', timing: staleTiming }, 3)).findings.includes('stale-zone-observation'));
+  const futureTiming = syntheticTimingPacket(handoffInput);
+  futureTiming.observations[0].zoneObservation.observedAt = new Date(Date.now() + 60000).toISOString();
+  assert.ok((await handoff('timing-future-zone', { ...header, stage: 'plan', executor: 'dot-cloud', timing: futureTiming }, 3)).findings.includes('future-zone-observation'));
+  const wrongInterface = syntheticTimingPacket(handoffInput);
+  wrongInterface.targets[0].target.inputTimeZone = 'Asia/Bangkok';
+  wrongInterface.observations[0].zoneObservation.inputTimeZone = 'Asia/Bangkok';
+  assert.ok((await handoff('timing-wrong-interface-compensation', { ...header, stage: 'plan', executor: 'dot-cloud', timing: wrongInterface }, 3)).findings.includes('unsupported-editor-zone-route'));
   const cloudPlan = await handoff('cloud-plan', { ...header, stage: 'plan', executor: 'dot-cloud' }, 0);
   assert.equal(cloudPlan.status, 'cloud-plan-ready');
   handoffInput.evaluatedAt = new Date().toISOString(); refreshRegisterEvidence(handoffInput);
@@ -103,6 +121,10 @@ module.exports.GoogleAuth = class {
   const localPacket = { ...header, stage: 'preflight', executor: 'local-executor', plan: cloudPlan.plan, operationDigest: operation.operationDigest };
   const preflight = await handoff('local-preflight', localPacket, 0);
   assert.equal(preflight.status, 'preflight-ready'); assert.notEqual(preflight.snapshotDigest, cloudPlan.plan.snapshotDigest);
+  assert.equal(preflight.preflight.timing.editorInput.start.time, operation.prepared.operation.changes.start.slice(11, 16));
+  const repeated = await handoff('timing-repeat-preparation', localPacket, 0);
+  assert.deepEqual(repeated.preflight.timing, preflight.preflight.timing);
+  assert.ok((await handoff('timing-missing-preflight', localPacket, 3, handoffInput, false)).findings.includes('timing-contract-required'));
   const changed = structuredClone(handoffInput); changed.request.operations[0].changes.title += ' locally changed';
   assert.equal((await handoff('local-change-refused', localPacket, 3, changed)).status, 'return-to-cloud');
   const attemptedAt = new Date().toISOString();
@@ -119,6 +141,53 @@ module.exports.GoogleAuth = class {
   const verifiedReceipt = { ...uncertainReceipt, outcome: 'verified', observedAt: verifiedAt, completedEffectKeys: [operation.effectKey], evidenceRef: 'synthetic-verified-same-attempt', reason: null };
   const accepted = await handoff('root-final-same-id', { ...header, stage: 'accept', executor: 'dot-cloud', plan: cloudPlan.plan, preflights: [preflight.preflight], receipts: [uncertainReceipt, verifiedReceipt] }, 0, savedInput);
   assert.equal(accepted.status, 'accepted-reported'); assert.equal(accepted.reports[0].outcome, 'uncertain'); assert.equal(accepted.assessment.proposals[0].status, 'already-saved');
+  const acceptedPacket = { ...header, stage: 'accept', executor: 'dot-cloud', plan: cloudPlan.plan, preflights: [preflight.preflight], receipts: [uncertainReceipt, verifiedReceipt] };
+  assert.equal((await handoff('timing-missing-accept', acceptedPacket, 3, savedInput, false)).status, 'return-to-cloud');
+  const wrongReadback = syntheticTimingPacket(savedInput, cloudPlan.plan);
+  wrongReadback.observations[0].readback.start.time = '10:00';
+  assert.ok((await handoff('timing-sgt-final-mismatch', { ...acceptedPacket, timing: wrongReadback }, 3, savedInput)).findings.includes('calendar-sgt-interval-mismatch'));
+  const wrongReceipt = { ...verifiedReceipt, timing: syntheticTimingReceipt(preflight.preflight.timing, verifiedAt) };
+  wrongReceipt.timing.readback.nativeIdentity = null; wrongReceipt.timing.readback.projectionId = 'synthetic-stable-calendar-projection';
+  const projectionOnly = await handoff('timing-projection-only-receipt', { ...acceptedPacket, receipts: [uncertainReceipt, wrongReceipt] }, 3, savedInput);
+  assert.ok(projectionOnly.findings.includes('exact-native-task-readback-required')); assert.deepEqual(projectionOnly.reports[1].completedEffectKeys, []);
+  const clockInput = (start, end, windowStart, windowEnd) => {
+    const candidate = timingRegisterFixture(new Date().toISOString());
+    const window = { start: windowStart, end: windowEnd, timeZone: 'Asia/Singapore' };
+    candidate.snapshot.scope.window = window; candidate.request.window = window;
+    candidate.request.workingIntervals = [{ start: window.start, end: window.end }];
+    candidate.request.visualReview.window = window;
+    for (const schedule of candidate.request.taskSchedules) schedule.window = window;
+    for (const calendar of candidate.snapshot.calendars) for (const page of calendar.collection.pages) Object.assign(page.query, { timeMin: window.start, timeMax: window.end });
+    Object.assign(candidate.request.operations[0].changes, { start, end, date: start.slice(0, 10) });
+    refreshRegisterEvidence(candidate); candidate.request.visualReview.observedAt = candidate.evaluatedAt;
+    return candidate;
+  };
+  const day = handoffInput.request.operations[0].changes.date;
+  for (const [name, candidate, expectedStart] of [
+    ['standalone-bangkok', clockInput(`${day}T11:00:00+08:00`, `${day}T12:00:00+08:00`, `${day}T08:00:00+08:00`, `${day}T18:00:00+08:00`), { date: day, time: '10:00' }],
+    ['standalone-rollover', clockInput('2027-01-01T00:30:00+08:00', '2027-01-01T01:30:00+08:00', '2026-12-31T22:00:00+08:00', '2027-01-01T03:00:00+08:00'), { date: '2026-12-31', time: '23:30' }],
+  ]) {
+    const timing = syntheticTimingPacket(candidate, null, 'standalone-tasks-editor');
+    const planned = await handoff(`timing-${name}-plan`, { ...header, stage: 'plan', executor: 'dot-cloud', timing }, 0, candidate);
+    candidate.evaluatedAt = new Date().toISOString(); refreshRegisterEvidence(candidate); candidate.request.visualReview.observedAt = candidate.evaluatedAt;
+    const checked = await handoff(`timing-${name}-preflight`, { ...header, stage: 'preflight', executor: 'local-executor', plan: planned.plan, operationDigest: planned.plan.operations[0].operationDigest }, 0, candidate);
+    assert.deepEqual(checked.preflight.timing.editorInput.start, expectedStart);
+    if (name === 'standalone-rollover') assert.deepEqual(checked.preflight.timing.editorInput.end, { date: '2027-01-01', time: '00:30' });
+    assert.equal(checked.preflight.timing.canonical.interval.start, candidate.request.operations[0].changes.start);
+    const again = await handoff(`timing-${name}-repeat`, { ...header, stage: 'preflight', executor: 'local-executor', plan: planned.plan, operationDigest: planned.plan.operations[0].operationDigest }, 0, candidate);
+    assert.deepEqual(again.preflight.timing, checked.preflight.timing);
+    const row = planned.plan.operations[0];
+    const attemptedAt = new Date().toISOString();
+    const observedAt = new Date(Date.parse(attemptedAt) + 1).toISOString();
+    const receipt = { planDigest: planned.plan.planDigest, operationDigest: row.operationDigest, preflightDigest: checked.preflight.preflightDigest, identity: row.prepared.operation.identity, itemType: 'task', outcome: 'verified', attemptedAt, observedAt, completedEffectKeys: [row.effectKey], evidenceRef: `synthetic-${name}-calendar-reopen`, timing: syntheticTimingReceipt(checked.preflight.timing, observedAt) };
+    candidate.snapshot.taskLists[0].tasks[0].due = `${row.prepared.operation.changes.date}T00:00:00.000Z`;
+    candidate.request.taskSchedules[0].taskDigest = registerHash(candidate.snapshot.taskLists[0].tasks[0]);
+    candidate.request.taskSchedules[0].intervals = [{ start: row.prepared.operation.changes.start, end: row.prepared.operation.changes.end }];
+    candidate.request.attempts = [{ identity: row.prepared.operation.identity, effectKey: row.effectKey, operationDigest: row.operationDigest, prepared: row.prepared, state: 'intent', attemptedAt, evidenceRef: `synthetic-${name}-original-intent` }];
+    candidate.evaluatedAt = new Date(Date.parse(observedAt) + 1).toISOString(); refreshRegisterEvidence(candidate); candidate.request.visualReview.observedAt = candidate.evaluatedAt;
+    candidate.request.attempts[0].resolution = { kind: 'saved', snapshotDigest: candidate.request.snapshotDigest, evidenceRef: `synthetic-${name}-fresh-root-window` };
+    assert.equal((await handoff(`timing-${name}-accept`, { ...header, stage: 'accept', executor: 'dot-cloud', plan: planned.plan, preflights: [checked.preflight], receipts: [receipt] }, 0, candidate)).status, 'accepted-reported');
+  }
   const apiEnvelope = join(directory, 'academic-os.envelope.json');
   const apiRequest = join(directory, 'academic-os.request.json');
   await writeFile(apiEnvelope, JSON.stringify({ schemaVersion: 1, action: 'academic-os', requestFile: apiRequest }));
@@ -169,5 +238,5 @@ module.exports.GoogleAuth = class {
     report.calendar.retainedFiles.push({ path: relative(join(home, 'calendar'), destination), bytes: bytes.length, sha256: digest(bytes) });
   }
   report.calendarRegister = { snapshotDigest: refresh.snapshotDigest, baselineOperationDigest: baseline.proposals[0].operationDigest, nativeWrites: 0, requests: requests.length, assurance: 'synthetic transport and actual CLI' };
-  scenario('calendar-register', 'Fresh real CLI processes collect immutable snapshots and validate a cloud-only planning responsibility plus typed cloud-plan/local-preflight/final-receipt boundaries. Changed local plans, uncertainty and worker done without fresh same-ID readbacks are refused; input bytes and retained evidence survive teardown. No live provider or native operation.');
+  scenario('calendar-register', 'Fresh real CLI processes collect immutable snapshots and validate cloud plans, exact preflights and final receipts. Canonical SGT stays separate from Calendar SGT or evidenced standalone Bangkok input, including rollover and repeated preparation. Missing, stale or future zone proof, wrong-interface compensation, projection-only identity and SGT final mismatches are refused. Original input bytes and retained evidence survive teardown. No live provider or native operation.');
 }

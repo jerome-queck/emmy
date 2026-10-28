@@ -2,14 +2,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { assessCalendarHandoff } from '../src/calendar-handoff.mjs';
+import { assessCalendarRegister } from '../src/calendar-register.mjs';
 import { parseDefinition } from '../src/records.mjs';
 import { effectKey } from '../src/work.mjs';
-import { bindRegister, refreshRegisterEvidence, registerFixture, registerHash } from '../verification/calendar-register-fixtures.mjs';
+import { bindRegister, refreshRegisterEvidence, registerHash } from '../verification/calendar-register-fixtures.mjs';
+import { timingRegisterFixture as registerFixture, syntheticTimingPacket, syntheticTimingReceipt } from '../verification/calendar-timing-fixtures.mjs';
 
 const policyDigest = 'a'.repeat(64);
 const coordinationDefinitionHash = 'b'.repeat(64);
 const packet = stage => ({ schemaVersion: 1, stage, executor: stage === 'preflight' ? 'local-executor' : 'dot-cloud', policyDigest, coordinationDefinitionHash });
-const run = (input, value) => assessCalendarHandoff(input.snapshot, input.request, value, { evaluatedAt: input.evaluatedAt });
+const rawRun = (input, value) => assessCalendarHandoff(input.snapshot, input.request, value, { evaluatedAt: input.evaluatedAt });
+const run = (input, value) => {
+  const packet = { ...value, timing: value.timing ?? syntheticTimingPacket(input, value.plan) };
+  packet.receipts = value.receipts?.map(receipt => {
+    const prepared = value.preflights?.find(row => row.preflightDigest === receipt.preflightDigest)?.timing;
+    return receipt.outcome === 'verified' && prepared && !receipt.timing ? { ...receipt, timing: syntheticTimingReceipt(prepared, receipt.observedAt) } : receipt;
+  });
+  if (value.receipts === undefined) delete packet.receipts;
+  return rawRun(input, packet);
+};
 function prepared() {
   const input = registerFixture();
   const plan = run(input, packet('plan')).plan;
@@ -117,7 +128,7 @@ test('a two-operation batch retains partial effects and requires fresh serial pr
   input.snapshot.taskLists[0].tasks.push(task);
   input.request.taskSchedules.push({ ...structuredClone(input.request.taskSchedules[0]), identity, taskDigest: registerHash(task) });
   input.request.sources.push({ ...structuredClone(input.request.sources[0]), id: 'paper-two', identity, name: 'Paper B attempt' });
-  input.request.operations.push({ ...structuredClone(input.request.operations[0]), id: 'move-two', identity, sourceId: 'paper-two', baselineDigest: registerHash({ native: task, intervals: [] }), changes: { ...input.request.operations[0].changes, title: task.title, start: '2026-10-27T11:00:00Z', end: '2026-10-27T12:00:00Z' } });
+  input.request.operations.push({ ...structuredClone(input.request.operations[0]), id: 'move-two', identity, sourceId: 'paper-two', baselineDigest: registerHash({ native: task, intervals: [] }), changes: { ...input.request.operations[0].changes, title: task.title, start: '2026-10-27T19:00:00+08:00', end: '2026-10-27T20:00:00+08:00' } });
   bindRegister(input);
   const plan = run(input, packet('plan')).plan; assert.equal(plan.operations.length, 2);
   const first = plan.operations[0]; const second = plan.operations[1];
@@ -214,4 +225,124 @@ test('preflight expiry comes from original evidence age rather than the later ev
   final.input.evaluatedAt = '2026-10-27T00:01:42.000Z'; refreshRegisterEvidence(final.input); final.input.request.visualReview.observedAt = final.input.evaluatedAt;
   final.input.request.attempts[0].resolution.snapshotDigest = final.input.request.snapshotDigest;
   assert.ok(run(final.input, final.value).findings.includes('successful-preflight-required'));
+});
+
+test('timed handoffs require a timing contract at plan, preflight and legacy acceptance', () => {
+  const initial = registerFixture();
+  assert.ok(rawRun(initial, packet('plan')).findings.includes('timing-contract-required'));
+  const before = prepared();
+  assert.ok(rawRun(before.input, before.value).findings.includes('timing-contract-required'));
+  const final = saved();
+  const legacy = structuredClone(final.value);
+  delete legacy.plan.timing;
+  const { planDigest, ...planBody } = legacy.plan;
+  legacy.plan.planDigest = registerHash(planBody);
+  for (const preflight of legacy.preflights) {
+    delete preflight.timing; preflight.planDigest = legacy.plan.planDigest;
+    const { preflightDigest, ...preflightBody } = preflight;
+    preflight.preflightDigest = registerHash(preflightBody);
+  }
+  for (const receipt of legacy.receipts) { receipt.planDigest = legacy.plan.planDigest; receipt.preflightDigest = legacy.preflights[0].preflightDigest; }
+  const output = rawRun(final.input, legacy);
+  assert.equal(output.status, 'return-to-cloud');
+  assert.ok(output.findings.includes('timing-contract-required'));
+  assert.deepEqual(output.reports[0].completedEffectKeys, []);
+});
+
+test('immutable target selectors and fresh account/interface/zone observations bind every phase', () => {
+  const before = prepared();
+  const timing = syntheticTimingPacket(before.input, before.plan);
+  for (const mutate of [
+    value => { value.targets[0].target.targetInterface = 'standalone-tasks-editor'; },
+    value => { value.observations[0].zoneObservation.executionEnvironment.epoch = 'changed-epoch'; },
+    value => { value.observations[0].zoneObservation.inputTimeZone = 'Asia/Bangkok'; },
+    value => { value.observations[0].zoneObservation.accountId = 'other@example.test'; },
+    value => { value.observations[0].zoneObservation.observedAt = before.plan.issuedAt; },
+    value => { value.observations[0].zoneObservation.observedAt = '2026-10-27T00:00:02.000Z'; },
+  ]) {
+    const changed = structuredClone(timing); mutate(changed);
+    assert.equal(rawRun(before.input, { ...before.value, timing: changed }).status, 'return-to-cloud');
+  }
+  const final = saved();
+  const finalTiming = syntheticTimingPacket(final.input, final.plan);
+  finalTiming.observations[0].zoneObservation.observedAt = final.receipt.observedAt;
+  assert.ok(run(final.input, { ...final.value, timing: finalTiming }).findings.includes('fresh-zone-observation-required'));
+});
+
+test('timing mismatch or projection-only receipt returns no verified receipt effects', () => {
+  for (const mutate of [
+    value => { value.preparedDigest = 'f'.repeat(64); },
+    value => { value.submittedInput.start.time = '16:00'; },
+    value => { value.readback.start.time = '16:00'; },
+    value => { value.readback.timeZone = 'Asia/Bangkok'; },
+    value => { value.readback.nativeIdentity = null; value.readback.projectionId = 'stable-projection'; },
+    value => { value.readback.nativeIdentity.nativeId = 'different-native-task'; },
+  ]) {
+    const final = saved();
+    final.receipt.timing = syntheticTimingReceipt(final.value.preflights[0].timing, final.receipt.observedAt);
+    mutate(final.receipt.timing);
+    const result = run(final.input, final.value);
+    assert.equal(result.status, 'return-to-cloud'); assert.deepEqual(result.reports[0].completedEffectKeys, []);
+  }
+});
+
+test('root timing readback must be independently fresh after all receipts', () => {
+  const final = saved(); const timing = syntheticTimingPacket(final.input, final.plan);
+  timing.observations[0].readback.observedAt = final.receipt.observedAt;
+  assert.ok(run(final.input, { ...final.value, timing }).findings.includes('fresh-calendar-readback-required'));
+  timing.observations[0].readback.observedAt = final.input.evaluatedAt;
+  timing.observations[0].readback.end.time = '17:00';
+  assert.ok(run(final.input, { ...final.value, timing }).findings.includes('calendar-sgt-interval-mismatch'));
+});
+
+test('root tightened age applies to final timing readback without changing original receipt expiry', () => {
+  const final = saved(); final.input.request.maxEvidenceAgeMs = 500;
+  const timing = syntheticTimingPacket(final.input, final.plan);
+  timing.observations[0].readback.observedAt = '2026-10-27T00:00:03.250Z';
+  assert.ok(run(final.input, { ...final.value, timing }).findings.includes('fresh-calendar-readback-required'));
+  timing.observations[0].readback.observedAt = final.input.evaluatedAt;
+  assert.equal(run(final.input, { ...final.value, timing }).status, 'accepted-reported');
+});
+
+test('date-only edits require complete canonical timing while untimed title edits keep legacy behavior', () => {
+  for (const changes of [{ date: '2026-10-27' }, { timeZone: 'Asia/Singapore' }]) {
+    const input = registerFixture(); input.request.operations[0].changes = changes; bindRegister(input);
+    assert.ok(rawRun(input, packet('plan')).findings.includes('complete-canonical-timing-required'));
+  }
+  const input = registerFixture();
+  input.request.operations[0].changes = { title: input.snapshot.taskLists[0].tasks[0].title }; bindRegister(input);
+  const plan = rawRun(input, packet('plan')).plan;
+  assert.ok(plan); assert.equal(plan.timing, undefined);
+  input.evaluatedAt = '2026-10-27T00:00:01.000Z'; refreshRegisterEvidence(input); input.request.visualReview.observedAt = input.evaluatedAt;
+  const row = plan.operations[0];
+  const preflight = rawRun(input, { ...packet('preflight'), plan, operationDigest: row.operationDigest }).preflight;
+  assert.ok(preflight); assert.equal(preflight.timing, undefined);
+  const attemptedAt = '2026-10-27T00:00:02.000Z';
+  input.request.attempts = [{ identity: row.prepared.operation.identity, effectKey: row.effectKey, operationDigest: row.operationDigest, prepared: row.prepared, state: 'intent', attemptedAt, evidenceRef: 'untimed-original-intent' }];
+  input.evaluatedAt = '2026-10-27T00:00:04.000Z'; refreshRegisterEvidence(input); input.request.visualReview.observedAt = input.evaluatedAt;
+  input.request.attempts[0].resolution = { kind: 'saved', snapshotDigest: input.request.snapshotDigest, evidenceRef: 'untimed-same-id-readback' };
+  const receipt = { planDigest: plan.planDigest, operationDigest: row.operationDigest, preflightDigest: preflight.preflightDigest, identity: row.prepared.operation.identity, itemType: 'task', outcome: 'verified', attemptedAt, observedAt: '2026-10-27T00:00:03.000Z', completedEffectKeys: [row.effectKey], evidenceRef: 'untimed-verified' };
+  assert.equal(rawRun(input, { ...packet('accept'), plan, preflights: [preflight], receipts: [receipt] }).status, 'accepted-reported');
+});
+
+test('SGT conflict planning refuses a newly occupied canonical slot', () => {
+  const input = registerFixture();
+  const changes = input.request.operations[0].changes;
+  input.snapshot.calendars[0].events.push({ id: 'sgt-conflict', summary: 'Owner conflict', status: 'confirmed', start: { dateTime: changes.start, timeZone: 'Asia/Singapore' }, end: { dateTime: changes.end, timeZone: 'Asia/Singapore' } });
+  bindRegister(input);
+  const result = run(input, packet('plan'));
+  assert.equal(result.status, 'return-to-cloud'); assert.ok(result.assessment.proposals[0].findings.includes('overlap'));
+});
+
+test('a valid Event timing proposal cannot bypass the supported Task editor routes', () => {
+  const input = registerFixture();
+  const event = input.snapshot.calendars[0].events[0];
+  const identity = { ...input.request.operations[0].identity, containerKind: 'calendar', containerId: 'calendar-one', nativeId: event.id };
+  input.request.operations[0].identity = identity;
+  input.request.operations[0].baselineDigest = registerHash({ native: event, intervals: [{ start: new Date(event.start.dateTime).toISOString(), end: new Date(event.end.dateTime).toISOString() }] });
+  input.request.sources[0].identity = identity;
+  bindRegister(input);
+  assert.equal(assessCalendarRegister(input.snapshot, input.request, { evaluatedAt: input.evaluatedAt }).status, 'proposed');
+  const result = rawRun(input, packet('plan'));
+  assert.equal(result.status, 'return-to-cloud'); assert.ok(result.findings.includes('unsupported-timing-interface'));
 });

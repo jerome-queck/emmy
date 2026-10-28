@@ -36,6 +36,8 @@ The standing [thread and model policy](AGENTS.md#standing-thread-and-model-polic
 
 An explicit [local guidance pin](docs/guidance-pin.md) can select an exact approved installed release. Its distinct `pinned` source validates manifest, source, launcher and bundle hashes before use. Deactivation restores the remote default; an invalid active pin blocks fallback. Pin configuration changes no canonical cache or native bootstrap.
 
+Timed Task handoffs also require [interface-aware timezone evidence](docs/calendar-timing.md). Plans stay in Singapore time; fresh scoped evidence selects unchanged Calendar input or named-zone conversion for the verified cloud Tasks editor. Unknown zones and mismatched saved Calendar readbacks block acceptance.
+
 A responsibility retains its goal, context, exact repository/host/path/revision, authority reference, finish criteria, source age, next review, feature, and lifecycle. `reconcile` imports optional evidence and reads actual local bytes and git identity. It preserves contradictions, failed repairs, and original reviews. Imported text stays reported. Required independent review stays an external gate.
 
 Use `--home <private-state>` to select one private register. The default is this checkout's ignored `.local/`. `backup` verifies a pinned record/evidence manifest and bindings. `restore` requires a new destination and suspends work until fresh observations name its new epoch. This does not establish hardware-loss recovery.
