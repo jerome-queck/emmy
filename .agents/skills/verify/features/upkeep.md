@@ -4,7 +4,7 @@
 
 Run `maintain --check` at session start. After public metadata changes, run `maintain --write`, inspect derived files, and run the aggregate check. Metadata owns commands, feature map, scenario names, and property IDs. Maintenance preserves research dates and formal sync records.
 
-Maintenance also generates `docs/briefing-guidance.json` from exactly the metadata-approved operating brief and briefing procedure. It binds each path, UTF-8 byte length and SHA-256 plus the complete content digest. Local generation does not publish canonical main or install native instructions.
+Maintenance also generates `docs/briefing-guidance.json` from exactly the metadata-approved operating brief, briefing procedure, and sign-in skill. It binds each path, UTF-8 byte length and SHA-256 plus the complete content digest. Local generation does not publish canonical main or install native instructions.
 
 Use `backup --to <archive>` to pin and validate immutable records, referenced evidence bytes, historical records, and private bindings. Use `restore --from <archive> --into <new-home>`. Existing destinations, unsafe paths, symlinks, missing files, corrupt bytes, and invalid references are refused.
 

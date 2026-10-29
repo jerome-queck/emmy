@@ -50,17 +50,19 @@ Discover the intended saved native project before creating a task. After creatio
 
 Resolve the executor's actual installed pstack skill before creating a coding task. Invoke it as `[$pstack:poteto-mode](/absolute/resolved/path/SKILL.md)` followed by the task details. This example path is a placeholder. Require the project `AGENTS.md`, relevant behavioral and formal maintenance, actual feature driving, and reviewed source-to-property mapping. Generated references cannot replace those checks.
 
-Apply these standing model choices to all Emmy-managed work:
+Apply the task-specific family policy in [AGENTS.md](../AGENTS.md#standing-thread-and-model-policy) to all Emmy-managed work:
 
 | Role | Model and reasoning effort |
 | --- | --- |
-| Ordinary Codex session | `gpt-6.1-sol` at `high` minimum |
-| Nontrivial subagent | `gpt-6.1-sol` at `medium` minimum |
-| Trivial subagent | `gpt-6-luna` at `max` permitted |
-| Most automations | `gpt-6-luna` at `max` by default |
-| Heavy-reasoning automation | `gpt-6.1-sol` at `high` or higher |
+| Coding lead and daily improvement review | Sol High |
+| Bounded implementation and nontrivial helper | Sol Medium, High when the task requires it |
+| Mechanical helper or established deterministic automation | Luna Max |
+| Computer Use | Terra High, Medium for an established bounded routine |
+| Read-only evidence review or suggestions | Sol Medium |
 
-A trivial helper performs one bounded action with a known target and supplied inputs. Investigation, architecture, and cross-file implementation require nontrivial helpers. Ordinary Codex leads retain Sol High minimum even for small requests. Honor Jerome's explicit model and effort instructions within their named scope, including stronger reviewer settings. Compare stronger efforts within the selected model rather than ranking model families by effort names. Preserve existing thread selections. Use supported project defaults for new sessions and helpers. Do not change Studio-wide global settings. Record requested settings, resolved configuration, and observed execution separately. If native controls or readbacks are unavailable, keep that part unverified.
+A trivial helper performs one bounded action with known target and supplied inputs. Investigation, architecture, unknown bugs, and cross-file implementation require a capable stronger model from the start. Luna uses Max only. Sol and Terra use at most XHigh, with a concrete complexity justification; never Max or Ultra. Light/Low requires an explicit speed need. Optimize total successful work, including failed attempts and verification, rather than nominal price. Honor scoped human choices and preserve existing threads. Pass the actual pstack skill and applicable verification instructions to every worker and reviewer.
+
+Resolve family and effort to the destination's latest clearly supported concrete model ID before dispatch. Do not invent a runtime alias or substitute a different family/effort. The coordinator supplies exact settings to the existing dispatch contract; project defaults and saved schedules are concrete configuration, not automatic version migration. Retain catalog evidence, requested policy, resolved ID, and recorded settings privately. Actual provider execution remains separate. Keep unavailable controls or readbacks unverified and preserve global settings.
 
 For runner updates, retain the verified runtime in a versioned private path. A shared cache path is not a durable runtime pin.
 
@@ -155,6 +157,12 @@ Inspect Studio-local source directly. Remote source and installed skill readback
 Native creation uses the discovered destination ID. Verify actual creator, configured host, saved membership, first-turn policy, and requested settings independently. Preserve pending IDs, uncertain-launch rediscovery, and parent-owned bounded progress. Recorded settings do not prove provider execution or effective access. ChatGPT conversational Projects have no supported equivalent native coding membership route here. Cloud Work creation is a separate operation.
 
 ## Keep fleet failures visible
+
+Use one improvement responsibility for the [daily review](daily-improvement.md). Review the previous Singapore day plus missed-review gaps, recover owner corrections, and compare new incidents against verified repairs. Make only justified small reversible local fixes with reproduction, required checks, independent review where required, and rollback. For larger changes, report actual harm, potential impact, affected resources, compatibility, and a concrete proposal before expanding scope. Keep opportunity suggestions separate from automatic implementation.
+
+Produce a private derived report that references existing journal evidence. Preserve source timestamps, coverage gaps, stable finding IDs, and separate source/published/installed/guidance-loaded/adopted/live-outcome states. Feed material changes into the existing daily briefing with distinct effect scopes. Missing or stale reports are gaps, not clean reviews. Use existing parent handoff when the briefing cannot access local files; no second delivery system is established by writing a report.
+
+Classify approval friction by exact action and environment before recommending a setting. Reuse existing owner authority, preflight the native local route, prepare the full prompt before updating an existing schedule, and use read operations for status. Preserve denied and uncertain actions. Never modify permissions to obtain a green run. Keep a manual rescue distinct from a scheduled occurrence; null next-run metadata alone proves no cause. Stable fleet action text avoids paraphrase-driven alert episodes. A policy-only eligibility change does not prove a fresh native recovery.
 
 Recover the primary private home through the trusted installed route. Use `fleet` with the existing responsibility journal to retain repository, installed guidance and launcher, native coding jobs, cloud jobs, schedules, and monitoring coverage. Acquire fresh actual reads in the environment that owns each source. Track source age, partial coverage, denied actions, expired login, unavailable tools, timeouts, pressure, failed workflows, failed monitoring, suspension, uncertainty, pending delivery, and recovery separately. Configuration is not execution. A completed run is not delivered work. Missing coverage stays unknown.
 

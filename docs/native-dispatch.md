@@ -105,6 +105,8 @@ Omitting `requestedSettings` uses the ordinary Sol High floor. An explicit setti
 
 `dispatch.coordinatorRequestedSettings` selects the coordinator policy independently. It is private repository metadata, not a native create argument. Omission preserves legacy records and the ordinary Sol High minimum, accepting stronger recorded effort. Explicit settings require an exact recorded model and effort. A different model or effort below High also requires `scopedOverrideRef` naming the explicit owner source for this objective's coordinator. Child-only settings never lower the coordinator policy; coordinator-only settings never lower the child policy.
 
+The [current family policy](../AGENTS.md#standing-thread-and-model-policy) guides the native coordinator before it calls this command. The CLI does not discover models or resolve prose aliases. Resolve the requested family and effort from the destination's current supported catalog, then supply the exact ID and effort through the existing explicit settings fields. Retain the catalog evidence and the scoped policy source. The examples here are concrete historical wire values, not a promise that those versions remain latest. Preserve legacy records and default behavior; new policy does not retroactively alter their launches. A saved automation likewise requires a supported update to adopt a new concrete model version.
+
 ```json
 {
   "coordinatorRequestedSettings": {

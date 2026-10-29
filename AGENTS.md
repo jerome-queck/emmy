@@ -25,19 +25,30 @@ Use the designated host's native `mcp__codex_app__create_thread` with the discov
 
 Discover the saved native project before dispatch. After creation, read back the returned thread's actual saved project membership and compare its project ID with the intended saved project. A working directory, request parameter, or returned thread ID alone does not prove membership. Retain the native thread ID, project ID, executor/host readback, requested settings, and verification time privately. If membership is missing, attach that same thread through the supported native project operation and read it back. If membership is unavailable or ambiguous, retain it as unverified and rediscover before any retry. Do not create a replacement thread to repair an uncertain association or edit native databases. Preserve contrary owner observations alongside later readbacks. See [the dispatch contract](docs/change-delivery.md#verify-the-created-threads-project-membership).
 
-Use these model choices for Emmy-managed work:
+Name model policy by family and effort. Resolve that choice against the destination host's current supported model catalog immediately before dispatch. Concrete API calls and saved schedules need a supported model ID; a prose alias does not make the runtime resolve it. Preserve the family and effort, record the resolved version and catalog evidence privately, and fail clearly if unavailable or ambiguous. Never silently substitute another family or effort. Existing threads keep their selections. Saved automations keep their concrete ID until a supported update is authorized and verified.
 
-| Role | Model and reasoning effort |
-| --- | --- |
-| Ordinary Codex session | `gpt-6.1-sol` at `high` minimum |
-| Nontrivial subagent | `gpt-6.1-sol` at `medium` minimum |
-| Trivial subagent | `gpt-6-luna` at `max` permitted |
-| Most automations | `gpt-6-luna` at `max` by default |
-| Heavy-reasoning automation | `gpt-6.1-sol` at `high` or higher |
+Choose for the actual task, including expected retries, verification, and handoff cost. Do not try an underpowered model first merely because its nominal price is lower. These are starting policies, not measured rankings between model families:
 
-A trivial subagent performs one bounded action with a known target and supplied inputs. Investigation, architecture, and cross-file implementation are nontrivial. Ordinary lead sessions keep the Sol High floor even for small requests. Compare effort levels within the selected model; effort names do not rank different model families.
+| Task group | Default | Change the choice when |
+| --- | --- | --- |
+| Ordinary coding lead; daily improvement planner and reviewer | Sol High | Use XHigh for a concrete reasoning difficulty, not every task. |
+| Bounded implementation with understood cause and acceptance; nontrivial helper | Sol Medium | Use High for uncertain behavior, cross-file coupling, or difficult verification. |
+| Mechanical helper with known target and supplied inputs | Luna Max | Use Sol Medium or High before starting if the task needs investigation or judgment. |
+| Computer Use and UI diagnosis | Terra High | Use Medium for an established bounded routine; XHigh for an evidenced difficult UI/reasoning problem. |
+| Read-only routine evidence collection or suggestions | Sol Medium | Use Luna Max only for a clearly specified extraction; High for ambiguous conflicting evidence. |
+| Established deterministic automation | Luna Max | Use a capable Sol or Terra lead when new interpretation, debugging, or meaningful repair is required. |
 
-Honor explicit human model and effort instructions within their named scope, including stronger reviewer choices. Existing thread selections remain in place. Project `.codex/config.toml` supplies defaults for new sessions and helpers. Explicit scoped instructions take precedence over project defaults and pstack role defaults. Do not change Studio-wide settings or another project's defaults. Distinguish requested settings, resolved configuration, and observed execution. If model selection or readback is unavailable, report that gap instead of claiming enforcement.
+Luna uses Max only. Sol and Terra never use Max or Ultra; XHigh is their ceiling. Avoid Light/Low unless the task explicitly requires speed. Medium and High are normal choices. Describe the concrete complexity before choosing XHigh. Effort names compare settings within a model, not different families.
+
+A trivial subagent performs one bounded action with a known target and supplied inputs. Investigation, architecture, unknown bugs, and cross-file implementation are nontrivial. Luna is not a mandatory first attempt. Escalate unexpected failures or scope growth with their evidence instead of repeating weak attempts. The lead independently reviews a helper's actual diff and verification.
+
+Honor explicit human model and effort instructions within their named scope. Project `.codex/config.toml` supplies concrete startup defaults; it is not a dynamic family resolver. The dispatch coordinator translates this family policy into exact supported requests and scoped overrides accepted by the existing dispatch contract. Do not edit global settings or another project's defaults. Distinguish requested policy, resolved ID, recorded settings, and observed execution. If any readback is unavailable, report it.
+
+All agents and subagents apply the installed pstack principles, not only the lead. Resolve and read the actual skill, pass its path plus the relevant project verification and authority requirements in every delegation, and retain one owner per change. These scoped model rules override conflicting pstack role defaults. Use the [official-source allocation rationale](docs/research/model-allocation.md) and local measurements to refine choices; never invent a model mapping or task benchmark.
+
+## Daily improvement
+
+Follow [the daily review procedure](docs/daily-improvement.md). Review prior-day evidence and unreviewed gaps, preserve verified repairs, make justified bounded reversible fixes, and report substantial changes with impact and rollback. Reuse existing responsibilities and the existing daily briefing. Keep suggestions separate from implementation. A derived report, a local patch, and a manual rescue do not prove deployment, adoption, or a repaired recurring trigger.
 
 ## Persistent calendar planning
 
