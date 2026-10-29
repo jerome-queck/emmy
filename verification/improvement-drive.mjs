@@ -49,12 +49,12 @@ export async function driveTokenReview({ home, run, scenario, report, evidenceDi
 export async function driveImprovementReport({ sourceRoot, root, home, scenario, report, evidenceDir }) {
   const directory = await realpath(await mkdir(join(home, 'improvement'), { recursive: true }).then(() => join(home, 'improvement')));
   const requests = join(directory, 'requests'); await mkdir(requests);
-  const env = await guardedEnvironment(requests, false);
+  const env = await guardedEnvironment(requests, false); const readEnv = await guardedEnvironment(requests, true);
   const outputs = []; let index = 0;
   const call = async (request, expected) => {
     const file = join(requests, `${index++}.json`); await writeFile(file, JSON.stringify({ directory, ...request }));
     const result = await new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, [join(sourceRoot, 'scripts/improvement-report.mjs'), '--file', file], { env: { ...process.env, ...env, PATH: `${join(root, 'bin')}:${process.env.PATH}` } });
+      const child = spawn(process.execPath, [join(sourceRoot, 'scripts/improvement-report.mjs'), '--file', file], { env: { ...process.env, ...(request.action === 'read' ? readEnv : env), PATH: `${join(root, 'bin')}:${process.env.PATH}` } });
       let stdout = ''; let stderr = ''; child.stdout.on('data', bytes => { stdout += bytes; }); child.stderr.on('data', bytes => { stderr += bytes; }); child.on('error', reject); child.on('close', code => resolve({ code, stdout, stderr }));
     }); outputs.push({ request, ...result }); assert.equal(result.code, expected, result.stdout); return JSON.parse(result.stdout).data;
   };
@@ -66,9 +66,10 @@ export async function driveImprovementReport({ sourceRoot, root, home, scenario,
   const value = terminalReport(new Date().toISOString());
   assert.equal((await call({ action: 'publish', report: value }, 0)).status, 'published');
   assert.equal((await call({ action: 'publish', report: value }, 0)).status, 'identical');
-  assert.equal((await call({ action: 'publish', report: { ...value, findings: 1 } }, 3)).status, 'conflict');
+  assert.equal((await call(read, 0)).status, 'completed-empty');
+  assert.equal((await call({ action: 'publish', report: { ...value, status: 'failed', coverage: 'partial', summary: 'Contradictory review failure.' } }, 3)).status, 'conflict');
   const before = await readdir(directory); const bytes = await Promise.all(before.filter(name => name.endsWith('.json')).map(name => readFile(join(directory, name))));
-  assert.equal((await call(read, 0)).status, 'completed-empty'); assert.deepEqual(await readdir(directory), before); assert.deepEqual(await Promise.all(before.filter(name => name.endsWith('.json')).map(name => readFile(join(directory, name)))), bytes);
+  const disputed = await call(read, 3); assert.equal(disputed.status, 'conflict'); assert.deepEqual(disputed.report, value); assert.equal(disputed.conflictingReport.status, 'failed'); assert.deepEqual(await readdir(directory), before); assert.deepEqual(await Promise.all(before.filter(name => name.endsWith('.json')).map(name => readFile(join(directory, name)))), bytes);
   await call({ action: 'release', ownerToken: owner.ownerToken }, 0);
   const retained = join(evidenceDir, 'improvement-report'); await cp(directory, retained, { recursive: true }); await writeFile(join(retained, 'results.json'), JSON.stringify(outputs, null, 2));
   report.improvementReport = { retained, declaredOnly: true };

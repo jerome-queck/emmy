@@ -46,6 +46,12 @@ function report(value) {
   need(value.provenance !== 'scheduled' || Date.parse(value.generatedAt) >= Date.parse(value.scheduledFor), 'Scheduled report cannot predate its occurrence');
   return value;
 }
+async function conflictReport(path, slot, original) {
+  const value = report(strictJson(await ordinary(path, 16384)));
+  need(hash(canonical([value.kind, new Date(value.scheduledFor).toISOString(), value.provenance])) === slot, 'Conflict marker slot identity mismatch');
+  need(canonical(value) !== canonical(original), 'Conflict marker must retain a different report');
+  return value;
+}
 async function publish(directory, name, bytes) {
   const temporary = join(directory, `.pending-${randomUUID()}`); const handle = await open(temporary, 'wx', 0o600);
   try { await handle.writeFile(bytes); } finally { await handle.close(); }
@@ -53,7 +59,13 @@ async function publish(directory, name, bytes) {
     try { await link(temporary, join(directory, name)); return 'published'; }
     catch (error) {
       if (error.code !== 'EEXIST') throw error;
-      if (await ordinary(join(directory, name), 16384) === bytes) return 'identical';
+      const original = await ordinary(join(directory, name), 16384);
+      if (original === bytes) return 'identical';
+      const marker = join(directory, `conflict-${name}`);
+      try { await link(temporary, marker); } catch (other) {
+        if (other.code !== 'EEXIST') throw other;
+        await conflictReport(marker, name.slice(0, -5), report(strictJson(original)));
+      }
       const conflict = `conflict-${name.slice(0, -5)}-${hash(bytes)}.json`;
       try { await link(temporary, join(directory, conflict)); } catch (other) { if (other.code !== 'EEXIST') throw other; need(await ordinary(join(directory, conflict), 16384) === bytes, 'Conflict evidence collision'); }
       return 'conflict';
@@ -101,6 +113,9 @@ export async function improvementReport(request, { evaluatedAt = new Date().toIS
   let value;
   try { value = report(strictJson(await ordinary(join(selected, `${slot}.json`), 16384))); } catch (error) { if (error.code === 'ENOENT') return { status: 'missing', slot }; throw error; }
   need(value.kind === request.kind && Date.parse(value.scheduledFor) === Date.parse(request.scheduledFor) && value.provenance === request.provenance, 'Report slot identity mismatch');
+  let conflictingReport;
+  try { conflictingReport = await conflictReport(join(selected, `conflict-${slot}.json`), slot, value); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  if (conflictingReport) return { status: 'conflict', slot, report: value, conflictingReport, evaluatedAt, assurance: 'declared-terminal-report', limits: ['Different reports are retained for this occurrence. The first report is unchanged; the dispute requires explicit review. Reads inspect only the canonical slot and its conflict marker and may precede a concurrent marker publication.'] };
   const now = Date.parse(evaluatedAt); const generated = Date.parse(value.generatedAt);
   const sourceWindowCurrent = Date.parse(value.sourceWindow.end) >= Date.parse(request.minimumSourceEnd);
   const status = generated > now || Date.parse(value.scheduledFor) > now ? 'future' : now - generated > request.maxAgeSeconds * 1000 || now - Date.parse(value.sourceWindow.end) > request.maxAgeSeconds * 1000 ? 'stale' : value.status === 'failed' ? 'failed' : value.status === 'skipped' ? 'skipped' : !sourceWindowCurrent || value.coverage !== 'complete' || !value.evidenceRefs.length ? 'partial' : value.findings ? 'completed-findings' : 'completed-empty';

@@ -13,7 +13,7 @@ async function fixture(t) {
   const read = { action: 'read', kind: 'maintenance', scheduledFor: '2026-10-29T03:00:00Z', maxAgeSeconds: 86400, provenance: 'scheduled', minimumSourceEnd: terminalReport().sourceWindow.end };
   return { directory, run, read };
 }
-function cli(file) { return new Promise((resolve, reject) => { const child = spawn(process.execPath, ['scripts/improvement-report.mjs', '--file', file]); let stdout = ''; child.stdout.on('data', bytes => { stdout += bytes; }); child.on('error', reject); child.on('close', code => resolve({ code, ...JSON.parse(stdout) })); }); }
+function cli(file, env = {}) { return new Promise((resolve, reject) => { const child = spawn(process.execPath, ['scripts/improvement-report.mjs', '--file', file], { env: { ...process.env, ...env } }); let stdout = ''; child.stdout.on('data', bytes => { stdout += bytes; }); child.on('error', reject); child.on('close', code => resolve({ code, ...JSON.parse(stdout) })); }); }
 test('concurrent real-process claims across all jobs have exactly one holder and exact-token release', async t => {
   const { directory, run } = await fixture(t); const files = await Promise.all(['maintenance', 'suggestions', 'token-optimisation'].map(async (kind, i) => { const file = join(directory, `request-${i}.json`); await writeFile(file, JSON.stringify({ action: 'claim', directory, kind, runId: `run-${i}` })); return file; }));
   const results = await Promise.all(files.map(cli)); assert.equal(results.filter(row => row.data.status === 'claimed').length, 1); assert.equal(results.filter(row => row.data.status === 'held').length, 2);
@@ -90,4 +90,47 @@ test('contradictory publication degrades reads and retains both reports through 
   assert.equal((await run({ action: 'publish', report: original })).status, 'identical');
   assert.equal((await run({ action: 'publish', report: candidate })).status, 'conflict');
   assert.equal((await run(read)).status, 'conflict');
+});
+
+test('concurrent contradictory real-process publications retain the first dispute and all candidates', async t => {
+  const { directory, run, read } = await fixture(t); const original = terminalReport();
+  const first = await run({ action: 'publish', report: original });
+  const candidates = Array.from({ length: 4 }, (_, i) => ({ ...original, runId: `contradiction-${i}`, status: 'failed', coverage: 'partial' }));
+  const files = await Promise.all(candidates.map(async (report, i) => { const file = join(directory, `candidate-${i}.json`); await writeFile(file, JSON.stringify({ action: 'publish', directory, report })); return file; }));
+  const results = await Promise.all(files.map(file => cli(file)));
+  assert.ok(results.every(result => result.code === 3 && result.data.status === 'conflict'));
+  const disputed = await run(read); assert.equal(disputed.status, 'conflict'); assert.ok(candidates.some(value => value.runId === disputed.conflictingReport.runId));
+  const marker = await readFile(join(directory, `conflict-${first.slot}.json`));
+  for (const candidate of candidates) assert.equal((await run({ action: 'publish', report: candidate })).status, 'conflict');
+  assert.deepEqual(await readFile(join(directory, `conflict-${first.slot}.json`)), marker);
+  const retained = (await readdir(directory)).filter(name => name.startsWith(`conflict-${first.slot}-`)); assert.equal(retained.length, candidates.length);
+  assert.deepEqual(JSON.parse(await readFile(join(directory, `${first.slot}.json`))), original);
+});
+test('malformed, oversized, nonregular, symlink and wrong-slot markers fail closed on read and conflicting publish', async t => {
+  const { directory, run, read } = await fixture(t); const original = terminalReport();
+  const first = await run({ action: 'publish', report: original }); const marker = join(directory, `conflict-${first.slot}.json`);
+  const candidate = { ...original, status: 'failed' };
+  for (const body of ['{', ' '.repeat(16385), JSON.stringify(original), JSON.stringify({ ...candidate, provenance: 'manual' }), JSON.stringify(candidate).replace('"schemaVersion":1', '"schemaVersion":1,"schemaVersion":1')]) {
+    await writeFile(marker, body); await assert.rejects(run(read)); await assert.rejects(run({ action: 'publish', report: candidate })); await rm(marker);
+  }
+  await mkdir(marker); await assert.rejects(run(read)); await assert.rejects(run({ action: 'publish', report: candidate })); await rm(marker, { recursive: true });
+  const target = join(directory, 'unrelated'); await writeFile(target, JSON.stringify(candidate)); await symlink(target, marker);
+  await assert.rejects(run(read)); await assert.rejects(run({ action: 'publish', report: candidate })); assert.deepEqual(JSON.parse(await readFile(target)), candidate);
+});
+test('interruption immediately after atomic marker publication cannot restore a healthy read', async t => {
+  const { directory, run, read } = await fixture(t); const original = terminalReport(); const first = await run({ action: 'publish', report: original });
+  const candidate = { ...original, status: 'failed', coverage: 'partial' }; const file = join(directory, 'request.json'); await writeFile(file, JSON.stringify({ action: 'publish', directory, report: candidate }));
+  const preload = join(directory, 'interrupt.mjs');
+  await writeFile(preload, `import fs from 'node:fs/promises'; import { syncBuiltinESMExports } from 'node:module'; const link = fs.link; fs.link = async (source, target) => { await link(source, target); if (target.endsWith('conflict-${first.slot}.json')) process.exit(97); }; syncBuiltinESMExports();`);
+  const result = await new Promise((resolve, reject) => { const child = spawn(process.execPath, ['--import', preload, 'scripts/improvement-report.mjs', '--file', file]); child.on('error', reject); child.on('close', resolve); });
+  assert.equal(result, 97); assert.deepEqual(JSON.parse(await readFile(join(directory, `conflict-${first.slot}.json`))), candidate);
+  assert.equal((await readdir(directory)).filter(name => name.startsWith(`conflict-${first.slot}-`)).length, 0);
+  assert.equal((await run(read)).status, 'conflict'); assert.deepEqual(JSON.parse(await readFile(join(directory, `${first.slot}.json`))), original);
+});
+test('bounded reads ignore unrelated malformed history and retain provenance separation after a dispute', async t => {
+  const { directory, run, read } = await fixture(t); const original = terminalReport();
+  await run({ action: 'publish', report: original }); await run({ action: 'publish', report: { ...original, status: 'failed' } });
+  await writeFile(join(directory, 'conflict-unrelated.json'), ' '.repeat(20000));
+  assert.equal((await run(read)).status, 'conflict'); assert.equal((await run({ ...read, provenance: 'manual' })).status, 'missing');
+  const manual = { ...original, provenance: 'manual' }; await run({ action: 'publish', report: manual }); assert.equal((await run({ ...read, provenance: 'manual' })).status, 'completed-empty');
 });
