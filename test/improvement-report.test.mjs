@@ -66,3 +66,14 @@ test('duplicate request and retained JSON keys are refused', async t => {
   const result = await run({ action: 'publish', report: terminalReport() });
   await writeFile(join(directory, `${result.slot}.json`), JSON.stringify(terminalReport()).replace('"schemaVersion":1', '"schemaVersion":1,"schemaVersion":1')); await assert.rejects(run(read), /Duplicate/);
 });
+test('equivalent UTC timestamp spellings share one immutable occurrence slot', async t => {
+  const { run, read } = await fixture(t); const report = terminalReport();
+  const first = await run({ action: 'publish', report });
+  assert.equal((await run({ ...read, scheduledFor: '2026-10-29T03:00:00.000Z' })).status, 'completed-empty');
+  assert.equal((await run({ action: 'publish', report })).status, 'identical');
+  const spelling = await run({ action: 'publish', report: { ...report, scheduledFor: '2026-10-29T03:00:00.000Z' } });
+  assert.equal(spelling.status, 'conflict'); assert.equal(spelling.slot, first.slot);
+  const changed = await run({ action: 'publish', report: { ...report, scheduledFor: '2026-10-29T03:00:00.000Z', summary: 'Different second body.' } });
+  assert.equal(changed.status, 'conflict'); assert.equal(changed.slot, first.slot);
+  assert.equal((await run({ ...read, scheduledFor: '2026-10-29T03:00:00.000Z' })).report.scheduledFor, report.scheduledFor);
+});
