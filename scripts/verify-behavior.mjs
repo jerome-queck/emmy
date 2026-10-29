@@ -16,6 +16,7 @@ import { driveCloud } from '../verification/cloud-drive.mjs';
 import { driveCalendar, verifyCalendarRetention } from '../verification/calendar-drive.mjs';
 import { driveCalendarRegister } from '../verification/calendar-register-drive.mjs';
 import { driveMorning } from '../verification/morning-drive.mjs';
+import { driveTokenReview, driveImprovementReport } from '../verification/improvement-drive.mjs';
 import { driveFleet } from '../verification/fleet-drive.mjs';
 
 const sourceRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -44,7 +45,7 @@ const git = args => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8
 const review = data => data.responsibilities[0].record;
 const reconcile = async (id, expected = 0, imports = null, selectedHome = home, asOf = now()) => run(['reconcile', '--id', id, '--as-of', asOf, ...(imports ? ['--import', await fixture(`import-${randomUUID()}.json`, { schemaVersion: 1, records: imports })] : [])], expected, selectedHome);
 try {
-  assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing', 'dispatch', 'calendar', 'cloud', 'fleet'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing|dispatch|calendar|cloud|fleet');
+  assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing|dispatch|calendar|cloud|fleet|token-review');
   for (const path of ['registry', 'docs', '.agents', 'src', 'scripts']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
   await mkdir(join(home, 'records'), { recursive: true }); await mkdir(join(root, 'bin'));
   for (const name of ['gh', 'codex', 'curl', 'ssh']) await writeFile(join(root, 'bin', name), `#!/bin/sh\necho invoked >> '${join(home, 'executor-invoked')}'\nexit 99\n`, { mode: 0o755 });
@@ -60,14 +61,18 @@ try {
   assert.deepEqual((await run(['help'])).commands.map(item => item.name), commands.map(item => item.name));
   await run(['doctor']); await run(['catalog']); await run(['snapshot'], 2); await run(['help', '--bogus'], 2);
   scenario('orientation', 'Metadata-defined commands, doctor in isolated repository, catalog and rejected legacy/unknown options.');
-  if (!['self-check-repair', 'dispatch', 'calendar', 'cloud', 'fleet'].includes(report.focus)) await driveBriefing({ sourceRoot, root, home, run, scenario, report, children });
-  if (!['self-check-repair', 'briefing', 'calendar', 'cloud', 'fleet'].includes(report.focus)) await driveDispatch({ root, home, run, scenario, report, bindings, target });
+  if (!['self-check-repair', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review'].includes(report.focus)) await driveBriefing({ sourceRoot, root, home, run, scenario, report, children });
+  if (!['self-check-repair', 'briefing', 'calendar', 'cloud', 'fleet', 'token-review'].includes(report.focus)) await driveDispatch({ root, home, run, scenario, report, bindings, target });
+  if (!report.focus || report.focus === 'token-review') {
+    await driveTokenReview({ home, run, scenario, report, evidenceDir });
+    await driveImprovementReport({ sourceRoot, root, home, scenario, report, evidenceDir });
+  }
   if (!report.focus || report.focus === 'cloud') await driveCloud({ sourceRoot, root, home, run, scenario, report, children, evidenceDir });
   if (!report.focus || report.focus === 'calendar') await driveCalendar({ home, run, scenario, report });
   if (!report.focus || report.focus === 'calendar') await driveCalendarRegister({ home, run, scenario, report });
   if (!report.focus || report.focus === 'fleet') await driveMorning({ home, bindings, target, run, scenario, report });
   if (!report.focus || report.focus === 'fleet') await driveFleet({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir, children });
-  if (!['briefing', 'dispatch', 'calendar', 'cloud', 'fleet'].includes(report.focus)) {
+  if (!['briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review'].includes(report.focus)) {
   const artifact = join(home, 'artifact.txt'); const original = 'Expected fixture bytes\n'; await writeFile(artifact, original);
   const definition = { id: 'self-check', parents: [], goal: 'Retain the expected local artifact and detect damage.', context: 'Synthetic responsibility survives a fresh process without a prior conversation.', action: 'verify', resource: 'fixture', destination: 'local-evidence', target, authorityRef: { reference: 'Synthetic owner request', action: 'verify', resource: 'fixture', destination: 'local-evidence' }, criteria: [{ id: 'artifact', description: 'Actual bytes match the retained expectation.', evidence: 'local-digest', path: artifact, sha256: digest(original) }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'artifact-watch', method: 'Compare expected local bytes.', intendedEffect: 'Maintain expected artifact bytes.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' } };
   const adopted = await run(['responsibility', '--file', await fixture('definition.json', definition)]);

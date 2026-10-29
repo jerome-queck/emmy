@@ -107,6 +107,17 @@
       "feature": "fleet"
     },
     {
+      "name": "token-review",
+      "description": "Assess bounded supplied usage captures and complete cost per verified success without telemetry or execution.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "evidence"
+    },
+    {
       "name": "calendar",
       "description": "Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution.",
       "options": [
@@ -284,7 +295,8 @@
         "briefing",
         "guidance-pin",
         "calendar",
-        "calendar-register"
+        "calendar-register",
+        "token-review"
       ],
       "scenarios": [
         "self-check-repair",
@@ -297,7 +309,8 @@
         "briefing-draft",
         "briefing-boundaries",
         "calendar-acceptance",
-        "calendar-register"
+        "calendar-register",
+        "token-review"
       ],
       "properties": [
         "observation-gates",
@@ -327,7 +340,8 @@
         "cloud-recovery",
         "restored-current-context",
         "publication-interruption",
-        "derived-boundaries"
+        "derived-boundaries",
+        "improvement-report"
       ],
       "properties": [
         "restore-suspension",

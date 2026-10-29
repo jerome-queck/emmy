@@ -13,6 +13,7 @@ import { cloud } from '../src/cloud.mjs';
 import { calendar } from '../src/calendar.mjs';
 import { calendarRegister } from '../src/calendar-register-io.mjs';
 import { fleet } from '../src/fleet.mjs';
+import { tokenReview } from '../src/token-review.mjs';
 import { signin } from '../src/signin.mjs';
 
 const args = process.argv.slice(2);
@@ -59,6 +60,9 @@ try {
     case 'cloud':
       data = await cloud(home, { file: resolve(options.file) });
       exitCode = ['ready'].includes(data.status) && !['backpressure', 'identity-conflict', 'deferred', 'backoff'].includes(data.outcome) ? 0 : 3; break;
+    case 'token-review':
+      data = await tokenReview({ file: resolve(options.file) });
+      exitCode = data.status === 'checked' ? 0 : 3; break;
     case 'calendar':
       data = await calendar({ file: resolve(options.file) });
       exitCode = data.status === 'checked' ? 0 : 3; break;
