@@ -31,8 +31,8 @@ test('immutable slots permit exact duplicate, preserve conflicts, and keep manua
   const first = await run({ action: 'publish', report }); assert.equal(first.status, 'published'); assert.equal((await run({ action: 'publish', report })).status, 'identical');
   const bytes = await readFile(join(directory, `${first.slot}.json`), 'utf8');
   assert.equal((await run({ action: 'publish', report: { ...report, runId: 'second', findings: 1 } })).status, 'conflict');
-  assert.equal(await readFile(join(directory, `${first.slot}.json`), 'utf8'), bytes); assert.equal((await readdir(directory)).filter(name => name.startsWith('conflict-')).length, 1);
-  assert.equal((await run(read)).status, 'completed-empty');
+  assert.equal(await readFile(join(directory, `${first.slot}.json`), 'utf8'), bytes); assert.equal((await readdir(directory)).filter(name => name.startsWith('conflict-')).length, 2);
+  assert.equal((await run(read)).status, 'conflict');
   const other = { ...report, kind: 'suggestions', provenance: 'manual' }; await run({ action: 'publish', report: other }); assert.equal((await run({ ...read, kind: 'suggestions' })).status, 'missing');
 });
 test('read distinguishes empty, findings, failed, skipped, stale, future and incomplete evidence without mutations', async t => {
@@ -76,4 +76,18 @@ test('equivalent UTC timestamp spellings share one immutable occurrence slot', a
   const changed = await run({ action: 'publish', report: { ...report, scheduledFor: '2026-10-29T03:00:00.000Z', summary: 'Different second body.' } });
   assert.equal(changed.status, 'conflict'); assert.equal(changed.slot, first.slot);
   assert.equal((await run({ ...read, scheduledFor: '2026-10-29T03:00:00.000Z' })).report.scheduledFor, report.scheduledFor);
+});
+
+test('contradictory publication degrades reads and retains both reports through exact repeats', async t => {
+  const { directory, run, read } = await fixture(t); const original = terminalReport();
+  const first = await run({ action: 'publish', report: original });
+  const candidate = { ...original, status: 'failed', coverage: 'partial', summary: 'The review failed.' };
+  assert.equal((await run({ action: 'publish', report: candidate })).status, 'conflict');
+  const before = await readdir(directory); const bytes = await Promise.all(before.map(name => readFile(join(directory, name))));
+  const result = await run(read); assert.equal(result.status, 'conflict'); assert.deepEqual(result.report, original); assert.deepEqual(result.conflictingReport, candidate);
+  assert.deepEqual(await readdir(directory), before); assert.deepEqual(await Promise.all(before.map(name => readFile(join(directory, name)))), bytes);
+  assert.deepEqual(JSON.parse(await readFile(join(directory, `${first.slot}.json`))), original);
+  assert.equal((await run({ action: 'publish', report: original })).status, 'identical');
+  assert.equal((await run({ action: 'publish', report: candidate })).status, 'conflict');
+  assert.equal((await run(read)).status, 'conflict');
 });
