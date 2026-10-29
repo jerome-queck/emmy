@@ -31,14 +31,16 @@ Choose for the actual task, including expected retries, verification, and handof
 
 | Task group | Default | Change the choice when |
 | --- | --- | --- |
-| Ordinary coding lead; daily improvement planner and reviewer | Sol High | Use XHigh for a concrete reasoning difficulty, not every task. |
+| Ordinary coding lead; substantial diagnosis or review | Sol High | Use XHigh for a concrete reasoning difficulty, not every task. |
+| Daily improvement coordinator | Sol Medium | Delegate ambiguous diagnosis, integration, identity, timezone, or concurrency work to Sol High before implementation. |
 | Bounded implementation with understood cause and acceptance; nontrivial helper | Sol Medium | Use High for uncertain behavior, cross-file coupling, or difficult verification. |
 | Mechanical helper with known target and supplied inputs | Luna Max | Use Sol Medium or High before starting if the task needs investigation or judgment. |
 | Computer Use and UI diagnosis | Terra High | Use Medium for an established bounded routine; XHigh for an evidenced difficult UI/reasoning problem. |
 | Read-only routine evidence collection or suggestions | Sol Medium | Use Luna Max only for a clearly specified extraction; High for ambiguous conflicting evidence. |
 | Established deterministic automation | Luna Max | Use a capable Sol or Terra lead when new interpretation, debugging, or meaningful repair is required. |
+| Exceptional architecture or difficult root-cause analysis | Astra High | Use XHigh only with a specific complexity reason; confirm availability before dispatch. |
 
-Luna uses Max only. Sol and Terra never use Max or Ultra; XHigh is their ceiling. Avoid Light/Low unless the task explicitly requires speed. Medium and High are normal choices. Describe the concrete complexity before choosing XHigh. Effort names compare settings within a model, not different families.
+Luna uses Max only. Sol and Terra never use Max or Ultra; XHigh is their ceiling. Avoid Light/Low unless the task explicitly requires speed. Medium and High are normal choices. Describe the concrete complexity before choosing XHigh. Use standard speed unless the task explicitly requires faster execution. Effort names compare settings within a model, not different families.
 
 A trivial subagent performs one bounded action with a known target and supplied inputs. Investigation, architecture, unknown bugs, and cross-file implementation are nontrivial. Luna is not a mandatory first attempt. Escalate unexpected failures or scope growth with their evidence instead of repeating weak attempts. The lead independently reviews a helper's actual diff and verification.
 
