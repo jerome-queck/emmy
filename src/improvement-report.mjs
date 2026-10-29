@@ -92,15 +92,15 @@ export async function improvementReport(request, { evaluatedAt = new Date().toIS
   if (request.action === 'publish') {
     const value = report(request.report);
     need(Date.parse(value.generatedAt) <= Date.parse(evaluatedAt), 'Future report cannot be published');
-    const slot = hash(canonical([value.kind, value.scheduledFor, value.provenance]));
+    const slot = hash(canonical([value.kind, new Date(value.scheduledFor).toISOString(), value.provenance]));
     return { status: await publish(selected, `${slot}.json`, `${canonical(value)}\n`), slot, assurance: 'declared-terminal-report' };
   }
   need(kinds.includes(request.kind) && stamp(request.scheduledFor) && ['scheduled', 'manual'].includes(request.provenance) && Number.isSafeInteger(request.maxAgeSeconds) && request.maxAgeSeconds >= 0 && request.maxAgeSeconds <= 31536000, 'Expected exact occurrence, provenance and bounded maximum age');
   need(stamp(request.minimumSourceEnd), 'Expected minimum original source end required');
-  const slot = hash(canonical([request.kind, request.scheduledFor, request.provenance]));
+  const slot = hash(canonical([request.kind, new Date(request.scheduledFor).toISOString(), request.provenance]));
   let value;
   try { value = report(strictJson(await ordinary(join(selected, `${slot}.json`), 16384))); } catch (error) { if (error.code === 'ENOENT') return { status: 'missing', slot }; throw error; }
-  need(value.kind === request.kind && value.scheduledFor === request.scheduledFor && value.provenance === request.provenance, 'Report slot identity mismatch');
+  need(value.kind === request.kind && Date.parse(value.scheduledFor) === Date.parse(request.scheduledFor) && value.provenance === request.provenance, 'Report slot identity mismatch');
   const now = Date.parse(evaluatedAt); const generated = Date.parse(value.generatedAt);
   const sourceWindowCurrent = Date.parse(value.sourceWindow.end) >= Date.parse(request.minimumSourceEnd);
   const status = generated > now || Date.parse(value.scheduledFor) > now ? 'future' : now - generated > request.maxAgeSeconds * 1000 || now - Date.parse(value.sourceWindow.end) > request.maxAgeSeconds * 1000 ? 'stale' : value.status === 'failed' ? 'failed' : value.status === 'skipped' ? 'skipped' : !sourceWindowCurrent || value.coverage !== 'complete' || !value.evidenceRefs.length ? 'partial' : value.findings ? 'completed-findings' : 'completed-empty';
