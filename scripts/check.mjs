@@ -12,6 +12,7 @@ for (const args of [
   ['--test', 'test/guidance-pin.test.mjs'],
   ['--test', 'test/process-incarnation.test.mjs', 'test/cloud-migration.test.mjs'],
   ['--test', 'test/fleet.test.mjs', 'test/fleet-history.test.mjs', 'test/morning.test.mjs', 'test/morning-compact.test.mjs', 'test/morning-collection.test.mjs'],
+  ['--test', 'test/token-review.test.mjs', 'test/improvement-report.test.mjs'],
   ['scripts/verify-behavior.mjs'],
   ['--test', 'test/github-auto-merge.test.mjs'],
   ['scripts/verify-formal.mjs'],
