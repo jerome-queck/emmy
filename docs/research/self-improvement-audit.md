@@ -52,7 +52,7 @@ These probes show accepted representations, not proof of the original live cause
 | 2 | Verify provider-save, module generation, and local readback separately; investigate supported native timing recovery. | Recovery can duplicate or resurrect intentionally removed work. This needs the separate project's authority and same-ID live acceptance. |
 | 2 | Test ordinary-turn adoption and the next real scheduled occurrence. | Fixtures cannot establish these outcomes. Keep the gate pending if no legitimate occurrence is available. |
 
-The daily procedure is a safe first operating change. It reuses existing journals, reports exact stages, and keeps larger repairs reviewable. It creates no new scheduler, incident database, native writer, or permission grant.
+The daily procedure is a safe first operating change. It reuses existing journals, reports exact stages, and keeps larger repairs reviewable. The separate token assessor and bounded report handoff implement accounting and reporting safeguards. They do not repair the calendar or fleet gaps above. Native schedules use the existing scheduler; this feature creates no incident database, provider writer, or permission grant.
 
 ## Approval and model findings
 
@@ -66,6 +66,6 @@ Use the task-specific family policy in [AGENTS.md](../../AGENTS.md#standing-thre
 
 The existing focused calendar suites passed 67 tests; the focused fleet/morning suites passed 44. The aggregate passed its link, unit, behavioral, finite-property, and mutation stages before the publication model hit a sandbox-denied Java listener. The unchanged pinned publication verifier then passed under a narrowly reviewed escalation, including both intended model counterexamples and both copied-source filesystem mutants. The initial failure remains retained as an environment limit, not a product counterexample.
 
-Doctor reports `needs-attention` for retained private fleet state while integrity and generated references are current. `ok: true` is not equivalent to “all responsibilities healthy.” The final delivery report records post-change checks and any reviewed documentation-only source-pin update separately. No property, mutation, model bound, or production function changes in this audit.
+Doctor reports `needs-attention` for retained private fleet state while integrity and generated references are current. `ok: true` is not equivalent to “all responsibilities healthy.” The final delivery report records post-change checks, the token/report feature, and its reviewed source-pin update separately. The existing calendar/fleet production functions, finite properties, mutations, and model bounds remain unchanged. The new accounting and handoff boundaries have separate unit and CLI controls; they are not new finite proofs.
 
 Native calendar/mail state, current Academic OS deployment, future scheduler execution, Computer Use access, provider model execution, and ordinary-turn adoption remain outside this local source audit. The [daily review procedure](../daily-improvement.md) keeps those acceptance gates explicit.

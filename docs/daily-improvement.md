@@ -1,6 +1,6 @@
 # Run the daily improvement review
 
-Use one improvement responsibility and the existing private journal. The review finds new failures, checks unresolved ones, and makes justified small local repairs. It does not need to invent a change every day. The [incident audit](research/self-improvement-audit.md) records the initial gaps and distinguishes them from repaired incidents.
+Use one improvement responsibility and the existing private journal. Daily maintenance finds new failures, checks unresolved ones, and makes justified small local repairs. A separate daily pass suggests opportunities. A twice-weekly [token review](token-review.md) examines cost per verified successful task. None needs to invent a change. The [incident audit](research/self-improvement-audit.md) records the initial gaps and distinguishes them from repaired incidents.
 
 ## Acquire the previous day's evidence
 
@@ -44,7 +44,17 @@ Before the briefing uses a report, verify its review window, source ages, eviden
 
 Project material findings into the existing [briefing input](briefing.md), using separate exact `scope.effect` values for source repair, installation, and live acceptance. For example, “source fix passes regression” must not close “verify the next scheduled occurrence.” Use the original evidence references and correction authority, not the briefing itself. The existing checker decides whether declared support is current and complete. It does not parse this report automatically or authenticate its contents.
 
-The morning owner adds a concise improvement section to the existing briefing: verified changes, the remaining user-visible issue, and any real decision needed. Do not send a second competing daily digest. Suppress unchanged previously delivered details while retaining unresolved items privately. A report is delivered only after the normal same-message readback. If the local artifact is unavailable to the cloud briefing, use the existing authorized parent handoff and record that coverage gap until its readback succeeds.
+The morning owner adds a concise improvement section to the existing 07:45 Singapore briefing: verified changes, the remaining user-visible issue, and any real decision needed. Do not send a second competing daily digest. Suppress unchanged previously delivered details while retaining unresolved items privately. A report is delivered only after the normal same-message readback. If the local artifact is unavailable to the cloud briefing, use the existing authorized parent handoff and record that coverage gap until its readback succeeds. Never wait for a running review or delay the briefing to obtain a report.
+
+## Review token efficiency twice weekly
+
+Review the work since the previous accepted token review, including any gap. Use supported usage exports or explicitly supplied captures. Compare total planner, worker, reviewer, retry, and tool cost against verified outcomes. Keep measurements, estimates with methods, and unavailable data separate. A cheap failed attempt can increase total cost. Missing usage is not zero, and account-wide limits do not attribute usage to a task.
+
+Inspect instruction duplication and length, stale or contradictory context, demonstrated truncation, repeated reads or tool calls, model fit, and coordination overhead. Repeated reads may be necessary after changed bytes or in an independent review. A character count is not a measured token count; a long conversation alone does not prove context overflow. Keep observations distinct from the cause of a failed outcome.
+
+Use `token-review` for deterministic accounting of supplied captures, then interpret its explicit limits. Model downgrades need representative task-specific evidence under unchanged acceptance criteria. Suggest an upgrade when observed failures show inadequate capability. Never remove essential safety rules, owner constraints, evidence, or recovery instructions to improve a metric. No edits to private runtime prompts, hidden context mechanisms, global settings, or another project's instructions. A small local shortening needs semantic comparison, regression cases, required checks, and rollback. Substantial changes remain proposals.
+
+Keep the review compact. Reuse the same report and journal references. Retain a measured/recommended summary, its coverage limits, and only material opportunities for the existing briefing. Do not create a growing parallel review registry or run live mail/calendar experiments.
 
 ## Reduce avoidable approval friction
 
@@ -58,7 +68,7 @@ Scheduled tasks normally use a noninteractive approval policy when allowed. Work
 
 Do not change global or project security settings under the improvement grant. Recommend only the smallest identified setting with consequences after inspecting the actual blocked operation. Measure avoidable repeats and owner wait by category, not total prompts alone. Keep a manual rescue separate from the expected scheduled occurrence. Null next-run metadata alone proves neither failure nor recovery.
 
-## Prepare the two prompts
+## Prepare the three prompts
 
 The scheduling owner resolves the actual installed pstack path and prefixes each prompt with its valid skill invocation. All placeholders below must be replaced before saving. Use one supported native project scheduler. Inspect existing upkeep first and avoid overlapping owners. This document creates no schedule.
 
@@ -69,6 +79,18 @@ Maintenance prompt:
 Suggestions-only prompt:
 
 > Review recent Emmy friction and repeated useful work using the current repository AGENTS.md, installed pstack poteto-mode skill, and authorized retained evidence. Propose a small number of worthwhile new builds or automations. Check existing responsibilities and schedules for overlap. For each idea, give the concrete benefit, evidence, likely effort, recurring resource cost, risks, required access, and a measurable acceptance check. Prioritize total successful work over nominal model cheapness. Follow the model policy and propagate pstack to any justified helper. It is valid to propose nothing. Save suggestions separately for the existing briefing. Do not implement ideas, create schedules, contact others, or change permissions in this pass.
+
+Token-optimisation prompt:
+
+> Review Emmy's token efficiency since the previous accepted review, following AGENTS.md, the installed pstack poteto-mode skill, docs/daily-improvement.md, and docs/token-review.md. Use available supported usage and outcome evidence; label measurements, estimates with methods, and unavailable figures separately. Run token-review over a bounded supplied capture. Optimise total cost per verified successful task, including planners, workers, reviews, retries and tool calls. Examine repeated reads, duplicated instructions, stale or contradictory context, demonstrated truncation, coordination overhead, and model/effort fit. Preserve safety, owner constraints, source evidence and recovery details. A model downgrade needs task-specific evidence; suggest stronger models when failures show insufficiency. Make only justified small reversible repo-local improvements with semantic comparison, regression cases, required checks, review and rollback. Do not edit private runtime instructions, permissions, inaccessible context mechanisms, or external systems. Publish a compact measured/recommended summary through the shared improvement report for the existing briefing. A review may make no change. Missing data is a coverage gap, not zero waste.
+
+## Stagger execution and bound the briefing read
+
+The intended native project schedule is maintenance daily at 05:45, token optimisation Monday and Thursday at 06:40, and suggestions daily at 07:15, all in `Asia/Singapore`. Maintenance should finish its bounded work by 06:30, token review by 07:05, and suggestions by 07:35. These are workflow deadlines, not a promise that the scheduler interrupts a run. Start only in a future slot. Check existing schedules before activation; the separately owned Sunday upkeep remains a full upkeep pass.
+
+Every review must claim the same cooperative improvement guard before reading mutable review state or writing fixes. A held or orphaned claim yields a skipped/blocked result. Never steal it on elapsed time, kill an unrelated worker, or clear it without exact ownership and explicit recovery. Retain a claim while its writers are active. A deadline or missing report must not become a reason to weaken verification or publish a successful status.
+
+Use the [compact report helper](improvement-report.md) with the same selected `<home>/improvement` directory for all three jobs. Publish the terminal handoff there. A briefing query names each expected occurrence, minimum original source cutoff, and maximum age; it reads only bounded report bytes, never repository or conversation history. Use a twelve-hour maximum for daily reports and five days for the most recent expected Monday/Thursday token report. Keep missing, stale, failed, skipped, partial, complete-empty, and complete-with-findings distinct. A manual run cannot satisfy the scheduled occurrence. The local read and its native bridge are acceptance checks before connecting the cloud briefing. Reading a report does not authenticate its evidence or prove delivery.
 
 ## Verify activation and the first real run
 
