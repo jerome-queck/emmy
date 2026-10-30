@@ -17,10 +17,10 @@ function scope(records, id, at) {
   const epoch = epochOf(records); const restore = restoredState(epoch, records.filter(record => record.type === 'observation' && record.responsibilityId === id), definition, at);
   return { definition, epoch, restore };
 }
-export function fleetSummary(records, id = null, at = new Date().toISOString()) {
+export function fleetSummary(records, id = null, at = new Date().toISOString(), viewOptions = {}) {
   const ids = id ? records.some(record => record.type === 'fleet-root' && record.responsibilityId === id) ? [id] : [] : [...new Set(records.filter(record => record.type === 'fleet-root').map(record => record.responsibilityId))].sort();
   return ids.map(responsibilityId => {
-    const view = fleetView(records, responsibilityId, at);
+    const view = fleetView(records, responsibilityId, at, viewOptions);
     try { const current = scope(records, responsibilityId, at); insist(!current.restore.suspended, 'Restored responsibility needs fresh epoch observations'); const root = fleetState(records, responsibilityId).root; insist(root && effectKey(current.definition) === root.effectKey, 'Fleet responsibility effect changed'); return view; }
     catch (error) { return { ...view, status: 'suspended', scopeError: error.message }; }
   });
@@ -41,11 +41,13 @@ export async function fleet(home, { file }) {
   shape(input, ['schemaVersion', 'responsibilityId', 'expectedHead', 'action', 'evidence'], 'fleet envelope');
   if (input.action?.operation === 'morning' && input.action.command?.step === 'open') insist(input.action.command.policyVersion === 2 && input.action.command.delivery && input.action.command.cleanupMode === 'batched-v1', 'New morning runs require current pinned policy and exact delivery target');
   if (input.action?.operation === 'group-send-intent') insist(input.action.delivery, 'New grouped sends require an exact authorized delivery target');
-  insist(input.schemaVersion === 1 && typeof input.responsibilityId === 'string', 'Invalid fleet envelope'); actionInput(input.action);
+  insist(input.schemaVersion === 1 && typeof input.responsibilityId === 'string', 'Invalid fleet envelope'); actionInput(input.action, 2);
+  if (input.action.operation === 'configure') insist(input.action.semanticsVersion === 2, 'New fleet roots require semanticsVersion two');
   let { records } = await readStore(home); const at = new Date().toISOString();
   if (input.action.operation === 'status') return fleetSummary(records, input.responsibilityId, at)[0] ?? { status: 'unconfigured' };
   const current = scope(records, input.responsibilityId, at); const projected = fleetState(records, input.responsibilityId);
   insist(!current.restore.suspended, 'Fresh exact responsibility epoch observations are required');
+  if (projected.status === 'ready' && projected.state.semanticsVersion !== 2) insist(input.action.operation === 'upgrade' || input.action.operation === 'resume' && projected.state.epochHash !== (current.epoch?.hash ?? null), 'Historical fleet semantics are replay-only; explicitly upgrade the exact predecessor before current writes');
   insist(projected.status === 'unconfigured' && input.action.operation === 'configure' || projected.status === 'ready', 'Fleet is unconfigured or has conflicting heads');
   if (projected.root) insist(effectKey(current.definition) === projected.root.effectKey, 'Fleet stable responsibility effect changed');
   if (input.action.operation === 'morning' && !['open', 'status'].includes(input.action.command.step)) insist(projected.state?.morningRuns?.find(run => run.id === input.action.command.runId)?.policyVersion === 2, 'Historical morning policy is replay-only; no new native effects');
