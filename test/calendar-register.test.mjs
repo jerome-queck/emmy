@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { assessCalendarRegister, validateCalendarRequest, validateCalendarSnapshot } from '../src/calendar-register.mjs';
 import { retainCalendarSnapshot } from '../src/calendar-register-io.mjs';
 import { declareRegisterPolicy, bindRegister, registerAttempt, refreshRegisterEvidence, registerFixture, registerHash, registerIdentity } from '../verification/calendar-register-fixtures.mjs';
-import { bindPolicy, calendarPolicyCases, calendarPolicyPositives, calendarPolicyFixture } from '../verification/calendar-policy-fixtures.mjs';
+import { bindPolicy, questionPolicy, calendarPolicyCases, calendarPolicyPositives, calendarPolicyFixture } from '../verification/calendar-policy-fixtures.mjs';
 import { assessCalendarPolicy } from '../src/calendar-policy.mjs';
 
 const assess = input => assessCalendarRegister(input.snapshot, input.request, { evaluatedAt: input.evaluatedAt });
@@ -37,6 +37,19 @@ test('impossible owner timestamps cannot normalize into valid timing authority',
   const result = assessCalendarPolicy(input.request.policy, input.snapshot.policy, input.request.policy.scope, [{ ...input.request.operations[0], source: input.request.sources[0], changes: { start: '2026-03-03T00:00:00Z', end: '2026-03-03T01:00:00Z' } }], input.evaluatedAt);
   assert.ok(result.findings.some(row => row.code === 'owner-rule-invalid'));
   assert.ok(before.includes('2026-02-30'), 'Original invalid evidence was retained');
+});
+test('unfinished earlier questions require an earlier valid proposal even when supplied dependencies are empty', () => {
+  const input = questionPolicy(registerFixture()); const source = input.request.sources[0];
+  const prior = input.request.policy.occurrences.find(row => row.id === 'q2'); prior.state = 'open'; prior.range = 'q2';
+  const identity = registerIdentity('question-two'); const task = { ...input.snapshot.taskLists[0].tasks[0], id: identity.nativeId, title: 'Module Worksheet' };
+  input.snapshot.taskLists[0].tasks.push(task);
+  input.request.sources.push({ ...source, id: 'source-q2', occurrenceId: 'q2', range: prior.range, identity, dependsOn: [] });
+  input.request.policy.bindings.push({ identity, occurrenceId: 'q2', supersedes: null, observedAt: prior.observedAt, evidenceRef: prior.evidenceRef });
+  input.request.taskSchedules.push({ ...input.request.taskSchedules[0], identity, taskDigest: registerHash(task) });
+  input.request.operations.push({ ...input.request.operations[0], id: 'schedule-q2', identity, sourceId: 'source-q2', baselineDigest: registerHash({ native: task, intervals: [] }), changes: { ...input.request.operations[0].changes, start: '2026-10-27T08:00:00Z', end: '2026-10-27T09:00:00Z' } });
+  bindPolicy(input); assert.equal(assess(input).status, 'proposed');
+  Object.assign(input.request.operations[1].changes, { start: '2026-10-27T11:00:00Z', end: '2026-10-27T12:00:00Z' });
+  assert.ok(found(assess(input), 'source-dependency-unmet')); assert.equal(assess(input).proposals[0].status, 'blocked');
 });
 test('a scoped Q3 correction may follow the completed original attempt without inventing earlier corrections', () => {
   const input = registerFixture(); const source = input.request.sources[0];
