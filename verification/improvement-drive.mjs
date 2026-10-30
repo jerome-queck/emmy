@@ -90,7 +90,7 @@ export async function driveImprovementReport({ sourceRoot, root, home, bindings,
     const result = await run(['fleet', '--file', await fixture(`input-${ordinal++}`, input)], 3, receiptHome); head = result.headHash; return result;
   };
   await fleet({ operation: 'configure', semanticsVersion: 2, entities: [{ id: 'report', kind: 'cloud-job', scope }] });
-  const job = { id: 'report-read', kind: 'briefing-source-read', occurrence: partial.handover.snapshotDigest, priority: 'morning', entityIds: ['report'], purpose: 'Acquire exactly the bounded derived report snapshot, not its underlying sources.', maxReads: 1, maxBytes: 32768, steps: 1 };
+  const job = { id: 'report-read', kind: 'briefing-source-read', occurrence: `lifecycle-check/${read.scheduledFor}/read-1`, priority: 'morning', entityIds: ['report'], purpose: 'Acquire exactly the bounded derived report snapshot, not its underlying sources.', maxReads: 1, maxBytes: 32768, steps: 1 };
   await fleet({ operation: 'submit', job }); const admitted = await fleet({ operation: 'claim', ownerRef: 'synthetic-parent' }); assert.ok(admitted.ticket);
   const acquired = await call({ ...read, kind: 'lifecycle-check' }, 3); const acquiredBytes = Buffer.from(outputs.at(-1).stdout);
   assert.equal(acquired.handover.snapshotDigest, partial.handover.snapshotDigest);
