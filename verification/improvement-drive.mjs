@@ -46,7 +46,7 @@ export async function driveTokenReview({ home, run, scenario, report, evidenceDi
   scenario('token-review', 'Fresh real CLI processes assess supplied failed/retry/helper costs, exact bytes, cache subset, partial and missing outcomes, malformed and duplicate controls without journal writes.');
 }
 
-export async function driveImprovementReport({ sourceRoot, root, home, scenario, report, evidenceDir }) {
+export async function driveImprovementReport({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir }) {
   const directory = await realpath(await mkdir(join(home, 'improvement'), { recursive: true }).then(() => join(home, 'improvement')));
   const requests = join(directory, 'requests'); await mkdir(requests);
   const env = await guardedEnvironment(requests, false); const readEnv = await guardedEnvironment(requests, true);
@@ -71,7 +71,42 @@ export async function driveImprovementReport({ sourceRoot, root, home, scenario,
   const before = await readdir(directory); const bytes = await Promise.all(before.filter(name => name.endsWith('.json')).map(name => readFile(join(directory, name))));
   const disputed = await call(read, 3); assert.equal(disputed.status, 'conflict'); assert.deepEqual(disputed.report, value); assert.equal(disputed.conflictingReport.status, 'failed'); assert.deepEqual(await readdir(directory), before); assert.deepEqual(await Promise.all(before.filter(name => name.endsWith('.json')).map(name => readFile(join(directory, name)))), bytes);
   await call({ action: 'release', ownerToken: owner.ownerToken }, 0);
+  let partial;
+  for (const kind of ['project-chat-cleanup', 'weekly-upkeep', 'lifecycle-check']) {
+    const query = { ...read, kind }; const bounded = { ...value, kind, coverage: 'partial', summary: 'Successful bounded synthetic work with partial source evidence.' };
+    assert.equal((await call(query, 3)).handover.execution, 'unknown');
+    await call({ action: 'publish', report: bounded }, 0);
+    partial = await call(query, 3); assert.equal(partial.handover.execution, 'completed'); assert.equal(partial.handover.evidenceCoverage, 'partial');
+    assert.equal((await call(query, 3)).handover.snapshotDigest, partial.handover.snapshotDigest);
+  }
+  const receiptHome = join(directory, 'fleet-receipt'); await mkdir(receiptHome); await writeFile(join(receiptHome, 'bindings.json'), JSON.stringify(bindings));
+  const fixture = async (name, value) => { const path = join(receiptHome, `${name}.json`); await writeFile(path, JSON.stringify(value)); return path; };
+  const definition = { id: 'report-handover', parents: [], goal: 'Retain one synthetic bounded report acquisition.', context: 'Synthetic parent receipt example. No live parent acceptance or delivery.', workClass: 'coordination', action: 'monitor', resource: target.projectId, destination: 'fixture-parent', target, authorityRef: { reference: 'Synthetic handover authority', action: 'monitor', resource: target.projectId, destination: 'fixture-parent' }, criteria: [{ id: 'receipt', evidence: 'reported-check', description: 'Complete acquisition remains separate from report coverage and delivery.' }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'report-handover', method: 'Existing fleet receipt.', intendedEffect: 'Retain bounded report bytes.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' } };
+  await run(['responsibility', '--file', await fixture('definition', definition)], 0, receiptHome);
+  const scope = { service: 'emmy', environment: 'fixture-local', surface: 'native', resource: 'lifecycle-check-report' };
+  let head; let ordinal = 0;
+  const fleet = async (action, evidence = []) => {
+    const input = { schemaVersion: 1, responsibilityId: definition.id, ...(head ? { expectedHead: head } : {}), action, evidence };
+    const result = await run(['fleet', '--file', await fixture(`input-${ordinal++}`, input)], 3, receiptHome); head = result.headHash; return result;
+  };
+  await fleet({ operation: 'configure', semanticsVersion: 2, entities: [{ id: 'report', kind: 'cloud-job', scope }] });
+  const job = { id: 'report-read', kind: 'briefing-source-read', occurrence: partial.handover.snapshotDigest, priority: 'morning', entityIds: ['report'], purpose: 'Acquire exactly the bounded derived report snapshot, not its underlying sources.', maxReads: 1, maxBytes: 32768, steps: 1 };
+  await fleet({ operation: 'submit', job }); const admitted = await fleet({ operation: 'claim', ownerRef: 'synthetic-parent' }); assert.ok(admitted.ticket);
+  const acquired = await call({ ...read, kind: 'lifecycle-check' }, 3); const acquiredBytes = Buffer.from(outputs.at(-1).stdout);
+  assert.equal(acquired.handover.snapshotDigest, partial.handover.snapshotDigest);
+  const path = join(receiptHome, 'acquired-report.json'); await writeFile(path, acquiredBytes); const at = new Date().toISOString();
+  const receipt = { sourceRef: 'synthetic-bounded-report-read', sha256: createHash('sha256').update(acquiredBytes).digest('hex'), observedAt: at, capturedAt: at, observer: 'Synthetic parent acquired the complete bounded helper output; underlying report evidence remains partial.', scope, coverage: { complete: true, gaps: [] } };
+  const evidence = [{ path, sha256: receipt.sha256, sourceRef: receipt.sourceRef }];
+  const resultAction = { operation: 'result', jobKey: admitted.ticket.key, ticket: admitted.ticket.ticket, checkpoint: 1, outcome: 'completed', usage: { reads: 1, bytes: acquiredBytes.length }, receipt };
+  const accepted = await fleet(resultAction, evidence); assert.equal(accepted.state.jobs[0].status, 'completed');
+  assert.equal((await fleet(resultAction, evidence)).outcome, 'coalesced');
+  assert.equal((await fleet({ operation: 'submit', job })).outcome, 'coalesced');
+  assert.equal((await fleet({ operation: 'claim', ownerRef: 'synthetic-parent' })).ticket, null);
+  assert.ok(accepted.state.alerts.every(alert => alert.delivery === 'pending'));
+  const changed = { ...value, kind: 'lifecycle-check', status: 'failed', coverage: 'partial' };
+  await call({ action: 'publish', report: changed }, 3);
+  const conflict = await call({ ...read, kind: 'lifecycle-check' }, 3); assert.equal(conflict.status, 'conflict'); assert.notEqual(conflict.handover.snapshotDigest, acquired.handover.snapshotDigest);
   const retained = join(evidenceDir, 'improvement-report'); await cp(directory, retained, { recursive: true }); await writeFile(join(retained, 'results.json'), JSON.stringify(outputs, null, 2));
-  report.improvementReport = { retained, declaredOnly: true };
-  scenario('improvement-report', 'Fresh helper processes retain exact-token guard refusal, immutable same-slot duplicates and conflicts, explicit missing/empty reports and read-only queries outside the journal.');
+  report.improvementReport = { retained, declaredOnly: true, fleetReceiptExample: join(retained, 'fleet-receipt'), parentAcceptance: 'synthetic-only', userDelivery: 'not-attempted' };
+  scenario('improvement-report', 'Fresh helper processes retain exact-token guards, immutable conflicts, successful partial-evidence outcomes and stable snapshots. Existing fleet CLI retains complete bounded-read bytes, coalesces repeated requests/results, and leaves delivery separate.');
 }

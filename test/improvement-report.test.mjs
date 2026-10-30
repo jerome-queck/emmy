@@ -60,6 +60,43 @@ test('original source end gates freshness and minimum coverage while wider gap w
   assert.equal((await run({ ...read, maxAgeSeconds: 3600 })).status, 'stale');
   assert.equal((await run({ ...read, minimumSourceEnd: '2026-10-28T23:00:00Z' })).status, 'completed-empty');
 });
+test('handover keeps successful bounded execution separate from evidence coverage for every report kind', async t => {
+  const { directory, run, read } = await fixture(t);
+  for (const kind of ['maintenance', 'suggestions', 'token-optimisation', 'project-chat-cleanup', 'weekly-upkeep', 'lifecycle-check']) {
+    const value = { ...terminalReport(), kind, coverage: 'partial' };
+    await run({ action: 'publish', report: value });
+    const first = await run({ ...read, kind }); const slotBytes = await readFile(join(directory, `${first.slot}.json`));
+    assert.equal(first.status, 'partial'); assert.equal(first.handover.execution, 'completed'); assert.equal(first.handover.evidenceCoverage, 'partial');
+    assert.equal(first.handover.reportAvailability, 'available'); assert.equal(first.handover.parentReceipt, 'parent-owned'); assert.equal(first.handover.userDelivery, 'parent-owned');
+    const later = await improvementReport({ directory, ...read, kind }, { evaluatedAt: '2026-10-29T04:01:00Z' });
+    assert.equal(later.handover.snapshotDigest, first.handover.snapshotDigest);
+    const equivalent = await run({ ...read, kind, scheduledFor: '2026-10-29T03:00:00.000Z', minimumSourceEnd: '2026-10-29T00:00:00.000Z' });
+    assert.equal(equivalent.handover.snapshotDigest, first.handover.snapshotDigest);
+    assert.deepEqual(await readFile(join(directory, `${first.slot}.json`)), slotBytes);
+    assert.notEqual((await run({ ...read, kind, maxAgeSeconds: 0 })).handover.snapshotDigest, first.handover.snapshotDigest);
+  }
+});
+test('missing, failed and conflicting snapshots remain visible under repeated reads without writes', async t => {
+  const { directory, run, read } = await fixture(t);
+  const missing = await run(read); assert.equal(missing.handover.execution, 'unknown'); assert.equal(missing.handover.reportAvailability, 'missing');
+  await run({ action: 'publish', report: { ...terminalReport(), status: 'failed' } });
+  const failed = await run(read); assert.equal(failed.handover.execution, 'failed'); assert.notEqual(failed.handover.snapshotDigest, missing.handover.snapshotDigest);
+  await run({ action: 'publish', report: terminalReport() });
+  const disputed = await run(read); assert.equal(disputed.handover.execution, 'conflicting'); assert.equal(disputed.handover.reportAvailability, 'conflict'); assert.notEqual(disputed.handover.snapshotDigest, failed.handover.snapshotDigest);
+  const names = await readdir(directory); const bytes = await Promise.all(names.map(name => readFile(join(directory, name))));
+  assert.deepEqual((await run(read)).handover, disputed.handover);
+  assert.deepEqual(await readdir(directory), names); assert.deepEqual(await Promise.all(names.map(name => readFile(join(directory, name)))), bytes);
+});
+test('early native cleanup completion cannot publish before its expected slot; later adaptation retains source times', async t => {
+  const { directory } = await fixture(t);
+  const scheduledFor = '2026-10-30T21:00:00Z'; const completedAt = '2026-10-30T20:59:48Z';
+  const value = { ...terminalReport(completedAt), kind: 'project-chat-cleanup', scheduledFor, coverage: 'partial', sourceWindow: { start: '2026-10-30T20:58:42Z', end: completedAt } };
+  await assert.rejects(improvementReport({ action: 'publish', directory, report: value }, { evaluatedAt: completedAt }), /predate/);
+  const adapted = { ...value, generatedAt: '2026-10-30T22:00:00Z', summary: 'Later derived handover of retained early native completion; not original producer publication.' };
+  await improvementReport({ action: 'publish', directory, report: adapted }, { evaluatedAt: adapted.generatedAt });
+  const read = await improvementReport({ action: 'read', directory, kind: value.kind, scheduledFor, provenance: 'scheduled', minimumSourceEnd: completedAt, maxAgeSeconds: 43200 }, { evaluatedAt: adapted.generatedAt });
+  assert.equal(read.handover.execution, 'completed'); assert.equal(read.handover.evidenceCoverage, 'partial'); assert.equal(read.report.sourceWindow.end, completedAt); assert.equal(read.report.generatedAt, adapted.generatedAt);
+});
 test('duplicate request and retained JSON keys are refused', async t => {
   const { directory, run, read } = await fixture(t); const request = join(directory, 'duplicate.json');
   await writeFile(request, JSON.stringify({ directory, ...read }).replace('"action":"read"', '"action":"read","action":"read"')); assert.equal((await cli(request)).code, 2);

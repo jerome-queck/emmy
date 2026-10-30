@@ -6,7 +6,7 @@ import { createHash, randomUUID } from 'node:crypto';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const text = value => typeof value === 'string' && value.trim().length > 0;
-const kinds = ['maintenance', 'suggestions', 'token-optimisation'];
+const kinds = ['maintenance', 'suggestions', 'token-optimisation', 'project-chat-cleanup', 'weekly-upkeep', 'lifecycle-check'];
 const stamp = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().replace('.000Z', 'Z') === value.replace('.000Z', 'Z');
 function shape(value, fields) { need(value && typeof value === 'object' && !Array.isArray(value) && fields.every(key => Object.hasOwn(value, key)) && Object.keys(value).every(key => fields.includes(key)), `Expected members ${fields.join(', ')}`); }
 function canonical(value) { return JSON.stringify(value, (_, item) => item && typeof item === 'object' && !Array.isArray(item) ? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item); }
@@ -73,6 +73,18 @@ async function publish(directory, name, bytes) {
   } finally { await unlink(temporary); }
 }
 
+function readResult(request, result) {
+  const { kind, scheduledFor, provenance, minimumSourceEnd, maxAgeSeconds } = request;
+  const snapshot = { query: { kind, scheduledFor: new Date(scheduledFor).toISOString(), provenance, minimumSourceEnd: new Date(minimumSourceEnd).toISOString(), maxAgeSeconds }, status: result.status, slot: result.slot, report: result.report ?? null, conflictingReport: result.conflictingReport ?? null, sourceWindowCurrent: result.sourceWindowCurrent ?? null };
+  return { ...result, handover: {
+    snapshotDigest: hash(canonical(snapshot)),
+    reportAvailability: result.status === 'missing' ? 'missing' : result.status === 'conflict' ? 'conflict' : 'available',
+    execution: result.status === 'conflict' ? 'conflicting' : result.report?.status ?? 'unknown',
+    evidenceCoverage: result.status === 'conflict' ? 'conflicting' : result.report?.coverage ?? 'unavailable',
+    parentReceipt: 'parent-owned', userDelivery: 'parent-owned'
+  } };
+}
+
 export async function improvementReport(request, { evaluatedAt = new Date().toISOString() } = {}) {
   need(request && typeof request === 'object' && ['claim', 'release', 'publish', 'read'].includes(request.action), 'Unknown report action');
   const fields = { claim: ['action', 'directory', 'kind', 'runId'], release: ['action', 'directory', 'ownerToken'], publish: ['action', 'directory', 'report'], read: ['action', 'directory', 'kind', 'scheduledFor', 'maxAgeSeconds', 'provenance', 'minimumSourceEnd'] };
@@ -111,15 +123,15 @@ export async function improvementReport(request, { evaluatedAt = new Date().toIS
   need(stamp(request.minimumSourceEnd), 'Expected minimum original source end required');
   const slot = hash(canonical([request.kind, new Date(request.scheduledFor).toISOString(), request.provenance]));
   let value;
-  try { value = report(strictJson(await ordinary(join(selected, `${slot}.json`), 16384))); } catch (error) { if (error.code === 'ENOENT') return { status: 'missing', slot }; throw error; }
+  try { value = report(strictJson(await ordinary(join(selected, `${slot}.json`), 16384))); } catch (error) { if (error.code === 'ENOENT') return readResult(request, { status: 'missing', slot }); throw error; }
   need(value.kind === request.kind && Date.parse(value.scheduledFor) === Date.parse(request.scheduledFor) && value.provenance === request.provenance, 'Report slot identity mismatch');
   let conflictingReport;
   try { conflictingReport = await conflictReport(join(selected, `conflict-${slot}.json`), slot, value); } catch (error) { if (error.code !== 'ENOENT') throw error; }
-  if (conflictingReport) return { status: 'conflict', slot, report: value, conflictingReport, evaluatedAt, assurance: 'declared-terminal-report', limits: ['Different reports are retained for this occurrence. The first report is unchanged; the dispute requires explicit review. Reads inspect only the canonical slot and its conflict marker and may precede a concurrent marker publication.'] };
+  if (conflictingReport) return readResult(request, { status: 'conflict', slot, report: value, conflictingReport, evaluatedAt, assurance: 'declared-terminal-report', limits: ['Different reports are retained for this occurrence. The first report is unchanged; the dispute requires explicit review. Reads inspect only the canonical slot and its conflict marker and may precede a concurrent marker publication.'] });
   const now = Date.parse(evaluatedAt); const generated = Date.parse(value.generatedAt);
   const sourceWindowCurrent = Date.parse(value.sourceWindow.end) >= Date.parse(request.minimumSourceEnd);
   const status = generated > now || Date.parse(value.scheduledFor) > now ? 'future' : now - generated > request.maxAgeSeconds * 1000 || now - Date.parse(value.sourceWindow.end) > request.maxAgeSeconds * 1000 ? 'stale' : value.status === 'failed' ? 'failed' : value.status === 'skipped' ? 'skipped' : !sourceWindowCurrent || value.coverage !== 'complete' || !value.evidenceRefs.length ? 'partial' : value.findings ? 'completed-findings' : 'completed-empty';
-  return { status, slot, report: value, sourceWindowCurrent, evaluatedAt, assurance: 'declared-terminal-report', limits: ['This cooperative guard and supplied report do not authenticate execution, evidence completeness, schedule firing or delivery. No automatic orphan recovery is provided.'] };
+  return readResult(request, { status, slot, report: value, sourceWindowCurrent, evaluatedAt, assurance: 'declared-terminal-report', limits: ['This cooperative guard and supplied report do not authenticate execution, evidence completeness, schedule firing or delivery. No automatic orphan recovery is provided.'] });
 }
 
 export async function readImprovementRequest(file) { return strictJson(await ordinary(file, 32768)); }

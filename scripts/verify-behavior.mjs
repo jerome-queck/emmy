@@ -65,7 +65,7 @@ try {
   if (!['self-check-repair', 'briefing', 'calendar', 'cloud', 'fleet', 'token-review'].includes(report.focus)) await driveDispatch({ root, home, run, scenario, report, bindings, target });
   if (!report.focus || report.focus === 'token-review') {
     await driveTokenReview({ home, run, scenario, report, evidenceDir });
-    await driveImprovementReport({ sourceRoot, root, home, scenario, report, evidenceDir });
+    await driveImprovementReport({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir });
   }
   if (!report.focus || report.focus === 'cloud') await driveCloud({ sourceRoot, root, home, run, scenario, report, children, evidenceDir });
   if (!report.focus || report.focus === 'calendar') await driveCalendar({ home, run, scenario, report });
