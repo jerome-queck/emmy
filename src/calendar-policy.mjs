@@ -76,7 +76,7 @@ export function assessCalendarPolicy(policy, baseline, scope, selectors, evaluat
     if (!assignment || source.name !== occurrence.name || source.reference !== assignment.reference || source.range !== occurrence.range || source.kind !== occurrence.kind) add('source-semantic-mismatch', selector.id);
     if (occurrence.state !== 'open') add('source-occurrence-terminal', selector.id);
     if (source.completed !== (occurrence.state === 'completed')) add('source-completion-policy-mismatch', selector.id);
-    if (occurrence.kind === 'correction' && !occurrence.predecessors.some(id => occurrences.get(id)?.kind === 'timed-attempt')) add('correction-attempt-policy-required', selector.id);
+    if (occurrence.kind === 'correction' && !occurrence.predecessors.some(id => { const prior = occurrences.get(id); return prior?.kind === 'timed-attempt' && prior.assignmentId === occurrence.assignmentId && occurrence.unitIds.every(unit => prior.unitIds.includes(unit)); })) add('correction-attempt-policy-required', selector.id);
     if (selector.create ? activeBindings.some(row => row.occurrenceId === occurrence.id) : !activeBindings.some(row => row.occurrenceId === occurrence.id && same(row.identity, selector.identity))) add('source-binding-mismatch', selector.id);
     const required = new Set(occurrence.predecessors);
     const first = assignment?.orderedUnits.indexOf(occurrence.unitIds[0]) ?? -1;

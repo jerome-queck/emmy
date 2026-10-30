@@ -117,6 +117,9 @@ export function verifyRegisterPolicy({ register }, check) {
 }
 
 export const registerMutations = [
+  {"id": "policy-correction-foreign-assignment", "property": "calendar-register", "source": "src/calendar-policy.mjs", "counterexample": "correction-foreign-assignment", "edits": [[" && prior.assignmentId === occurrence.assignmentId", ""]]},
+  {"id": "policy-correction-unattempted-unit", "property": "calendar-register", "source": "src/calendar-policy.mjs", "counterexample": "correction-unattempted-question", "edits": [[" && occurrence.unitIds.every(unit => prior.unitIds.includes(unit))", ""]]},
+
   {"id": "policy-substring-source-label", "property": "calendar-register", "source": "src/calendar-policy.mjs", "counterexample": "source-title-prefix", "edits": [["export const sourceLabel = (title, label) => typeof title === 'string' && typeof label === 'string' && label.length > 0 && [...title.matchAll(new RegExp(label.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'gu'))].some(match => !/[\\p{L}\\p{N}\\p{M}]/u.test([...title.slice(0, match.index)].at(-1) ?? '') && !/[\\p{L}\\p{N}\\p{M}]/u.test([...title.slice(match.index + label.length)][0] ?? ''));", "export const sourceLabel = (title, label) => title.includes(label);"]]},
   { id: 'policy-ignore-current-baseline', property: 'calendar-register', source: 'src/calendar-policy.mjs', counterexample: 'policy-baseline', edits: [["if (!same(policy, baseline)) add('calendar-policy-baseline-mismatch');", "if (false) add('calendar-policy-baseline-mismatch');"]] },
   { id: 'policy-repurpose-source', property: 'calendar-register', source: 'src/calendar-policy.mjs', counterexample: 'semantic-repurpose', edits: [["if (!assignment || source.name !== occurrence.name || source.reference !== assignment.reference || source.range !== occurrence.range || source.kind !== occurrence.kind) add('source-semantic-mismatch', selector.id);", "if (false) add('source-semantic-mismatch', selector.id);"]] },

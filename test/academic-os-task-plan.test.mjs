@@ -31,6 +31,18 @@ test('API corrections require the original timed attempt and permit its complete
     assert.equal(result.status, kind === 'timed-attempt' ? 'api-plan-ready-reported' : 'return-to-cloud');
   }
 });
+test('API correction prerequisites bind the same assignment and every corrected question', () => {
+  for (const mismatch of ['foreign', 'question', null]) {
+    const input = fixture('create'); input.intent.source.kind = 'correction';
+    const policy = input.intent.policy; const occurrence = policy.occurrences[0];
+    occurrence.kind = 'correction'; occurrence.unitIds = ['q3']; occurrence.predecessors = ['original-attempt']; policy.assignments[0].orderedUnits = ['q1', 'q2', 'q3'];
+    if (mismatch === 'foreign') policy.assignments.push({ ...policy.assignments[0], id: 'other-assignment', reference: 'other-paper' });
+    policy.occurrences.push({ ...occurrence, id: 'original-attempt', assignmentId: mismatch === 'foreign' ? 'other-assignment' : occurrence.assignmentId, kind: 'timed-attempt', unitIds: mismatch === 'question' ? ['q1'] : ['q1', 'q2', 'q3'], predecessors: [], state: 'completed' });
+    input.observation.policy = structuredClone(policy); const result = prepare(input);
+    assert.equal(result.status, mismatch === null ? 'api-plan-ready-reported' : 'return-to-cloud');
+    if (mismatch !== null) { assert.equal(result.call, null); assert.ok(result.findings.includes('correction-attempt-policy-required')); }
+  }
+});
 test('create and change titles require whole source labels across Unicode and literal punctuation', () => {
   for (const name of ['create', 'change']) for (const [label, title, allowed] of [
     ['Handout 10', 'MH3210 Handout 100', false], ['Handout 10', 'MH3210 Handout 10a', false],

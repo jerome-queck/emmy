@@ -209,6 +209,16 @@ module.exports.GoogleAuth = class {
     const output = await api(`${name}-source-prefix`, { schemaVersion: 1, stage: 'prepare', intent: fixture.intent, observation: fixture.observation }, 3);
     assert.equal(output.call, null); assert.ok(output.findings.includes('source-scope-missing-from-title'));
   }
+  for (const name of ['create', 'change']) for (const mismatch of ['foreign', 'question', null]) {
+    const fixture = academicOsPlanFixture(name); fixture.intent.source.kind = 'correction';
+    const policy = fixture.intent.policy; const occurrence = policy.occurrences[0];
+    occurrence.kind = 'correction'; occurrence.unitIds = ['q3']; occurrence.predecessors = ['original-attempt']; policy.assignments[0].orderedUnits = ['q1', 'q2', 'q3'];
+    if (mismatch === 'foreign') policy.assignments.push({ ...policy.assignments[0], id: 'other-assignment', reference: 'other-paper' });
+    policy.occurrences.push({ ...occurrence, id: 'original-attempt', assignmentId: mismatch === 'foreign' ? 'other-assignment' : occurrence.assignmentId, kind: 'timed-attempt', unitIds: mismatch === 'question' ? ['q1'] : ['q1', 'q2', 'q3'], predecessors: [], state: 'completed' });
+    fixture.observation.policy = structuredClone(policy);
+    const output = await api(`${name}-correction-${mismatch ?? 'matching'}`, { schemaVersion: 1, stage: 'prepare', intent: fixture.intent, observation: fixture.observation }, mismatch === null ? 0 : 3);
+    assert.equal(Boolean(output.call), mismatch === null);
+  }
   for (const name of ['create', 'change', 'complete']) {
     const fixture = academicOsPlanFixture(name);
     fixture.observation.result = { content: [{ type: 'text', text: JSON.stringify(fixture.observation.result.report) }], isError: false };

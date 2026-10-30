@@ -18,8 +18,22 @@ export function ownerMovePolicy(input) {
   input.request.policy.ownerRules.push({ id: 'owner-move', identity: structuredClone(input.request.operations[0].identity), occurrenceId: input.request.sources[0].occurrenceId, changes: intervals[0], observedAt: input.snapshot.acquisition.completedAt, evidenceRef: 'synthetic-owner-manual-move', supersedes: null });
   return bindPolicy(input);
 }
+export function correctionPolicy(input, foreign = false) {
+  const source = input.request.sources[0]; const policy = input.request.policy;
+  Object.assign(source, { name: 'Paper A correction', range: 'Q3 correction', kind: 'correction', actualDurationMinutes: 15, dependsOn: ['attempt-source'] });
+  Object.assign(input.request.operations[0].changes, { title: 'Module Paper A correction', end: `${input.request.window.start.slice(0, 10)}T09:30:00Z`, durationMinutes: 30 });
+  policy.assignments[0].orderedUnits = ['q1', 'q2', 'q3'];
+  Object.assign(policy.occurrences[0], { name: source.name, range: source.range, kind: source.kind, unitIds: ['q3'], predecessors: ['original-attempt'] });
+  if (foreign) policy.assignments.push({ ...policy.assignments[0], id: 'other-assignment', reference: 'other-paper' });
+  const attempt = { ...policy.occurrences[0], id: 'original-attempt', assignmentId: foreign ? 'other-assignment' : source.assignmentId, kind: 'timed-attempt', unitIds: foreign ? ['q1', 'q2', 'q3'] : ['q1'], predecessors: [], state: 'completed' };
+  policy.occurrences.push(attempt);
+  input.request.sources.push({ ...source, id: 'attempt-source', occurrenceId: attempt.id, assignmentId: attempt.assignmentId, identity: { ...source.identity, nativeId: 'original-attempt' }, kind: 'timed-attempt', dependsOn: [], completed: true });
+  return bindPolicy(input);
+}
 
 export const calendarPolicyCases = [
+  ['correction-foreign-assignment', input => correctionPolicy(input, true), 'correction-attempt-policy-required'],
+  ['correction-unattempted-question', input => correctionPolicy(input), 'correction-attempt-policy-required'],
   ['owner-invalid-date', input => { calendarPolicyPositives.find(row => row[0] === 'owner-explicit-supersession')[1](input); input.request.policy.ownerRules.at(-1).changes.start = '2026-02-30T09:00:00Z'; bindPolicy(input); }, 'owner-rule-invalid'],
   ['owner-invalid-hour', input => { calendarPolicyPositives.find(row => row[0] === 'owner-explicit-supersession')[1](input); input.request.policy.ownerRules.at(-1).changes.start = `${input.request.window.start.slice(0, 10)}T24:00:00Z`; bindPolicy(input); }, 'owner-rule-invalid'],
   ['owner-different-instant', input => { calendarPolicyPositives.find(row => row[0] === 'owner-explicit-supersession')[1](input); const changes = input.request.policy.ownerRules.at(-1).changes; for (const key of ['start', 'end']) changes[key] = new Date(Date.parse(changes[key]) + 3600000).toISOString(); bindPolicy(input); }, 'owner-policy-protected'],
