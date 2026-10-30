@@ -1,5 +1,5 @@
 import { canonical, digest } from './records.mjs';
-import { assessCalendarPolicy } from './calendar-policy.mjs';
+import { assessCalendarPolicy, sourceLabel } from './calendar-policy.mjs';
 
 const fail = (condition, message) => { if (!condition) throw new Error(message); };
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -15,7 +15,6 @@ const hash = value => digest(canonical(value));
 const overlaps = (a, b) => a.start < b.end && b.start < a.end;
 const clipped = (span, window) => ({ start: Math.max(span.start, window.start), end: Math.min(span.end, window.end) });
 const mealTitle = title => /\b(?:breakfast|brunch|lunch|dinner|supper|meal(?:s)?)\b/iu.test(title);
-const sourceLabel = (title, label) => [...title.matchAll(new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gu'))].some(match => !/[\p{L}\p{N}]/u.test(title[match.index - 1] ?? '') && !/[\p{L}\p{N}]/u.test(title[match.index + label.length] ?? ''));
 const nativeIdentity = (snapshot, kind, containerId, nativeId) => ({ environment: snapshot.scope.environment, accountId: snapshot.scope.accountId, containerKind: kind, containerId, nativeId });
 
 function validDate(value) {

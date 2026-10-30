@@ -13,6 +13,8 @@ const evidence = (row, at) => stamp(row.observedAt) && Date.parse(row.observedAt
 const fields = (value, names) => object(value) && Object.keys(value).every(key => names.includes(key));
 const fieldEqual = (key, left, right) => ['start', 'end'].includes(key) ? stamp(left) && stamp(right) && Date.parse(left) === Date.parse(right) : same(left, right);
 
+export const sourceLabel = (title, label) => typeof title === 'string' && typeof label === 'string' && label.length > 0 && [...title.matchAll(new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gu'))].some(match => !/[\p{L}\p{N}\p{M}]/u.test([...title.slice(0, match.index)].at(-1) ?? '') && !/[\p{L}\p{N}\p{M}]/u.test([...title.slice(match.index + label.length)][0] ?? ''));
+
 export function assessCalendarPolicy(policy, baseline, scope, selectors, evaluatedAt) {
   const findings = [];
   const add = (code, target = null) => { if (!findings.some(row => row.code === code && same(row.target, target))) findings.push({ code, target }); };

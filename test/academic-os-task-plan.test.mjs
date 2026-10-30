@@ -31,6 +31,22 @@ test('API corrections require the original timed attempt and permit its complete
     assert.equal(result.status, kind === 'timed-attempt' ? 'api-plan-ready-reported' : 'return-to-cloud');
   }
 });
+test('create and change titles require whole source labels across Unicode and literal punctuation', () => {
+  for (const name of ['create', 'change']) for (const [label, title, allowed] of [
+    ['Handout 10', 'MH3210 Handout 100', false], ['Handout 10', 'MH3210 Handout 10a', false],
+    ['Handout 10', '中Handout 10', false], ['Handout 10', 'Handout 10١', false],
+    ['Handout 10', '𝒜Handout 10', false], ['Handout 10', 'Handout 10𝒜', false],
+    ['Handout 10', 'Handout 10\u0301', false],
+    ['Handout 10', 'MH3210 Handout 10 revised', true], ['Handout 10', '(Handout 10)', true],
+    ['A+B [1].', 'Module A+B [1]. attempt', true], ['A+B [1].', 'Module AAAB 1x attempt', false],
+  ]) {
+    const input = fixture(name); input.intent.source.name = label; input.intent.policy.occurrences[0].name = label;
+    input.observation.policy = structuredClone(input.intent.policy); input.intent.operation.title = title;
+    const result = prepare(input);
+    assert.equal(result.status, allowed ? 'api-plan-ready-reported' : 'return-to-cloud', `${name}/${title}`);
+    assert.equal(Boolean(result.call), allowed);
+  }
+});
 
 test('module and research create/change/complete emit only literal task-plan/1 fields and preserve associations', () => {
   for (const kind of ['module', 'research-project']) for (const name of ['create', 'change', 'complete']) {

@@ -204,6 +204,11 @@ module.exports.GoogleAuth = class {
     return output;
   };
   let apiPrepared;
+  for (const name of ['create', 'change']) {
+    const fixture = academicOsPlanFixture(name); fixture.intent.operation.title = 'MH3210 Handout 100';
+    const output = await api(`${name}-source-prefix`, { schemaVersion: 1, stage: 'prepare', intent: fixture.intent, observation: fixture.observation }, 3);
+    assert.equal(output.call, null); assert.ok(output.findings.includes('source-scope-missing-from-title'));
+  }
   for (const name of ['create', 'change', 'complete']) {
     const fixture = academicOsPlanFixture(name);
     fixture.observation.result = { content: [{ type: 'text', text: JSON.stringify(fixture.observation.result.report) }], isError: false };

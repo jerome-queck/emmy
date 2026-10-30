@@ -1,6 +1,6 @@
 import { canonical, digest } from './records.mjs';
 import { strictJson } from './bounded-json.mjs';
-import { assessCalendarPolicy } from './calendar-policy.mjs';
+import { assessCalendarPolicy, sourceLabel } from './calendar-policy.mjs';
 
 const hash = value => digest(canonical(value));
 const same = (a, b) => canonical(a) === canonical(b);
@@ -65,7 +65,7 @@ function semanticAssessment(intent, baseline, evaluatedAt) {
   const identity = { ...scope, containerKind: 'task-list', containerId: intent.identity.listId, nativeId: intent.identity.taskId ?? intent.identity.sourceOccurrenceId };
   const assessment = assessCalendarPolicy(intent.policy, baseline, scope, [{ id: intent.operationId, identity, create, source: intent.source, changes: intent.operation.name === 'complete' ? { completed: true } : { title: intent.operation.title } }], evaluatedAt);
   if (create && intent.source?.occurrenceId !== intent.identity.sourceOccurrenceId) assessment.findings.push({ code: 'source-occurrence-create-mismatch' });
-  if (intent.operation.name !== 'complete' && intent.source && !intent.operation.title.includes(intent.source.name)) assessment.findings.push({ code: 'source-scope-missing-from-title' });
+  if (intent.operation.name !== 'complete' && intent.source && !sourceLabel(intent.operation.title, intent.source.name)) assessment.findings.push({ code: 'source-scope-missing-from-title' });
   return assessment;
 }
 
