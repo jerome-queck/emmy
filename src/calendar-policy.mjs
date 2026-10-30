@@ -4,12 +4,14 @@ const same = (a, b) => canonical(a) === canonical(b);
 const hash = value => digest(canonical(value));
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const text = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 16384;
-const stamp = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value));
+const date = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+const stamp = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value)) && date(value.slice(0, 10)) && +value.slice(11, 13) < 24 && +value.slice(14, 16) < 60 && +value.slice(17, 19) < 60;
 const list = value => Array.isArray(value) && value.length <= 2000;
 const unique = rows => new Set(rows).size === rows.length;
 const identity = value => object(value) && ['environment', 'accountId', 'containerKind', 'containerId', 'nativeId'].every(key => text(value[key])) && ['calendar', 'task-list'].includes(value.containerKind);
 const evidence = (row, at) => stamp(row.observedAt) && Date.parse(row.observedAt) <= Date.parse(at) && text(row.evidenceRef);
 const fields = (value, names) => object(value) && Object.keys(value).every(key => names.includes(key));
+const fieldEqual = (key, left, right) => ['start', 'end'].includes(key) ? stamp(left) && stamp(right) && Date.parse(left) === Date.parse(right) : same(left, right);
 
 export function assessCalendarPolicy(policy, baseline, scope, selectors, evaluatedAt) {
   const findings = [];
@@ -56,6 +58,7 @@ export function assessCalendarPolicy(policy, baseline, scope, selectors, evaluat
   for (const row of policy.ownerRules) {
     if (!fields(row, ['id', 'identity', 'occurrenceId', 'changes', 'observedAt', 'evidenceRef', 'supersedes']) || !text(row.id) || !identity(row.identity) || !occurrences.has(row.occurrenceId) || !evidence(row, evaluatedAt) || !fields(row.changes, ['title', 'date', 'start', 'end', 'durationMinutes', 'timeZone', 'completed']) || Object.keys(row.changes).length === 0 || !(row.supersedes === null || /^[a-f0-9]{64}$/.test(row.supersedes))) { add('owner-rule-invalid'); continue; }
     if (row.identity.environment !== scope.environment || row.identity.accountId !== scope.accountId) add('owner-rule-scope-mismatch');
+    if (['start', 'end'].some(key => Object.hasOwn(row.changes, key) && !stamp(row.changes[key]))) add('owner-rule-invalid');
     if (row.supersedes !== null) {
       const prior = policy.ownerRules.find(entry => hash(entry) === row.supersedes);
       if (!prior || !same(prior.identity, row.identity) || prior.occurrenceId !== row.occurrenceId || !same(Object.keys(prior.changes).sort(), Object.keys(row.changes).sort()) || Date.parse(prior.observedAt) >= Date.parse(row.observedAt) || policy.ownerRules.filter(entry => entry.supersedes === row.supersedes).length !== 1) add('owner-rule-supersession-invalid');
@@ -94,9 +97,9 @@ export function assessCalendarPolicy(policy, baseline, scope, selectors, evaluat
     }
     dependencies.set(source.id, unresolved);
     const rules = activeRules.filter(row => row.occurrenceId === occurrence.id && same(row.identity, selector.identity));
-    if (selector.baselineIntervals?.length && Object.hasOwn(selector.changes, 'start') && !selector.baselineIntervals.some(row => row.start === Date.parse(selector.changes.start) && row.end === Date.parse(selector.changes.end)) && !rules.some(rule => rule.changes.start === selector.changes.start && rule.changes.end === selector.changes.end)) add('existing-interval-change-needs-owner-policy', selector.id);
+    if (selector.baselineIntervals?.length && Object.hasOwn(selector.changes, 'start') && !selector.baselineIntervals.some(row => row.start === Date.parse(selector.changes.start) && row.end === Date.parse(selector.changes.end)) && !rules.some(rule => fieldEqual('start', rule.changes.start, selector.changes.start) && fieldEqual('end', rule.changes.end, selector.changes.end))) add('existing-interval-change-needs-owner-policy', selector.id);
     for (const rule of rules) {
-      if (Object.entries(rule.changes).some(([key, value]) => Object.hasOwn(selector.changes, key) && !same(selector.changes[key], value))) add('owner-policy-protected', selector.id);
+      if (Object.entries(rule.changes).some(([key, value]) => Object.hasOwn(selector.changes, key) && !fieldEqual(key, selector.changes[key], value))) add('owner-policy-protected', selector.id);
     }
   }
   return { findings, dependencies };

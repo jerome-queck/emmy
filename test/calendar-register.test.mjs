@@ -6,7 +6,8 @@ import { join } from 'node:path';
 import { assessCalendarRegister, validateCalendarRequest, validateCalendarSnapshot } from '../src/calendar-register.mjs';
 import { retainCalendarSnapshot } from '../src/calendar-register-io.mjs';
 import { declareRegisterPolicy, bindRegister, registerAttempt, refreshRegisterEvidence, registerFixture, registerHash, registerIdentity } from '../verification/calendar-register-fixtures.mjs';
-import { calendarPolicyCases, calendarPolicyPositives, calendarPolicyFixture } from '../verification/calendar-policy-fixtures.mjs';
+import { bindPolicy, calendarPolicyCases, calendarPolicyPositives, calendarPolicyFixture } from '../verification/calendar-policy-fixtures.mjs';
+import { assessCalendarPolicy } from '../src/calendar-policy.mjs';
 
 const assess = input => assessCalendarRegister(input.snapshot, input.request, { evaluatedAt: input.evaluatedAt });
 const found = (result, code) => result.findings.some(row => row.code === code);
@@ -23,6 +24,19 @@ test('policy permits stable identity, ordered work, and explicit scoped owner su
     const result = assess(calendarPolicyFixture(mutate));
     assert.equal(result.status, 'proposed', `${name}: ${JSON.stringify(result.findings)}`);
   }
+});
+test('impossible owner timestamps cannot normalize into valid timing authority', () => {
+  const input = registerFixture('2026-03-02T00:00:00.000Z');
+  calendarPolicyPositives.find(row => row[0] === 'owner-explicit-supersession')[1](input);
+  for (const key of ['start', 'end']) input.request.policy.ownerRules.at(-1).changes[key] = input.request.policy.ownerRules.at(-1).changes[key].replace('2026-03-02', '2026-02-30');
+  bindPolicy(input); const before = JSON.stringify(input);
+  assert.ok(found(assess(input), 'owner-rule-invalid'));
+  assert.equal(JSON.stringify(input), before);
+  const rule = input.request.policy.ownerRules.at(-1);
+  rule.changes = { start: '2026-03-02T24:00:00Z', end: '2026-03-03T01:00:00Z' }; bindPolicy(input);
+  const result = assessCalendarPolicy(input.request.policy, input.snapshot.policy, input.request.policy.scope, [{ ...input.request.operations[0], source: input.request.sources[0], changes: { start: '2026-03-03T00:00:00Z', end: '2026-03-03T01:00:00Z' } }], input.evaluatedAt);
+  assert.ok(result.findings.some(row => row.code === 'owner-rule-invalid'));
+  assert.ok(before.includes('2026-02-30'), 'Original invalid evidence was retained');
 });
 test('a scoped Q3 correction may follow the completed original attempt without inventing earlier corrections', () => {
   const input = registerFixture(); const source = input.request.sources[0];
