@@ -76,6 +76,18 @@ Task REST and Academic OS MCP proposals support title, do-date and completion. T
 
 ## Execution boundary
 
+Every current proposal requires a retained `policy` in both snapshot and request. Their complete bytes must agree. Provider collection cannot supply owner policy; attach the existing responsibility's retained policy before retaining the assessed snapshot. Missing policy blocks proposals. A refreshed native baseline cannot revoke a policy rule. Historical packets remain inspectable, without a legacy switch permitting new proposals.
+
+The policy has `schemaVersion: 1`, exact environment/account `scope`, and four arrays. `assignments` retain stable IDs, source references and ordered question IDs. `occurrences` retain stable IDs, assignment IDs, name/range/kind, selected `unitIds`, `predecessors`, and open/completed/dismissed/superseded state. Both carry `observedAt` and `evidenceRef`. Each request source names its `assignmentId` and `occurrenceId`. Display labels cannot replace that source. Generic preparation requires an evidenced obligation.
+
+`bindings` associate each active occurrence with one exact native identity. Each retains evidence and `supersedes`, either null or its predecessor's digest. Rebinding requires the same native identity, later evidence and one explicit predecessor; a replaced occurrence remains retained as superseded. Duplicate active native or occurrence associations block. No provider item is created or migrated.
+
+Question groups select contiguous units from the retained ordered inventory. Earlier unfinished units and explicit predecessors require earlier valid proposals. Clearing request-local dependencies cannot remove those requirements. Corrections keep their explicit original-attempt prerequisite and can target only questions needing correction.
+
+`ownerRules` retain an ID, occurrence/native identity, protected `changes`, evidence and exact predecessor digest. Supersession requires the same occurrence, identity and field set, with later evidence. An unrelated rule or newer timestamp cannot revoke protection. Moving an existing timed interval requires a matching evidenced rule. Title-only edits preserve timing. The [policy fixtures](../verification/calendar-policy-fixtures.mjs) include forbidden manual-move reversal and allowed exact supersession.
+
+Owner attribution and complete policy history remain reported. A caller fabricating both snapshot and policy can fabricate a consistent declaration. Retain original bytes and responsibility history. These checks cannot authenticate owner intent or intercept another executor.
+
 A `proposed` result is reviewable advice. It is neither permission nor a queued native action. Retain the request, snapshot, exact prepared operation and full result in the existing private responsibility evidence before a parent executes one separately authorized action.
 
 The prepared operation binds the original snapshot, intent digest, baseline bytes and capture time. Its stable effect key survives a new acquisition. An attempt cannot predate its before-state. A lost response, interrupted write or mismatched end time requires reconciliation. No-effect resolution compares the original protected before-state, not a newly selected baseline. Saved resolution checks all changed fields and protected native fields, plus fresh protected schedule evidence. A verified saved effect returns `already-saved` and requires no duplicate write. Denied and consumed scopes stay terminal.

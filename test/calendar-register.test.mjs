@@ -5,10 +5,37 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { assessCalendarRegister, validateCalendarRequest, validateCalendarSnapshot } from '../src/calendar-register.mjs';
 import { retainCalendarSnapshot } from '../src/calendar-register-io.mjs';
-import { bindRegister, registerAttempt, refreshRegisterEvidence, registerFixture, registerHash, registerIdentity } from '../verification/calendar-register-fixtures.mjs';
+import { declareRegisterPolicy, bindRegister, registerAttempt, refreshRegisterEvidence, registerFixture, registerHash, registerIdentity } from '../verification/calendar-register-fixtures.mjs';
+import { calendarPolicyCases, calendarPolicyPositives, calendarPolicyFixture } from '../verification/calendar-policy-fixtures.mjs';
 
 const assess = input => assessCalendarRegister(input.snapshot, input.request, { evaluatedAt: input.evaluatedAt });
 const found = (result, code) => result.findings.some(row => row.code === code);
+
+test('retained source and owner policy refuses the audit counterexamples and scoped variants', () => {
+  for (const [name, mutate, code] of calendarPolicyCases) {
+    const result = assess(calendarPolicyFixture(mutate));
+    assert.ok(found(result, code), `${name}: ${JSON.stringify(result.findings)}`);
+    assert.equal(result.counts.proposed, 0, name); assert.equal(result.counts.executed, 0);
+  }
+});
+test('policy permits stable identity, ordered work, and explicit scoped owner supersession', () => {
+  for (const [name, mutate] of calendarPolicyPositives) {
+    const result = assess(calendarPolicyFixture(mutate));
+    assert.equal(result.status, 'proposed', `${name}: ${JSON.stringify(result.findings)}`);
+  }
+});
+test('a scoped Q3 correction may follow the completed original attempt without inventing earlier corrections', () => {
+  const input = registerFixture(); const source = input.request.sources[0];
+  Object.assign(source, { name: 'Paper A correction', range: 'Q3 correction', kind: 'correction', actualDurationMinutes: 15, dependsOn: ['attempt-source'] });
+  Object.assign(input.request.operations[0].changes, { title: 'Module Paper A correction', end: '2026-10-27T09:30:00Z', durationMinutes: 30 });
+  input.request.sources.push({ ...source, id: 'attempt-source', occurrenceId: 'attempt-all', kind: 'timed-attempt', completed: true, dependsOn: [], identity: registerIdentity('original-attempt') });
+  const policy = input.request.policy;
+  policy.assignments[0].orderedUnits = ['q1', 'q2', 'q3'];
+  Object.assign(policy.occurrences[0], { name: source.name, range: source.range, kind: source.kind, unitIds: ['q3'], predecessors: ['attempt-all'] });
+  policy.occurrences.push({ ...policy.occurrences[0], id: 'attempt-all', kind: 'timed-attempt', unitIds: ['q1', 'q2', 'q3'], predecessors: [], state: 'completed' });
+  input.snapshot.policy = structuredClone(policy); bindRegister(input);
+  assert.equal(assess(input).status, 'proposed');
+});
 
 test('deterministic half-open availability protects Free meals and permits optional Free classes', () => {
   const input = registerFixture(); const result = assess(input);
@@ -114,7 +141,7 @@ test('actual attempt and correction durations stay separate inside rounded sched
   input.request.taskSchedules.push({ ...input.request.taskSchedules[0], identity: registerIdentity('correction-one'), taskDigest: registerHash(correction) });
   input.request.sources.push({ id: 'paper-correction', identity: registerIdentity('correction-one'), name: 'Paper A correction', reference: 'synthetic-module-file', range: 'Paper A, corrections only', kind: 'correction', actualDurationMinutes: 15, dependsOn: ['paper-attempt'], completed: false });
   input.request.operations.push({ id: 'correction', identity: registerIdentity('correction-one'), baselineDigest: registerHash({ native: correction, intervals: [] }), transport: 'calendar-native-ui', changes: { title: correction.title, date: '2026-10-27', start: '2026-10-27T11:00:00Z', end: '2026-10-27T11:30:00Z', durationMinutes: 30, timeZone: 'UTC' }, sourceId: 'paper-correction' });
-  bindRegister(input); assert.equal(assess(input).status, 'proposed');
+  declareRegisterPolicy(input); assert.equal(assess(input).status, 'proposed');
   input.request.operations[1].changes.start = '2026-10-27T08:40:00Z'; input.request.operations[1].changes.end = '2026-10-27T08:55:00Z';
   assert.ok(found(assess(input), 'source-dependency-unmet'));
   Object.assign(input.request.operations[0].changes, { start: '2026-10-27T12:00:00Z', end: '2026-10-27T13:00:00Z' });

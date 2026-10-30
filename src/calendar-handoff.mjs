@@ -10,7 +10,7 @@ const sha = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const stamp = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value) && Number.isFinite(Date.parse(value));
 const need = (condition, message) => { if (!condition) throw new Error(message); };
 const fields = (value, keys, name) => need(object(value) && Object.keys(value).every(key => keys.includes(key)), `${name}: unsupported field`);
-const intent = request => ({ window: request.window, workingIntervals: request.workingIntervals, mealPolicy: request.mealPolicy, protectedIdentities: request.protectedIdentities, sources: request.sources, ownerDone: request.ownerDone, lifecycle: request.lifecycle });
+const intent = request => ({ window: request.window, workingIntervals: request.workingIntervals, mealPolicy: request.mealPolicy, protectedIdentities: request.protectedIdentities, sources: request.sources, ownerDone: request.ownerDone, lifecycle: request.lifecycle, policy: request.policy ?? null });
 const itemType = identity => identity.containerKind === 'task-list' ? 'task' : 'event';
 const timed = operation => ['date', 'start', 'end', 'durationMinutes', 'timeZone'].some(key => Object.hasOwn(operation.changes, key));
 const completeTiming = operation => ['start', 'end', 'durationMinutes', 'timeZone'].every(key => Object.hasOwn(operation.changes, key));

@@ -5,6 +5,7 @@ import { digest } from '../src/records.mjs';
 import { bindRegister, refreshRegisterEvidence, registerFixture, registerHash } from './calendar-register-fixtures.mjs';
 import { academicOsPlanFixture } from './academic-os-plan-fixtures.mjs';
 import { timingRegisterFixture, syntheticTimingPacket, syntheticTimingReceipt } from './calendar-timing-fixtures.mjs';
+import { calendarPolicyCases, calendarPolicyPositives } from './calendar-policy-fixtures.mjs';
 
 export async function driveCalendarRegister({ home, run, scenario, report }) {
   const directory = join(home, 'calendar/register');
@@ -41,6 +42,7 @@ module.exports.GoogleAuth = class {
   const refresh = await run(['calendar-register', '--file', refreshFile], 0, home, env);
   assert.equal(refresh.status, 'collected'); assert.equal(refresh.execution, 'provider-reads-only'); assert.equal(refresh.taskTiming, 'unsupported-by-rest-needs-native-readback');
   input.snapshot = JSON.parse(await readFile(refresh.file, 'utf8'));
+  input.snapshot.policy = structuredClone(input.request.policy);
   const snapshotFile = join(directory, 'assessed-snapshot.json');
   const requestFile = join(directory, 'request.json');
   const envelopeFile = join(directory, 'assess.json');
@@ -59,6 +61,8 @@ module.exports.GoogleAuth = class {
     assert.equal(result.status, 'proposed'); assert.equal(result.proposals[0].sourceTiming.actualDurationMinutes, 40);
     assert.equal(result.proposals[0].changes.durationMinutes, 60); assert.equal(result.availability.freeIntervals.length, 3);
   });
+  for (const [name, mutate, code] of calendarPolicyCases) await assess(name, 3, mutate, result => { assert.ok(result.findings.some(row => row.code === code), name); assert.equal(result.counts.proposed, 0); });
+  for (const [name, mutate] of calendarPolicyPositives) await assess(name, 0, mutate, result => assert.equal(result.status, 'proposed', name));
   await assess('unknown-task-timing', 3, candidate => { candidate.request.taskSchedules = []; }, result => assert.equal(result.availability.freeIntervals, null));
   await assess('new-owner-event', 3, candidate => {
     candidate.snapshot.calendars[0].events.push({ id: 'new-owner-event', summary: 'New owner event', status: 'confirmed', start: { dateTime: candidate.request.operations[0].changes.start }, end: { dateTime: candidate.request.operations[0].changes.end } });

@@ -5,7 +5,7 @@ import { assessCalendarHandoff } from '../src/calendar-handoff.mjs';
 import { assessCalendarRegister } from '../src/calendar-register.mjs';
 import { parseDefinition } from '../src/records.mjs';
 import { effectKey } from '../src/work.mjs';
-import { bindRegister, refreshRegisterEvidence, registerHash } from '../verification/calendar-register-fixtures.mjs';
+import { declareRegisterPolicy, bindRegister, refreshRegisterEvidence, registerHash } from '../verification/calendar-register-fixtures.mjs';
 import { timingRegisterFixture as registerFixture, syntheticTimingPacket, syntheticTimingReceipt } from '../verification/calendar-timing-fixtures.mjs';
 
 const policyDigest = 'a'.repeat(64);
@@ -127,9 +127,9 @@ test('a two-operation batch retains partial effects and requires fresh serial pr
   const identity = { ...input.request.operations[0].identity, nativeId: task.id };
   input.snapshot.taskLists[0].tasks.push(task);
   input.request.taskSchedules.push({ ...structuredClone(input.request.taskSchedules[0]), identity, taskDigest: registerHash(task) });
-  input.request.sources.push({ ...structuredClone(input.request.sources[0]), id: 'paper-two', identity, name: 'Paper B attempt' });
+  input.request.sources.push({ ...structuredClone(input.request.sources[0]), id: 'paper-two', occurrenceId: 'paper-two', assignmentId: 'paper-b', identity, name: 'Paper B attempt' });
   input.request.operations.push({ ...structuredClone(input.request.operations[0]), id: 'move-two', identity, sourceId: 'paper-two', baselineDigest: registerHash({ native: task, intervals: [] }), changes: { ...input.request.operations[0].changes, title: task.title, start: '2026-10-27T19:00:00+08:00', end: '2026-10-27T20:00:00+08:00' } });
-  bindRegister(input);
+  declareRegisterPolicy(input);
   const plan = run(input, packet('plan')).plan; assert.equal(plan.operations.length, 2);
   const first = plan.operations[0]; const second = plan.operations[1];
   input.evaluatedAt = '2026-10-27T00:00:01.000Z'; refreshRegisterEvidence(input);
@@ -341,7 +341,9 @@ test('a valid Event timing proposal cannot bypass the supported Task editor rout
   input.request.operations[0].identity = identity;
   input.request.operations[0].baselineDigest = registerHash({ native: event, intervals: [{ start: new Date(event.start.dateTime).toISOString(), end: new Date(event.end.dateTime).toISOString() }] });
   input.request.sources[0].identity = identity;
-  bindRegister(input);
+  declareRegisterPolicy(input);
+  const rule = { id: 'event-owner-replan', identity, occurrenceId: input.request.sources[0].occurrenceId, changes: { start: input.request.operations[0].changes.start, end: input.request.operations[0].changes.end }, observedAt: input.snapshot.acquisition.completedAt, evidenceRef: 'synthetic-owner-replan', supersedes: null };
+  input.request.policy.ownerRules.push(rule); input.snapshot.policy = structuredClone(input.request.policy); bindRegister(input);
   assert.equal(assessCalendarRegister(input.snapshot, input.request, { evaluatedAt: input.evaluatedAt }).status, 'proposed');
   const result = rawRun(input, packet('plan'));
   assert.equal(result.status, 'return-to-cloud'); assert.ok(result.findings.includes('unsupported-timing-interface'));

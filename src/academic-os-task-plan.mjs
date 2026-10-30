@@ -1,5 +1,6 @@
 import { canonical, digest } from './records.mjs';
 import { strictJson } from './bounded-json.mjs';
+import { assessCalendarPolicy } from './calendar-policy.mjs';
 
 const hash = value => digest(canonical(value));
 const same = (a, b) => canonical(a) === canonical(b);
@@ -22,7 +23,7 @@ function toolResult(value) {
   catch { return null; }
 }
 function intentShape(intent) {
-  shape(intent, ['schemaVersion', 'operationId', 'issuedAt', 'maxEvidenceAgeMs', 'target', 'identity', 'expectedSnapshot', 'operation', 'policyDigest', 'coordinationDefinitionHash', 'planDigest', 'operationDigest', 'effectKey', 'sourceRef', 'authorityRef'], ['baseline', 'nativeSnapshotDigest', 'preflightDigest']);
+  shape(intent, ['schemaVersion', 'operationId', 'issuedAt', 'maxEvidenceAgeMs', 'target', 'identity', 'expectedSnapshot', 'operation', 'policyDigest', 'coordinationDefinitionHash', 'planDigest', 'operationDigest', 'effectKey', 'sourceRef', 'authorityRef'], ['baseline', 'nativeSnapshotDigest', 'preflightDigest', 'policy', 'source']);
   need(intent.schemaVersion === 1 && text(intent.operationId, 200) && stamp(intent.issuedAt) && Number.isSafeInteger(intent.maxEvidenceAgeMs) && intent.maxEvidenceAgeMs > 0 && intent.maxEvidenceAgeMs <= 86400000, 'Invalid versioned API intent');
   target(intent.target);
   for (const key of ['expectedSnapshot', 'policyDigest', 'coordinationDefinitionHash', 'planDigest', 'operationDigest', 'effectKey']) need(sha(intent[key]), `Invalid ${key}`);
@@ -58,12 +59,23 @@ const limits = [
 ];
 const result = (status, findings, extra = {}) => ({ schemaVersion: 1, kind: 'academic-os-task-plan-adapter', status, execution: 'none', nativeVerified: false, completedEffectKeys: [], assurance: 'declared-api-intent-and-reported-readback', findings, ...extra, limits });
 
+function semanticAssessment(intent, baseline, evaluatedAt) {
+  const scope = { environment: intent.identity.environment, accountId: intent.identity.accountId };
+  const create = intent.operation.name === 'create';
+  const identity = { ...scope, containerKind: 'task-list', containerId: intent.identity.listId, nativeId: intent.identity.taskId ?? intent.identity.sourceOccurrenceId };
+  const assessment = assessCalendarPolicy(intent.policy, baseline, scope, [{ id: intent.operationId, identity, create, source: intent.source, changes: intent.operation.name === 'complete' ? { completed: true } : { title: intent.operation.title } }], evaluatedAt);
+  if (create && intent.source?.occurrenceId !== intent.identity.sourceOccurrenceId) assessment.findings.push({ code: 'source-occurrence-create-mismatch' });
+  if (intent.operation.name !== 'complete' && intent.source && !intent.operation.title.includes(intent.source.name)) assessment.findings.push({ code: 'source-scope-missing-from-title' });
+  return assessment;
+}
+
 export function prepareAcademicOsTaskPlan(intent, observation, { evaluatedAt = new Date().toISOString() } = {}) {
   intentShape(intent);
-  shape(observation, ['environment', 'accountId', 'capturedAt', 'evidenceRef', 'result']);
+  shape(observation, ['environment', 'accountId', 'capturedAt', 'evidenceRef', 'result'], ['policy']);
   need(stamp(evaluatedAt) && stamp(observation.capturedAt) && text(observation.evidenceRef, 16384) && text(observation.environment) && text(observation.accountId), 'Invalid observation attribution');
   const findings = [];
   const add = code => { if (!findings.includes(code)) findings.push(code); };
+  for (const row of semanticAssessment(intent, observation.policy, evaluatedAt).findings) add(row.code);
   const received = toolResult(observation.result);
   const report = received?.report;
   const execution = report?.execution;
@@ -90,7 +102,7 @@ export function prepareAcademicOsTaskPlan(intent, observation, { evaluatedAt = n
     }
   }
   if (findings.length) return result('return-to-cloud', findings, { intent: structuredClone(intent), call: null, prepared: null });
-  const binding = { environment: observation.environment, accountId: observation.accountId, evidenceRef: observation.evidenceRef, capturedAt: observation.capturedAt, observedAt: register.observedAt, generation: register.generation, target: structuredClone(execution.target), listId: execution.listId, expectedSnapshot: execution.expectedSnapshot, selectedTask };
+  const binding = { environment: observation.environment, accountId: observation.accountId, evidenceRef: observation.evidenceRef, capturedAt: observation.capturedAt, observedAt: register.observedAt, generation: register.generation, target: structuredClone(execution.target), listId: execution.listId, expectedSnapshot: execution.expectedSnapshot, selectedTask, policy: structuredClone(observation.policy) };
   const body = { schemaVersion: 1, intent: structuredClone(intent), binding, preparedAt: evaluatedAt, validUntil, apiPlan: wirePlan(intent) };
   const prepared = { ...body, preparedDigest: hash(body) };
   return result('api-plan-ready-reported', [], { prepared, call: { tool: 'tasks_apply_plan', arguments: { plan_json: canonical(prepared.apiPlan) } } });
@@ -102,7 +114,8 @@ export function assessAcademicOsTaskResult(prepared, receipt, { evaluatedAt = ne
   intentShape(prepared.intent);
   const intent = prepared.intent;
   const binding = prepared.binding;
-  shape(binding, ['environment', 'accountId', 'evidenceRef', 'capturedAt', 'observedAt', 'generation', 'target', 'listId', 'expectedSnapshot', 'selectedTask']);
+  shape(binding, ['environment', 'accountId', 'evidenceRef', 'capturedAt', 'observedAt', 'generation', 'target', 'listId', 'expectedSnapshot', 'selectedTask', 'policy']);
+  need(semanticAssessment(intent, binding.policy, prepared.preparedAt).findings.length === 0, 'Original API semantic policy is missing or changed');
   need(prepared.schemaVersion === 1 && sha(preparedDigest) && preparedDigest === hash(body) && same(prepared.apiPlan, wirePlan(intent)) && stamp(prepared.preparedAt) && stamp(prepared.validUntil) && stamp(binding.observedAt) && stamp(binding.capturedAt) && sha(binding.generation) && text(binding.evidenceRef, 16384), 'Changed or invalid original API packet');
   const expiry = Math.min(Date.parse(intent.issuedAt), Date.parse(binding.observedAt)) + intent.maxEvidenceAgeMs;
   need(Date.parse(prepared.validUntil) === expiry && Date.parse(prepared.preparedAt) <= expiry && Date.parse(binding.observedAt) <= Date.parse(binding.capturedAt) && Date.parse(binding.capturedAt) <= Date.parse(prepared.preparedAt) && Date.parse(intent.issuedAt) <= Date.parse(prepared.preparedAt) && binding.environment === intent.identity.environment && binding.accountId === intent.identity.accountId && binding.listId === intent.identity.listId && binding.expectedSnapshot === intent.expectedSnapshot && same(binding.target, intent.target), 'Changed API snapshot, account or expiry binding');

@@ -1,5 +1,7 @@
 # Prepare an Academic OS API plan
 
+Current preparation requires `intent.source`, `intent.policy` and the independently retained current `observation.policy`. The shared calendar policy assessor requires equal policy bytes, exact occurrence/native association, source semantics and owner rules. Creates require an unbound occurrence matching `identity.sourceOccurrenceId`; existing changes and completion require the same retained Task binding. Changed titles retain the source label. Missing legacy associations return no call. The outer prepared packet retains this policy; `task-plan/1` fields remain unchanged. The official provider read does not authenticate this owner-policy supplement or establish native timing.
+
 The local adapter prepares the reviewed Academic OS `task-plan/1` wire contract. It sends no call and loads no credentials. Its counterpart implementation and Emmy adapter require separate deployment and client adoption. Negotiate `tasks_sync_capabilities` before future use; the existing deployed service does not establish this new contract.
 
 Use this adapter for an explicit module or research create, title change or completion. It does not translate arbitrary [native Calendar handoff](calendar-handoff.md) operations. Dates, timing, descriptions, cancellation, reopening and combined operations are refused. The native checker already represents existing-Task completion; creation remains outside its existing-identity contract.

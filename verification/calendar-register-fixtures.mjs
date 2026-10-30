@@ -5,6 +5,21 @@ export const registerTime = '2026-10-27T00:00:00.000Z';
 export const registerHash = value => digest(canonical(value));
 export const registerIdentity = (nativeId = 'task-one', containerKind = 'task-list', containerId = containerKind === 'task-list' ? 'list-one' : 'calendar-one') => ({ environment: 'synthetic', accountId: 'owner@example.test', containerKind, containerId, nativeId });
 
+export function declareRegisterPolicy(input) {
+  const { snapshot, request } = input;
+  const at = snapshot.acquisition.completedAt;
+  const evidence = { observedAt: at, evidenceRef: 'synthetic-retained-owner-obligation' };
+  request.policy = { schemaVersion: 1, scope: { environment: snapshot.scope.environment, accountId: snapshot.scope.accountId }, assignments: [], occurrences: [], bindings: [], ownerRules: [] };
+  for (const source of request.sources) {
+    source.assignmentId ??= 'paper-a'; source.occurrenceId ??= source.id;
+    if (!request.policy.assignments.some(row => row.id === source.assignmentId)) request.policy.assignments.push({ id: source.assignmentId, reference: source.reference, orderedUnits: [], ...evidence });
+    request.policy.occurrences.push({ id: source.occurrenceId, assignmentId: source.assignmentId, name: source.name, range: source.range, kind: source.kind, unitIds: [], predecessors: source.dependsOn, state: source.completed ? 'completed' : 'open', ...evidence });
+    request.policy.bindings.push({ identity: structuredClone(source.identity), occurrenceId: source.occurrenceId, supersedes: null, ...evidence });
+  }
+  snapshot.policy = structuredClone(request.policy);
+  return bindRegister(input);
+}
+
 export function bindRegister(input) {
   input.request.snapshotDigest = calendarSnapshotDigest(input.snapshot);
   if (input.request.visualReview) input.request.visualReview.snapshotDigest = input.request.snapshotDigest;
@@ -42,5 +57,5 @@ export function registerFixture(evaluatedAt = registerTime) {
     operations: [{ id: 'move-one', identity: registerIdentity(), baselineDigest: registerHash({ native: task, intervals: [] }), transport: 'calendar-native-ui', changes: { title: task.title, date: day, start: point('09:00'), end: point('10:00'), durationMinutes: 60, timeZone: 'UTC' }, sourceId: 'paper-attempt' }], attempts: [], history: { complete: true, completeThrough: evaluatedAt, evidenceRef: 'synthetic-complete-existing-responsibility-history' },
     visualReview: { snapshotDigest: '', observedAt: acquiredAt, evidenceRef: 'synthetic-native-calendar-visual-review', window, mealsProtected: true, numericCompared: true },
   };
-  return bindRegister({ snapshot, request, evaluatedAt });
+  return declareRegisterPolicy({ snapshot, request, evaluatedAt });
 }

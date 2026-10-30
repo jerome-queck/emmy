@@ -13,5 +13,10 @@ export function academicOsPlanFixture(name = 'change', now = new Date().toISOStr
     register: { freshness: 'fresh', listId: 'list-one', providerSnapshot: intent.expectedSnapshot, generation: 'b'.repeat(64), observedAt: new Date(Date.parse(now) - 1000).toISOString() },
     tasks: [{ title: 'Unpushed local draft', status: 'open' }, { taskId: 'task-one', title: 'Original source title', status: 'open', notes: 'synthetic-private-note-not-for-plan-output' }],
   } } };
+  const scope = { environment: intent.identity.environment, accountId: intent.identity.accountId };
+  const evidence = { observedAt: observation.result.report.register.observedAt, evidenceRef: 'synthetic-retained-owner-obligation' };
+  intent.source = { id: 'source-one', assignmentId: 'assignment-one', occurrenceId: 'source-one-occurrence-one', name: kind === 'module' ? 'Handout 10' : 'Hecke Worksheet', reference: 'synthetic-source-file', range: 'whole source', kind: 'whole-source', completed: false };
+  intent.policy = { schemaVersion: 1, scope, assignments: [{ id: 'assignment-one', reference: intent.source.reference, orderedUnits: [], ...evidence }], occurrences: [{ id: intent.source.occurrenceId, assignmentId: intent.source.assignmentId, name: intent.source.name, range: intent.source.range, kind: intent.source.kind, unitIds: [], predecessors: [], state: 'open', ...evidence }], bindings: name === 'create' ? [] : [{ identity: { ...scope, containerKind: 'task-list', containerId: intent.identity.listId, nativeId: intent.identity.taskId }, occurrenceId: intent.source.occurrenceId, supersedes: null, ...evidence }], ownerRules: [] };
+  observation.policy = structuredClone(intent.policy);
   return { intent, observation, evaluatedAt: now };
 }

@@ -9,6 +9,29 @@ const prepare = input => prepareAcademicOsTaskPlan(input.intent, input.observati
 const receipt = (prepared, outcome = 'applied', taskId = 'task-one') => ({ attemptedAt: now, observedAt: now, evidenceRef: 'synthetic-original-result', report: { schemaVersion: 1, operationId: prepared.intent.operationId, outcome, taskId, registerFresh: outcome === 'applied' }, isError: outcome !== 'applied' });
 const assess = (prepared, reply) => assessAcademicOsTaskResult(prepared, reply, { evaluatedAt: now });
 
+test('current API proposals require retained semantic association and current policy baseline', () => {
+  for (const name of ['create', 'change', 'complete']) for (const mutate of [
+    input => { delete input.intent.policy; },
+    input => { delete input.observation.policy; },
+    input => { input.intent.source.name = 'Worksheet Q5'; if (name !== 'complete') input.intent.operation.title = 'Module Worksheet Q5'; },
+    input => { input.intent.policy.ownerRules = []; input.observation.policy.ownerRules.push({ oldRule: true }); },
+    input => { input.intent.source.occurrenceId = 'other-assignment'; },
+  ]) {
+    const input = fixture(name); mutate(input);
+    const result = prepare(input); assert.equal(result.status, 'return-to-cloud'); assert.equal(result.call, null);
+  }
+});
+test('API corrections require the original timed attempt and permit its completed exact occurrence', () => {
+  for (const kind of [null, 'whole-source', 'timed-attempt']) {
+    const input = fixture('create'); input.intent.source.kind = 'correction';
+    const occurrence = input.intent.policy.occurrences[0]; occurrence.kind = 'correction';
+    if (kind) { occurrence.predecessors = ['original-attempt']; input.intent.policy.occurrences.push({ ...occurrence, id: 'original-attempt', kind, predecessors: [], state: 'completed' }); }
+    input.observation.policy = structuredClone(input.intent.policy);
+    const result = prepare(input);
+    assert.equal(result.status, kind === 'timed-attempt' ? 'api-plan-ready-reported' : 'return-to-cloud');
+  }
+});
+
 test('module and research create/change/complete emit only literal task-plan/1 fields and preserve associations', () => {
   for (const kind of ['module', 'research-project']) for (const name of ['create', 'change', 'complete']) {
     const input = fixture(name, kind);

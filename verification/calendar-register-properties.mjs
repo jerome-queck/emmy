@@ -1,4 +1,5 @@
 import { bindRegister, refreshRegisterEvidence, registerFixture, registerHash, registerIdentity } from './calendar-register-fixtures.mjs';
+import { calendarPolicyCases, calendarPolicyPositives } from './calendar-policy-fixtures.mjs';
 
 function retainedAttempt(input) {
   const row = input.request.operations[0];
@@ -8,6 +9,7 @@ function retainedAttempt(input) {
 }
 
 const negative = [
+  ...calendarPolicyCases,
   ['snapshot-binding', input => { input.request.snapshotDigest = '0'.repeat(64); }, 'snapshot-digest-mismatch'],
   ['snapshot-stale', input => { input.evaluatedAt = '2026-10-27T00:01:00Z'; }, 'stale-snapshot'],
   ['page-stale', input => { input.snapshot.taskLists[0].collection.pages[0].acquiredAt = '2026-10-26T00:00:00Z'; }, 'stale-source-page'],
@@ -81,7 +83,7 @@ const negative = [
 ];
 const positives = ['base-40-minute-attempt', 'transparent-optional-class', 'cancelled-occurrence', 'source-permutation', 'verified-self-projection', 'provider-utc-event-zone'];
 
-export const registerBounds = { evaluatedAt: '2026-10-27T00:00:00Z', maxEvidenceAgeMs: 60000, negativeCases: negative.map(row => row[0]), positiveCases: positives, cases: negative.length + positives.length, assumptions: ['Fixed finite synthetic domain, not an unbounded proof.', 'Provider truth, account identity, owner intent and native visual/schedule captures remain reported.', 'Collection, bounded files, credentials, live clock, immutable exports and real CLI execution are behavioral boundaries.', 'Native writes and automatic invocation are excluded.'] };
+export const registerBounds = { evaluatedAt: '2026-10-27T00:00:00Z', maxEvidenceAgeMs: 60000, negativeCases: negative.map(row => row[0]), positiveCases: [...positives, ...calendarPolicyPositives.map(row => row[0])], cases: negative.length + positives.length + calendarPolicyPositives.length, assumptions: ['Fixed finite synthetic domain, not an unbounded proof.', 'Provider truth, account identity, owner intent and native visual/schedule captures remain reported.', 'Collection, bounded files, credentials, live clock, immutable exports and real CLI execution are behavioral boundaries.', 'Native writes and automatic invocation are excluded.'] };
 
 export function verifyRegisterPolicy({ register }, check) {
   let cases = 0;
@@ -110,10 +112,17 @@ export function verifyRegisterPolicy({ register }, check) {
     bindRegister(input);
     run(name, input, result => result.status === 'proposed' && result.proposals[0].status === 'proposed' && result.availability.freeIntervals.length === 3 && result.proposals[0].changes.durationMinutes === 60 && result.proposals[0].sourceTiming.actualDurationMinutes === 40, 'Exact 40-minute attempt and optional Free class remain possible while meals block.');
   }
+  for (const [name, mutate] of calendarPolicyPositives) { const input = registerFixture(); mutate(input); run(name, input, result => result.status === 'proposed', 'Legitimate source policy and exact owner supersession remain possible.'); }
   return { cases };
 }
 
 export const registerMutations = [
+  { id: 'policy-ignore-current-baseline', property: 'calendar-register', source: 'src/calendar-policy.mjs', counterexample: 'policy-baseline', edits: [["if (!same(policy, baseline)) add('calendar-policy-baseline-mismatch');", "if (false) add('calendar-policy-baseline-mismatch');"]] },
+  { id: 'policy-repurpose-source', property: 'calendar-register', source: 'src/calendar-policy.mjs', counterexample: 'semantic-repurpose', edits: [["if (!assignment || source.name !== occurrence.name || source.reference !== assignment.reference || source.range !== occurrence.range || source.kind !== occurrence.kind) add('source-semantic-mismatch', selector.id);", "if (false) add('source-semantic-mismatch', selector.id);"]] },
+  { id: 'policy-ignore-question-group', property: 'calendar-register', source: 'src/calendar-policy.mjs', counterexample: 'question-gap', edits: [["if (indices.some((index, i) => index < 0 || i > 0 && index !== indices[i - 1] + 1) || assignment.orderedUnits.length > 0 && row.unitIds.length === 0) add('question-group-not-contiguous', row.id);", "if (false) add('question-group-not-contiguous', row.id);"]] },
+  { id: 'policy-ignore-question-order', property: 'calendar-register', source: 'src/calendar-policy.mjs', counterexample: 'question-order', edits: [["if (!predecessor) add('ordered-question-dependency-unmet', selector.id);", "if (!predecessor) void 0;"]] },
+  { id: 'policy-ignore-native-association', property: 'calendar-register', source: 'src/calendar-policy.mjs', counterexample: 'binding-native-change', edits: [["if (selector.create ? activeBindings.some(row => row.occurrenceId === occurrence.id) : !activeBindings.some(row => row.occurrenceId === occurrence.id && same(row.identity, selector.identity))) add('source-binding-mismatch', selector.id);", "if (false) add('source-binding-mismatch', selector.id);"]] },
+  { id: 'policy-reverse-owner-move', property: 'calendar-register', source: 'src/calendar-policy.mjs', counterexample: 'owner-move-reversal', edits: [["if (Object.entries(rule.changes).some(([key, value]) => Object.hasOwn(selector.changes, key) && !same(selector.changes[key], value))) add('owner-policy-protected', selector.id);", "if (false) add('owner-policy-protected', selector.id);"]] },
   { id: 'register-reject-provider-utc', property: 'calendar-register', source: 'src/calendar-register.mjs', counterexample: 'provider-utc-event-zone', edits: [["if (endpoint.timeZone !== undefined && !zone(endpoint.timeZone)) return null;", "if (endpoint.timeZone !== undefined && !zone(endpoint.timeZone)) return null;\n    if (endpoint.timeZone !== undefined && !wallClockMatches(endpoint.dateTime, endpoint.timeZone)) return null;"]] },
   { id: 'register-free-meals', property: 'calendar-register', source: 'src/calendar-register.mjs', counterexample: 'meal-free-protected', edits: [["const busy = native.transparency !== 'transparent' || protectedMeal;", "const busy = native.transparency !== 'transparent';"]] },
   { id: 'register-forget-task-timing', property: 'calendar-register', source: 'src/calendar-register.mjs', counterexample: 'task-unknown', edits: [["if (!scheduleById.has(identityKey(row.identity))) add('unknown-task-timing', row.identity);", "if (false) add('unknown-task-timing', row.identity);"]] },
