@@ -4,6 +4,7 @@ import { join, relative } from 'node:path';
 import { digest } from '../src/records.mjs';
 import { bindRegister, refreshRegisterEvidence, registerFixture, registerHash } from './calendar-register-fixtures.mjs';
 import { academicOsPlanFixture } from './academic-os-plan-fixtures.mjs';
+import { academicOsPlanningFixture } from './academic-os-planning-fixtures.mjs';
 import { timingRegisterFixture, syntheticTimingPacket, syntheticTimingReceipt } from './calendar-timing-fixtures.mjs';
 import { calendarPolicyCases, calendarPolicyPositives } from './calendar-policy-fixtures.mjs';
 
@@ -203,6 +204,19 @@ module.exports.GoogleAuth = class {
     await writeFile(join(directory, `academic-os-${name}.output.json`), JSON.stringify(output));
     return output;
   };
+  const planning = academicOsPlanningFixture();
+  const published = await api('publish-cloud-catalog', { schemaVersion: 1, stage: 'publish', catalog: planning.catalogInput });
+  assert.equal(published.status, 'planning-catalog-ready');
+  const acquired = await api('acquire-cloud-intent', { schemaVersion: 1, stage: 'acquire', catalog: published.catalog, request: planning.request, observation: planning.observation });
+  assert.equal(acquired.status, 'api-plan-ready-reported');
+  assert.equal(acquired.prepared.apiPlan.policyVersion, published.catalog.policyVersion);
+  assert.equal(acquired.prepared.apiPlan.operation.taskId, planning.request.taskId);
+  const catalogChanged = structuredClone(published.catalog); catalogChanged.authorizations[0].authorityRef += '-changed';
+  await api('acquire-revised-policy-refused', { schemaVersion: 1, stage: 'acquire', catalog: catalogChanged, request: planning.request, observation: planning.observation }, 2);
+  const terminalRead = structuredClone(planning.observation); terminalRead.result.report.tasks[1].status = 'completed';
+  assert.equal((await api('acquire-terminal-refused', { schemaVersion: 1, stage: 'acquire', catalog: published.catalog, request: planning.request, observation: terminalRead }, 3)).call, null);
+  const partialCatalog = structuredClone(planning.catalogInput); partialCatalog.coverage.complete = false;
+  await api('publish-partial-refused', { schemaVersion: 1, stage: 'publish', catalog: partialCatalog }, 2);
   let apiPrepared;
   for (const name of ['create', 'change']) {
     const fixture = academicOsPlanFixture(name); fixture.intent.operation.title = 'MH3210 Handout 100';
