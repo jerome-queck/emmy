@@ -1,10 +1,11 @@
 export function verifyDispatchPolicy({ dispatch, records, work }, check) {
+  const ordinarySettingsForSpeed = () => ({ model: 'gpt-6.1-sol', effort: 'medium', sourceRef: 'Synthetic speed scope' });
   const asOf = '2026-10-24T12:00:00.000Z'; const machine = 'synthetic-host';
   const target = { projectId: 'fixture', repository: 'https://example.invalid/fixture', executor: 'local-codex', hostId: 'local', nativeProjectId: 'native-project', path: '/synthetic/project', revision: 'a'.repeat(40), dirtyDigest: records.digest('clean') };
   const selected = { threadId: 'selected-dispatcher', hostId: target.hostId, nativeProjectId: 'dispatcher-own-project', selectionRef: 'Synthetic selected dispatcher', childAccessIntent: 'full-access-inherit', authorityRef: { reference: 'Synthetic standing human scope', action: 'dispatch-native-child', resource: target.projectId, destination: target.nativeProjectId } };
   const bindings = { schemaVersion: 1, localHostId: 'local', hosts: { local: { label: 'Synthetic local', machine } }, projects: { coordination: { label: 'Synthetic coordinator', hostId: 'local', nativeProjectId: selected.nativeProjectId, path: '/synthetic/coordinator', dispatcher: { ...selected, authorityRef: { ...selected.authorityRef, resource: 'coordination', destination: selected.nativeProjectId } } }, fixture: { label: 'Synthetic project', hostId: 'local', nativeProjectId: target.nativeProjectId, path: target.path, repository: target.repository, dispatcher: selected } } };
   const definition = records.recordPayload(records.parseDefinition({ id: 'dispatch-objective', parents: [], goal: 'Complete one synthetic coding objective.', context: 'Bounded dispatch domain.', target, action: 'implement', resource: 'fixture', destination: 'native-project', authorityRef: { reference: 'Synthetic human objective', action: 'implement', resource: 'fixture', destination: 'native-project' }, criteria: [{ id: 'outcome', description: 'Separate actual outcome review.', evidence: 'reported-check' }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: asOf, feature: { id: 'dispatch', method: 'Recover context.', intendedEffect: 'Finish this objective.', reviewAt: asOf }, lifecycle: { status: 'active' }, dispatch: { correlationKey: 'bounded-objective-one', dispatcher: selected, skill: { path: '/synthetic/SKILL.md', sha256: records.digest('skill') } } }));
-  const readback = (threadId, observedAt) => ({ threadId, hostId: 'local', nativeProjectId: threadId === selected.threadId ? selected.nativeProjectId : target.nativeProjectId, creatorThreadId: selected.threadId, pinned: true, correlationKey: definition.dispatch.correlationKey, observedAt, sourceRef: 'Synthetic supported readback', recordedSettings: { model: 'gpt-6.1-sol', effort: 'high', sandboxMode: 'danger-full-access', approvalPolicy: 'never', observedAt, sourceRef: 'Synthetic recorded session' } });
+  const readback = (threadId, observedAt) => ({ threadId, hostId: 'local', nativeProjectId: threadId === selected.threadId ? selected.nativeProjectId : target.nativeProjectId, creatorThreadId: selected.threadId, pinned: true, correlationKey: definition.dispatch.correlationKey, observedAt, sourceRef: 'Synthetic supported readback', recordedSettings: { model: 'gpt-6.1-sol', effort: 'medium', serviceTier: 'default', sandboxMode: 'danger-full-access', approvalPolicy: 'never', observedAt, sourceRef: 'Synthetic recorded session' } });
   const make = ({ phase = 'ready', complete = true, availability = 'available', age = 0 } = {}) => {
     const observedAt = new Date(Date.parse(asOf) - age).toISOString();
     const priorAt = new Date(Math.min(Date.parse(asOf) - 1, Date.parse(observedAt) - 1)).toISOString();
@@ -25,28 +26,29 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
     const expected = eligible && phase === 'absent' ? 'create-via-dispatcher' : eligible && phase === 'ready' ? 'read-or-wait' : null;
     assertAdvice(`${phase}-${complete}-${availability}-${age}`, make({ phase, complete, availability, age }), expected);
   }
-  const coordinatorPolicy = (input, model = 'gpt-6.1-sol', effort = 'medium') => {
+  const coordinatorPolicy = (input, model = 'gpt-6.1-sol', effort = 'high') => {
     input.records[0].dispatch.coordinatorRequestedSettings = { model, effort, sourceRef: 'Synthetic explicit owner coordinator policy', scopedOverrideRef: 'Synthetic objective-scoped owner choice', scope: { objectiveId: input.id, role: 'coordinator' } };
+    input.records[0].dispatch.coordinatorRequestedSettings.oneTimePermission = { objectiveId: input.id, role: 'coordinator', model, effort, sourceRef: 'Synthetic exact one-time owner permission' };
     Object.assign(input.records.at(-1).dispatch.dispatcher.recordedSettings, { model, effort });
     return input;
   };
-  for (const [model, effort] of [['gpt-6.1-sol', 'medium'], ['gpt-6.1-sol', 'low'], ['gpt-6-luna', 'max'], ['gpt-6.1-sol', 'max']]) {
+  for (const [model, effort] of [['gpt-6.1-sol', 'high'], ['gpt-6.1-sol', 'medium'], ['gpt-6.1-sol', 'low'], ['gpt-6-luna', 'max'], ['gpt-6.1-sol', 'max']]) {
     for (const phase of ['absent', 'ready']) {
       const input = coordinatorPolicy(make({ phase }), model, effort);
       assertAdvice(`scoped-coordinator-${model}-${effort}-${phase}`, input, phase === 'absent' ? 'create-via-dispatcher' : 'read-or-wait');
     }
   }
   for (const [label, edit] of [
-    ['missing-owner-override', input => { delete input.records[0].dispatch.coordinatorRequestedSettings.scopedOverrideRef; }],
+    ['missing-owner-override', input => { input.records[0].dispatch.coordinatorRequestedSettings.model = 'gpt-6-luna'; input.records[0].dispatch.coordinatorRequestedSettings.oneTimePermission.model = 'gpt-6-luna'; input.records.at(-1).dispatch.dispatcher.recordedSettings.model = 'gpt-6-luna'; delete input.records[0].dispatch.coordinatorRequestedSettings.scopedOverrideRef; }],
     ['wrong-objective-scope', input => { input.records[0].dispatch.coordinatorRequestedSettings.scope.objectiveId = 'another-objective'; }],
     ['wrong-role-scope', input => { input.records[0].dispatch.coordinatorRequestedSettings.scope.role = 'child'; }],
     ['missing-scope', input => { delete input.records[0].dispatch.coordinatorRequestedSettings.scope; }],
     ['stale-coordinator-settings', input => { input.records.at(-1).dispatch.dispatcher.recordedSettings.observedAt = '2000-01-01T00:00:00Z'; }],
     ['future-coordinator-settings', input => { input.records.at(-1).dispatch.dispatcher.recordedSettings.observedAt = '2099-01-01T00:00:00Z'; }],
     ['missing-coordinator-settings', input => { input.records.at(-1).dispatch.dispatcher.recordedSettings = null; }],
-    ['mismatched-coordinator-effort', input => { input.records.at(-1).dispatch.dispatcher.recordedSettings.effort = 'high'; }],
+    ['mismatched-coordinator-effort', input => { input.records.at(-1).dispatch.dispatcher.recordedSettings.effort = 'low'; }],
     ['mismatched-coordinator-model', input => { input.records.at(-1).dispatch.dispatcher.recordedSettings.model = 'gpt-6-luna'; }],
-    ['coordinator-policy-cannot-lower-child', input => { input.records.at(-1).dispatch.child.recordedSettings.effort = 'medium'; }],
+    ['coordinator-policy-cannot-lower-child', input => { input.records.at(-1).dispatch.child.recordedSettings.effort = 'high'; }],
     ['unchanged-pin-gate', input => { input.records.at(-1).dispatch.dispatcher.pinned = false; }],
     ['unchanged-authority-gate', input => { input.bindings.projects.fixture.dispatcher.authorityRef.resource = 'foreign'; }]
   ]) { const input = coordinatorPolicy(make()); edit(input); assertAdvice(label, input, null); }
@@ -65,14 +67,51 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
   assertAdvice('descendant-policy-is-not-immutable-identity', revised, 'create-via-dispatcher');
   for (const effort of ['high', 'max']) {
     const input = make({ phase: 'absent' }); input.records.at(-1).dispatch.dispatcher.recordedSettings.effort = effort;
-    assertAdvice(`legacy-default-floor-${effort}`, input, 'create-via-dispatcher');
+    assertAdvice(`default-exact-medium-${effort}`, input, null);
   }
   const childOnly = make();
   childOnly.records[0].dispatch.requestedSettings = { model: 'gpt-6.1-sol', effort: 'medium', sourceRef: 'Synthetic child-only owner source', scopedOverrideRef: 'Synthetic child-only choice' };
   childOnly.records.at(-1).dispatch.child.recordedSettings.effort = 'medium';
-  assertAdvice('child-only-override-retains-coordinator-high', childOnly, 'read-or-wait');
-  childOnly.records.at(-1).dispatch.dispatcher.recordedSettings.effort = 'medium';
+  assertAdvice('child-only-override-retains-coordinator-medium', childOnly, 'read-or-wait');
+  childOnly.records.at(-1).dispatch.dispatcher.recordedSettings.effort = 'high';
   assertAdvice('child-only-override-cannot-lower-coordinator', childOnly, null);
+  for (const role of ['child', 'coordinator']) for (const [model, effort] of [['gpt-6.1-sol', 'high'], ['gpt-6.1-sol', 'xhigh'], ['gpt-6.1-sol', 'max'], ['gpt-6-astra', 'high']]) {
+    const field = role === 'child' ? 'requestedSettings' : 'coordinatorRequestedSettings';
+    const input = make({ phase: 'absent' });
+    const settings = { model, effort, sourceRef: 'Synthetic owner says or higher', scopedOverrideRef: 'Synthetic generic or higher', ...(role === 'coordinator' ? { scope: { objectiveId: input.id, role } } : {}) };
+    input.records[0].dispatch[field] = settings;
+    if (role === 'coordinator') Object.assign(input.records.at(-1).dispatch.dispatcher.recordedSettings, { model, effort });
+    assertAdvice(`${role}-${model}-${effort}-generic`, input, model === 'gpt-6.1-sol' && effort === 'high' ? 'create-via-dispatcher' : null);
+    settings.oneTimePermission = { objectiveId: input.id, role, model, effort, sourceRef: 'Synthetic explicit one-time owner permission' };
+    assertAdvice(`${role}-${model}-${effort}-exact-permission`, input, 'create-via-dispatcher');
+    if (model !== 'gpt-6.1-sol' || effort !== 'high') for (const key of ['objectiveId', 'role', 'model', 'effort', 'sourceRef']) {
+      const invalid = structuredClone(input); invalid.records[0].dispatch[field].oneTimePermission[key] = key === 'sourceRef' ? '' : 'foreign';
+      assertAdvice(`${role}-${model}-${effort}-permission-${key}`, invalid, null);
+    }
+  }
+  for (const role of ['child', 'coordinator']) for (const tier of ['priority', 'ultrafast']) {
+    const field = role === 'child' ? 'requestedSettings' : 'coordinatorRequestedSettings';
+    for (const variant of ['unanswered', 'requested', 'declined', 'approved', 'wrong-objective', 'wrong-role', 'wrong-tier']) {
+      const input = make({ phase: 'absent' });
+      const settings = { ...ordinarySettingsForSpeed(), serviceTier: tier, ...(role === 'coordinator' ? { scope: { objectiveId: input.id, role } } : {}) };
+      if (variant !== 'unanswered') settings.speedApproval = { status: ['requested', 'declined'].includes(variant) ? variant : 'approved', objectiveId: input.id, role, serviceTier: tier, sourceRef: 'Synthetic exact task speed approval' };
+      if (variant === 'wrong-objective') settings.speedApproval.objectiveId = 'another-objective';
+      if (variant === 'wrong-role') settings.speedApproval.role = role === 'child' ? 'coordinator' : 'child';
+      if (variant === 'wrong-tier') settings.speedApproval.serviceTier = 'different-tier';
+      input.records[0].dispatch[field] = settings;
+      const approved = variant === 'approved';
+      if (role === 'coordinator') input.records.at(-1).dispatch.dispatcher.recordedSettings.serviceTier = approved ? tier : 'default';
+      const result = dispatch.dispatchDecision(input);
+      check('dispatch-recovery', { case: `speed-${role}-${tier}-${variant}`, actual: result }, result[role === 'child' ? 'childSpeed' : 'coordinatorSpeed'].serviceTier === (approved ? tier : 'default'), 'Only exact approved task speed changes Standard. Silence continues ordinary work.');
+      const reversed = dispatch.dispatchDecision({ ...input, records: [...input.records].reverse() });
+      check('dispatch-recovery', { case: `speed-${role}-${tier}-${variant}-permutation` }, records.canonical(result) === records.canonical(reversed), 'Speed selection is independent of record order.');
+      assertAdvice(`speed-${role}-${tier}-${variant}-continues`, input, 'create-via-dispatcher');
+    }
+    const inherited = make(); inherited.records.at(-1).dispatch[role === 'child' ? 'child' : 'dispatcher'].recordedSettings.serviceTier = tier;
+    assertAdvice(`unapproved-inherited-${role}-${tier}`, inherited, null);
+    delete inherited.records.at(-1).dispatch[role === 'child' ? 'child' : 'dispatcher'].recordedSettings.serviceTier;
+    assertAdvice(`unknown-tier-${role}-${tier}`, inherited, null);
+  }
   const cross = make({ phase: 'absent' }); const crossAdvice = dispatch.dispatchDecision(cross);
   check('dispatch-recovery', { case: 'cross-project-request-destination', actual: crossAdvice.nativeCreateRequest }, crossAdvice.nativeCreateRequest?.target.projectId === target.nativeProjectId && crossAdvice.dispatcherProject === 'coordination', 'The child destination is independent of dispatcher project ownership.');
   const crossReverse = dispatch.dispatchDecision({ ...cross, records: [...cross.records].reverse() });
