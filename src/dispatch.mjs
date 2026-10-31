@@ -5,7 +5,7 @@ import { canonical, canonicalRepository, digest, dispatchEfforts as efforts, par
 import { inspectRepository } from './responsibilities.mjs';
 
 const identity = value => [value?.threadId, value?.hostId, value?.nativeProjectId];
-const ordinarySettings = { model: 'gpt-6.1-sol', effort: 'high', sourceRef: 'Standing ordinary-session policy' };
+const ordinarySettings = { model: 'gpt-6.1-sol', effort: 'medium', sourceRef: 'Standing ordinary-session policy' };
 const currentTime = (value, asOf, maxAgeMs) => Date.parse(value) <= Date.parse(asOf) && Date.parse(asOf) - Date.parse(value) <= maxAgeMs;
 
 function readbackReasons(readback, expected, requested, asOf, maxAgeMs, label, restoredAt = null) {
@@ -22,7 +22,7 @@ function readbackReasons(readback, expected, requested, asOf, maxAgeMs, label, r
   else {
     if (!currentTime(settings.observedAt, asOf, maxAgeMs)) reasons.push(`${label}-settings-not-current`);
     if (restoredAt && Date.parse(settings.observedAt) < Date.parse(restoredAt)) reasons.push(`${label}-settings-before-restore`);
-    if (settings.model !== requested.model || !efforts.includes(settings.effort) || (requested === ordinarySettings ? efforts.indexOf(settings.effort) < efforts.indexOf(requested.effort) : settings.effort !== requested.effort)) reasons.push(`${label}-model-mismatch`);
+    if (settings.model !== requested.model || !efforts.includes(settings.effort) || settings.effort !== requested.effort) reasons.push(`${label}-model-mismatch`);
     if (settings.sandboxMode !== 'danger-full-access' || settings.approvalPolicy !== 'never') reasons.push(`${label}-policy-mismatch`);
   }
   return reasons;
@@ -90,9 +90,14 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   let repositoryVerified = !remote && repositoryReadback && sameSubject({ ...target, ...repositoryReadback }, target);
   if (!remote && !repositoryVerified) result.reasons.push('current-repository-unverified');
   if (definition.lifecycle.status !== 'active') result.reasons.push('objective-inactive');
-  if ((requested.model !== ordinarySettings.model || efforts.indexOf(requested.effort) < efforts.indexOf('high')) && !requested.scopedOverrideRef) result.reasons.push('scoped-model-override-needed');
+  if ((requested.model !== ordinarySettings.model || efforts.indexOf(requested.effort) < efforts.indexOf('medium')) && !requested.scopedOverrideRef) result.reasons.push('scoped-model-override-needed');
   if (spec.coordinatorRequestedSettings && (coordinatorRequested.scope?.objectiveId !== id || coordinatorRequested.scope?.role !== 'coordinator')) result.reasons.push('coordinator-model-scope-mismatch');
-  if ((coordinatorRequested.model !== ordinarySettings.model || efforts.indexOf(coordinatorRequested.effort) < efforts.indexOf('high')) && !coordinatorRequested.scopedOverrideRef) result.reasons.push('coordinator-scoped-model-override-needed');
+  if ((coordinatorRequested.model !== ordinarySettings.model || efforts.indexOf(coordinatorRequested.effort) < efforts.indexOf('medium')) && !coordinatorRequested.scopedOverrideRef) result.reasons.push('coordinator-scoped-model-override-needed');
+  for (const [role, settings] of [['child', requested], ['coordinator', coordinatorRequested]]) {
+    const exceptional = settings.model !== ordinarySettings.model || efforts.indexOf(settings.effort) > efforts.indexOf('high');
+    const permission = settings.oneTimePermission;
+    if (exceptional && !(permission?.objectiveId === id && permission?.role === role && permission?.model === settings.model && permission?.effort === settings.effort && permission?.sourceRef?.trim())) result.reasons.push(`${role}-one-time-model-permission-needed`);
+  }
   if (!remote && !skillVerified) result.reasons.push('installed-skill-unverified');
 
   const observations = records.filter(record => record.type === 'observation' && record.responsibilityId === id);
@@ -152,7 +157,7 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
     if (knownIds.length) return stop('existing-child-requires-rediscovery');
     if (result.reasons.length) return stop();
     const attemptKey = digest({ objective: id, correlationKey: spec.correlationKey, effectKey: key, discovery: observation.hash });
-    const prompt = `[$pstack:poteto-mode](${spec.skill.path})\n\n${definition.goal}\n\n${definition.context}\n\nObjective ${definition.id}. Correlation ${spec.correlationKey}. Effect ${key}. Attempt ${attemptKey}.\nTarget repository ${target.repository}. Host ${target.hostId}. Saved native project ${target.nativeProjectId}. Checkout ${target.path}. Revision ${target.revision}. Dirty digest ${target.dirtyDigest}.\nRequested model ${requested.model} at ${requested.effort}. Source ${requested.scopedOverrideRef ?? requested.sourceRef}. Honor scoped human helper overrides in the task context.\nSource authority ${definition.authorityRef.reference}. Standing FullAccess-child intent ${spec.dispatcher.authorityRef.reference}. Preserve global defaults, other threads and separate connector/Computer Use grants. Retain actual first-turn policy/model readbacks separately from provider execution and effective access.\nFinish evidence ${definition.criteria.map(item => item.description).join(' ')}\nKeep private identifiers and receipts in ignored private state. Read and follow this destination's actual AGENTS.md, installed skills and verification requirements. Preserve its project defaults. Complete independent review and protected delivery where required. Parent owns native read/wait progress; do not depend on child callbacks.`;
+    const prompt = `[$pstack:poteto-mode](${spec.skill.path})\n\n${definition.goal}\n\n${definition.context}\n\nObjective ${definition.id}. Correlation ${spec.correlationKey}. Effect ${key}. Attempt ${attemptKey}.\nTarget repository ${target.repository}. Host ${target.hostId}. Saved native project ${target.nativeProjectId}. Checkout ${target.path}. Revision ${target.revision}. Dirty digest ${target.dirtyDigest}.\nRequested model ${requested.model} at ${requested.effort}. Source ${requested.scopedOverrideRef ?? requested.sourceRef}. One-time permission declaration ${JSON.stringify(requested.oneTimePermission ?? null)}. This is declared scope; verify the owner source before relying on an exception. Ordinary coding and substantive helpers use Sol Medium. Heavy reasoning uses Sol High maximum. Any stronger effort or other coding model requires explicit one-time owner permission for that exact objective, role, model and effort. Generic "or higher" is not permission. Honor scoped human helper overrides in the task context.\nSource authority ${definition.authorityRef.reference}. Standing FullAccess-child intent ${spec.dispatcher.authorityRef.reference}. Preserve global defaults, other threads and separate connector/Computer Use grants. Retain actual first-turn policy/model readbacks separately from provider execution and effective access.\nFinish evidence ${definition.criteria.map(item => item.description).join(' ')}\nKeep private identifiers and receipts in ignored private state. Read and follow this destination's actual AGENTS.md, installed skills and verification requirements. Preserve its project defaults. Complete independent review and protected delivery where required. Parent owns native read/wait progress; do not depend on child callbacks.`;
     const words = definition.id.split('-').slice(0, 5); if (words.length === 1) words.push('objective');
     return { ...result, status: 'advice-ready', next: 'create-via-dispatcher', attemptKey, beforeNativeCall: 'Retain attempted state with this attempt key and the exact request digest through reconcile --import, then use this pinned proposal once. Rediscover any uncertain result before retry.', nativeCreateRequest: { target: { type: 'project', projectId: target.nativeProjectId, environment: { type: 'local' } }, model: requested.model, thinking: requested.effort, title: `${bindings.projects[target.projectId].label} · ${words.join(' ')} 🟡`, prompt } };
   }

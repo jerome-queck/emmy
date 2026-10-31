@@ -32,7 +32,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   await writeFile(discoveryPath, JSON.stringify(discovery));
   const bindingsPath = join(privateHome, 'bindings.json'); await writeFile(bindingsPath, JSON.stringify(selectedBindings));
   const skillPath = join(privateHome, 'SKILL.md'); const skillBytes = '# Synthetic installed skill\n'; await writeFile(skillPath, skillBytes);
-  const definition = { id: 'native-job', parents: [], goal: 'Repair the synthetic coding objective.', context: 'One explicit objective survives a new CLI process.', action: 'implement', resource: target.projectId, destination: target.nativeProjectId, target, authorityRef: { reference: 'Synthetic human objective authorization', action: 'implement', resource: target.projectId, destination: target.nativeProjectId }, criteria: [{ id: 'release', description: 'Inspect the actual reviewed outcome separately.', evidence: 'reported-check' }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'native-dispatch', method: 'Recover native coding context.', intendedEffect: 'Finish this one synthetic objective.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' }, dispatch: { correlationKey: 'synthetic-objective-one', dispatcher, skill: { path: skillPath, sha256: digest(skillBytes) }, requestedSettings: { model: 'gpt-6.1-sol', effort: 'max', sourceRef: 'Synthetic scoped stronger human request' } } };
+  const definition = { id: 'native-job', parents: [], goal: 'Repair the synthetic coding objective.', context: 'One explicit objective survives a new CLI process.', action: 'implement', resource: target.projectId, destination: target.nativeProjectId, target, authorityRef: { reference: 'Synthetic human objective authorization', action: 'implement', resource: target.projectId, destination: target.nativeProjectId }, criteria: [{ id: 'release', description: 'Inspect the actual reviewed outcome separately.', evidence: 'reported-check' }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'native-dispatch', method: 'Recover native coding context.', intendedEffect: 'Finish this one synthetic objective.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' }, dispatch: { correlationKey: 'synthetic-objective-one', dispatcher, skill: { path: skillPath, sha256: digest(skillBytes) }, requestedSettings: { model: 'gpt-6.1-sol', effort: 'high', sourceRef: 'Synthetic scoped stronger human request' } } };
   const adopt = async value => (await cli(['responsibility', '--file', await file(value)])).record;
   const adopted = await adopt(definition);
   await cli(['doctor']);
@@ -41,7 +41,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
     return cli(['dispatch', '--id', id, '--discovery', discoveryPath, '--as-of', now(), ...extra], expected, selectedHome);
   };
   assert.equal((await advise(3)).next, 'rediscover');
-  const readback = (threadId, extra = {}) => ({ threadId, hostId: target.hostId, nativeProjectId: threadId === dispatcher.threadId ? initialTarget.nativeProjectId : target.nativeProjectId, creatorThreadId: dispatcher.threadId, pinned: true, observedAt: now(), sourceRef: 'Synthetic native inventory receipt', recordedSettings: { model: 'gpt-6.1-sol', effort: 'max', sandboxMode: 'danger-full-access', approvalPolicy: 'never', observedAt: now(), sourceRef: 'Synthetic recorded session settings' }, ...extra });
+  const readback = (threadId, extra = {}) => ({ threadId, hostId: target.hostId, nativeProjectId: threadId === dispatcher.threadId ? initialTarget.nativeProjectId : target.nativeProjectId, creatorThreadId: dispatcher.threadId, pinned: true, observedAt: now(), sourceRef: 'Synthetic native inventory receipt', recordedSettings: { model: 'gpt-6.1-sol', effort: threadId === dispatcher.threadId ? 'medium' : 'high', sandboxMode: 'danger-full-access', approvalPolicy: 'never', observedAt: now(), sourceRef: 'Synthetic recorded session settings' }, ...extra });
   const observation = async (def, phase, prior = null, extra = {}) => {
     const attemptKey = extra.attemptKey ?? (phase === 'attempted' ? digest({ id: def.id, prior: prior?.hash ?? null }) : prior?.dispatch.attemptKey ?? digest(`Synthetic request ${def.id}`));
     const state = { phase, correlationKey: def.dispatch.correlationKey, dispatcher: readback(dispatcher.threadId), ...(phase !== 'absent' || prior?.dispatch.attemptKey ? { attemptKey } : {}), ...(phase === 'attempted' ? { requestDigest: digest(`Synthetic native request ${attemptKey}`) } : {}), ...extra };
@@ -57,7 +57,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   const create = await advise(); assert.equal(create.next, 'create-via-dispatcher');
   assert.deepEqual(create.nativeCreateRequest.target, { type: 'project', projectId: target.nativeProjectId, environment: { type: 'local' } });
   assert.equal(create.dispatcherProject, initialTarget.projectId); assert.notEqual(create.nativeCreateRequest.target.projectId, dispatcher.nativeProjectId);
-  assert.equal(create.nativeCreateRequest.model, 'gpt-6.1-sol'); assert.equal(create.nativeCreateRequest.thinking, 'max');
+  assert.equal(create.nativeCreateRequest.model, 'gpt-6.1-sol'); assert.equal(create.nativeCreateRequest.thinking, 'high');
   assert.ok(create.nativeCreateRequest.prompt.startsWith(`[$pstack:poteto-mode](${skillPath})\n\n`));
   assert.deepEqual(Object.keys(create.nativeCreateRequest).sort(), ['model', 'prompt', 'target', 'thinking', 'title']);
   assert.equal(create.providerExecution, 'unverified'); assert.equal(create.effectiveChildAccess, 'unverified');
@@ -72,7 +72,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   assert.equal(scopedAdvice.next, 'create-via-dispatcher');
   assert.equal(scopedAdvice.coordinatorRequestedSettings.effort, 'medium');
   assert.deepEqual(scopedAdvice.recordedDispatcherSettings, mediumReadback.recordedSettings);
-  assert.equal(scopedAdvice.nativeCreateRequest.thinking, 'max');
+  assert.equal(scopedAdvice.nativeCreateRequest.thinking, 'high');
   for (const [label, change] of [
     ['missing-scope', value => { delete value.dispatch.coordinatorRequestedSettings.scope; }],
     ['wrong-objective', value => { value.dispatch.coordinatorRequestedSettings.scope.objectiveId = 'foreign'; }],
@@ -96,6 +96,25 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   assert.equal((await advise(0, [], privateHome, scoped.id)).next, 'create-via-dispatcher');
   const noSource = structuredClone(low); noSource.parents = [lowAdopted.hash]; noSource.dispatch.coordinatorRequestedSettings.effort = 'medium'; delete noSource.dispatch.coordinatorRequestedSettings.scopedOverrideRef;
   assert.match((await cli(['responsibility', '--file', await file(noSource)], 2)).error, /explicit scoped override/);
+  for (const role of ['child', 'coordinator']) for (const variant of ['generic', 'wrong-objective', 'wrong-role', 'wrong-model', 'wrong-effort', 'exact']) {
+    const exceptional = structuredClone(definition);
+    exceptional.id = `exception-${role}-${variant}`; exceptional.dispatch.correlationKey = exceptional.id;
+    const settings = { model: 'gpt-6.1-sol', effort: 'xhigh', sourceRef: 'Synthetic generic or higher', scopedOverrideRef: 'Synthetic generic override' };
+    if (role === 'coordinator') settings.scope = { objectiveId: exceptional.id, role };
+    if (variant !== 'generic') settings.oneTimePermission = { objectiveId: exceptional.id, role, model: settings.model, effort: settings.effort, sourceRef: 'Synthetic explicit one-time owner permission' };
+    if (variant.startsWith('wrong-')) settings.oneTimePermission[variant.slice(6) === 'objective' ? 'objectiveId' : variant.slice(6)] = variant === 'wrong-role' ? (role === 'child' ? 'coordinator' : 'child') : variant === 'wrong-effort' ? 'high' : 'foreign';
+    exceptional.dispatch[role === 'child' ? 'requestedSettings' : 'coordinatorRequestedSettings'] = settings;
+    const saved = await adopt(exceptional);
+    const coordinator = readback(dispatcher.threadId);
+    if (role === 'coordinator') coordinator.recordedSettings.effort = 'xhigh';
+    await retain(await observation(saved, 'absent', null, { dispatcher: coordinator }));
+    const result = await advise(variant === 'exact' ? 0 : 3, [], privateHome, saved.id);
+    if (variant === 'exact') {
+      assert.equal(result.next, 'create-via-dispatcher');
+      if (role === 'child') assert.deepEqual(JSON.parse(result.nativeCreateRequest.prompt.match(/One-time permission declaration (.+?)\. This is declared/)[1]), settings.oneTimePermission);
+    }
+    else assert.ok(result.reasons.includes(`${role}-one-time-model-permission-needed`));
+  }
   const resolve = (selector, expected = 0, path = discoveryPath) => cli(['dispatch', '--resolve', selector, '--discovery', path, '--as-of', now()], expected);
   const resolution = await resolve('name:Synthetic destination'); assert.equal(resolution.source.target.repository, target.repository); assert.equal(resolution.project, target.projectId);
   assert.equal((await resolve(`path:${target.path}`)).nativeProject.projectId, target.nativeProjectId);
@@ -161,10 +180,12 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   const recovered = await cli(['dispatch', '--project', target.projectId, '--as-of', now()]);
   assert.equal(recovered.dispatcher.threadId, dispatcher.threadId); assert.deepEqual(recovered.jobs.find(job => job.id === adopted.id).readyThreadIds, [child.threadId]);
   const advance = async childChange => {
-    current = await retain(await observation(adopted, 'ready', current, { child: readback(child.threadId, { correlationKey: adopted.dispatch.correlationKey, ...childChange }) }));
+    const nextChild = readback(child.threadId, { correlationKey: adopted.dispatch.correlationKey });
+    Object.assign(nextChild, childChange);
+    current = await retain(await observation(adopted, 'ready', current, { child: nextChild }));
   };
   await advance({ creatorThreadId: 'different-native-creator' }); assert.ok((await advise(3)).reasons.includes('child-creator-unverified'));
-  await advance({ recordedSettings: { ...child.recordedSettings, effort: 'high' } }); assert.ok((await advise(3)).reasons.includes('child-model-mismatch'));
+  await advance({ recordedSettings: { ...child.recordedSettings, effort: 'medium' } }); assert.ok((await advise(3)).reasons.includes('child-model-mismatch'));
   await advance({ nativeProjectId: null }); assert.ok((await advise(3)).reasons.includes('child-project-unverified'));
   await advance({ nativeProjectId: 'synthetic-wrong-project' }); assert.ok((await advise(3)).reasons.includes('child-identity-mismatch'));
   await advance({ hostId: 'synthetic-wrong-host' }); assert.ok((await advise(3)).reasons.includes('child-identity-mismatch'));

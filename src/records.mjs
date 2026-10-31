@@ -129,6 +129,13 @@ function dispatchDefinition(value, objectiveId) {
     for (const key of ['model', 'effort', 'sourceRef']) text(settings[key], `${field}.${key}`);
     choice(settings.effort, dispatchEfforts, `${field}.effort`);
     if (settings.scopedOverrideRef !== undefined) text(settings.scopedOverrideRef, `${field}.scopedOverrideRef`);
+    if (settings.oneTimePermission !== undefined) {
+      const permission = settings.oneTimePermission;
+      object(permission, `${field}.oneTimePermission`);
+      for (const key of ['objectiveId', 'role', 'model', 'effort', 'sourceRef']) text(permission[key], `oneTimePermission.${key}`);
+      choice(permission.role, ['child', 'coordinator'], 'oneTimePermission.role');
+      choice(permission.effort, dispatchEfforts, 'oneTimePermission.effort');
+    }
     if (field === 'coordinatorRequestedSettings') {
       object(settings.scope, `${field}.scope`);
       requireValue(settings.scope.objectiveId === objectiveId && settings.scope.role === 'coordinator', 'Coordinator settings require this objective and coordinator role scope');

@@ -6,6 +6,12 @@ import { fleetMutations } from './fleet-mutations.mjs';
 
 export const mutations = [
   ...morningMutations,
+  { id: 'dispatch-ignore-one-time-permission', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["if (exceptional && !(", "if (false && !("]] },
+  { id: 'dispatch-borrow-one-time-objective', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["permission?.objectiveId === id", "true"]] },
+  { id: 'dispatch-borrow-one-time-role', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["permission?.role === role", "true"]] },
+  { id: 'dispatch-borrow-one-time-model', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["permission?.model === settings.model", "true"]] },
+  { id: 'dispatch-borrow-one-time-effort', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["permission?.effort === settings.effort", "true"]] },
+
   { id: 'dispatch-hardcode-coordinator-high', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["spec.coordinatorRequestedSettings ?? ordinarySettings", "ordinarySettings"]] },
   { id: 'dispatch-borrow-child-model-policy', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["spec.coordinatorRequestedSettings ?? ordinarySettings", "spec.coordinatorRequestedSettings ?? requested"]] },
   { id: 'dispatch-ignore-coordinator-override-source', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["!coordinatorRequested.scopedOverrideRef", "false"]] },

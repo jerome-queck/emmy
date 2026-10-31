@@ -54,13 +54,13 @@ Apply these standing model choices to all Emmy-managed work:
 
 | Role | Model and reasoning effort |
 | --- | --- |
-| Ordinary Codex session | `gpt-6.1-sol` at `high` minimum |
-| Nontrivial subagent | `gpt-6.1-sol` at `medium` minimum |
+| Ordinary Codex session | `gpt-6.1-sol` at `medium` |
+| Nontrivial subagent | `gpt-6.1-sol` at `medium` |
 | Trivial subagent | `gpt-6-luna` at `max` permitted |
 | Most automations | `gpt-6-luna` at `max` by default |
-| Heavy-reasoning automation | `gpt-6.1-sol` at `high` or higher |
+| Heavy-reasoning automation | `gpt-6.1-sol` at `high` maximum |
 
-A trivial helper performs one bounded action with a known target and supplied inputs. Investigation, architecture, and cross-file implementation require nontrivial helpers. Ordinary Codex leads retain Sol High minimum even for small requests. Honor Jerome's explicit model and effort instructions within their named scope, including stronger reviewer settings. Compare stronger efforts within the selected model rather than ranking model families by effort names. Preserve existing thread selections. Use supported project defaults for new sessions and helpers. Do not change Studio-wide global settings. Record requested settings, resolved configuration, and observed execution separately. If native controls or readbacks are unavailable, keep that part unverified.
+A trivial helper performs one bounded action with a known target and supplied inputs. Investigation, architecture, and cross-file implementation require nontrivial helpers. Ordinary coding and substantive helpers use Sol Medium. Heavy reasoning uses Sol High maximum. Anything above High or a different coding model requires explicit one-time owner permission for that exact task, role, model and effort. No Astra default or automatic XHigh escalation. Generic "or higher" grants no permission. This policy overrides pstack role defaults and leaves unrelated automation selections unchanged. Honor Jerome's explicit model and effort instructions within their named scope, subject to the exact one-time permission requirement. Compare stronger efforts within the selected model rather than ranking model families by effort names. Preserve existing thread selections. Use supported project defaults for new sessions and helpers. Do not change Studio-wide global settings. Record requested settings, resolved configuration, and observed execution separately. If native controls or readbacks are unavailable, keep that part unverified.
 
 For runner updates, retain the verified runtime in a versioned private path. A shared cache path is not a durable runtime pin.
 
