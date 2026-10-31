@@ -31,16 +31,18 @@ Choose for the actual task, including expected retries, verification, and handof
 
 | Task group | Default | Change the choice when |
 | --- | --- | --- |
-| Ordinary coding lead; substantial diagnosis or review | Sol High | Use XHigh for a concrete reasoning difficulty, not every task. |
-| Daily improvement coordinator | Sol Medium | Delegate ambiguous diagnosis, integration, identity, timezone, or concurrency work to Sol High before implementation. |
-| Bounded implementation with understood cause and acceptance; nontrivial helper | Sol Medium | Use High for uncertain behavior, cross-file coupling, or difficult verification. |
+| Ordinary coding lead; substantial diagnosis or review | Sol Medium | Use Sol High for heavy reasoning; no higher without exact-task one-time owner permission. |
+| Daily improvement coordinator | Sol Medium | Substantive helpers use Sol Medium; use Sol High only for heavy reasoning. |
+| Bounded implementation with understood cause and acceptance; nontrivial helper | Sol Medium | Use Sol High only for heavy reasoning. |
 | Mechanical helper with known target and supplied inputs | Luna Max | Use Sol Medium or High before starting if the task needs investigation or judgment. |
 | Computer Use and UI diagnosis | Terra High | Use Medium for an established bounded routine; XHigh for an evidenced difficult UI/reasoning problem. |
 | Read-only routine evidence collection or suggestions | Sol Medium | Use Luna Max only for a clearly specified extraction; High for ambiguous conflicting evidence. |
 | Established deterministic automation | Luna Max | Use a capable Sol or Terra lead when new interpretation, debugging, or meaningful repair is required. |
-| Exceptional architecture or difficult root-cause analysis | Astra High | Use XHigh only with a specific complexity reason; confirm availability before dispatch. |
+| Exceptional architecture or difficult root-cause analysis | Sol High | Above High or another coding model requires exact-task one-time owner permission. |
 
-Luna uses Max only. Sol and Terra never use Max or Ultra; XHigh is their ceiling. Avoid Light/Low unless the task explicitly requires speed. Medium and High are normal choices. Describe the concrete complexity before choosing XHigh. Use standard speed unless the task explicitly requires faster execution. Effort names compare settings within a model, not different families.
+Ordinary coding sessions and substantive helpers use Sol Medium. Heavy reasoning uses Sol High maximum. Anything above High or another coding model requires explicit ONE-TIME owner permission for the exact task, role, model and effort. No Astra default or automatic XHigh escalation. Generic "or higher" is insufficient. This scoped coding/helper policy overrides pstack role defaults; other established task groups and unrelated automation selections remain unchanged. Luna uses Max only for established groups outside this coding/helper scope. Terra UI settings remain separate. Effort names compare settings within one model.
+
+Standard/non-fast is the default for coding sessions, coordinators and helpers. Fast or Ultrafast requires explicit owner approval for that exact task, role and tier. An unanswered request is not approval; continue Standard without waiting. Never inherit an accelerated tier from a parent, saved session or broader preference. Model/effort permission does not grant speed permission. Use supported native/config controls only, verify recorded settings separately, and report an unavailable tier control or readback.
 
 A trivial subagent performs one bounded action with a known target and supplied inputs. Investigation, architecture, unknown bugs, and cross-file implementation are nontrivial. Luna is not a mandatory first attempt. Escalate unexpected failures or scope growth with their evidence instead of repeating weak attempts. The lead independently reviews a helper's actual diff and verification.
 

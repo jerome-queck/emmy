@@ -54,14 +54,16 @@ Apply the task-specific family policy in [AGENTS.md](../AGENTS.md#standing-threa
 
 | Role | Model and reasoning effort |
 | --- | --- |
-| Coding lead and substantial diagnosis/review | Sol High |
-| Daily improvement coordinator | Sol Medium; delegate difficult diagnosis or repair to High |
-| Bounded implementation and nontrivial helper | Sol Medium, High when the task requires it |
+| Coding lead and substantial diagnosis/review | Sol Medium; Sol High for heavy reasoning |
+| Daily improvement coordinator | Sol Medium; High only for heavy reasoning |
+| Bounded implementation and nontrivial helper | Sol Medium; High only for heavy reasoning |
 | Mechanical helper or established deterministic automation | Luna Max |
 | Computer Use | Terra High, Medium for an established bounded routine |
 | Read-only evidence review or suggestions | Sol Medium |
 
-A trivial helper performs one bounded action with known target and supplied inputs. Investigation, architecture, unknown bugs, and cross-file implementation require a capable stronger model from the start. Exceptional root-cause or architecture work may use Astra High or justified XHigh. Luna uses Max only. Sol and Terra use at most XHigh, with a concrete complexity justification; never Max or Ultra. Light/Low and faster-than-standard speed require an explicit speed need. Optimize total successful work, including failed attempts and verification, rather than nominal price. Honor scoped human choices and preserve existing threads. Pass the actual pstack skill and applicable verification instructions to every worker and reviewer.
+Ordinary coding sessions and substantive helpers use Sol Medium. Heavy reasoning uses Sol High maximum. Anything above High or another coding model requires explicit ONE-TIME owner permission for the exact task, role, model and effort. No Astra default or automatic XHigh escalation. Generic "or higher" is insufficient. This scoped coding/helper policy overrides pstack role defaults; other established task groups and unrelated automation selections remain unchanged.
+
+Standard/non-fast is the default for coding sessions, coordinators and helpers. Fast or Ultrafast requires explicit owner approval for that exact task, role and tier. An unanswered request is not approval; continue Standard without waiting. Never inherit an accelerated tier from a parent, saved session or broader preference. Model/effort permission does not grant speed permission. Use supported native/config controls only, verify recorded settings separately, and report an unavailable tier control or readback.
 
 Resolve family and effort to the destination's latest clearly supported concrete model ID before dispatch. Do not invent a runtime alias or substitute a different family/effort. The coordinator supplies exact settings to the existing dispatch contract; project defaults and saved schedules are concrete configuration, not automatic version migration. Retain catalog evidence, requested policy, resolved ID, and recorded settings privately. Actual provider execution remains separate. Keep unavailable controls or readbacks unverified and preserve global settings.
 
