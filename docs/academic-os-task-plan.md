@@ -28,6 +28,16 @@ Immediately before the first provider send, after recovery backup and the final 
 
 The [producer fixtures](../verification/academic-os-planning-fixtures.mjs) are synthetic test inputs. They cannot become a live configured authority. A partial unrelated project policy cannot substitute for a module policy. Missing semantic bindings, prerequisite completion evidence or particular owner authority must remain explicit gaps until the actual cloud planner obtains them.
 
+## Compact service launcher
+
+For a pinned planning-only deployment, invoke `node <release>/scripts/academic-os-planning.mjs calendar-register --file <service-owned envelope>`. Envelope, seven planning stages, strict ordinary UTF-8 JSON bounds, output wrapper and exit codes are identical to the general CLI. Both entry points use `src/academic-os-planning-io.mjs`. All policy, source, authority, identity, expiry and recovery assessment modules remain unchanged.
+
+This launcher accepts only that service invocation and `action:"academic-os"`. General commands, `--root`, `--home`, `--json`, refresh and other Calendar actions are unsupported. It does not read the general public project catalog or private responsibility home. Those are kit orientation inputs, not planning authority. The consumer still acquires its trusted configured planning catalog separately; no catalog data or account binding is supplied by the code bundle. Node 24 or later remains required.
+
+A compact runtime contains the unchanged transitive dependency closure plus the launcher and shared stage dispatcher. It uses no module substitution, hash shim or tree shaking. A source manifest pins every payload file. Synthetic fixtures remain a separate test artifact. Brotli packaging uses Node's standard compression library; verify archive and per-file SHA-256 before selecting the executable. Rollback selects the previous configured executable and preserves catalog/operation/consumed-effect state.
+
+`node --test test/academic-os-planning-cli.test.mjs` compares actual general and compact child-process outputs and exits for all stages, policy revision drift, terminal Tasks, expiry, foreign identity, partial policy, lost receipts, duplicate keys, symlinks and closed shapes. Only per-invocation preparation/check timestamps and the preparation digest that covers that timestamp differ.
+
 ## Prepare the exact operation
 
 Obtain a fresh official `tasks_read_register` or `research_tasks_read_register` result through existing supported access. Preserve its original acquisition time and source reference. The adapter checks its `failed: false`, `outcome: "read"`, fresh register, protocol, target, list, generation and provider snapshot. It does not refresh a register itself.

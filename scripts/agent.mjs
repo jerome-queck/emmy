@@ -12,6 +12,7 @@ import { dispatch } from '../src/dispatch.mjs';
 import { cloud } from '../src/cloud.mjs';
 import { calendar } from '../src/calendar.mjs';
 import { calendarRegister } from '../src/calendar-register-io.mjs';
+import { academicOsPlanningReadyStatuses } from '../src/academic-os-planning-io.mjs';
 import { fleet } from '../src/fleet.mjs';
 import { tokenReview } from '../src/token-review.mjs';
 import { signin } from '../src/signin.mjs';
@@ -68,7 +69,7 @@ try {
       exitCode = data.status === 'checked' ? 0 : 3; break;
     case 'calendar-register':
       data = await calendarRegister(home, { file: resolve(options.file) });
-      exitCode = ['collected', 'proposed', 'cloud-plan-ready', 'preflight-ready', 'accepted-reported', 'api-plan-ready-reported', 'api-applied-reported', 'planning-catalog-ready', 'planning-catalog-valid', 'planning-authorizations-discovered', 'api-plan-current-reported'].includes(data.status) ? 0 : 3; break;
+      exitCode = ['collected', 'proposed', 'cloud-plan-ready', 'preflight-ready', 'accepted-reported', ...academicOsPlanningReadyStatuses].includes(data.status) ? 0 : 3; break;
     case 'fleet':
       data = await fleet(home, { file: resolve(options.file) });
       exitCode = data.status === 'ready' && !['backpressure', 'reconcile-before-admission'].includes(data.outcome) ? 0 : 3; break;
