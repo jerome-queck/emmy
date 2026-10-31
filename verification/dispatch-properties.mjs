@@ -1,10 +1,11 @@
 export function verifyDispatchPolicy({ dispatch, records, work }, check) {
+  const ordinarySettingsForSpeed = () => ({ model: 'gpt-6.1-sol', effort: 'medium', sourceRef: 'Synthetic speed scope' });
   const asOf = '2026-10-24T12:00:00.000Z'; const machine = 'synthetic-host';
   const target = { projectId: 'fixture', repository: 'https://example.invalid/fixture', executor: 'local-codex', hostId: 'local', nativeProjectId: 'native-project', path: '/synthetic/project', revision: 'a'.repeat(40), dirtyDigest: records.digest('clean') };
   const selected = { threadId: 'selected-dispatcher', hostId: target.hostId, nativeProjectId: 'dispatcher-own-project', selectionRef: 'Synthetic selected dispatcher', childAccessIntent: 'full-access-inherit', authorityRef: { reference: 'Synthetic standing human scope', action: 'dispatch-native-child', resource: target.projectId, destination: target.nativeProjectId } };
   const bindings = { schemaVersion: 1, localHostId: 'local', hosts: { local: { label: 'Synthetic local', machine } }, projects: { coordination: { label: 'Synthetic coordinator', hostId: 'local', nativeProjectId: selected.nativeProjectId, path: '/synthetic/coordinator', dispatcher: { ...selected, authorityRef: { ...selected.authorityRef, resource: 'coordination', destination: selected.nativeProjectId } } }, fixture: { label: 'Synthetic project', hostId: 'local', nativeProjectId: target.nativeProjectId, path: target.path, repository: target.repository, dispatcher: selected } } };
   const definition = records.recordPayload(records.parseDefinition({ id: 'dispatch-objective', parents: [], goal: 'Complete one synthetic coding objective.', context: 'Bounded dispatch domain.', target, action: 'implement', resource: 'fixture', destination: 'native-project', authorityRef: { reference: 'Synthetic human objective', action: 'implement', resource: 'fixture', destination: 'native-project' }, criteria: [{ id: 'outcome', description: 'Separate actual outcome review.', evidence: 'reported-check' }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: asOf, feature: { id: 'dispatch', method: 'Recover context.', intendedEffect: 'Finish this objective.', reviewAt: asOf }, lifecycle: { status: 'active' }, dispatch: { correlationKey: 'bounded-objective-one', dispatcher: selected, skill: { path: '/synthetic/SKILL.md', sha256: records.digest('skill') } } }));
-  const readback = (threadId, observedAt) => ({ threadId, hostId: 'local', nativeProjectId: threadId === selected.threadId ? selected.nativeProjectId : target.nativeProjectId, creatorThreadId: selected.threadId, pinned: true, correlationKey: definition.dispatch.correlationKey, observedAt, sourceRef: 'Synthetic supported readback', recordedSettings: { model: 'gpt-6.1-sol', effort: 'medium', sandboxMode: 'danger-full-access', approvalPolicy: 'never', observedAt, sourceRef: 'Synthetic recorded session' } });
+  const readback = (threadId, observedAt) => ({ threadId, hostId: 'local', nativeProjectId: threadId === selected.threadId ? selected.nativeProjectId : target.nativeProjectId, creatorThreadId: selected.threadId, pinned: true, correlationKey: definition.dispatch.correlationKey, observedAt, sourceRef: 'Synthetic supported readback', recordedSettings: { model: 'gpt-6.1-sol', effort: 'medium', serviceTier: 'default', sandboxMode: 'danger-full-access', approvalPolicy: 'never', observedAt, sourceRef: 'Synthetic recorded session' } });
   const make = ({ phase = 'ready', complete = true, availability = 'available', age = 0 } = {}) => {
     const observedAt = new Date(Date.parse(asOf) - age).toISOString();
     const priorAt = new Date(Math.min(Date.parse(asOf) - 1, Date.parse(observedAt) - 1)).toISOString();
@@ -87,6 +88,29 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
       const invalid = structuredClone(input); invalid.records[0].dispatch[field].oneTimePermission[key] = key === 'sourceRef' ? '' : 'foreign';
       assertAdvice(`${role}-${model}-${effort}-permission-${key}`, invalid, null);
     }
+  }
+  for (const role of ['child', 'coordinator']) for (const tier of ['priority', 'ultrafast']) {
+    const field = role === 'child' ? 'requestedSettings' : 'coordinatorRequestedSettings';
+    for (const variant of ['unanswered', 'requested', 'declined', 'approved', 'wrong-objective', 'wrong-role', 'wrong-tier']) {
+      const input = make({ phase: 'absent' });
+      const settings = { ...ordinarySettingsForSpeed(), serviceTier: tier, ...(role === 'coordinator' ? { scope: { objectiveId: input.id, role } } : {}) };
+      if (variant !== 'unanswered') settings.speedApproval = { status: ['requested', 'declined'].includes(variant) ? variant : 'approved', objectiveId: input.id, role, serviceTier: tier, sourceRef: 'Synthetic exact task speed approval' };
+      if (variant === 'wrong-objective') settings.speedApproval.objectiveId = 'another-objective';
+      if (variant === 'wrong-role') settings.speedApproval.role = role === 'child' ? 'coordinator' : 'child';
+      if (variant === 'wrong-tier') settings.speedApproval.serviceTier = 'different-tier';
+      input.records[0].dispatch[field] = settings;
+      const approved = variant === 'approved';
+      if (role === 'coordinator') input.records.at(-1).dispatch.dispatcher.recordedSettings.serviceTier = approved ? tier : 'default';
+      const result = dispatch.dispatchDecision(input);
+      check('dispatch-recovery', { case: `speed-${role}-${tier}-${variant}`, actual: result }, result[role === 'child' ? 'childSpeed' : 'coordinatorSpeed'].serviceTier === (approved ? tier : 'default'), 'Only exact approved task speed changes Standard. Silence continues ordinary work.');
+      const reversed = dispatch.dispatchDecision({ ...input, records: [...input.records].reverse() });
+      check('dispatch-recovery', { case: `speed-${role}-${tier}-${variant}-permutation` }, records.canonical(result) === records.canonical(reversed), 'Speed selection is independent of record order.');
+      assertAdvice(`speed-${role}-${tier}-${variant}-continues`, input, 'create-via-dispatcher');
+    }
+    const inherited = make(); inherited.records.at(-1).dispatch[role === 'child' ? 'child' : 'dispatcher'].recordedSettings.serviceTier = tier;
+    assertAdvice(`unapproved-inherited-${role}-${tier}`, inherited, null);
+    delete inherited.records.at(-1).dispatch[role === 'child' ? 'child' : 'dispatcher'].recordedSettings.serviceTier;
+    assertAdvice(`unknown-tier-${role}-${tier}`, inherited, null);
   }
   const cross = make({ phase: 'absent' }); const crossAdvice = dispatch.dispatchDecision(cross);
   check('dispatch-recovery', { case: 'cross-project-request-destination', actual: crossAdvice.nativeCreateRequest }, crossAdvice.nativeCreateRequest?.target.projectId === target.nativeProjectId && crossAdvice.dispatcherProject === 'coordination', 'The child destination is independent of dispatcher project ownership.');

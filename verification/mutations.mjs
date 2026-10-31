@@ -6,6 +6,13 @@ import { fleetMutations } from './fleet-mutations.mjs';
 
 export const mutations = [
   ...morningMutations,
+  { id: 'dispatch-speed-without-approval', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["approval?.status === 'approved'", "true"]] },
+  { id: 'dispatch-speed-borrow-objective', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["approval?.objectiveId === objectiveId", "true"]] },
+  { id: 'dispatch-speed-borrow-role', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["approval?.role === role", "true"]] },
+  { id: 'dispatch-speed-borrow-tier', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["approval?.serviceTier === requestedServiceTier", "true"]] },
+  { id: 'dispatch-speed-ignore-inheritance', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["settings.serviceTier !== speed.serviceTier", "false"]] },
+  { id: 'dispatch-speed-ignore-missing-readback', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["if (!settings.serviceTier)", "if (false)"], ["settings.serviceTier !== speed.serviceTier", "settings.serviceTier && settings.serviceTier !== speed.serviceTier"]] },
+
   { id: 'dispatch-ignore-one-time-permission', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["if (exceptional && !(", "if (false && !("]] },
   { id: 'dispatch-borrow-one-time-objective', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["permission?.objectiveId === id", "true"]] },
   { id: 'dispatch-borrow-one-time-role', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["permission?.role === role", "true"]] },

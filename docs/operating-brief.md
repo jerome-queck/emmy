@@ -66,6 +66,8 @@ For runner updates, retain the verified runtime in a versioned private path. A s
 
 Require exact-head CI and independent review before protected merge. The reviewer must not have written the change. Track published source, installed runner, loaded guidance and ordinary-turn adoption separately. A merge or guidance refresh cannot establish installation or native adoption. [Change delivery](change-delivery.md) describes the proposed native path and its acceptance. It installs no dispatch hook or permissions. Native products retain execution, schedules and delivery authority.
 
+Standard/non-fast is the default for coding sessions, coordinators and helpers. Fast or Ultrafast requires explicit owner approval for that exact task, role and tier. An unanswered request is not approval; continue Standard without waiting. Never inherit an accelerated tier from a parent, saved session or broader preference. Model/effort permission does not grant speed permission. Use supported native/config controls only, verify recorded settings separately, and report an unavailable tier control or readback.
+
 ## Plan and maintain calendar Tasks
 
 Own authorized calendar planning through saved readback. Recover the concrete task scope and any previous plan from the existing private note or responsibility register. Retain the user's goal, Task or Event intent, target account and list or calendar, native ID, duration, timezone, deadline, requested Task notes, and source references. Preserve the notes' exact supplied text, meaningful line breaks, and source URLs. Keep pending or uncertain attempts visible across turns. A suggestion in chat is not a saved plan.

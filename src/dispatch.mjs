@@ -8,7 +8,14 @@ const identity = value => [value?.threadId, value?.hostId, value?.nativeProjectI
 const ordinarySettings = { model: 'gpt-6.1-sol', effort: 'medium', sourceRef: 'Standing ordinary-session policy' };
 const currentTime = (value, asOf, maxAgeMs) => Date.parse(value) <= Date.parse(asOf) && Date.parse(asOf) - Date.parse(value) <= maxAgeMs;
 
-function readbackReasons(readback, expected, requested, asOf, maxAgeMs, label, restoredAt = null) {
+function speedPolicy(settings, objectiveId, role) {
+  const requestedServiceTier = settings.serviceTier ?? 'default';
+  const approval = settings.speedApproval;
+  const approved = approval?.status === 'approved' && approval?.objectiveId === objectiveId && approval?.role === role && approval?.serviceTier === requestedServiceTier && Boolean(approval?.sourceRef?.trim());
+  return { serviceTier: approved ? requestedServiceTier : 'default', requestedServiceTier, approval: approved ? approval : null };
+}
+
+function readbackReasons(readback, expected, requested, asOf, maxAgeMs, label, restoredAt = null, speed = { serviceTier: 'default' }) {
   if (!readback) return [`${label}-readback-needed`];
   const reasons = [];
   if (readback.threadId !== expected.threadId || readback.hostId !== null && readback.hostId !== expected.hostId || readback.nativeProjectId !== null && readback.nativeProjectId !== expected.nativeProjectId) reasons.push(`${label}-identity-mismatch`);
@@ -23,6 +30,8 @@ function readbackReasons(readback, expected, requested, asOf, maxAgeMs, label, r
     if (!currentTime(settings.observedAt, asOf, maxAgeMs)) reasons.push(`${label}-settings-not-current`);
     if (restoredAt && Date.parse(settings.observedAt) < Date.parse(restoredAt)) reasons.push(`${label}-settings-before-restore`);
     if (settings.model !== requested.model || !efforts.includes(settings.effort) || settings.effort !== requested.effort) reasons.push(`${label}-model-mismatch`);
+    if (!settings.serviceTier) reasons.push(`${label}-speed-unverified`);
+    else if (settings.serviceTier !== speed.serviceTier) reasons.push(`${label}-speed-mismatch`);
     if (settings.sandboxMode !== 'danger-full-access' || settings.approvalPolicy !== 'never') reasons.push(`${label}-policy-mismatch`);
   }
   return reasons;
@@ -68,6 +77,9 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   const remote = target.hostId !== bindings.localHostId;
   const requested = spec.requestedSettings ?? ordinarySettings;
   const coordinatorRequested = spec.coordinatorRequestedSettings ?? ordinarySettings;
+  const childSpeed = speedPolicy(requested, id, 'child');
+  const coordinatorSpeed = speedPolicy(coordinatorRequested, id, 'coordinator');
+  Object.assign(result, { childSpeed, coordinatorSpeed, providerSpeed: 'unverified' });
   const key = effectKey(definition);
   Object.assign(result, { correlationKey: spec.correlationKey, effectKey: key, dispatcher: spec.dispatcher, selectedDispatcher: selected ?? null, requestedSettings: requested, coordinatorRequestedSettings: coordinatorRequested, childAccessIntent: spec.dispatcher.childAccessIntent, authorityRef: definition.authorityRef });
   const stable = value => value && { correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill };
@@ -148,7 +160,7 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   if (!['attempted', 'pending', 'uncertain'].includes(state.phase) && unsettled.size) result.reasons.push(state.phase === 'absent' ? 'prior-launch-no-effect-readback-needed' : 'another-launch-unresolved');
   result.phase = state.phase;
   result.recordedDispatcherSettings = state.dispatcher?.recordedSettings ?? null;
-  result.reasons.push(...readbackReasons(state.dispatcher, spec.dispatcher, coordinatorRequested, asOf, definition.freshness.maxAgeMs, 'dispatcher', epoch?.restoredAt));
+  result.reasons.push(...readbackReasons(state.dispatcher, spec.dispatcher, coordinatorRequested, asOf, definition.freshness.maxAgeMs, 'dispatcher', epoch?.restoredAt, coordinatorSpeed));
   if (['attempted', 'pending', 'uncertain'].includes(state.phase)) {
     Object.assign(result, { next: state.phase === 'pending' ? 'resolve-pending' : 'rediscover', clientThreadId: state.clientThreadId ?? null, attemptKey: state.attemptKey });
     return stop('native-launch-unresolved');
@@ -157,14 +169,14 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
     if (knownIds.length) return stop('existing-child-requires-rediscovery');
     if (result.reasons.length) return stop();
     const attemptKey = digest({ objective: id, correlationKey: spec.correlationKey, effectKey: key, discovery: observation.hash });
-    const prompt = `[$pstack:poteto-mode](${spec.skill.path})\n\n${definition.goal}\n\n${definition.context}\n\nObjective ${definition.id}. Correlation ${spec.correlationKey}. Effect ${key}. Attempt ${attemptKey}.\nTarget repository ${target.repository}. Host ${target.hostId}. Saved native project ${target.nativeProjectId}. Checkout ${target.path}. Revision ${target.revision}. Dirty digest ${target.dirtyDigest}.\nRequested model ${requested.model} at ${requested.effort}. Source ${requested.scopedOverrideRef ?? requested.sourceRef}. One-time permission declaration ${JSON.stringify(requested.oneTimePermission ?? null)}. This is declared scope; verify the owner source before relying on an exception. Ordinary coding and substantive helpers use Sol Medium. Heavy reasoning uses Sol High maximum. Any stronger effort or other coding model requires explicit one-time owner permission for that exact objective, role, model and effort. Generic "or higher" is not permission. Honor scoped human helper overrides in the task context.\nSource authority ${definition.authorityRef.reference}. Standing FullAccess-child intent ${spec.dispatcher.authorityRef.reference}. Preserve global defaults, other threads and separate connector/Computer Use grants. Retain actual first-turn policy/model readbacks separately from provider execution and effective access.\nFinish evidence ${definition.criteria.map(item => item.description).join(' ')}\nKeep private identifiers and receipts in ignored private state. Read and follow this destination's actual AGENTS.md, installed skills and verification requirements. Preserve its project defaults. Complete independent review and protected delivery where required. Parent owns native read/wait progress; do not depend on child callbacks.`;
+    const prompt = `[$pstack:poteto-mode](${spec.skill.path})\n\n${definition.goal}\n\n${definition.context}\n\nObjective ${definition.id}. Correlation ${spec.correlationKey}. Effect ${key}. Attempt ${attemptKey}.\nTarget repository ${target.repository}. Host ${target.hostId}. Saved native project ${target.nativeProjectId}. Checkout ${target.path}. Revision ${target.revision}. Dirty digest ${target.dirtyDigest}.\nRequested model ${requested.model} at ${requested.effort}. Required service tier ${childSpeed.serviceTier}. Speed approval declaration ${JSON.stringify(childSpeed.approval)}. Standard/non-fast is the default. An unanswered speed request is not approval and must continue Standard. Never inherit Fast or Ultrafast without explicit owner approval for this exact task and role. Verify supported recorded tier before work; no native tier field is implied by this prompt. Source ${requested.scopedOverrideRef ?? requested.sourceRef}. One-time permission declaration ${JSON.stringify(requested.oneTimePermission ?? null)}. This is declared scope; verify the owner source before relying on an exception. Ordinary coding and substantive helpers use Sol Medium. Heavy reasoning uses Sol High maximum. Any stronger effort or other coding model requires explicit one-time owner permission for that exact objective, role, model and effort. Generic "or higher" is not permission. Honor scoped human helper overrides in the task context.\nSource authority ${definition.authorityRef.reference}. Standing FullAccess-child intent ${spec.dispatcher.authorityRef.reference}. Preserve global defaults, other threads and separate connector/Computer Use grants. Retain actual first-turn policy/model readbacks separately from provider execution and effective access.\nFinish evidence ${definition.criteria.map(item => item.description).join(' ')}\nKeep private identifiers and receipts in ignored private state. Read and follow this destination's actual AGENTS.md, installed skills and verification requirements. Preserve its project defaults. Complete independent review and protected delivery where required. Parent owns native read/wait progress; do not depend on child callbacks.`;
     const words = definition.id.split('-').slice(0, 5); if (words.length === 1) words.push('objective');
-    return { ...result, status: 'advice-ready', next: 'create-via-dispatcher', attemptKey, beforeNativeCall: 'Retain attempted state with this attempt key and the exact request digest through reconcile --import, then use this pinned proposal once. Rediscover any uncertain result before retry.', nativeCreateRequest: { target: { type: 'project', projectId: target.nativeProjectId, environment: { type: 'local' } }, model: requested.model, thinking: requested.effort, title: `${bindings.projects[target.projectId].label} · ${words.join(' ')} 🟡`, prompt } };
+    return { ...result, status: 'advice-ready', next: 'create-via-dispatcher', attemptKey, beforeNativeCall: 'Apply the required childSpeed through supported destination configuration/control and verify it; nativeCreateRequest has no speed argument. Retain attempted state with this attempt key and the exact request digest through reconcile --import, then use this pinned proposal once. Rediscover any uncertain result before retry.', nativeCreateRequest: { target: { type: 'project', projectId: target.nativeProjectId, environment: { type: 'local' } }, model: requested.model, thinking: requested.effort, title: `${bindings.projects[target.projectId].label} · ${words.join(' ')} 🟡`, prompt } };
   }
   const task = observation.tasks[0];
   if (task.nativeId === spec.dispatcher.threadId || task.nativeId === selected?.threadId) result.reasons.push('dispatcher-cannot-own-implementation');
   Object.assign(result, { readyThreadId: task.nativeId, actualHostId: state.child?.hostId ?? null, afterCursor: state.afterCursor ?? null, observedNativeStatus: task.status, recordedChildSettings: state.child?.recordedSettings ?? null });
-  result.reasons.push(...readbackReasons(state.child, { threadId: task.nativeId, hostId: target.hostId, nativeProjectId: target.nativeProjectId }, requested, asOf, definition.freshness.maxAgeMs, 'child', epoch?.restoredAt));
+  result.reasons.push(...readbackReasons(state.child, { threadId: task.nativeId, hostId: target.hostId, nativeProjectId: target.nativeProjectId }, requested, asOf, definition.freshness.maxAgeMs, 'child', epoch?.restoredAt, childSpeed));
   if (state.child?.correlationKey !== spec.correlationKey) result.reasons.push('child-correlation-unverified');
   if (state.child?.creatorThreadId !== spec.dispatcher.threadId) result.reasons.push('child-creator-unverified');
   if (result.reasons.length) return { ...stop(), next: 'inspect-existing-child' };

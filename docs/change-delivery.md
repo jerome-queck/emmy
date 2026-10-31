@@ -16,6 +16,8 @@ Emmy owns coordination and authorized follow-ups. The CLI's proposals are not di
 
 When a private project binding selects a persistent local native dispatcher, that route takes precedence. Recover its identity and known objectives with the trusted installed `dispatch` command. Keep the selected dispatcher pinned for coordination and use the existing authorized control connection to give it the scoped objective. It creates the fresh implementation child. Private bindings and objective/task records retain exact identities, human source authorization, launch attempts and native readbacks. [Private dispatch recovery](native-dispatch.md) defines the supported schema and invocation. The command is a read-only projection over the existing archived journal, not a native executor or a second authority store.
 
+Standard/non-fast is the default for coding sessions, coordinators and helpers. Fast or Ultrafast requires explicit owner approval for that exact task, role and tier. An unanswered request is not approval; continue Standard without waiting. Never inherit an accelerated tier from a parent, saved session or broader preference. Model/effort permission does not grant speed permission. Use supported native/config controls only, verify recorded settings separately, and report an unavailable tier control or readback.
+
 ## Create through the native host service
 
 Discover the current tool catalog and saved projects on the designated Mac. A selected eligible dispatcher performs the creation. If no dispatcher is selected, use the supported direct or authorized bridge route. Use `mcp__codex_app__list_projects`, then `mcp__codex_app__create_thread` with the returned native project ID and a local environment:

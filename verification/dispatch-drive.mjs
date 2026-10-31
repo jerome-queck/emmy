@@ -41,7 +41,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
     return cli(['dispatch', '--id', id, '--discovery', discoveryPath, '--as-of', now(), ...extra], expected, selectedHome);
   };
   assert.equal((await advise(3)).next, 'rediscover');
-  const readback = (threadId, extra = {}) => ({ threadId, hostId: target.hostId, nativeProjectId: threadId === dispatcher.threadId ? initialTarget.nativeProjectId : target.nativeProjectId, creatorThreadId: dispatcher.threadId, pinned: true, observedAt: now(), sourceRef: 'Synthetic native inventory receipt', recordedSettings: { model: 'gpt-6.1-sol', effort: threadId === dispatcher.threadId ? 'medium' : 'high', sandboxMode: 'danger-full-access', approvalPolicy: 'never', observedAt: now(), sourceRef: 'Synthetic recorded session settings' }, ...extra });
+  const readback = (threadId, extra = {}) => ({ threadId, hostId: target.hostId, nativeProjectId: threadId === dispatcher.threadId ? initialTarget.nativeProjectId : target.nativeProjectId, creatorThreadId: dispatcher.threadId, pinned: true, observedAt: now(), sourceRef: 'Synthetic native inventory receipt', recordedSettings: { model: 'gpt-6.1-sol', effort: threadId === dispatcher.threadId ? 'medium' : 'high', serviceTier: 'default', sandboxMode: 'danger-full-access', approvalPolicy: 'never', observedAt: now(), sourceRef: 'Synthetic recorded session settings' }, ...extra });
   const observation = async (def, phase, prior = null, extra = {}) => {
     const attemptKey = extra.attemptKey ?? (phase === 'attempted' ? digest({ id: def.id, prior: prior?.hash ?? null }) : prior?.dispatch.attemptKey ?? digest(`Synthetic request ${def.id}`));
     const state = { phase, correlationKey: def.dispatch.correlationKey, dispatcher: readback(dispatcher.threadId), ...(phase !== 'absent' || prior?.dispatch.attemptKey ? { attemptKey } : {}), ...(phase === 'attempted' ? { requestDigest: digest(`Synthetic native request ${attemptKey}`) } : {}), ...extra };
@@ -114,6 +114,28 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
       if (role === 'child') assert.deepEqual(JSON.parse(result.nativeCreateRequest.prompt.match(/One-time permission declaration (.+?)\. This is declared/)[1]), settings.oneTimePermission);
     }
     else assert.ok(result.reasons.includes(`${role}-one-time-model-permission-needed`));
+  }
+  for (const role of ['child', 'coordinator']) for (const tier of ['priority', 'ultrafast']) for (const variant of ['unanswered', 'requested', 'declined', 'approved', 'wrong-objective', 'wrong-role', 'wrong-tier']) {
+    const speedJob = structuredClone(definition); speedJob.id = `speed-${role}-${tier}-${variant}`; speedJob.dispatch.correlationKey = speedJob.id;
+    const settings = { model: 'gpt-6.1-sol', effort: 'medium', sourceRef: 'Synthetic speed request', serviceTier: tier };
+    if (role === 'coordinator') settings.scope = { objectiveId: speedJob.id, role };
+    if (variant !== 'unanswered') settings.speedApproval = { status: ['requested', 'declined'].includes(variant) ? variant : 'approved', objectiveId: speedJob.id, role, serviceTier: tier, sourceRef: 'Synthetic explicit owner speed approval' };
+    if (variant === 'wrong-objective') settings.speedApproval.objectiveId = 'another-job';
+    if (variant === 'wrong-role') settings.speedApproval.role = role === 'child' ? 'coordinator' : 'child';
+    if (variant === 'wrong-tier') settings.speedApproval.serviceTier = 'different-tier';
+    speedJob.dispatch[role === 'child' ? 'requestedSettings' : 'coordinatorRequestedSettings'] = settings;
+    const saved = await adopt(speedJob); const coordinator = readback(dispatcher.threadId);
+    if (role === 'coordinator' && variant === 'approved') coordinator.recordedSettings.serviceTier = tier;
+    const state = await retain(await observation(saved, 'absent', null, { dispatcher: coordinator }));
+    const result = await advise(0, [], privateHome, saved.id);
+    assert.equal(result[role === 'child' ? 'childSpeed' : 'coordinatorSpeed'].serviceTier, variant === 'approved' ? tier : 'default');
+    assert.equal(result.next, 'create-via-dispatcher');
+    assert.deepEqual(Object.keys(result.nativeCreateRequest).sort(), ['model', 'prompt', 'target', 'thinking', 'title']);
+    if (role === 'coordinator' && variant === 'unanswered') {
+      const inherited = readback(dispatcher.threadId); inherited.recordedSettings.serviceTier = tier;
+      await retain(await observation(saved, 'absent', state, { dispatcher: inherited }));
+      assert.ok((await advise(3, [], privateHome, saved.id)).reasons.includes('dispatcher-speed-mismatch'));
+    }
   }
   const resolve = (selector, expected = 0, path = discoveryPath) => cli(['dispatch', '--resolve', selector, '--discovery', path, '--as-of', now()], expected);
   const resolution = await resolve('name:Synthetic destination'); assert.equal(resolution.source.target.repository, target.repository); assert.equal(resolution.project, target.projectId);
@@ -240,7 +262,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   assert.ok((await advise(3, ['--context-needed'])).reasons.includes('child-bound-to-another-objective'));
   const second = structuredClone(definition); second.id = 'another-objective'; second.dispatch.correlationKey = 'synthetic-objective-two'; delete second.dispatch.requestedSettings;
   const secondAdopted = await adopt(second); let secondState = await retain(await observation(secondAdopted, 'absent'));
-  const secondAdvice = await advise(0, [], privateHome, second.id); assert.equal(secondAdvice.next, 'create-via-dispatcher'); assert.equal(secondAdvice.nativeCreateRequest.thinking, 'high');
+  const secondAdvice = await advise(0, [], privateHome, second.id); assert.equal(secondAdvice.next, 'create-via-dispatcher'); assert.equal(secondAdvice.nativeCreateRequest.thinking, 'medium');
   secondState = await retain(await observation(secondAdopted, 'attempted', secondState));
   await retain(await observation(secondAdopted, 'ready', secondState, { child: readback(child.threadId, { correlationKey: second.dispatch.correlationKey }) }));
   assert.ok((await advise(3, [], privateHome, second.id)).reasons.includes('child-bound-to-another-objective'));
@@ -281,7 +303,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   await writeFile(bindingsPath, JSON.stringify(selectedBindings)); await writeFile(discoveryPath, JSON.stringify({ ...discovery, observedAt: now() }));
   const nonGit = await resolve('name:Synthetic non Git', 3); assert.equal(nonGit.nativeProject.projectId, 'non-git-native'); assert.ok(nonGit.reasons.includes('repository-source-needed'));
   const finalStore = await readStore(privateHome); assert.equal(finalStore.records.some(record => record.hash === attemptHash), true);
-  assert.equal((await cli(['dispatch', '--project', target.projectId, '--as-of', now()])).jobs.length, 5);
+  assert.equal((await cli(['dispatch', '--project', target.projectId, '--as-of', now()])).jobs.length, 45);
   await cli(['maintain', '--write']);
   for (const path of ['docs/cli.md', 'docs/catalog.md', 'docs/briefing-guidance.json', 'docs/verification-index.json']) {
     const publicBytes = await readFile(join(root, path), 'utf8');

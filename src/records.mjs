@@ -114,6 +114,7 @@ function nativeReadback(value) {
   if (value.recordedSettings !== undefined && value.recordedSettings !== null) {
     object(value.recordedSettings, 'recordedSettings');
     for (const field of ['model', 'effort', 'sandboxMode', 'approvalPolicy', 'sourceRef']) text(value.recordedSettings[field], `recordedSettings.${field}`);
+    if (value.recordedSettings.serviceTier !== undefined && value.recordedSettings.serviceTier !== null) text(value.recordedSettings.serviceTier, 'recordedSettings.serviceTier');
     timestamp(value.recordedSettings.observedAt, 'recordedSettings.observedAt');
     if (value.recordedSettings.recordedAt !== undefined) timestamp(value.recordedSettings.recordedAt, 'recordedSettings.recordedAt');
   }
@@ -129,6 +130,14 @@ function dispatchDefinition(value, objectiveId) {
     for (const key of ['model', 'effort', 'sourceRef']) text(settings[key], `${field}.${key}`);
     choice(settings.effort, dispatchEfforts, `${field}.effort`);
     if (settings.scopedOverrideRef !== undefined) text(settings.scopedOverrideRef, `${field}.scopedOverrideRef`);
+    if (settings.serviceTier !== undefined) text(settings.serviceTier, `${field}.serviceTier`);
+    if (settings.speedApproval !== undefined) {
+      const approval = settings.speedApproval;
+      object(approval, `${field}.speedApproval`);
+      for (const key of ['objectiveId', 'role', 'serviceTier', 'sourceRef']) text(approval[key], `speedApproval.${key}`);
+      choice(approval.role, ['child', 'coordinator'], 'speedApproval.role');
+      choice(approval.status, ['requested', 'approved', 'declined'], 'speedApproval.status');
+    }
     if (settings.oneTimePermission !== undefined) {
       const permission = settings.oneTimePermission;
       object(permission, `${field}.oneTimePermission`);
