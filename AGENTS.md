@@ -29,15 +29,17 @@ Use these model choices for Emmy-managed work:
 
 | Role | Model and reasoning effort |
 | --- | --- |
-| Ordinary Codex session | `gpt-6.1-sol` at `high` minimum |
-| Nontrivial subagent | `gpt-6.1-sol` at `medium` minimum |
+| Ordinary Codex session | `gpt-6.1-sol` at `medium` |
+| Nontrivial subagent | `gpt-6.1-sol` at `medium` |
 | Trivial subagent | `gpt-6-luna` at `max` permitted |
 | Most automations | `gpt-6-luna` at `max` by default |
-| Heavy-reasoning automation | `gpt-6.1-sol` at `high` or higher |
+| Heavy-reasoning automation | `gpt-6.1-sol` at `high` maximum |
 
-A trivial subagent performs one bounded action with a known target and supplied inputs. Investigation, architecture, and cross-file implementation are nontrivial. Ordinary lead sessions keep the Sol High floor even for small requests. Compare effort levels within the selected model; effort names do not rank different model families.
+A trivial subagent performs one bounded action with a known target and supplied inputs. Investigation, architecture, and cross-file implementation are nontrivial. Ordinary coding sessions and substantive helpers use Sol Medium. Heavy reasoning uses Sol High maximum. Anything above High or a different coding model requires explicit one-time owner permission for that exact task, role, model and effort. No Astra default or automatic XHigh escalation. Generic "or higher" grants no permission. This coding/helper policy overrides pstack role defaults; unrelated automation selections remain unchanged. Compare effort levels within the selected model; effort names do not rank different model families.
 
-Honor explicit human model and effort instructions within their named scope, including stronger reviewer choices. Existing thread selections remain in place. Project `.codex/config.toml` supplies defaults for new sessions and helpers. Explicit scoped instructions take precedence over project defaults and pstack role defaults. Do not change Studio-wide settings or another project's defaults. Distinguish requested settings, resolved configuration, and observed execution. If model selection or readback is unavailable, report that gap instead of claiming enforcement.
+Honor explicit human model and effort instructions within their named scope, subject to the exact one-time permission requirement. Existing thread selections remain in place. Project `.codex/config.toml` supplies defaults for new sessions and helpers. Explicit scoped instructions take precedence over project defaults and pstack role defaults. Do not change Studio-wide settings or another project's defaults. Distinguish requested settings, resolved configuration, and observed execution. If model selection or readback is unavailable, report that gap instead of claiming enforcement.
+
+Standard/non-fast is the default for coding sessions, coordinators and helpers. Fast or Ultrafast requires explicit owner approval for that exact task, role and tier. An unanswered request is not approval; continue Standard without waiting. Never inherit an accelerated tier from a parent, saved session or broader preference. Model/effort permission does not grant speed permission. Use supported native/config controls only, verify recorded settings separately, and report an unavailable tier control or readback.
 
 ## Persistent calendar planning
 
