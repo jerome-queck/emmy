@@ -68,7 +68,7 @@ try {
       exitCode = data.status === 'checked' ? 0 : 3; break;
     case 'calendar-register':
       data = await calendarRegister(home, { file: resolve(options.file) });
-      exitCode = ['collected', 'proposed', 'cloud-plan-ready', 'preflight-ready', 'accepted-reported', 'api-plan-ready-reported', 'api-applied-reported'].includes(data.status) ? 0 : 3; break;
+      exitCode = ['collected', 'proposed', 'cloud-plan-ready', 'preflight-ready', 'accepted-reported', 'api-plan-ready-reported', 'api-applied-reported', 'planning-catalog-ready', 'planning-catalog-valid', 'planning-authorizations-discovered', 'api-plan-current-reported'].includes(data.status) ? 0 : 3; break;
     case 'fleet':
       data = await fleet(home, { file: resolve(options.file) });
       exitCode = data.status === 'ready' && !['backpressure', 'reconcile-before-admission'].includes(data.outcome) ? 0 : 3; break;

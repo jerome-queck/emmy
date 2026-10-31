@@ -17,7 +17,7 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 | signin | `--file <value>` required | Choose a scoped sign-in recovery handoff without accepting or retaining secrets. | fleet |
 | token-review | `--file <value>` required | Assess bounded supplied usage captures and complete cost per verified success without telemetry or execution. | evidence |
 | calendar | `--file <value>` required | Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution. | evidence |
-| calendar-register | `--file <value>` required | Collect read-only Calendar/Tasks snapshots, assess exact-ID proposals, validate handoffs, or prepare Academic OS API plans and inspect reports without applying them. | evidence |
+| calendar-register | `--file <value>` required | Collect read-only Calendar/Tasks snapshots, assess exact-ID proposals, validate handoffs, or export scoped cloud planning catalogs, acquire Academic OS API plans and inspect reports without applying them. | evidence |
 | briefing | `--file <value>` | Load an explicitly pinned local release or canonical public guidance, check a declared draft, and retain exact advisory Markdown. | evidence |
 | guidance-pin | `--file <value>` required | Activate, inspect or deactivate an exact approved installed local guidance release without changing canonical caches. | evidence |
 | probe | `--id <value>`, `--nonce <value>` required | Publish a proposed Dot onboarding packet with eight probes. | routing |

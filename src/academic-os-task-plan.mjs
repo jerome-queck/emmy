@@ -22,7 +22,7 @@ function toolResult(value) {
   try { return { failed: value.isError, report: strictJson(value.content[0].text) }; }
   catch { return null; }
 }
-function intentShape(intent) {
+export function validateAcademicOsTaskIntent(intent) {
   shape(intent, ['schemaVersion', 'operationId', 'issuedAt', 'maxEvidenceAgeMs', 'target', 'identity', 'expectedSnapshot', 'operation', 'policyDigest', 'coordinationDefinitionHash', 'planDigest', 'operationDigest', 'effectKey', 'sourceRef', 'authorityRef'], ['baseline', 'nativeSnapshotDigest', 'preflightDigest', 'policy', 'source']);
   need(intent.schemaVersion === 1 && text(intent.operationId, 200) && stamp(intent.issuedAt) && Number.isSafeInteger(intent.maxEvidenceAgeMs) && intent.maxEvidenceAgeMs > 0 && intent.maxEvidenceAgeMs <= 86400000, 'Invalid versioned API intent');
   target(intent.target);
@@ -70,7 +70,7 @@ function semanticAssessment(intent, baseline, evaluatedAt) {
 }
 
 export function prepareAcademicOsTaskPlan(intent, observation, { evaluatedAt = new Date().toISOString() } = {}) {
-  intentShape(intent);
+  validateAcademicOsTaskIntent(intent);
   shape(observation, ['environment', 'accountId', 'capturedAt', 'evidenceRef', 'result'], ['policy']);
   need(stamp(evaluatedAt) && stamp(observation.capturedAt) && text(observation.evidenceRef, 16384) && text(observation.environment) && text(observation.accountId), 'Invalid observation attribution');
   const findings = [];
@@ -108,10 +108,10 @@ export function prepareAcademicOsTaskPlan(intent, observation, { evaluatedAt = n
   return result('api-plan-ready-reported', [], { prepared, call: { tool: 'tasks_apply_plan', arguments: { plan_json: canonical(prepared.apiPlan) } } });
 }
 
-export function assessAcademicOsTaskResult(prepared, receipt, { evaluatedAt = new Date().toISOString() } = {}) {
+export function validateAcademicOsTaskPrepared(prepared) {
   shape(prepared, ['schemaVersion', 'intent', 'binding', 'preparedAt', 'validUntil', 'apiPlan', 'preparedDigest']);
   const { preparedDigest, ...body } = prepared;
-  intentShape(prepared.intent);
+  validateAcademicOsTaskIntent(prepared.intent);
   const intent = prepared.intent;
   const binding = prepared.binding;
   shape(binding, ['environment', 'accountId', 'evidenceRef', 'capturedAt', 'observedAt', 'generation', 'target', 'listId', 'expectedSnapshot', 'selectedTask', 'policy']);
@@ -120,6 +120,13 @@ export function assessAcademicOsTaskResult(prepared, receipt, { evaluatedAt = ne
   const expiry = Math.min(Date.parse(intent.issuedAt), Date.parse(binding.observedAt)) + intent.maxEvidenceAgeMs;
   need(Date.parse(prepared.validUntil) === expiry && Date.parse(prepared.preparedAt) <= expiry && Date.parse(binding.observedAt) <= Date.parse(binding.capturedAt) && Date.parse(binding.capturedAt) <= Date.parse(prepared.preparedAt) && Date.parse(intent.issuedAt) <= Date.parse(prepared.preparedAt) && binding.environment === intent.identity.environment && binding.accountId === intent.identity.accountId && binding.listId === intent.identity.listId && binding.expectedSnapshot === intent.expectedSnapshot && same(binding.target, intent.target), 'Changed API snapshot, account or expiry binding');
   need(intent.operation.name === 'create' ? binding.selectedTask === null : same(binding.selectedTask, { taskId: intent.identity.taskId, ...intent.baseline }), 'Changed original exact Task baseline');
+  return prepared;
+}
+
+export function assessAcademicOsTaskResult(prepared, receipt, { evaluatedAt = new Date().toISOString() } = {}) {
+  validateAcademicOsTaskPrepared(prepared);
+  const intent = prepared.intent;
+  const expiry = Date.parse(prepared.validUntil);
   shape(receipt, ['attemptedAt', 'observedAt', 'evidenceRef'], ['report', 'isError', 'transportError', 'result']);
   need(stamp(evaluatedAt) && stamp(receipt.attemptedAt) && stamp(receipt.observedAt) && text(receipt.evidenceRef, 16384) && Date.parse(receipt.observedAt) >= Date.parse(receipt.attemptedAt) && Date.parse(receipt.observedAt) <= Date.parse(evaluatedAt) && ['report', 'result', 'transportError'].filter(key => receipt[key] !== undefined).length === 1 && (receipt.isError === undefined || typeof receipt.isError === 'boolean') && (receipt.transportError === undefined || text(receipt.transportError, 16384)), 'Invalid original operation receipt');
   const findings = [];

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildAcademicOsPlanningCatalog, acquireAcademicOsTaskPlan, validateAcademicOsPlanningCatalog } from '../src/academic-os-planning.mjs';
+import { buildAcademicOsPlanningCatalog, acquireAcademicOsTaskPlan, validateAcademicOsPlanningCatalog, discoverAcademicOsPlanningAuthorizations, revalidateAcademicOsTaskPlan } from '../src/academic-os-planning.mjs';
 import { assessAcademicOsTaskResult } from '../src/academic-os-task-plan.mjs';
 import { canonical, digest } from '../src/records.mjs';
 import { academicOsPlanningFixture } from '../verification/academic-os-planning-fixtures.mjs';
@@ -16,6 +16,10 @@ test('real caller obtains exact module and research plans from cloud catalog wit
     const before = canonical(input);
     const catalog = build(input.catalogInput);
     assert.equal(catalog.policyVersion, digest(canonical(input.catalogInput)));
+    const { operationId: omitted, ...selector } = input.request;
+    const discovered = discoverAcademicOsPlanningAuthorizations(catalog, selector, { evaluatedAt: now });
+    assert.equal(discovered.authorizations.length, 1);
+    input.request.operationId = discovered.authorizations[0].operationId;
     const result = acquire(catalog, input);
     assert.equal(result.status, 'api-plan-ready-reported');
     assert.equal(result.prepared.apiPlan.policyVersion, catalog.policyVersion);
@@ -100,4 +104,70 @@ test('acquired original packet retains uncertainty and does not turn a lost resp
   assert.equal(assessment.status, 'reconcile-original-operation');
   assert.equal(assessment.call, null);
   assert.deepEqual(assessment.prepared, result.prepared);
+});
+
+
+test('publication refuses semantic title drift and two creates for one occurrence', () => {
+  for (const name of ['create', 'change']) {
+    const input = fixture(name); input.catalogInput.authorizations[0].operation.title = 'Unrelated title';
+    assert.throws(() => build(input.catalogInput), /Source label/);
+  }
+  const input = fixture('create');
+  input.catalogInput.authorizations.push({ ...structuredClone(input.catalogInput.authorizations[0]), operationId: 'second-create-operation' });
+  assert.throws(() => build(input.catalogInput), /uniquely authorized/);
+});
+
+
+test('discovery supplies stable eligible selectors and cannot cross target/list boundaries', () => {
+  const input = fixture(); const catalog = build(input.catalogInput);
+  const selector = { target: input.request.target, listId: input.request.listId, taskId: input.request.taskId };
+  const discovered = discoverAcademicOsPlanningAuthorizations(catalog, selector, { evaluatedAt: now });
+  assert.equal(discovered.authorizations[0].operationId, input.request.operationId);
+  assert.equal(discovered.authorizations[0].taskId, input.request.taskId);
+  assert.deepEqual(discoverAcademicOsPlanningAuthorizations(catalog, { ...selector, taskId: 'foreign' }, { evaluatedAt: now }).authorizations, []);
+  assert.throws(() => discoverAcademicOsPlanningAuthorizations(catalog, { ...selector, listId: 'foreign' }, { evaluatedAt: now }));
+});
+
+test('final revalidation refuses a policy revision during backup and never replaces the stored packet', () => {
+  const input = fixture(); const catalog = build(input.catalogInput);
+  const { prepared } = acquire(catalog, input);
+  const before = canonical(prepared);
+  const revalidate = (current, observation = input.observation) => revalidateAcademicOsTaskPlan(current, prepared, observation, { evaluatedAt: now });
+  const valid = revalidate(catalog);
+  assert.equal(valid.status, 'api-plan-current-reported');
+  assert.equal(valid.call, null);
+  assert.deepEqual(valid.prepared, prepared);
+  const revised = structuredClone(input.catalogInput); revised.authorizations[0].authorityRef += '-new-revision-during-backup';
+  assert.deepEqual(revalidate(build(revised)).findings, ['current-cloud-planning-revision-mismatch']);
+  assert.equal(revalidate(build(revised)).call, null);
+  const drift = structuredClone(input.observation); drift.result.report.execution.expectedSnapshot = '9'.repeat(64); drift.result.report.register.providerSnapshot = '9'.repeat(64);
+  assert.ok(revalidate(catalog, drift).findings.includes('original-api-snapshot-mismatch'));
+  assert.equal(canonical(prepared), before);
+  const tampered = structuredClone(prepared); tampered.apiPlan.operation.taskId = 'foreign';
+  assert.throws(() => revalidateAcademicOsTaskPlan(catalog, tampered, input.observation, { evaluatedAt: now }), /Changed|invalid/);
+});
+
+test('fresher reads cannot renew original prepared expiry and policy change does not erase uncertain recovery', () => {
+  const input = fixture(); input.observation.result.report.register.observedAt = new Date(Date.parse(now) - 59000).toISOString();
+  const catalog = build(input.catalogInput); const { prepared } = acquire(catalog, input);
+  const later = new Date(Date.parse(now) + 2000).toISOString();
+  input.observation.result.report.register.observedAt = later; input.observation.capturedAt = later;
+  assert.deepEqual(revalidateAcademicOsTaskPlan(catalog, prepared, input.observation, { evaluatedAt: later }).findings, ['original-prepared-packet-expired']);
+  const unknown = assessAcademicOsTaskResult(prepared, { attemptedAt: now, observedAt: now, evidenceRef: 'synthetic-lost-before-policy-change', transportError: 'lost' }, { evaluatedAt: later });
+  assert.equal(unknown.status, 'reconcile-original-operation');
+  assert.equal(unknown.call, null);
+  assert.deepEqual(unknown.prepared, prepared);
+});
+
+
+test('consumed effect identity survives policy and operation ID rotation', () => {
+  const input = fixture('create');
+  const original = acquire(build(input.catalogInput), input);
+  input.catalogInput.authorizations[0].authorityRef += '-new-policy';
+  input.catalogInput.authorizations[0].operationId = 'rotated-operation-id';
+  input.request.operationId = 'rotated-operation-id';
+  const rotated = acquire(build(input.catalogInput), input);
+  assert.notEqual(rotated.policyVersion, original.policyVersion);
+  assert.notEqual(rotated.prepared.intent.operationDigest, original.prepared.intent.operationDigest);
+  assert.equal(rotated.prepared.intent.effectKey, original.prepared.intent.effectKey);
 });
