@@ -1,5 +1,10 @@
 const mutant = (id, before, after, counterexample) => ({ id: `fleet-${id}`, source: 'src/fleet-state.mjs', property: 'fleet-contract', edits: [[before, after]], counterexample });
 export const fleetMutations = [
+  mutant('overrun-ceiling-bytes', 'job.usedBytes = totalBytes;', 'job.usedBytes = Math.min(totalBytes, 262144);', 'overrun/ceiling/bytes'),
+  mutant('overrun-unsafe-byte-sum', '&& Number.isSafeInteger(totalBytes)', '', 'overrun/aggregate/Bytes'),
+  mutant('overrun-unsafe-read-sum', '&& Number.isSafeInteger(totalReads)', '', 'overrun/aggregate/Reads'),
+  mutant('overrun-retention-label', 'rawResponseBytesVerified: false', 'rawResponseBytesVerified: true', 'overrun/retention-label'),
+
   mutant('overrun-compliance', "budgetCompliance: 'exceeded'", "budgetCompliance: 'compliant'", 'overrun/accounting'),
   mutant('overrun-breach', '(totalReads > job.input.maxReads || totalBytes > job.input.maxBytes)', 'true', 'overrun/actual-breach'),
   mutant('overrun-monotone', 'readDelta >= 0 && byteDelta >= 0 && Number.isSafeInteger(totalReads)', 'Number.isSafeInteger(totalReads)', 'overrun/monotone'),

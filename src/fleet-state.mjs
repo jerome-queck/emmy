@@ -249,7 +249,7 @@ export function fleetTransition(original, action, root, at, epochHash = original
           const totalReads = job.usedReads + readDelta; const totalBytes = job.usedBytes + byteDelta;
           insist(readDelta >= 0 && byteDelta >= 0 && Number.isSafeInteger(totalReads) && Number.isSafeInteger(totalBytes) && (totalReads > job.input.maxReads || totalBytes > job.input.maxBytes), 'Measured overrun requires monotone actual usage exceeding original caps');
           job.usedReads = totalReads; job.usedBytes = totalBytes; job.attemptReads = action.usage.reads; job.attemptBytes = action.usage.bytes;
-          job.byteAccounting = { measuredTotalBytes: totalBytes, measuredTotalReads: totalReads, admittedMaxReads: job.input.maxReads, admittedMaxBytes: job.input.maxBytes, budgetCompliance: 'exceeded', failure: action.failure };
+          job.byteAccounting = { measuredTotalBytes: totalBytes, measuredTotalReads: totalReads, admittedMaxReads: job.input.maxReads, admittedMaxBytes: job.input.maxBytes, budgetCompliance: 'exceeded', failure: action.failure, ...(action.failure.retention === 'measurement-only' ? { responseRetention: 'measurement-only', rawResponseBytesVerified: false } : {}) };
         } else {
         const readDelta = action.usage.reads - job.attemptReads; const byteDelta = action.usage.bytes - job.attemptBytes;
         insist(readDelta >= 0 && byteDelta >= 0 && job.usedReads + readDelta <= job.input.maxReads && job.usedBytes + byteDelta <= job.input.maxBytes, 'Parent usage rewinds or exceeds the admitted total budget');

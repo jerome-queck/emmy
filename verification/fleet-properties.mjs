@@ -3,7 +3,7 @@ import { digest } from '../src/records.mjs';
 import { fleetCapture, fleetEntities, fleetJob, fleetReceipt, fleetRoot, fleetTime } from './fleet-fixtures.mjs';
 import { morningOpen, morningRoot, morningAt } from './morning-fixtures.mjs';
 
-export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 139, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
+export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 155, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
 export function verifyFleetPolicy({ fleet }, check) {
   let cases = 0;
   const expect = (name, ok, message) => { cases++; check('fleet-contract', { case: name }, ok, message); };
@@ -185,6 +185,21 @@ export function verifyFleetPolicy({ fleet }, check) {
   expect('overrun/expired-result', rejects(() => transition(measuredState, { ...measuredAction, operation: 'result' }, unknownAt)), 'Expiry still requires explicit reconciliation.');
   expect('overrun/duplicate', transition(measured.state, measuredAction, unknownAt).outcome === 'coalesced' && measured.state.jobs[0].usedBytes === 161853, 'Duplicate settlement does not count usage twice.');
   expect('overrun/terminal', rejects(() => transition(measured.state, { ...measuredAction, reason: 'Changed settlement' }, unknownAt)), 'Terminal attempt cannot be reused.');
+  let ceilingState = transition(green(), { operation: 'submit', job: fleetJob('ceiling-overrun', 'morning', { maxReads: 32, maxBytes: 262144 }) }).state;
+  ceilingState = transition(ceilingState, { operation: 'claim', ownerRef: 'synthetic-parent' }).state; const ceilingJob = ceilingState.jobs[0];
+  const ceilingAction = { ...measuredAction, jobKey: ceilingJob.key, ticket: ceilingJob.ticket };
+  for (const [name, usage] of [['bytes', { reads: 1, bytes: 262145 }], ['reads', { reads: 33, bytes: 33 }], ['safe-maximum', { reads: Number.MAX_SAFE_INTEGER, bytes: Number.MAX_SAFE_INTEGER }]]) {
+    const actual = transition(ceilingState, { ...ceilingAction, usage }, unknownAt).state.jobs[0];
+    expect(`overrun/ceiling/${name}`, actual.usedReads === usage.reads && actual.usedBytes === usage.bytes && actual.input.maxReads === 32 && actual.input.maxBytes === 262144, 'Measured failure can truthfully retain safe counts beyond maximum admission.');
+  }
+  for (const field of ['reads', 'bytes']) for (const [name, value] of [['fraction', 1.5], ['string', '33'], ['unsafe', Number.MAX_SAFE_INTEGER + 1], ['negative', -1]]) expect(`overrun/numeric/${field}/${name}`, rejects(() => transition(ceilingState, { ...ceilingAction, usage: { reads: 33, bytes: 262145, [field]: value } }, unknownAt)), 'Lossy, negative or unsafe measured counters refuse.');
+  for (const field of ['Reads', 'Bytes']) {
+    const previous = structuredClone(ceilingState); previous.jobs[0][`used${field}`] = 1;
+    expect(`overrun/aggregate/${field}`, rejects(() => transition(previous, { ...ceilingAction, usage: { reads: Number.MAX_SAFE_INTEGER, bytes: Number.MAX_SAFE_INTEGER } }, unknownAt)), 'Safe attempt counters cannot overflow cumulative sums.');
+  }
+  for (const field of ['reads', 'bytes']) expect(`overrun/ceiling-success/${field}`, rejects(() => transition(ceilingState, { ...ceilingAction, failure: undefined, outcome: 'completed', checkpoint: 1, usage: { reads: 1, bytes: 33, [field]: field === 'reads' ? 33 : 262145 } }, unknownAt)), 'Success retains protocol and admission caps.');
+  const measurementOnly = transition(ceilingState, { ...ceilingAction, usage: { reads: 1, bytes: 262145 }, failure: { ...ceilingAction.failure, retention: 'measurement-only' } }, unknownAt).state.jobs[0];
+  expect('overrun/retention-label', measurementOnly.usedBytes === 262145 && measurementOnly.byteAccounting.rawResponseBytesVerified === false && measurementOnly.byteAccounting.responseRetention === 'measurement-only' && measurementOnly.byteAccounting.budgetCompliance === 'exceeded', 'Measurement-only overflow labels missing raw-byte verification without losing exact counters.');
   const provenance = green();
   for (const [name, invocation, expected] of [['missing', undefined, 'invocation-origin-unverified'], ['unknown', { origin: 'unknown' }, 'invocation-origin-unverified'], ['manual', { origin: 'manual' }, 'manual-run-only'], ['wrong-occurrence', { origin: 'scheduled', occurrenceId: 'other-occurrence' }, 'occurrence-mismatch']]) {
     expect(`schedule/origin/${name}`, fleet.captureCondition(provenance.entities[2], fleetCapture('routine', 'healthy', fleetTime, { invocation }), provenance, { maxAgeMs: 300000 }, fleetTime).issueKey === expected, 'Only an exact scheduled occurrence can establish scheduled health.');

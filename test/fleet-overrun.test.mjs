@@ -45,3 +45,17 @@ test('overrun cannot loosen successful, uncertain, scope, checkpoint or monotone
   assert.throws(() => fleetTransition(blocked, { ...action, reason: 'Different settlement' }, fleetRoot, at), /exact reconciliation/);
   assert.equal(blocked.jobs[0].ticket, action.ticket);
 });
+
+test('measured failure at maximum admission plus one retains exact safe counters', () => {
+  let state = fleetTransition(fleetInitial(fleetRoot), { operation: 'submit', job: fleetJob('ceiling-overrun', 'morning', { maxReads: 32, maxBytes: 262144 }) }, fleetRoot, fleetTime).state;
+  state = fleetTransition(state, { operation: 'claim', ownerRef: 'fixture-parent' }, fleetRoot, fleetTime).state;
+  const { action, at } = overrunFixture(); const job = state.jobs[0];
+  const measured = { ...action, jobKey: job.key, ticket: job.ticket, usage: { reads: 33, bytes: 262145 } };
+  const blocked = fleetTransition(state, measured, fleetRoot, at).state.jobs[0];
+  assert.equal(blocked.usedReads, 33); assert.equal(blocked.usedBytes, 262145);
+  assert.equal(blocked.input.maxReads, 32); assert.equal(blocked.input.maxBytes, 262144);
+  for (const field of ['reads', 'bytes']) for (const value of [1.5, '33', null, -1, Number.MAX_SAFE_INTEGER + 1, Infinity, NaN]) assert.throws(() => actionInput({ ...measured, usage: { ...measured.usage, [field]: value } }));
+  assert.throws(() => actionInput({ ...measured, failure: undefined, outcome: 'completed', checkpoint: 1 }));
+  const prior = structuredClone(state); prior.jobs[0].usedBytes = 1;
+  assert.throws(() => fleetTransition(prior, { ...measured, usage: { reads: 33, bytes: Number.MAX_SAFE_INTEGER } }, fleetRoot, at), /monotone/);
+});
