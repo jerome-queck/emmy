@@ -203,7 +203,7 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   while (Date.now() <= Date.parse(overrunTicket.deadline)) await new Promise(resolve => setTimeout(resolve, 25));
   const overrunEnvelope = async (value, name, expected = 2, changes = {}) => {
     const path = await fixture(`${name}-proof`, value); const ref = { path, sourceRef: name, sha256: digest(await readFile(path)) };
-    const receipt = { ...overrunCapture.receipt, sourceRef: name, sha256: ref.sha256, coverage: { complete: false, gaps: ['Measured overrun; observed workload status is independent.'] } };
+    const receipt = { ...overrunCapture.receipt, sourceRef: name, sha256: ref.sha256, coverage: { complete: false, gaps: value.retention === 'measurement-only' ? ['Raw responses omitted because existing evidence-retention bounds were exceeded.'] : ['Measured overrun; observed workload status is independent.'] } };
     return timeoutCall(name, { operation: 'resolve', jobKey: overrunTicket.key, ticket: overrunTicket.ticket, checkpoint: 0, outcome: 'blocked', usage: { reads: 2, bytes: 161853 }, receipt, reason: 'Observer calls ended without native effects.', failure: { kind: 'read-only-known-overrun', sourceRef: name, sha256: ref.sha256, reason: 'Original byte cap exceeded.', ...(value.retention ? { retention: value.retention } : {}) }, ...changes }, expected, [...responseRefs, ref]);
   };
   for (const [field, value] of [['jobKey', 'b'.repeat(64)], ['ticket', 'b'.repeat(64)], ['scope', { ...overrunProof.scope, resource: 'foreign' }], ['allReadsEnded', false], ['readOnly', false], ['nativeEffects', 'uncertain'], ['workerStopped', false], ['mailOpened', true], ['mailMutations', 1], ['actualReadAttempts', 1], ['totalSerializedResponseBytes', null], ['admittedMaxBytes', 161853]]) await overrunEnvelope({ ...overrunProof, [field]: value }, `overrun-negative-${field}`);
@@ -241,6 +241,7 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
     await submitMeasured('success-refused', measuredProof, { outcome: 'completed', checkpoint: 1 });
     if (measurementOnly) {
       await submitMeasured('wrong-count', { ...measuredProof, totalSerializedResponseBytes: null });
+      if (counts.bytes > counts.reads) await submitMeasured('impossible-largest', { ...measuredProof, largestResponseBytes: 1 });
       await submitMeasured('ongoing', { ...measuredProof, allReadsEnded: false });
       await submitMeasured('wrong-commitment', { ...measuredProof, rawResponseCommitment: 'unknown' });
       await submitMeasured('out-of-window', { ...measuredProof, startedAt: '2000-01-01T00:00:00.000Z' });

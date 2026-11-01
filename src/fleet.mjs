@@ -119,7 +119,7 @@ export async function fleet(home, { file }) {
       insist(proof.retention === action.failure.retention, 'Proof retention mode differs from retained failure');
       if (action.failure.retention === 'measurement-only') {
         const largest = proof.largestResponseBytes;
-        const retentionExceeded = Number.isSafeInteger(largest) && largest > 0 && largest <= action.usage.bytes && (largest > 262144 || action.usage.reads > 63 || action.usage.bytes > 1048576 - files[`evidence-${index}.bin`].length);
+        const retentionExceeded = Number.isSafeInteger(largest) && largest > 0 && largest <= action.usage.bytes && BigInt(largest) * BigInt(action.usage.reads) >= BigInt(action.usage.bytes) && (largest > 262144 || action.usage.reads > 63 || action.usage.bytes > 1048576 - files[`evidence-${index}.bin`].length);
         insist(retentionExceeded && proof.responses === undefined && hash(proof.rawResponseCommitment) && proof.rawResponsesRetained === false && action.receipt.coverage.complete === false && action.receipt.coverage.gaps.includes('Raw responses omitted because existing evidence-retention bounds were exceeded.'), 'Measurement-only proof requires numeric retention overflow and explicit omitted raw responses');
         insist(Date.parse(proof.startedAt) >= Date.parse(job.deadline) - fleetConfig(projected.root.action.config).attemptMs && Date.parse(proof.startedAt) <= Date.parse(proof.capturedAt) && Date.parse(proof.capturedAt) <= Date.parse(action.receipt.capturedAt), 'Measured overflow acquisition is outside this attempt window');
       } else {
