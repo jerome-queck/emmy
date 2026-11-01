@@ -190,6 +190,67 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   await failureEnvelope(proof, 'unknown-ended-proof', 3); const unknownJob = timeoutView.state.jobs.find(job => job.key === unknownTicket.key);
   assert.equal(unknownJob.status, 'blocked'); assert.equal(unknownJob.usedBytes, null); assert.equal(unknownJob.byteAccounting.knownBytesLowerBound, 78082); assert.equal(unknownJob.byteAccounting.budgetCompliance, 'unverified');
   report.fleetUnknownBytes = { reads: 13, measuredBytes: null, knownBytesLowerBound: 78082, endedReadonlySlotReleased: true, liveClosure: false };
+
+  await timeoutCall('overrun-submit', { operation: 'submit', job: fleetJob('measured-overrun', 'morning', { maxReads: 3, maxBytes: 131072 }) });
+  const overrunTicket = (await timeoutCall('overrun-claim', { operation: 'claim', ownerRef: 'fixture-parent' })).ticket;
+  const overrunCapture = currentCapture('protected'); const responseRefs = []; const responses = [];
+  for (const [index, bytes] of [12813, 149040].entries()) {
+    const path = join(root, 'bin', `overrun-response-${index}.bin`); const raw = Buffer.alloc(bytes, 120); await writeFile(path, raw);
+    const ref = { path, sourceRef: `overrun-response-${index}`, sha256: digest(raw) }; responseRefs.push(ref);
+    responses.push({ sourceRef: ref.sourceRef, sha256: ref.sha256, bytes, startedAt: overrunCapture.receipt.capturedAt, capturedAt: overrunCapture.receipt.capturedAt });
+  }
+  const overrunProof = { jobKey: overrunTicket.key, ticket: overrunTicket.ticket, scope: overrunCapture.receipt.scope, actualReadAttempts: 2, totalSerializedResponseBytes: 161853, admittedMaxReads: 3, admittedMaxBytes: 131072, allReadsEnded: true, readOnly: true, nativeEffects: 'none', responses };
+  while (Date.now() <= Date.parse(overrunTicket.deadline)) await new Promise(resolve => setTimeout(resolve, 25));
+  const overrunEnvelope = async (value, name, expected = 2, changes = {}) => {
+    const path = await fixture(`${name}-proof`, value); const ref = { path, sourceRef: name, sha256: digest(await readFile(path)) };
+    const receipt = { ...overrunCapture.receipt, sourceRef: name, sha256: ref.sha256, coverage: { complete: false, gaps: value.retention === 'measurement-only' ? ['Raw responses omitted because existing evidence-retention bounds were exceeded.'] : ['Measured overrun; observed workload status is independent.'] } };
+    return timeoutCall(name, { operation: 'resolve', jobKey: overrunTicket.key, ticket: overrunTicket.ticket, checkpoint: 0, outcome: 'blocked', usage: { reads: 2, bytes: 161853 }, receipt, reason: 'Observer calls ended without native effects.', failure: { kind: 'read-only-known-overrun', sourceRef: name, sha256: ref.sha256, reason: 'Original byte cap exceeded.', ...(value.retention ? { retention: value.retention } : {}) }, ...changes }, expected, [...responseRefs, ref]);
+  };
+  for (const [field, value] of [['jobKey', 'b'.repeat(64)], ['ticket', 'b'.repeat(64)], ['scope', { ...overrunProof.scope, resource: 'foreign' }], ['allReadsEnded', false], ['readOnly', false], ['nativeEffects', 'uncertain'], ['workerStopped', false], ['mailOpened', true], ['mailMutations', 1], ['actualReadAttempts', 1], ['totalSerializedResponseBytes', null], ['admittedMaxBytes', 161853]]) await overrunEnvelope({ ...overrunProof, [field]: value }, `overrun-negative-${field}`);
+  await overrunEnvelope({ ...overrunProof, responses: [responses[0], responses[0]] }, 'overrun-duplicate-response');
+  await overrunEnvelope({ ...overrunProof, responses: [{ ...responses[0], sha256: 'b'.repeat(64) }, responses[1]] }, 'overrun-wrong-response');
+  await overrunEnvelope(overrunProof, 'overrun-success-refused', 2, { outcome: 'completed', checkpoint: 1 });
+  const falseOverflow = await overrunEnvelope({ ...overrunProof, responses: undefined, retention: 'measurement-only', largestResponseBytes: 149040, rawResponsesRetained: false, rawResponseCommitment: digest('omitted-fixture'), startedAt: responses[0].startedAt, capturedAt: responses.at(-1).capturedAt }, 'overrun-retention-not-exceeded'); assert.match(falseOverflow.error, /numeric retention overflow/);
+  const overrunSettled = await overrunEnvelope(overrunProof, 'overrun-ended', 3); const blockedOverrun = overrunSettled.state.jobs.find(row => row.key === overrunTicket.key);
+  assert.equal(blockedOverrun.status, 'blocked'); assert.equal(blockedOverrun.usedBytes, 161853); assert.equal(blockedOverrun.usedReads, 2); assert.equal(blockedOverrun.input.maxBytes, 131072); assert.equal(blockedOverrun.byteAccounting.budgetCompliance, 'exceeded');
+  await overrunEnvelope(overrunProof, 'overrun-ended', 3); assert.equal(timeoutView.outcome, 'coalesced');
+  await run(['doctor'], 3, timeoutHome);
+  report.fleetMeasuredOverrun = { synthetic: true, actualReads: 2, measuredBytes: 161853, originalCap: 131072, budgetCompliance: 'exceeded', status: 'blocked', originalTicketRetained: true, replay: 'passed', providerReads: false };
+
+  for (const [name, counts, largest, measurementOnly] of [
+    ['maximum-byte-plus-one', { reads: 1, bytes: 262145 }, 262145, true],
+    ['maximum-read-plus-one', { reads: 33, bytes: 33 }, 1, false],
+    ['retention-total-overflow', { reads: 5, bytes: 1048577 }, 262144, true],
+    ['retention-count-overflow', { reads: 64, bytes: 64 }, 1, true]
+  ]) {
+    await timeoutCall(`${name}-submit`, { operation: 'submit', job: fleetJob(name, 'morning', { maxReads: 32, maxBytes: 262144 }) });
+    const admitted = (await timeoutCall(`${name}-claim`, { operation: 'claim', ownerRef: 'fixture-parent' })).ticket;
+    const captured = currentCapture('protected'); const rawRefs = []; const rawResponses = [];
+    if (!measurementOnly) for (let i = 0; i < counts.reads; i++) {
+      const path = join(root, 'bin', `${name}-${i}.bin`); const raw = Buffer.from('x'); await writeFile(path, raw);
+      const ref = { path, sourceRef: `${name}-${i}`, sha256: digest(raw) }; rawRefs.push(ref); rawResponses.push({ sourceRef: ref.sourceRef, sha256: ref.sha256, bytes: 1, startedAt: captured.receipt.capturedAt, capturedAt: captured.receipt.capturedAt });
+    }
+    const measuredProof = { jobKey: admitted.key, ticket: admitted.ticket, scope: captured.receipt.scope, actualReadAttempts: counts.reads, totalSerializedResponseBytes: counts.bytes, admittedMaxReads: 32, admittedMaxBytes: 262144, allReadsEnded: true, readOnly: true, nativeEffects: 'none', ...(measurementOnly ? { retention: 'measurement-only', largestResponseBytes: largest, rawResponseCommitment: digest(`synthetic-unretained-${name}`), rawResponsesRetained: false, startedAt: captured.receipt.capturedAt, capturedAt: captured.receipt.capturedAt } : { responses: rawResponses }) };
+    while (Date.now() <= Date.parse(admitted.deadline)) await new Promise(resolve => setTimeout(resolve, 25));
+    const submitMeasured = async (suffix, proof, changes = {}, expected = 2) => {
+      const path = await fixture(`${name}-${suffix}-proof`, proof); const ref = { path, sourceRef: `${name}-${suffix}`, sha256: digest(await readFile(path)) };
+      const { completeCoverage, ...actionChanges } = changes;
+      const receipt = { ...captured.receipt, sourceRef: ref.sourceRef, sha256: ref.sha256, coverage: { complete: completeCoverage === true, gaps: completeCoverage ? [] : measurementOnly ? ['Raw responses omitted because existing evidence-retention bounds were exceeded.'] : ['Read admission exceeded.'] } };
+      return timeoutCall(`${name}-${suffix}`, { operation: 'resolve', jobKey: admitted.key, ticket: admitted.ticket, checkpoint: 0, outcome: 'blocked', usage: counts, receipt, reason: 'Exact safe measured counts; no further call permitted.', failure: { kind: 'read-only-known-overrun', sourceRef: ref.sourceRef, sha256: ref.sha256, reason: 'Original admission exceeded.', ...(measurementOnly ? { retention: 'measurement-only' } : {}) }, ...actionChanges }, expected, [...rawRefs, ref]);
+    };
+    await submitMeasured('success-refused', measuredProof, { outcome: 'completed', checkpoint: 1 });
+    if (measurementOnly) {
+      await submitMeasured('wrong-count', { ...measuredProof, totalSerializedResponseBytes: null });
+      if (counts.bytes > counts.reads) await submitMeasured('impossible-largest', { ...measuredProof, largestResponseBytes: 1 });
+      await submitMeasured('ongoing', { ...measuredProof, allReadsEnded: false });
+      await submitMeasured('wrong-commitment', { ...measuredProof, rawResponseCommitment: 'unknown' });
+      await submitMeasured('out-of-window', { ...measuredProof, startedAt: '2000-01-01T00:00:00.000Z' });
+      await submitMeasured('claims-complete', measuredProof, { completeCoverage: true });
+    }
+    const settled = await submitMeasured('blocked', measuredProof, {}, 3); const actual = settled.state.jobs.find(row => row.key === admitted.key);
+    assert.equal(actual.usedReads, counts.reads); assert.equal(actual.usedBytes, counts.bytes); assert.equal(actual.input.maxReads, 32); assert.equal(actual.input.maxBytes, 262144); assert.equal(actual.byteAccounting.budgetCompliance, 'exceeded');
+    if (measurementOnly) { assert.equal(actual.byteAccounting.responseRetention, 'measurement-only'); assert.equal(actual.byteAccounting.rawResponseBytesVerified, false); }
+  }
   await call({ operation: 'submit', job }); assert.equal(last.state.jobs.length, 0);
   await call({ operation: 'submit', job: fleetJob('heavy-one', 'heavy') });
   await call({ operation: 'submit', job: fleetJob('heavy-two', 'heavy') });

@@ -5,7 +5,7 @@ import { isAbsolute, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { boundedFile, boundedJson, strictJson } from './bounded-json.mjs';
 import { canonical, digest, publishRecord, readStore, recordPayload, validateReferences } from './records.mjs';
-import { actionInput, hash, insist, shape } from './fleet-schema.mjs';
+import { actionInput, fleetConfig, hash, insist, shape } from './fleet-schema.mjs';
 import { fleetHistory, fleetInitial, fleetState, fleetTransition, fleetView } from './fleet-state.mjs';
 import { authorityStatus, definitionHeads, effectKey, restoredState } from './work.mjs';
 
@@ -109,7 +109,32 @@ export async function fleet(home, { file }) {
       }
     }
   }
-  if (['result', 'resolve'].includes(input.action.operation)) { const job = projected.state?.jobs.find(job => job.key === input.action.jobKey) ?? history?.jobs.get(input.action.jobKey); insist(job && totalBytes <= job.input.maxBytes && (input.action.usage.bytes === null || totalBytes <= input.action.usage.bytes), 'Parent result exceeds admitted or declared byte budget'); }
+  if (['result', 'resolve'].includes(input.action.operation)) {
+    const action = input.action; const job = projected.state?.jobs.find(job => job.key === action.jobKey) ?? history?.jobs.get(action.jobKey);
+    insist(job, 'Parent result requires retained job');
+    if (action.failure?.kind === 'read-only-known-overrun') {
+      const index = evidence.findIndex(ref => ref.sourceRef === action.failure.sourceRef && ref.sha256 === action.failure.sha256); let proof;
+      try { proof = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(files[`evidence-${index}.bin`])); } catch { throw new Error('Measured overrun requires exact retained proof JSON'); }
+      insist(proof.jobKey === action.jobKey && proof.ticket === action.ticket && canonical(proof.scope) === canonical(action.receipt.scope) && proof.actualReadAttempts === action.usage.reads && proof.totalSerializedResponseBytes === action.usage.bytes && proof.admittedMaxReads === job.input.maxReads && proof.admittedMaxBytes === job.input.maxBytes && proof.allReadsEnded === true && proof.readOnly === true && proof.nativeEffects === 'none' && (proof.workerStopped === undefined || proof.workerStopped === true) && (proof.mailOpened === undefined || proof.mailOpened === false) && (proof.mailMutations === undefined || proof.mailMutations === 0), 'Measured overrun proof must bind exact attempt, scope, counts, original caps and ended read-only calls');
+      insist(proof.retention === action.failure.retention, 'Proof retention mode differs from retained failure');
+      if (action.failure.retention === 'measurement-only') {
+        const largest = proof.largestResponseBytes;
+        const retentionExceeded = Number.isSafeInteger(largest) && largest > 0 && largest <= action.usage.bytes && BigInt(largest) * BigInt(action.usage.reads) >= BigInt(action.usage.bytes) && (largest > 262144 || action.usage.reads > 63 || action.usage.bytes > 1048576 - files[`evidence-${index}.bin`].length);
+        insist(retentionExceeded && proof.responses === undefined && hash(proof.rawResponseCommitment) && proof.rawResponsesRetained === false && action.receipt.coverage.complete === false && action.receipt.coverage.gaps.includes('Raw responses omitted because existing evidence-retention bounds were exceeded.'), 'Measurement-only proof requires numeric retention overflow and explicit omitted raw responses');
+        insist(Date.parse(proof.startedAt) >= Date.parse(job.deadline) - fleetConfig(projected.root.action.config).attemptMs && Date.parse(proof.startedAt) <= Date.parse(proof.capturedAt) && Date.parse(proof.capturedAt) <= Date.parse(action.receipt.capturedAt), 'Measured overflow acquisition is outside this attempt window');
+      } else {
+        insist(Array.isArray(proof.responses) && proof.responses.length === action.usage.reads && proof.responses.length > 0, 'Measured overrun requires every returned response');
+        const responseRefs = new Set(); let measuredBytes = 0;
+        for (const response of proof.responses) {
+          const responseIndex = evidence.findIndex(ref => ref.sourceRef === response.sourceRef && ref.sha256 === response.sha256);
+          const raw = files[`evidence-${responseIndex}.bin`];
+          insist(responseIndex !== index && !responseRefs.has(response.sourceRef) && raw && raw.length === response.bytes && Date.parse(response.startedAt) >= Date.parse(job.deadline) - fleetConfig(projected.root.action.config).attemptMs && Date.parse(response.startedAt) <= Date.parse(response.capturedAt) && Date.parse(response.capturedAt) <= Date.parse(action.receipt.capturedAt), 'Measured response bytes or acquisition window differ from retained proof');
+          responseRefs.add(response.sourceRef); measuredBytes += raw.length;
+        }
+        insist(measuredBytes === action.usage.bytes, 'Measured overrun total differs from retained response bytes');
+      }
+    } else insist(totalBytes <= job.input.maxBytes && (action.usage.bytes === null || totalBytes <= action.usage.bytes), 'Parent result exceeds admitted or declared byte budget');
+  }
   if (['result', 'resolve'].includes(input.action.operation) && input.action.usage.bytes === null) {
     const action = input.action; const index = evidence.findIndex(ref => ref.sourceRef === action.failure.sourceRef && ref.sha256 === action.failure.sha256); let proof;
     try { proof = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(files[`evidence-${index}.bin`])); } catch { throw new Error('Known-ended failure requires exact retained proof JSON'); }
