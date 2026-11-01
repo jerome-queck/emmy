@@ -211,10 +211,11 @@
         "FreshSafe",
         "ExactSlotSafe",
         "ManualExcluded",
+        "UnboundExcluded",
         "NeverInferSuccess",
         "GraceNeverFailure"
       ],
-      "boundary": "Pure projection over captured immutable current records. Caller-supplied controlAuthority must match expectation namespace/automationId. Exact original registration digest, owner, target, usable original/latest, scheduling fingerprint, recorded-clock order and due/grace identity form dependency. Current disabled/edited configuration withdraws at or after effectiveAt; prior changed slots remain unknown. Freshness and complete-scan predicates gate applicability. Only a validated producer own occurrence with exact nominal timestamp and no explicit manual report correlates a candidate. Early report-null runs can be observed independently of execution or report availability. State observation-gap is strictly after due; execution remains not-inferred regardless of any real reported run. Latest missing/conflicted/invalid leaf abstracts unusable. Source predicate arithmetic and parser domains remain bounded source controls, not exhaustive TLC enumeration."
+      "boundary": "Pure projection over captured immutable current records. Caller-supplied controlAuthority must match expectation namespace/automationId. Exact original registration digest, owner, target, usable original/latest, scheduling fingerprint, recorded-clock order and due/grace identity form dependency. Current disabled/edited configuration withdraws at or after effectiveAt; prior changed slots remain unknown. Freshness and complete-scan predicates gate applicability. Only a validated producer own occurrence with exact nominal timestamp and no explicit manual or scheduled-unbound report correlates a candidate. Early report-null runs can be observed independently of execution or report availability. State observation-gap is strictly after due; execution remains not-inferred regardless of any real reported run. Latest missing/conflicted/invalid leaf abstracts unusable. Source predicate arithmetic and parser domains remain bounded source controls, not exhaustive TLC enumeration."
     },
     {
       "source": "src/automation-reporting-expectations.mjs",
@@ -230,6 +231,34 @@
         "ExpectationProjection.DependencySafe"
       ],
       "boundary": "Pure synchronous exact control-envelope validation and bounded recurrence membership supply validated/slot predicates. Exact source dependency closure is copied for every old and new witness. Source witnesses retain strict recordedAt-before-slot and fingerprint rejection. TLC assumes collision-free digests, validated records and faithfully computed recurrence membership; it does not prove all RRULEs, schema strings, timezone truth or acquisition."
+    },
+    {
+      "source": "src/automation-reporting.mjs",
+      "functions": [
+        "retrospectiveOK",
+        "predecessorOK",
+        "aggregate"
+      ],
+      "model": [
+        "UnboundOutcome.Capture",
+        "UnboundOutcome.ReadOutcome",
+        "RetrospectiveBasisSafe",
+        "RetrospectiveMetadataSafe",
+        "AttachedReportImmutable",
+        "UnboundRepresentationSafe"
+      ],
+      "boundary": "One validated same-identity predecessor and successor abstract pure attachment/carry guards. priorReport distinguishes null, producer and retrospective. Exact prior digest, terminal basis, original record clock equality and observation/window no later than basis are Boolean predicates. metadataStable abstracts exact coverage and canonical timing/telemetry equality. sameReport is canonical whole-report equality; sameSummary is weaker summary equality used only by a mutant. Acceptance means predecessor usability, not global ready, source truth or authorization. Existing RunTransitions independently covers terminal execution; publisher awaits remain unchanged."
+    },
+    {
+      "source": "src/automation-reporting-outcome.mjs",
+      "functions": [
+        "outcomeSourceTimes",
+        "validateOutcomeReport"
+      ],
+      "model": [
+        "UnboundOutcome.OriginalClockSafe"
+      ],
+      "boundary": "outcomeSourceTimes supplies original observedAt, original recordedAt and sourceWindow.end only. aggregate compares each supplied original clock to configured maximum age, preserving old evidence despite new report/wrapper clocks. Finite originalClock classes old, fresh and unknown abstract the oldest supplied original clock after validated UTC parsing; fresh includes exact age equality. Actual-source controls check equality and one millisecond beyond, old windows and null clocks. Full UTC parsing and arithmetic are not exhaustively enumerated by TLC."
     }
   ],
   "sourceState": "reviewed-commit",
@@ -301,6 +330,30 @@
     {
       "id": "GraceNeverFailure",
       "promise": "Elapsed observation grace never infers execution failed."
+    },
+    {
+      "id": "OriginalClockSafe",
+      "promise": "A fresh wrapper cannot make old or unknown original evidence fresh."
+    },
+    {
+      "id": "RetrospectiveBasisSafe",
+      "promise": "Initial retrospective attachment requires exact immediate null-report terminal basis and its original clocks."
+    },
+    {
+      "id": "RetrospectiveMetadataSafe",
+      "promise": "Retrospective attachment/carry preserves coverage, timing and telemetry."
+    },
+    {
+      "id": "AttachedReportImmutable",
+      "promise": "A retained retrospective report may be carried identically but cannot be replaced or flipped to producer."
+    },
+    {
+      "id": "UnboundRepresentationSafe",
+      "promise": "An attached scheduled-unbound report cannot be relabelled manual or downgraded to v1."
+    },
+    {
+      "id": "UnboundExcluded",
+      "promise": "Scheduled-unbound outcomes never satisfy a nominal expectation."
     }
   ],
   "assumptions": [
@@ -311,7 +364,8 @@
     "Finite bounded exploration; no fairness, liveness, unbounded record count or global snapshot promise.",
     "Expectation model receives validated schema, correctly computed recurrence membership and collision-free exact original registration identity.",
     "Caller control-role configuration is trusted as local intended role selection, not independently authenticated ownership. Source freshness uses supplied original observation clocks and configured age, not verified provider truth.",
-    "One captured expectation read over bounded pure predicates abstracts current leaf conflict/validity and source acquisition; omitted external history remains unverified."
+    "One captured expectation read over bounded pure predicates abstracts current leaf conflict/validity and source acquisition; omitted external history remains unverified.",
+    "UnboundOutcome receives schema-valid reports and exact identity/predecessor lookup. Supplied clock classes are relative to one configured evaluation clock, not measured provider time. Equality predicates faithfully represent canonical metadata/report comparisons; retained bytes remain immutable."
   ],
   "excluded": [
     "Independent truth, provider execution, external effects, delivery, native IDs/ownership, schedule firing, deployment and cloud adoption.",
@@ -323,7 +377,8 @@
     "Generic outcome parser full input domain, availability projection semantics, sourceWindow completeness and producer report truth.",
     "Concise summary/detail projection, scoped input filters, finding pagination and validate/dry-run namespace/predecessor preflight IO.",
     "Expectation recurrence expansion full input domain, binding snapshots, controller acquisition/reconciliation, real current cloud definition truth, nominal-slot metadata, future scheduling and provider execution. Caller role configuration is an assumption, not authentication.",
-    "scopeReadView selects a read-only owner/dependency closure after full aggregate classification. Scoped filtering, health summaries and CLI pagination remain behavioral checks outside the bounded expectation projection."
+    "scopeReadView selects a read-only owner/dependency closure after full aggregate classification. Scoped filtering, health summaries and CLI pagination remain behavioral checks outside the bounded expectation projection.",
+    "Unbound attestedBy identity and permission, source truth, full parser/UTC arithmetic, source acquisition, transport basis remapping, sanitized export and UI remain separate behavioral or external gates. One predecessor/successor does not prove arbitrary history completeness."
   ],
   "mutations": [
     {
@@ -420,6 +475,36 @@
       "id": "expectation-infer-failure",
       "property": "GraceNeverFailure",
       "actualWitness": "Full copied production aggregate with designated infer-failure predicate mutation must expose exact named witness; all unrelated witness assertions remain enabled."
+    },
+    {
+      "id": "unbound-clocks",
+      "property": "OriginalClockSafe",
+      "actualWitness": "Copied aggregate selects new generatedAt instead of original clock inputs in both stale and sourceFreshness projections; two-day-old source becomes within-configured-age and stale false."
+    },
+    {
+      "id": "unbound-basis",
+      "property": "RetrospectiveBasisSafe",
+      "actualWitness": "Copied retrospectiveOK drops initial basis predicates; wrong digest and rewritten original recordedAt become valid."
+    },
+    {
+      "id": "unbound-metadata",
+      "property": "RetrospectiveMetadataSafe",
+      "actualWitness": "Copied retrospectiveOK replaces metadataStable with true; added timing/telemetry and changed coverage become valid."
+    },
+    {
+      "id": "unbound-immutable",
+      "property": "AttachedReportImmutable",
+      "actualWitness": "Copied retrospectiveOK drops whole-report equality and permits leaving retrospective mode; changed content and mode become valid."
+    },
+    {
+      "id": "unbound-representation",
+      "property": "UnboundRepresentationSafe",
+      "actualWitness": "Copied retrospectiveOK trusts summary equality and permits leaving retrospective mode; manual v1 successor becomes valid."
+    },
+    {
+      "id": "expectation-unbound",
+      "property": "UnboundExcluded",
+      "actualWitness": "Copied candidate predicate removes explicit scheduled-unbound exclusion and admits unbound as alternative to exact own occurrence. Usable completed unbound v2 falsely makes independent expectation observed, with execution still not-inferred."
     }
   ],
   "transitionBounds": {
@@ -452,7 +537,8 @@
       "absent",
       "exact-bound",
       "other-slot",
-      "manual"
+      "manual",
+      "scheduled-unbound"
     ],
     "binaryPredicates": [
       "configured-control-role",
@@ -471,8 +557,52 @@
       "Capture",
       "ReadProjection"
     ],
-    "baselineDistinctStates": 16385,
+    "baselineDistinctStates": 20481,
     "depth": 3,
     "scope": "One captured read. Predicate abstraction, no temporal scheduling, liveness or provider truth. Conflict/invalid/missing latest inputs conservatively map to unusable."
+  },
+  "pendingReview": "Scheduled-unbound outcome source and expanded model mapping await independent review. Existing sourceCommit and source/verification digest pins deliberately remain unchanged.",
+  "unboundBounds": {
+    "predecessors": 1,
+    "successors": 1,
+    "originalClockClasses": [
+      "old",
+      "fresh",
+      "unknown"
+    ],
+    "priorReportKinds": [
+      "null",
+      "producer",
+      "retrospective"
+    ],
+    "generationModes": [
+      "producer",
+      "retrospective"
+    ],
+    "representations": [
+      "v2-unbound",
+      "manual",
+      "v1-downgrade"
+    ],
+    "binaryPredicates": [
+      "exact-immediate-basis",
+      "terminal-basis",
+      "metadata-stable",
+      "original-record-clock-equal",
+      "original-observation-and-window-before-basis",
+      "whole-report-equal",
+      "summary-equal"
+    ],
+    "domainRelations": [
+      "Whole-report equality implies summary equality.",
+      "For a retained retrospective report, whole-report equality implies retrospective mode and v2-unbound representation."
+    ],
+    "actions": [
+      "Capture",
+      "ReadOutcome"
+    ],
+    "baselineDistinctStates": 9409,
+    "depth": 3,
+    "scope": "One validated pure captured transition. No publication IO, arbitrary history, liveness, external attestor authorization or provider truth."
   }
 }

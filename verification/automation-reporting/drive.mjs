@@ -16,8 +16,8 @@ export async function driveAutomationReporting(root, evidence) {
     if (mutation === 'partial') candidate = replace(candidate, 'const temporary = join(namespace, `.pending-${randomUUID()}`);', 'const temporary = join(namespace, `${hash}.json`);');
     if (mutation === 'accept') candidate = replace(candidate, 'const usable = record => complete && record.valid && !record.conflict;', 'const usable = record => true;');
     if (mutation === 'stale') candidate = replace(candidate, 'const stale = sourceTimes.some(time => Date.parse(evaluatedAt) - Date.parse(time) > maxAgeSeconds * 1000);', 'const stale = false;');
-    if (mutation === 'terminal') candidate = replace(candidate, 'return executionStable && receiptStable && controlStable && previous', 'return receiptStable && controlStable && previous');
-    if (mutation === 'receipt') candidate = replace(candidate, 'return executionStable && receiptStable && controlStable && previous', 'return executionStable && controlStable && previous');
+    if (mutation === 'terminal') candidate = replace(candidate, 'return executionStable && receiptStable && controlStable &&', 'return receiptStable && controlStable &&');
+    if (mutation === 'receipt') candidate = replace(candidate, 'return executionStable && receiptStable && controlStable &&', 'return executionStable && controlStable &&');
     if (mutation === 'missing') candidate = replace(candidate, "state, runIds: observed.map(run => run.id), execution: 'not-inferred'", "state, runIds: observed.map(run => run.id), execution: 'completed'");
     if (mutation === 'authority') candidate = replace(candidate, "assurance: 'reported', publication: 'pending'", "assurance: 'authenticated', publication: 'pending'");
     const checkpointSource = `const handle = await open(temporary, 'wx', 0o600);

@@ -46,7 +46,12 @@ export function sanitizeRecords(records, { namespace, evaluatedAt = new Date().t
         const report = original.report;
         const normalizeManual = report !== null && report.type !== 'automation-outcome' && report.provenance === 'manual';
         if (normalizeManual) manualNominalSlotOmittedSourceRetained.push({ sourceDigest, originalScheduledFor: report.scheduledFor });
-        const compact = report === null ? null : validateOutcomeReport({ schemaVersion: 1, type: 'automation-outcome', runId: report.runId, provenance: report.provenance, scheduledFor: normalizeManual ? null : report.scheduledFor, status: report.status, coverage: report.coverage, availability: report.availability ?? 'available', summary: report.summary, artifactLinks: report.artifactLinks ?? [], sourceWindow: report.sourceWindow, generatedAt: report.generatedAt });
+        let compact;
+        if (report?.schemaVersion === 2) {
+          const basedOn = report.generation.basedOn === null ? null : hashes.get(report.generation.basedOn);
+          need(basedOn !== undefined, 'Missing projected retrospective report basis');
+          compact = validateOutcomeReport({ ...structuredClone(report), generation: { ...report.generation, basedOn } });
+        } else compact = report === null ? null : validateOutcomeReport({ schemaVersion: 1, type: 'automation-outcome', runId: report.runId, provenance: report.provenance, scheduledFor: normalizeManual ? null : report.scheduledFor, status: report.status, coverage: report.coverage, availability: report.availability ?? 'available', summary: report.summary, artifactLinks: report.artifactLinks ?? [], sourceWindow: report.sourceWindow, generatedAt: report.generatedAt });
         data = { occurrenceKey: original.occurrenceKey, execution: original.execution, coverage: original.coverage, report: compact, evidenceRefs: [`source-record-sha256:${sourceDigest}`] };
         if (original.timing !== undefined) data.timing = { startedAt: original.timing.startedAt, lastHeartbeatAt: original.timing.lastHeartbeatAt, endedAt: original.timing.endedAt, observedAt: original.timing.observedAt, sourceRef: ref(original.timing.sourceRef) };
         if (original.telemetry !== undefined) data.telemetry = { runtimeMs: original.telemetry.runtimeMs, inputTokens: original.telemetry.inputTokens, outputTokens: original.telemetry.outputTokens, sourceRef: ref(original.telemetry.sourceRef) };

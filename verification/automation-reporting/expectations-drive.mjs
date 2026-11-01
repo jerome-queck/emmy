@@ -7,7 +7,7 @@ const save = (path, value) => writeFile(path, `${JSON.stringify(value, null, 2)}
 const replace = (source, before, after) => { assert.equal(source.split(before).length, 2, `Expected one expectation mutation anchor ${before}`); return source.replace(before, after); };
 const dependencies = ['bounded-json.mjs', 'improvement-report.mjs', 'reporting-privacy.mjs', 'automation-reporting-outcome.mjs', 'automation-reporting-expectations.mjs'];
 export const expectationMutants = [
-  ['authority', 'AuthoritySafe'], ['slot', 'ConfiguredSlotSafe'], ['target', 'TargetSafe'], ['owner', 'OwnerSafe'], ['dependency', 'DependencySafe'], ['complete', 'CompleteSafe'], ['withdrawal', 'WithdrawalSafe'], ['fresh', 'FreshSafe'], ['exact', 'ExactSlotSafe'], ['manual', 'ManualExcluded'], ['infer-success', 'NeverInferSuccess'], ['infer-failure', 'GraceNeverFailure'],
+  ['authority', 'AuthoritySafe'], ['slot', 'ConfiguredSlotSafe'], ['target', 'TargetSafe'], ['owner', 'OwnerSafe'], ['dependency', 'DependencySafe'], ['complete', 'CompleteSafe'], ['withdrawal', 'WithdrawalSafe'], ['fresh', 'FreshSafe'], ['exact', 'ExactSlotSafe'], ['manual', 'ManualExcluded'], ['unbound', 'UnboundExcluded'], ['infer-success', 'NeverInferSuccess'], ['infer-failure', 'GraceNeverFailure'],
 ];
 export async function driveExpectationProjection(root, evidence) {
   await mkdir(evidence, { recursive: true });
@@ -26,7 +26,11 @@ export async function driveExpectationProjection(root, evidence) {
     if (mutation === 'withdrawal') changed = replace(changed, 'latest && latest.data.enabled && latest.data.fingerprint === data.fingerprint', 'latest');
     if (mutation === 'fresh') changed = replace(changed, 'latest && Date.parse(evaluatedAt) - Date.parse(latest.data.observedAt) <= latest.data.sourceMaxAgeSeconds * 1000', 'latest');
     if (mutation === 'exact') changed = replace(changed, ' && Date.parse(ownOccurrence.data.scheduledFor) === Date.parse(data.scheduledFor)', '');
-    if (mutation === 'manual') changed = replace(changed, "run.data.report?.provenance !== 'manual' && ownOccurrence && Date.parse(ownOccurrence.data.scheduledFor) === Date.parse(data.scheduledFor)", "run.data.report?.provenance === 'manual'");
+    if (mutation === 'manual') changed = replace(changed, "!['manual', 'scheduled-unbound'].includes(run.data.report?.provenance) && ownOccurrence && Date.parse(ownOccurrence.data.scheduledFor) === Date.parse(data.scheduledFor)", "run.data.report?.provenance === 'manual'");
+    if (mutation === 'unbound') {
+      changed = replace(changed, " && !['manual', 'scheduled-unbound'].includes(run.data.report?.provenance)", " && run.data.report?.provenance !== 'manual'");
+      changed = replace(changed, ' && ownOccurrence && Date.parse(ownOccurrence.data.scheduledFor) === Date.parse(data.scheduledFor)', " && (run.data.report?.provenance === 'scheduled-unbound' || ownOccurrence && Date.parse(ownOccurrence.data.scheduledFor) === Date.parse(data.scheduledFor))");
+    }
     if (mutation === 'infer-success') changed = replace(changed, "execution: 'not-inferred'", "execution: 'completed'");
     if (mutation === 'infer-failure') changed = replace(changed, "execution: 'not-inferred'", "execution: Date.parse(evaluatedAt) > Date.parse(data.observationDueAt) ? 'failed' : 'not-inferred'");
     const path = join(directory, 'automation-reporting.mjs'); await writeFile(path, replace(source, projection, changed));
@@ -52,6 +56,7 @@ export async function driveExpectationProjection(root, evidence) {
     const run = (provenance = 'scheduled', scheduledFor = slot, execution = 'running') => {
       const occurrence = { schemaVersion: 1, namespace: 'target', automationId: 'target', kind: 'occurrence', key: 'slot', revision: 0, previous: null, recordedAt: clock, data: { scheduledFor, expiresAt: scheduledFor } };
       const record = { ...occurrence, kind: 'run', key: 'run', data: { occurrenceKey: provenance === 'scheduled' ? 'slot' : null, execution, coverage: 'partial', evidenceRefs: ['synthetic:run'], report: { schemaVersion: 1, type: 'automation-outcome', runId: 'run', provenance, scheduledFor: provenance === 'scheduled' ? scheduledFor : null, status: execution, coverage: 'partial', availability: 'unavailable', summary: 'Synthetic outcome', artifactLinks: [], sourceWindow: null, generatedAt: clock } } };
+      if (provenance === 'scheduled-unbound') { record.data.report.schemaVersion = 2; record.data.report.sourceEvidence = { observedAt: null, recordedAt: null }; record.data.report.generation = { mode: 'producer', attestedBy: 'synthetic-producer', basedOn: null }; }
       return provenance === 'scheduled' ? [occurrence, record] : [record];
     };
     const foreignTarget = registration({ targetNamespace: 'other', targetAutomationId: 'other' });
@@ -69,9 +74,10 @@ export async function driveExpectationProjection(root, evidence) {
       fresh: inspect(undefined, { evaluatedAt: '2026-11-04T03:00:00Z' }),
       exact: inspect([original, exp, ...run('scheduled', '2026-11-01T01:01:00Z')]),
       manual: inspect([original, exp, ...run('manual')]),
+      unbound: inspect([original, exp, ...run('scheduled-unbound', null, 'completed')]),
       'infer-success': inspect(), 'infer-failure': inspect(),
     };
-    const expectedStates = { authority: 'unknown', slot: 'unknown', target: 'unknown', owner: 'unknown', dependency: 'unknown', complete: 'unknown', withdrawal: 'withdrawn', edited: 'withdrawn', fresh: 'unknown', exact: 'observation-gap', manual: 'observation-gap' };
+    const expectedStates = { authority: 'unknown', slot: 'unknown', target: 'unknown', owner: 'unknown', dependency: 'unknown', complete: 'unknown', withdrawal: 'withdrawn', edited: 'withdrawn', fresh: 'unknown', exact: 'observation-gap', manual: 'observation-gap', unbound: 'observation-gap' };
     for (const [name, expected] of Object.entries(expectedStates)) {
       const mutated = mutation === name || name === 'edited' && mutation === 'withdrawal';
       assert.equal(results[name].state, mutated ? ['authority', 'slot', 'target', 'owner', 'dependency', 'complete', 'withdrawal', 'fresh', 'edited'].includes(name) ? 'observation-gap' : 'observed' : expected, `Designated actual-source witness ${name}`);

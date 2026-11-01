@@ -30,6 +30,19 @@ export async function driveAutomationReporting({ run, scenario, evidenceDir, rep
   assert.equal((await call({ action: 'list', limit: 1 }, 3)).items.length, 1);
   const path = join(directory, 'fixture', `${recordDigest(record)}.json`);
   assert.deepEqual(JSON.parse(await readFile(path, 'utf8')), record);
+  const unboundTerminal = { ...record, key: 'synthetic-unbound', data: { ...record.data, evidenceRefs: [] } };
+  await call({ action: 'publish-own-record', namespace: 'fixture', record: unboundTerminal });
+  const generatedAt = new Date().toISOString();
+  const readable = { ...unboundTerminal, revision: 1, previous: recordDigest(unboundTerminal), recordedAt: generatedAt, data: { ...unboundTerminal.data, report: { schemaVersion: 2, type: 'automation-outcome', runId: unboundTerminal.key, provenance: 'scheduled-unbound', scheduledFor: null, status: 'completed', coverage: 'partial', availability: 'available', summary: 'Synthetic completed work with original partial evidence.', artifactLinks: [], sourceWindow: null, generatedAt, sourceEvidence: { observedAt: null, recordedAt: at }, generation: { mode: 'retrospective', attestedBy: 'synthetic-driver', basedOn: recordDigest(unboundTerminal) } } } };
+  await call({ action: 'publish-own-record', namespace: 'fixture', record: readable });
+  const readableView = await call({ action: 'inspect' }, 3);
+  const outcome = readableView.runs.find(value => value.key === unboundTerminal.key);
+  assert.equal(outcome.reportAvailability, 'available'); assert.equal(outcome.data.report.summary, readable.data.report.summary);
+  assert.equal(outcome.invocationProvenance, 'scheduled-unbound'); assert.equal(outcome.nominalSlot, null);
+  assert.equal(outcome.actualTiming.startedAt, null); assert.equal(outcome.data.report.generation.mode, 'retrospective');
+  const invalid = { ...readable, data: { ...readable.data, occurrenceKey: 'guessed-slot' } };
+  await call({ action: 'publish-own-record', namespace: 'fixture', record: invalid }, 2);
+  assert.deepEqual(JSON.parse(await readFile(join(directory, 'fixture', `${recordDigest(unboundTerminal)}.json`), 'utf8')), unboundTerminal);
   const controlDirectory = join(retained, 'independent-control'); await mkdir(controlDirectory);
   const future = new Date(Date.now() + 600000);
   const control = { namespace: 'control', automationId: 'control' };
@@ -45,5 +58,5 @@ export async function driveAutomationReporting({ run, scenario, evidenceDir, rep
   const corrupt = await call({ action: 'inspect' }, 3);
   assert.equal(corrupt.scan.complete, false); assert.ok(corrupt.runs.every(value => value.execution === 'unknown'));
   report.automationReporting = { retained, original: path, originalDigest: recordDigest(record), independentControl: controlDirectory, futureExpectations: independent.expectations.map(record => record.id), synthetic: true };
-  scenario('automation-reporting', 'Fresh CLI processes retain immutable own records, independent future control expectations before any run, configured role and read-only target joins, duplicate retries, partial completion, conflicts and corrupt sync without replaying workloads.');
+  scenario('automation-reporting', 'Fresh CLI processes retain immutable own records, readable scheduled-unbound retrospective outcomes without guessed slots, independent future control expectations, configured role and read-only target joins, duplicate retries, partial completion, conflicts and corrupt sync without replaying workloads.');
 }

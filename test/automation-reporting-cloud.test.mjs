@@ -21,7 +21,7 @@ test('cloud bundle executes outside repository with exact product validation and
   const directory = await mkdtemp(join(await realpath(tmpdir()), 'emmy-cloud-'));
   try {
     const executable = join(directory, 'cloud.mjs');
-    await copyFile(join(root, '.local/reporting-cloud/automation-reporting-cloud-v1.mjs'), executable);
+    await copyFile(join(root, '.local/reporting-cloud/automation-reporting-cloud-v2.mjs'), executable);
     const input = join(directory, 'input.json'); const output = join(directory, 'canonical.json');
     const run = (command, extra = []) => spawnSync(process.execPath, [executable, command, '--namespace', 'own', '--automation-id', 'daily', '--file', command === 'verify' ? output : input, ...(command === 'verify' ? ['--id', recordDigest(record())] : ['--to', output]), ...extra], { cwd: directory, encoding: 'utf8' });
     const prepare = async value => { await writeFile(input, typeof value === 'string' ? value : JSON.stringify(value)); return run('prepare'); };
@@ -88,6 +88,17 @@ test('cloud bundle executes outside repository with exact product validation and
     const controlSchema = await readFile(join(root,'schemas/automation-reporting-v2.schema.json'));
     assert.equal(manifest.controlSchema.sha256,hash(controlSchema)); assert.equal(manifest.controlSchema.bytes,controlSchema.length);
     assert.deepEqual(await readFile(join(root,'.local/reporting-cloud/automation-reporting-v2.schema.json')),controlSchema);
+    const outcomeSchema = await readFile(join(root, 'schemas/automation-reporting-v3.schema.json'));
+    assert.equal(manifest.outcomeSchema.sha256, hash(outcomeSchema));
+    assert.deepEqual(await readFile(join(root, '.local/reporting-cloud/automation-reporting-v3.schema.json')), outcomeSchema);
+    assert.deepEqual(manifest.supportedOutcomeVersions, [1, 2]);
+    const unbound = record();
+    unbound.data.report = { ...unbound.data.report, schemaVersion: 2, provenance: 'scheduled-unbound', sourceEvidence: { observedAt: null, recordedAt: time }, generation: { mode: 'producer', attestedBy: 'synthetic-producer', basedOn: null } };
+    const preparedUnbound = await prepare(unbound); assert.equal(preparedUnbound.status, 0, preparedUnbound.stderr);
+    const verifyUnbound = spawnSync(process.execPath, [executable, 'verify', '--namespace', 'own', '--automation-id', 'daily', '--file', output, '--id', recordDigest(unbound)], { cwd: directory, encoding: 'utf8' });
+    assert.equal(verifyUnbound.status, 0, verifyUnbound.stderr);
+    unbound.data.report.generation = { mode: 'retrospective', attestedBy: 'compiler', basedOn: ['a'.repeat(64)] };
+    assert.equal((await prepare(unbound)).status, 1);
     if (manifest.sourceState === 'committed') assert.ok(manifest.sources.every(source => source.sourceState === 'committed' && /^[a-f0-9]{40}$/.test(source.commit)));
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
@@ -144,7 +155,7 @@ test('copied standalone bind writes private exact binding without repository imp
   const build=spawnSync(process.execPath,['scripts/build-reporting-cloud.mjs'],{cwd:root,encoding:'utf8'}); assert.equal(build.status,0,build.stderr);
   const directory=await mkdtemp(join(await realpath(tmpdir()),'emmy-bind-'));
   try {
-    const executable=join(directory,'cloud.mjs'); await copyFile(join(root,'.local/reporting-cloud/automation-reporting-cloud-v1.mjs'),executable);
+    const executable=join(directory,'cloud.mjs'); await copyFile(join(root,'.local/reporting-cloud/automation-reporting-cloud-v2.mjs'),executable);
     const {snapshot}=bindingFixture();
     const now=new Date(); const observed=new Date(now.getTime()-3600000).toISOString(); const slot=new Date(now.getTime()+3600000); slot.setUTCMinutes(0,0,0);
     const registration=snapshot.records[0]; registration.recordedAt=observed; registration.data.observedAt=observed; registration.data.effectiveAt=observed; registration.data.rrule=`FREQ=DAILY;BYHOUR=${slot.getUTCHours()};BYMINUTE=0`; registration.data.fingerprint=registrationFingerprint(registration.data);
