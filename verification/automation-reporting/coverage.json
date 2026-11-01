@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "kind": "bounded-tla-automation-reporting-safety",
-  "sourceCommit": "3e5adb1bbfd5f0502dca9e13c45a0d7cdd7d01bf",
-  "reviewBasis": "Independent source review accepted the exact narrow reporting source and source-to-model mapping against the public initialBaseCommit. Source hashes describe these reviewed working-tree bytes, not files already present in that base commit. The report validator retains its complete validation function and pure helpers while excluding unrelated storage, claims and readers. Reporting publication retains exclusive pending open, complete write/close, atomic hard link, exact readback and temporary-only unlink. Aggregation retains complete valid conflict-free capture, dependency, staleness, reported-assurance, terminal execution and receipt stability guards. The three bounded models, named production mapping, assumptions, bounds and all nineteen paired model/source controls remain unchanged. Controller, binding, transport, parser completeness, provider truth, actual scheduling and delivery remain separate behavioral or native acceptance boundaries. The integration adds only reporting command metadata, bounded request routing, credential-safe diagnostics and its registered test/behavior/model checks. Private build reports and historical review logs are not public source provenance. Promote to reviewed-commit only after comparing the exact committed source closure with these hashes.",
+  "sourceCommit": "aabf00f8ad423c37231447ff8c5d7e7d60346a97",
+  "reviewBasis": "Independent source review accepted the exact narrow reporting source closure committed at sourceCommit and its source-to-model mapping against the public initialBaseCommit. Each source hash matches that committed file. The report validator retains its complete validation function and pure helpers while excluding unrelated storage, claims and readers. Reporting publication retains exclusive pending open, complete write/close, atomic hard link, exact readback and temporary-only unlink. Aggregation retains complete valid conflict-free capture, dependency, staleness, reported-assurance, terminal execution and receipt stability guards. The three bounded models, named production mapping, assumptions, bounds and all nineteen paired model/source controls remain unchanged. Controller, binding, transport, parser completeness, provider truth, actual scheduling and delivery remain separate behavioral or native acceptance boundaries. The integration adds only reporting command metadata, bounded request routing, credential-safe diagnostics and its registered test/behavior/model checks. Strict stale-source refusals were retained before this reviewed provenance update; they do not count as source mutation witnesses. Private operational reports and historical build logs are not exported source provenance.",
   "sourceFiles": {
     "src/automation-reporting.mjs": "46fedf25c7643869d28cfc19f73cad16b0ff23130379a5ab3566689669140828",
     "src/improvement-report.mjs": "e808baf21a07ff5ff7d414669c35bddda99e478162f3db5de7e6cca3613cbe21",
@@ -232,7 +232,7 @@
       "boundary": "Pure synchronous exact control-envelope validation and bounded recurrence membership supply validated/slot predicates. Exact source dependency closure is copied for every old and new witness. Source witnesses retain strict recordedAt-before-slot and fingerprint rejection. TLC assumes collision-free digests, validated records and faithfully computed recurrence membership; it does not prove all RRULEs, schema strings, timezone truth or acquisition."
     }
   ],
-  "sourceState": "reviewed-working-tree-bytes",
+  "sourceState": "reviewed-commit",
   "properties": [
     {
       "id": "PublishedComplete",
