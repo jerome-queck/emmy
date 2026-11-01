@@ -30,3 +30,18 @@ test('ended measured overrun settles blocked with exact counts and immutable cap
   const submitted = fleetTransition(result.state, { operation: 'submit', job: fleetJob('fresh-authorized-read') }, fleetRoot, at).state;
   assert.ok(fleetTransition(submitted, { operation: 'claim', ownerRef: 'other' }, fleetRoot, at).ticket);
 });
+
+test('overrun cannot loosen successful, uncertain, scope, checkpoint or monotone usage rules', () => {
+  const { state, action, at } = overrunFixture();
+  for (const outcome of ['completed', 'checkpoint', 'uncertain', 'known-unexecuted']) assert.throws(() => fleetTransition(state, { ...action, outcome }, fleetRoot, at));
+  assert.throws(() => fleetTransition(state, { ...action, failure: undefined, outcome: 'completed', checkpoint: 1 }, fleetRoot, at), /budget/);
+  assert.throws(() => fleetTransition(state, { ...action, operation: 'result' }, fleetRoot, at), /exact reconciliation/);
+  for (const patch of [{ ticket: 'b'.repeat(64) }, { checkpoint: 1 }, { usage: { reads: 2, bytes: 131072 } }, { usage: { reads: 2, bytes: null } }, { usage: { reads: 2, bytes: 161853, knownBytesLowerBound: 1 } }, { receipt: { ...action.receipt, scope: { ...action.receipt.scope, resource: 'foreign' } } }]) assert.throws(() => fleetTransition(state, { ...action, ...patch }, fleetRoot, at));
+  const mutating = structuredClone(state); mutating.jobs[0].input.kind = 'native-mutation';
+  assert.throws(() => fleetTransition(mutating, action, fleetRoot, at), /read-only/);
+  const previous = structuredClone(state); previous.jobs[0].attemptReads = 3; previous.jobs[0].usedReads = 3;
+  assert.throws(() => fleetTransition(previous, action, fleetRoot, at), /monotone/);
+  const blocked = fleetTransition(state, action, fleetRoot, at).state;
+  assert.throws(() => fleetTransition(blocked, { ...action, reason: 'Different settlement' }, fleetRoot, at), /exact reconciliation/);
+  assert.equal(blocked.jobs[0].ticket, action.ticket);
+});

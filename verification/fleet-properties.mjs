@@ -3,7 +3,7 @@ import { digest } from '../src/records.mjs';
 import { fleetCapture, fleetEntities, fleetJob, fleetReceipt, fleetRoot, fleetTime } from './fleet-fixtures.mjs';
 import { morningOpen, morningRoot, morningAt } from './morning-fixtures.mjs';
 
-export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 130, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
+export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 139, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
 export function verifyFleetPolicy({ fleet }, check) {
   let cases = 0;
   const expect = (name, ok, message) => { cases++; check('fleet-contract', { case: name }, ok, message); };
@@ -170,6 +170,21 @@ export function verifyFleetPolicy({ fleet }, check) {
   expect('unknown-bytes/accounting', unknownResult.usedBytes === null && unknownResult.usedReads === 13 && unknownResult.byteAccounting.knownBytesLowerBound === 78082 && unknownResult.byteAccounting.budgetReservedBytes === 262144 && unknownResult.byteAccounting.budgetCompliance === 'unverified', 'Unknown measured total remains distinct from known subtotal and conservative reservation.');
   expect('unknown-bytes/no-success', rejects(() => transition(unknownState, { ...unknownAction, outcome: 'completed', checkpoint: 1 }, unknownAt)), 'Unknown-byte failure cannot be promoted into completed acquisition.');
   expect('unknown-bytes/no-numeric-substitute', rejects(() => transition(unknownState, { ...unknownAction, usage: { reads: 13, bytes: 78082 } }, unknownAt)), 'Known lower bound cannot substitute for measured total under failure discriminator.');
+  let measuredState = transition(green(), { operation: 'submit', job: fleetJob('measured-overrun', 'morning', { maxReads: 3, maxBytes: 131072 }) }).state;
+  measuredState = transition(measuredState, { operation: 'claim', ownerRef: 'synthetic-parent' }).state; const measuredJob = measuredState.jobs[0];
+  const measuredAction = { operation: 'resolve', jobKey: measuredJob.key, ticket: measuredJob.ticket, checkpoint: 0, outcome: 'blocked', usage: { reads: 2, bytes: 161853 }, receipt: fleetReceipt(), reason: 'Both observer calls ended.', failure: { kind: 'read-only-known-overrun', sourceRef: 'measured-ended-proof', sha256: 'a'.repeat(64), reason: 'Exact original cap exceeded.' } };
+  const measured = transition(measuredState, measuredAction, unknownAt);
+  expect('overrun/accounting', measured.state.jobs[0].status === 'blocked' && measured.state.jobs[0].usedReads === 2 && measured.state.jobs[0].usedBytes === 161853 && measured.state.jobs[0].input.maxBytes === 131072 && measured.state.jobs[0].byteAccounting.budgetCompliance === 'exceeded', 'Measured overrun stays blocked with actual bytes and immutable original cap.');
+  expect('overrun/no-success', rejects(() => transition(measuredState, { ...measuredAction, outcome: 'completed', checkpoint: 1 }, unknownAt)), 'Overrun cannot become successful.');
+  expect('overrun/strict-success-budget', rejects(() => transition(measuredState, { ...measuredAction, failure: undefined, outcome: 'completed', checkpoint: 1 }, unknownAt)), 'Normal success retains original strict budget.');
+  expect('overrun/actual-breach', rejects(() => transition(measuredState, { ...measuredAction, usage: { reads: 2, bytes: 131072 } }, unknownAt)), 'Overrun classification requires a real admitted-cap breach.');
+  const rewound = structuredClone(measuredState); rewound.jobs[0].usedReads = 3; rewound.jobs[0].attemptReads = 3;
+  expect('overrun/monotone', rejects(() => transition(rewound, measuredAction, unknownAt)), 'Known counters cannot be lowered.');
+  const mutating = structuredClone(measuredState); mutating.jobs[0].input.kind = 'native-mutation';
+  expect('overrun/read-only', rejects(() => transition(mutating, measuredAction, unknownAt)), 'Mutating work cannot use read-only settlement.');
+  expect('overrun/expired-result', rejects(() => transition(measuredState, { ...measuredAction, operation: 'result' }, unknownAt)), 'Expiry still requires explicit reconciliation.');
+  expect('overrun/duplicate', transition(measured.state, measuredAction, unknownAt).outcome === 'coalesced' && measured.state.jobs[0].usedBytes === 161853, 'Duplicate settlement does not count usage twice.');
+  expect('overrun/terminal', rejects(() => transition(measured.state, { ...measuredAction, reason: 'Changed settlement' }, unknownAt)), 'Terminal attempt cannot be reused.');
   const provenance = green();
   for (const [name, invocation, expected] of [['missing', undefined, 'invocation-origin-unverified'], ['unknown', { origin: 'unknown' }, 'invocation-origin-unverified'], ['manual', { origin: 'manual' }, 'manual-run-only'], ['wrong-occurrence', { origin: 'scheduled', occurrenceId: 'other-occurrence' }, 'occurrence-mismatch']]) {
     expect(`schedule/origin/${name}`, fleet.captureCondition(provenance.entities[2], fleetCapture('routine', 'healthy', fleetTime, { invocation }), provenance, { maxAgeMs: 300000 }, fleetTime).issueKey === expected, 'Only an exact scheduled occurrence can establish scheduled health.');

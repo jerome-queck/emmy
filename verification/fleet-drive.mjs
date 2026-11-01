@@ -190,6 +190,32 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   await failureEnvelope(proof, 'unknown-ended-proof', 3); const unknownJob = timeoutView.state.jobs.find(job => job.key === unknownTicket.key);
   assert.equal(unknownJob.status, 'blocked'); assert.equal(unknownJob.usedBytes, null); assert.equal(unknownJob.byteAccounting.knownBytesLowerBound, 78082); assert.equal(unknownJob.byteAccounting.budgetCompliance, 'unverified');
   report.fleetUnknownBytes = { reads: 13, measuredBytes: null, knownBytesLowerBound: 78082, endedReadonlySlotReleased: true, liveClosure: false };
+
+  await timeoutCall('overrun-submit', { operation: 'submit', job: fleetJob('measured-overrun', 'morning', { maxReads: 3, maxBytes: 131072 }) });
+  const overrunTicket = (await timeoutCall('overrun-claim', { operation: 'claim', ownerRef: 'fixture-parent' })).ticket;
+  const overrunCapture = currentCapture('protected'); const responseRefs = []; const responses = [];
+  for (const [index, bytes] of [12813, 149040].entries()) {
+    const path = join(root, 'bin', `overrun-response-${index}.bin`); const raw = Buffer.alloc(bytes, 120); await writeFile(path, raw);
+    const ref = { path, sourceRef: `overrun-response-${index}`, sha256: digest(raw) }; responseRefs.push(ref);
+    responses.push({ sourceRef: ref.sourceRef, sha256: ref.sha256, bytes, startedAt: overrunCapture.receipt.capturedAt, capturedAt: overrunCapture.receipt.capturedAt });
+  }
+  const overrunProof = { jobKey: overrunTicket.key, ticket: overrunTicket.ticket, scope: overrunCapture.receipt.scope, actualReadAttempts: 2, totalSerializedResponseBytes: 161853, admittedMaxReads: 3, admittedMaxBytes: 131072, allReadsEnded: true, readOnly: true, nativeEffects: 'none', responses };
+  while (Date.now() <= Date.parse(overrunTicket.deadline)) await new Promise(resolve => setTimeout(resolve, 25));
+  const overrunEnvelope = async (value, name, expected = 2, changes = {}) => {
+    const path = await fixture(`${name}-proof`, value); const ref = { path, sourceRef: name, sha256: digest(await readFile(path)) };
+    const receipt = { ...overrunCapture.receipt, sourceRef: name, sha256: ref.sha256, coverage: { complete: false, gaps: ['Measured overrun; observed workload status is independent.'] } };
+    return timeoutCall(name, { operation: 'resolve', jobKey: overrunTicket.key, ticket: overrunTicket.ticket, checkpoint: 0, outcome: 'blocked', usage: { reads: 2, bytes: 161853 }, receipt, reason: 'Observer calls ended without native effects.', failure: { kind: 'read-only-known-overrun', sourceRef: name, sha256: ref.sha256, reason: 'Original byte cap exceeded.' }, ...changes }, expected, [...responseRefs, ref]);
+  };
+  for (const [field, value] of [['jobKey', 'b'.repeat(64)], ['ticket', 'b'.repeat(64)], ['scope', { ...overrunProof.scope, resource: 'foreign' }], ['allReadsEnded', false], ['readOnly', false], ['nativeEffects', 'uncertain'], ['workerStopped', false], ['mailOpened', true], ['mailMutations', 1], ['actualReadAttempts', 1], ['totalSerializedResponseBytes', null], ['admittedMaxBytes', 161853]]) await overrunEnvelope({ ...overrunProof, [field]: value }, `overrun-negative-${field}`);
+  await overrunEnvelope({ ...overrunProof, responses: [responses[0], responses[0]] }, 'overrun-duplicate-response');
+  await overrunEnvelope({ ...overrunProof, responses: [{ ...responses[0], sha256: 'b'.repeat(64) }, responses[1]] }, 'overrun-wrong-response');
+  await overrunEnvelope(overrunProof, 'overrun-success-refused', 2, { outcome: 'completed', checkpoint: 1 });
+  const overrunSettled = await overrunEnvelope(overrunProof, 'overrun-ended', 3); const blockedOverrun = overrunSettled.state.jobs.find(row => row.key === overrunTicket.key);
+  assert.equal(blockedOverrun.status, 'blocked'); assert.equal(blockedOverrun.usedBytes, 161853); assert.equal(blockedOverrun.usedReads, 2); assert.equal(blockedOverrun.input.maxBytes, 131072); assert.equal(blockedOverrun.byteAccounting.budgetCompliance, 'exceeded');
+  await overrunEnvelope(overrunProof, 'overrun-ended', 3); assert.equal(timeoutView.outcome, 'coalesced');
+  await run(['doctor'], 3, timeoutHome);
+  report.fleetMeasuredOverrun = { synthetic: true, actualReads: 2, measuredBytes: 161853, originalCap: 131072, budgetCompliance: 'exceeded', status: 'blocked', originalTicketRetained: true, replay: 'passed', providerReads: false };
+
   await call({ operation: 'submit', job }); assert.equal(last.state.jobs.length, 0);
   await call({ operation: 'submit', job: fleetJob('heavy-one', 'heavy') });
   await call({ operation: 'submit', job: fleetJob('heavy-two', 'heavy') });
