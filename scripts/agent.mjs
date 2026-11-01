@@ -14,6 +14,8 @@ import { calendar } from '../src/calendar.mjs';
 import { calendarRegister } from '../src/calendar-register-io.mjs';
 import { fleet } from '../src/fleet.mjs';
 import { tokenReview } from '../src/token-review.mjs';
+import { boundedJson } from '../src/bounded-json.mjs';
+import { automationReporting } from '../src/automation-reporting.mjs';
 import { signin } from '../src/signin.mjs';
 
 const args = process.argv.slice(2);
@@ -72,6 +74,9 @@ try {
     case 'fleet':
       data = await fleet(home, { file: resolve(options.file) });
       exitCode = data.status === 'ready' && !['backpressure', 'reconcile-before-admission'].includes(data.outcome) ? 0 : 3; break;
+    case 'reporting':
+      data = await automationReporting(await boundedJson(resolve(options.file), 65536));
+      exitCode = data.status === 'needs-attention' ? 3 : 0; break;
     case 'signin':
       data = await signin({ file: resolve(options.file) });
       exitCode = data.status === 'recovered' ? 0 : 3; break;

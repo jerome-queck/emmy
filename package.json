@@ -6,6 +6,8 @@
   "engines": { "node": ">=24" },
   "scripts": {
     "agent": "node scripts/agent.mjs",
+    "reporting": "node scripts/automation-reporting.mjs",
+    "verify:reporting": "node scripts/verify-automation-reporting.mjs",
     "check": "node scripts/check.mjs",
     "check:links": "node scripts/check-markdown-links.mjs",
     "verify:behavior": "node scripts/verify-behavior.mjs",

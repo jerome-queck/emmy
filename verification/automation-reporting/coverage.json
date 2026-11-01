@@ -1,0 +1,265 @@
+{
+  "schemaVersion": 1,
+  "kind": "bounded-tla-automation-reporting-safety",
+  "sourceCommit": "2c69acf7657fef831447fc41c0e729cd3fd08735",
+  "reviewBasis": "Initial implementation reviewed as exact working-tree bytes against base sourceCommit. This base commit does not contain the newly created reporting module. Read the full automation-reporting owner, bounded-json parser and improvement-report adapter validation. Reviewed two rounds of producer aggregation corrections: root/namespace scan bounds, explicit incomplete unknown entries, run occurrence/report provenance correlation, current usable same-namespace receipt subjects and causal clocks. Source/mapping are separately bound by SHA256. Publication temp open/write/close precede atomic hard link; readbacks and pending-only unlink do not mutate canonical bytes. No existing publication contract is advanced. Future source changes must refuse until covered diff is reviewed. Reviewed final source logicalKey bounded text, blocked/pending-approval states, improvementRecords adapter and sourceTimes (recordedAt, observedAt, report generatedAt/sourceWindow end). Reviewed predecessorOK terminal stability, occurrence binding and verified receipt subject/state stability; no new filesystem await. Adapter repeated scheduled occurrence timestamp now original scheduledFor, pure and outside TLC. Added separately bounded RunTransitions model and paired actual publication regression witnesses. Maintenance 2026-11-01: retained stale-source refusal run-2026-10-31T23-57-55.218Z-5ec9cefd. Diffed current owner against exact prior passed copied baseline bytes (80da34a9...). Only run timing optional schema, sourceTimes timing observedAt and explicit-null actualTiming projection changed. Reviewed all timestamp ordering/observation checks; no await, publication action, predecessor transition or model assumption changed. Existing staleness abstraction covers timing observation age; timing schema/measurement truth remains outside TLC. Added actual-source old timing observation control and default-null assertion, without weakening invariants. Privacy maintenance 2026-11-01: retained stale-source refusal run-2026-10-31T23-59-48.166Z-3560ab84. Compared exact previous passed source bytes against current owner: only assertNoCredentials import and synchronous pre-kind call added. Read complete new reporting-privacy module; no IO imports, awaits or modeled transition changes. Copied-source closure now includes exact privacy dependency so mutants must reach intended witnesses rather than fail imports. Lexical credential-pattern coverage, export safety and arbitrary secrecy remain explicitly outside TLC. No invariant or bound changed.",
+  "sourceFiles": {
+    "src/automation-reporting.mjs": "98f27d023f90f509b96f4545f00b4c8ffa3e1a2ff3f4f53a15b71ab9885d17c7",
+    "src/improvement-report.mjs": "da7f7172c75ec65a2470c0f2ab0cad803e085ffd51f536a705522f913a45fa60",
+    "src/bounded-json.mjs": "4bf4230dd0b8775f56482cf429112c1a7456f83b78cad19ae05e1b00987e8a71",
+    "src/reporting-privacy.mjs": "43092f368882ef5782315e57999eb3ea5c3cfd3e3db0e37677059921b4a69a45"
+  },
+  "verificationFiles": {
+    "verification/automation-reporting/AutomationReporting.tla": "950df3edff88fb86a48af82552e483a9419903c8c7e24a93a1b882a3b16271d7",
+    "verification/automation-reporting/worker.mjs": "53227abdc8737bcc3a820342f5877d4a20b0f10e4af696f3fa2bfef57ebfcbbd",
+    "verification/automation-reporting/stale-mutant.cfg": "1d922c9ca497b31059d876cfc2291a0ee2d93829400f76049a02da03d2b69ced",
+    "verification/automation-reporting/drive.mjs": "d71c6a03ff21743434582be99744df8ca35fd4b387d7b1a47912182f01517077",
+    "verification/automation-reporting/terminal-mutant.cfg": "2323400188f8714cbef0c9b9be5458da7e22677bd4a6ab8a8d8a4326996f0e32",
+    "verification/automation-reporting/view.mjs": "778ca820999fca6b65feb2f628f8651256de8ef422e7f194ad4e6700251c5495",
+    "verification/automation-reporting/run-view.mjs": "96bdf62508e2b6f9dce446cfc3103fd1f375a0f47427bfa96176b73fa0417573",
+    "verification/automation-reporting/baseline.cfg": "bd50e6199b19c02ecc890cdfacacde5bebba30b5b65d9e33f11a0c657b7be2c9",
+    "verification/automation-reporting/missing-mutant.cfg": "b9edb51601055688f101d478eca5cd51e1965e9bd36477d41ba85e5919b7042d",
+    "verification/automation-reporting/RunTransitions.tla": "74ff75af46b2f2917cfe27d39670f9fdab5573fb4db201f7bf14091848841be4",
+    "verification/automation-reporting/partial-mutant.cfg": "92e388626f51bf33c563b47ed394fb58771c8c22c3c6eaa93b21c809cf105825",
+    "verification/automation-reporting/accept-mutant.cfg": "52158b62db0adbaa3c495025411f65f63040efa6f9bcb31122780a4db84ac9e3",
+    "verification/automation-reporting/authority-mutant.cfg": "07603a568218a348452d80f78cb8ce5a0f61360d60e3a63b39565bd288446c0c",
+    "verification/automation-reporting/receipt-mutant.cfg": "3816c8ca6b3d6876512d7b268920451d156d1ecd2d8150793e445cef4d8ad7c9",
+    "verification/automation-reporting/transitions.cfg": "97912cbea5b13eacad5b5ee9c4f05960685b03a72fde9cfd12d20dadd16bd143",
+    "scripts/verify-automation-reporting.mjs": "32bdc36708dd7230c0ca771c1c1d3f23b12d4e9ea4c22c7b05d633dcf62b8375",
+    ".agents/skills/automation-reporting-contract/SKILL.md": "bb19b0e1dab51912d39f10796466f8143c6276be0a600b80d5f8d096569c9235"
+  },
+  "tool": {
+    "release": "TLA+ tools 1.7.4",
+    "tlcVersion": "2.19 of 08 August 2024",
+    "javaMajor": 21,
+    "filename": "tla2tools-1.7.4.jar",
+    "url": "https://github.com/tlaplus/tlaplus/releases/download/v1.7.4/tla2tools.jar",
+    "sha256": "936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88",
+    "officialSha1": "bee4a54f3ee3d4afc347c3240ec2d9e93b075104",
+    "provenance": "The official release checksum table publishes this SHA-1. The cached jar matches it. SHA-256 was computed over those same bytes and is enforced before execution. Java and the jar are never committed.",
+    "sources": [
+      "https://github.com/tlaplus/tlaplus/releases/tag/v1.7.4",
+      "https://github.com/tlaplus/tlaplus/blob/master/USE.md",
+      "https://lamport.azurewebsites.net/tla/book.html"
+    ],
+    "arguments": [
+      "-XX:+UseParallelGC",
+      "-Xmx1g",
+      "tlc2.TLC",
+      "-workers",
+      "1",
+      "-fp",
+      "0"
+    ],
+    "mode": "Breadth-first complete reachable-state exploration. No simulation, depth cutoff, fairness or temporal liveness property. Terminal deadlocks are permitted."
+  },
+  "bounds": {
+    "writers": 2,
+    "readers": 1,
+    "symbolicRecords": 4,
+    "crashesPerWriter": 1,
+    "retriesPerWriter": 1,
+    "staleInput": "fresh or stale",
+    "observer": "Any captured subset of visible symbolic records with independent complete/incomplete marker; one final classification, no atomic snapshot promise."
+  },
+  "mapping": [
+    {
+      "source": "src/automation-reporting.mjs",
+      "functions": [
+        "publish"
+      ],
+      "model": [
+        "Start",
+        "Write",
+        "Link",
+        "Reply",
+        "Crash",
+        "Retry",
+        "PublishedComplete",
+        "CompletedSurvive"
+      ],
+      "boundary": "Pending open, partial/complete write, atomic hard link, readback and reply. Existing identical canonical destination is represented by set union. Interrupted pending names remain ignored; retry reuses record identity with a fresh pending file. Metadata/readback/unlink are silent under ordinary immutable-file assumptions."
+    },
+    {
+      "source": "src/automation-reporting.mjs",
+      "functions": [
+        "scan",
+        "ordinary"
+      ],
+      "model": [
+        "CorruptSync",
+        "Scan"
+      ],
+      "boundary": "Bounded directory entries and per-file parsing may return a captured subset, complete false for corrupt/unknown entries or exhausted bounds. Model bad is untrusted sync, not a producer write. No global atomic snapshot."
+    },
+    {
+      "source": "src/automation-reporting.mjs",
+      "functions": [
+        "aggregate",
+        "predecessorOK",
+        "identity"
+      ],
+      "model": [
+        "Valid",
+        "Conflict",
+        "Classify",
+        "AcceptedSafe"
+      ],
+      "boundary": "Two symbolic successor records share predecessor a and logical identity. Missing predecessor, invalid bytes, incomplete scan or two leaves prevent usable execution. accepted abstracts only this usable predicate, not global ready: missing automation/report or other findings may still require attention."
+    },
+    {
+      "source": "src/automation-reporting.mjs",
+      "functions": [
+        "aggregate"
+      ],
+      "model": [
+        "NoFalseAuthority",
+        "StaleVisible"
+      ],
+      "boundary": "run and receipt assurance reported, even with producer verified delivery reference. Clock comparison adds explicit stale flag/finding while historical reported execution remains. Boolean staleInput abstracts exact age arithmetic; no real clock guarantee. Run timing.observedAt is another sourceTimes age input; actualTiming retains supplied fields or explicit nulls. Timing timestamp ordering and measurement truth are outside TLC."
+    },
+    {
+      "source": "src/automation-reporting.mjs",
+      "functions": [
+        "canonical",
+        "recordDigest",
+        "validateRecord"
+      ],
+      "model": [
+        "Records",
+        "Request",
+        "committed"
+      ],
+      "boundary": "Validated records and collision-free canonical digest identity are assumed. Parser rules and content schema are behavioral controls, not exhaustively proved by TLC."
+    },
+    {
+      "source": "src/automation-reporting.mjs",
+      "functions": [
+        "predecessorOK",
+        "aggregate",
+        "publish"
+      ],
+      "model": [
+        "RunTransitions.ReviseRun",
+        "RunTransitions.ReviseReceipt",
+        "TerminalMonotonic",
+        "VerifiedReceiptMonotonic"
+      ],
+      "boundary": "Pure predecessor validation before publication and aggregate usable projection. Terminal execution cannot change on same-key successor; verified receipt cannot regress. Same-terminal attachments permitted. Subject and occurrence binding are additionally guarded but outside this finite transition model."
+    },
+    {
+      "source": "src/automation-reporting.mjs",
+      "functions": [
+        "aggregate"
+      ],
+      "model": [
+        "RunTransitions.ReadMissing",
+        "MissingNeverSuccess"
+      ],
+      "boundary": "Expected occurrence with no observed run retains execution not-inferred, never completed. CreateRun is an explicit producer supplied claim and is never inferred from the slot."
+    },
+    {
+      "source": "src/reporting-privacy.mjs",
+      "functions": [
+        "assertNoCredentials"
+      ],
+      "model": [],
+      "boundary": "Synchronous lexical credential rejection during validateRecord. Exact source closure pin only; not a TLA secrecy theorem. assertExportSafe and validateArtifactLinks are cloud-export behavioral controls outside this local immutable-store model."
+    }
+  ],
+  "sourceState": "reviewed-working-tree-bytes",
+  "properties": [
+    {
+      "id": "PublishedComplete",
+      "promise": "Producer canonical records contain complete intended bytes."
+    },
+    {
+      "id": "CompletedSurvive",
+      "promise": "Returned publications remain visible through the modeled retries."
+    },
+    {
+      "id": "AcceptedSafe",
+      "promise": "Usable captured records require a complete valid conflict-free captured input."
+    },
+    {
+      "id": "NoFalseAuthority",
+      "promise": "Recorded run and receipt claims never establish independent execution/delivery authentication."
+    },
+    {
+      "id": "StaleVisible",
+      "promise": "Stale captured records retain an explicit stale signal."
+    }
+  ],
+  "assumptions": [
+    "Collision-free digests; complete writes contain exact requested bytes.",
+    "Atomic same-filesystem hard links; ordinary immutable canonical files and fresh unique pending names.",
+    "No external deletion or mutation of already-published producer bytes; corrupt sync is separate untrusted input.",
+    "Successful operations and duplicate hard-link collisions only; arbitrary I/O errors and power-loss durability excluded.",
+    "Finite bounded exploration; no fairness, liveness, unbounded record count or global snapshot promise."
+  ],
+  "excluded": [
+    "Independent truth, provider execution, external effects, delivery, native IDs/ownership, schedule firing, deployment and cloud adoption.",
+    "Exact occurrence/report correlation and receipt causal-clock schema; separately driven by behavioral tests.",
+    "Complete parser validation, telemetry measurement truth, hostile OS ownership, symlink races and arbitrary I/O failures.",
+    "CLI option parsing, pagination, dashboard rendering, native sync and notification.",
+    "Run timing schema/ordering validation, real start/end/heartbeat truth and live process liveness. Timing observation age alone maps to staleInput.",
+    "Known credential lexical pattern coverage, cloud export selection/sanitization and arbitrary secrecy guarantees."
+  ],
+  "mutations": [
+    {
+      "id": "partial",
+      "property": "PublishedComplete",
+      "actualWitness": "Stopped copied publisher opens canonical destination before write, leaving actual zero-byte digest.json."
+    },
+    {
+      "id": "accept",
+      "property": "AcceptedSafe",
+      "actualWitness": "Copied usable predicate true exposes completed execution for incomplete, conflict, missing predecessor and actual corrupt filesystem scan."
+    },
+    {
+      "id": "authority",
+      "property": "NoFalseAuthority",
+      "actualWitness": "Copied run assurance escalates to authenticated despite only supplied producer receipt."
+    },
+    {
+      "id": "stale",
+      "property": "StaleVisible",
+      "actualWitness": "Copied clock predicate false suppresses stale flag and stale finding for two-day-old record."
+    },
+    {
+      "id": "terminal",
+      "property": "TerminalMonotonic",
+      "actualWitness": "Copied predecessorOK omits executionStable; completed-to-running successor becomes valid and publishes."
+    },
+    {
+      "id": "receipt",
+      "property": "VerifiedReceiptMonotonic",
+      "actualWitness": "Copied predecessorOK omits receiptStable; verified-to-failed successor becomes valid and publishes."
+    },
+    {
+      "id": "missing",
+      "property": "MissingNeverSuccess",
+      "actualWitness": "Copied occurrence projection outputs completed with no run."
+    }
+  ],
+  "transitionBounds": {
+    "runs": 1,
+    "executionStates": [
+      "unknown",
+      "running",
+      "blocked",
+      "pending-approval",
+      "completed",
+      "failed",
+      "skipped"
+    ],
+    "receiptStates": [
+      "pending",
+      "accepted",
+      "verified",
+      "failed"
+    ],
+    "revisions": "Unbounded state-only transitions over finite domains; accepted invalid transition is retained in a monotonic violation bit.",
+    "missing": "One expected slot with no run before explicit producer CreateRun."
+  }
+}

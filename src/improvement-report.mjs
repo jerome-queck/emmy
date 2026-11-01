@@ -135,3 +135,5 @@ export async function improvementReport(request, { evaluatedAt = new Date().toIS
 }
 
 export async function readImprovementRequest(file) { return strictJson(await ordinary(file, 32768)); }
+
+export const validateImprovementReport = report;

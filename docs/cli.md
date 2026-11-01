@@ -14,6 +14,7 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 | dispatch | `--id <value>`, `--project <value>`, `--resolve <value>`, `--discovery <value>`, `--as-of <value>` required, `--context-needed` | Resolve an explicit saved destination from fresh discovery, recover private bindings, and return read-only native dispatch advice. | routing |
 | cloud | `--file <value>` required | Run bounded cooperative cloud jobs with durable checkpoints, priority admission and pending health escalation. | cloud |
 | fleet | `--file <value>` required | Retain scoped fleet health, parent read admission, alert delivery and explicit bounded history archival in the responsibility journal. | fleet |
+| reporting | `--file <value>` required | Inspect validated private automation records or publish only a producer-owned immutable record; no workload execution. | upkeep |
 | signin | `--file <value>` required | Choose a scoped sign-in recovery handoff without accepting or retaining secrets. | fleet |
 | token-review | `--file <value>` required | Assess bounded supplied usage captures and complete cost per verified success without telemetry or execution. | evidence |
 | calendar | `--file <value>` required | Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution. | evidence |

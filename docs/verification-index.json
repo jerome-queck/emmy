@@ -96,6 +96,17 @@
       "feature": "fleet"
     },
     {
+      "name": "reporting",
+      "description": "Inspect validated private automation records or publish only a producer-owned immutable record; no workload execution.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "upkeep"
+    },
+    {
       "name": "signin",
       "description": "Choose a scoped sign-in recovery handoff without accepting or retaining secrets.",
       "options": [
@@ -333,7 +344,8 @@
       "commands": [
         "maintain",
         "backup",
-        "restore"
+        "restore",
+        "reporting"
       ],
       "scenarios": [
         "archive-recovery",
@@ -341,7 +353,8 @@
         "restored-current-context",
         "publication-interruption",
         "derived-boundaries",
-        "improvement-report"
+        "improvement-report",
+        "automation-reporting"
       ],
       "properties": [
         "restore-suspension",
