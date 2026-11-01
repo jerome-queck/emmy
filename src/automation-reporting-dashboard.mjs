@@ -62,7 +62,7 @@ function render(snapshot) {
   const heading = document.createElement('div'); heading.className = 'card-head';
   const name = document.createElement('h2'); name.textContent = title; heading.append(name);
   const value = snapshot[key];
-  if (Array.isArray(value)) { const count = document.createElement('span'); count.className = 'count'; count.textContent = String(value.length); heading.append(count); }
+  if (Array.isArray(value)) { const count = document.createElement('span'); count.className = 'count'; count.textContent = String(snapshot.counts?.[key] ?? (key === 'findings' ? snapshot.findingPage?.total : undefined) ?? value.length); heading.append(count); }
   card.append(heading);
   if (value == null || (Array.isArray(value) && !value.length)) {
    const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = 'No records in this snapshot.'; card.append(empty);
@@ -71,7 +71,12 @@ function render(snapshot) {
     if (item && typeof item === 'object' && item.data) recordCard(card, item);
     else { const finding = document.createElement('p'); finding.textContent = String(item); card.append(finding); }
    }
-   if (value.length > 50) { const more = document.createElement('p'); more.textContent = 'Showing the first 50. Use the CLI to query all records.'; card.append(more); }
+   const page = key === 'findings' ? snapshot.findingPage : snapshot.pagination?.[key];
+   if (page) {
+    const more = document.createElement('p'); more.className = 'empty';
+    more.textContent = 'Showing ' + Math.min(value.length, 50) + ' of ' + page.total + (page.nextCursor ? '. More records available. CLI next cursor: ' + page.nextCursor : '.');
+    card.append(more);
+   }
   } else { fields(card, Object.entries(value)); evidence(card, value); }
   container.append(card);
  }
@@ -108,7 +113,7 @@ refresh();`;
 
 export async function startDashboard({ directory, port = 0 }) {
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Invalid dashboard port');
-  await automationReporting({ action: 'status', directory });
+  await automationReporting({ action: 'inspect', directory });
   const server = createServer(async (request, response) => {
     const headers = {
       'Cache-Control': 'no-store',
@@ -123,7 +128,7 @@ export async function startDashboard({ directory, port = 0 }) {
     if (request.url === '/dashboard.js') return send(200, 'text/javascript; charset=utf-8', browserScript);
     if (request.url !== '/api') return send(404, 'application/json', JSON.stringify({ ok: false, error: 'Not found' }));
     try {
-      const data = await automationReporting({ action: 'status', directory });
+      const data = await automationReporting({ action: 'inspect', directory });
       send(200, 'application/json', JSON.stringify({ ok: true, data }));
     } catch (error) { send(500, 'application/json', JSON.stringify({ ok: false, error: error.message })); }
   });

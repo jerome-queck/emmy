@@ -11,14 +11,18 @@ const actions = new Set(['inspect', 'list', 'get', 'status', 'publish-own-record
 const options = new Map([
   ['--to', 'to'], ['--directory', 'directory'], ['--namespace', 'namespace'], ['--file', 'file'],
   ['--id', 'id'], ['--automation-id', 'automationId'], ['--query', 'query'],
-  ['--cursor', 'cursor'], ['--limit', 'limit'], ['--as-of', 'evaluatedAt'], ['--port', 'port'],
+  ['--finding-cursor', 'findingCursor'], ['--cursor', 'cursor'], ['--limit', 'limit'], ['--as-of', 'evaluatedAt'], ['--port', 'port'],
 ]);
 const help = `Usage: automation-reporting <action> --directory <private-store> [options]
 Actions: inspect, list, get, status, publish-own-record, validate, diagnose,
          dry-run, reconcile, import-improvement, export-outcome, serve
 Options: --namespace <owner> --file <record.json> --id <digest>
          --automation-id <id> --query <text> --cursor <cursor> --limit <count>
-         --as-of <UTC> --port <port, serve only; default 0>
+         --finding-cursor <finding> --as-of <UTC> --port <port, serve only; default 0>
+status, diagnose and reconcile return compact counts and paged findings.
+inspect returns paged record details; --limit 1..200, --cursor <digest>.
+Use --finding-cursor from findingPage.nextCursor for the next finding page.
+--namespace and --automation-id scope all reads.
 Publication requires --namespace and --file. Files contain one record object.
 import-improvement requires --namespace, --automation-id and --file <compact-report.json>.
 Use import-improvement --dry-run to validate without writing.
@@ -101,11 +105,17 @@ try {
       process.once('SIGTERM', stop);
     } else if (action === 'export-outcome') {
       if (!parsed.id || !parsed.to || Object.keys(parsed).some(key => !['directory', 'id', 'to'].includes(key))) throw new Error('export-outcome requires only --directory, --id and --to');
-      const snapshot = await automationReporting({ action: 'status', directory: parsed.directory });
-      const run = snapshot.runs.find(item => item.id === parsed.id);
-      if (!snapshot.scan.complete || !run || !run.valid || run.conflict) throw new Error('Export requires a valid nonconflicted current run and complete scan');
       const exact = await automationReporting({ action: 'get', directory: parsed.directory, id: parsed.id });
-      if (!exact.scan.complete || !exact.record) throw new Error('Exact run readback unavailable');
+      if (!exact.scan.complete || !exact.record || exact.record.kind !== 'run') throw new Error('Exact run readback unavailable');
+      let cursor;
+      let run;
+      do {
+        const snapshot = await automationReporting({ action: 'inspect', directory: parsed.directory, namespace: exact.record.namespace, automationId: exact.record.automationId, limit: 200, ...(cursor ? { cursor } : {}) });
+        if (!snapshot.scan.complete) throw new Error('Export requires a complete scan');
+        run = snapshot.runs.find(item => item.id === parsed.id);
+        cursor = snapshot.pagination.runs.nextCursor;
+      } while (!run && cursor);
+      if (!run || !run.valid || run.conflict) throw new Error('Export requires a valid nonconflicted current run and complete scan');
       const outcome = exportOutcome(exact.record);
       const status = await writeOutcome(parsed.to, canonical(outcome) + '\n');
       process.stdout.write(JSON.stringify({ ok: true, data: { status, subject: parsed.id, publication: 'pending', userDelivery: 'pending' } }) + '\n');

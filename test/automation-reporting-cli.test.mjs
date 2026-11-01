@@ -96,8 +96,11 @@ test('CLI exposes overdue gaps, bounded pagination, search and corrupt records',
   await publish(record('issue', { title: hostileTitle, state: 'open', evidenceRefs: [] }));
   const status = invoke('status', '--directory', directory, '--as-of', '2020-01-02T00:00:00Z');
   assert.equal(status.code, 3);
-  assert.equal(status.data.occurrences[0].state, 'overdue');
-  assert.equal(status.data.occurrences[0].execution, 'not-inferred');
+  assert.equal(status.data.counts.occurrences, 1);
+  assert.ok(status.data.findings.some(finding => finding.startsWith('occurrence-overdue:')));
+  const detail = invoke('inspect', '--directory', directory, '--as-of', '2020-01-02T00:00:00Z');
+  assert.equal(detail.data.occurrences[0].state, 'overdue');
+  assert.equal(detail.data.occurrences[0].execution, 'not-inferred');
   const first = invoke('list', '--directory', directory, '--limit', '1');
   assert.equal(first.data.items.length, 1);
   assert.match(first.data.nextCursor, /^[a-f0-9]{64}$/);
@@ -226,6 +229,54 @@ test('CLI exports only sanitized current outcomes into exclusive private files',
   assert.equal(invoke(...args).code, 2, 'An earlier run revision cannot be exported as current');
 });
 
+test('CLI keeps representative status compact and pages details and findings explicitly', async t => {
+  const directory = await temporary(t);
+  const inputDirectory = await temporary(t);
+  const file = join(inputDirectory, 'record.json');
+  for (let index = 0; index < 16; index++) {
+    const definition = record();
+    definition.automationId = 'automation-' + index;
+    definition.data.name = 'Review ' + index;
+    for (const field of ['schedule', 'environment', 'nativeRef', 'model', 'destination', 'sourceRef']) definition.data[field] = 'reported-' + field + '-'.repeat(250);
+    await writeFile(file, JSON.stringify(definition));
+    assert.equal(invoke('publish-own-record', '--directory', directory, '--namespace', 'test-owner', '--file', file).code, 0);
+    if (index < 4) {
+      const report = { schemaVersion: 1, kind: 'maintenance', scheduledFor: '2020-01-02T00:00:00Z', runId: 'representative:' + index, provenance: 'manual', status: 'completed', coverage: 'partial', summary: 'Retained source coverage gap. '.repeat(40), findings: 1, evidenceRefs: ['fixture-evidence'], sourceWindow: { start: '2020-01-01T00:00:00Z', end: '2020-01-01T23:00:00Z' }, generatedAt: '2020-01-02T01:00:00Z' };
+      await writeFile(file, JSON.stringify(report));
+      assert.equal(invoke('import-improvement', '--directory', directory, '--namespace', 'test-owner', '--automation-id', definition.automationId, '--file', file).code, 0);
+    }
+  }
+  const summary = invoke('status', '--directory', directory);
+  const detail = invoke('inspect', '--directory', directory);
+  const summaryBytes = Buffer.byteLength(JSON.stringify(summary));
+  const detailBytes = Buffer.byteLength(JSON.stringify(detail));
+  assert.ok(summaryBytes < 12000, String(summaryBytes));
+  assert.ok(summaryBytes < detailBytes / 3, JSON.stringify({ summaryBytes, detailBytes }));
+  assert.equal(summary.data.counts.automations, 16);
+  assert.equal(summary.data.counts.runs, 4);
+  assert.equal(summary.data.execution.completed, 4);
+  assert.equal(summary.data.evidenceCoverage.partial, 4);
+  assert.equal(summary.data.automations, undefined);
+  assert.equal(detail.data.records, undefined);
+  assert.equal(detail.data.pagination.automations.total, 16);
+  assert.ok(summary.data.findings.length <= 20);
+  assert.ok(summary.data.findingPage.total > 20);
+  const nextFindings = invoke('status', '--directory', directory, '--finding-cursor', summary.data.findingPage.nextCursor);
+  assert.equal(nextFindings.data.findingPage.total, summary.data.findingPage.total);
+  assert.ok(nextFindings.data.findings.every(finding => finding > summary.data.findingPage.nextCursor));
+  const first = invoke('inspect', '--directory', directory, '--limit', '2');
+  assert.equal(first.data.automations.length, 2);
+  assert.equal(first.data.pagination.automations.total, 16);
+  const next = invoke('inspect', '--directory', directory, '--limit', '2', '--cursor', first.data.pagination.automations.nextCursor);
+  assert.ok(next.data.automations.every(item => item.id > first.data.pagination.automations.nextCursor));
+  const scoped = invoke('status', '--directory', directory, '--namespace', 'test-owner', '--automation-id', 'automation-0');
+  assert.equal(scoped.data.counts.automations, 1);
+  assert.equal(scoped.data.counts.runs, 1);
+  const empty = invoke('status', '--directory', directory, '--namespace', 'other-owner');
+  assert.equal(empty.data.counts.automations, 0);
+  assert.equal(empty.data.counts.runs, 0);
+});
+
 test('dashboard binds loopback, serves safe static UI and refuses writes', async t => {
   const directory = await temporary(t);
   const { server, address } = await startDashboard({ directory });
@@ -279,12 +330,14 @@ test('served dashboard script polls once at a time, invalidates failures and cle
   nodes.refresh.listeners.click();
   assert.equal(requests.length, 1, 'Concurrent refreshes must share the active read');
   const run = { kind: 'run', key: 'run-one', automationId: 'daily-review', namespace: 'test-owner', execution: 'completed', evidenceCoverage: 'partial', reportAvailability: 'available', publication: 'pending', userDelivery: 'pending', data: { report: { summary: '<script>reported text</script>' } } };
-  requests[0].resolve({ ok: true, json: async () => ({ ok: true, data: { status: 'needs-attention', runs: [run] } }) });
+  requests[0].resolve({ ok: true, json: async () => ({ ok: true, data: { status: 'needs-attention', runs: [run], counts: { runs: 75 }, pagination: { runs: { total: 75, shown: 1, nextCursor: 'fixture-cursor' } } } }) });
   await new Promise(setImmediate);
   assert.equal(nodes.status.textContent, 'Needs attention');
   assert.match(nodes.updated.textContent, /Last successful read/);
   assert.match(text(nodes.sections), /Execution completed/);
   assert.match(text(nodes.sections), /Coverage partial/);
+  assert.match(text(nodes.sections), /Showing 1 of 75/);
+  assert.match(text(nodes.sections), /fixture-cursor/);
   assert.match(text(nodes.sections), /<script>reported text<\/script>/);
   intervals.get(5000)();
   assert.equal(requests.length, 2);

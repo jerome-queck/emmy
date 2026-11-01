@@ -14,6 +14,6 @@ Run `node --test test/automation-reporting.test.mjs test/automation-reporting-cl
 
 ## Gotchas
 
-Completed partial evidence remains completed with separate coverage attention. Missing/invalid/conflicting records never infer success. Claims and referenced receipts remain reported. Expected occurrences are independent of invocations. Real Drive mapping, upload, scheduler, fresh-chat/archive and recipient delivery need separate native evidence. The dashboard performs no provider actions.
+Completed partial evidence remains completed with separate coverage attention. Missing/invalid/conflicting records never infer success. Claims and referenced receipts remain reported. Expected occurrences are independent of invocations. Private transport, scheduler, fresh-chat/archive and recipient delivery need separate native evidence. The dashboard performs no provider actions.
 
 The export/privacy suite exercises known credential forms, credential-bearing URLs, private path/account exclusion, original timing preservation and safe artifact links. Run events and envelope/report clocks remain distinct; missing heartbeat is null. Lexical refusal is not proof arbitrary prose is secret-free.

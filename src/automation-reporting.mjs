@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
 import { open, lstat, realpath, mkdir, opendir, link, unlink } from 'node:fs/promises';
 import { resolve, join, dirname, parse, isAbsolute } from 'node:path';
+import { validateOutcomeReport } from './automation-reporting-outcome.mjs';
 import { assertNoCredentials } from './reporting-privacy.mjs';
 import { strictJson } from './bounded-json.mjs';
 import { validateImprovementReport } from './improvement-report.mjs';
@@ -48,7 +49,8 @@ export function validateRecord(record, evaluatedAt = new Date().toISOString()) {
       need(data.occurrenceKey === null || logicalKey(data.occurrenceKey), 'Invalid occurrence reference');
       need(['running', 'blocked', 'pending-approval', 'completed', 'failed', 'skipped', 'unknown'].includes(data.execution) && ['complete', 'partial', 'unavailable'].includes(data.coverage) && refs(data.evidenceRefs), 'Invalid execution or evidence coverage');
       if (data.report !== null) {
-        validateImprovementReport(data.report);
+        if (data.report.type === 'automation-outcome') validateOutcomeReport(data.report);
+        else validateImprovementReport(data.report);
         need(data.report.runId === record.key && data.report.status === data.execution && data.report.coverage === data.coverage && Date.parse(data.report.generatedAt) <= Date.parse(record.recordedAt), 'Compact report/run identity, state or clock mismatch');
       }
       if (data.timing !== undefined) {
@@ -137,7 +139,7 @@ export function aggregate(records, { evaluatedAt = new Date().toISOString(), fin
     const conflict = leaves.length !== 1;
     if (conflict) problems.push(`conflict:${identity(group[0])}`);
     for (const record of leaves) {
-      const sourceTimes = [record.recordedAt, ...(record.kind === 'automation' ? [record.data.observedAt] : []), ...(record.kind === 'run' && record.data.timing ? [record.data.timing.observedAt] : []), ...(record.kind === 'run' && record.data.report ? [record.data.report.generatedAt, record.data.report.sourceWindow.end] : [])];
+      const sourceTimes = [record.recordedAt, ...(record.kind === 'automation' ? [record.data.observedAt] : []), ...(record.kind === 'run' && record.data.timing ? [record.data.timing.observedAt] : []), ...(record.kind === 'run' && record.data.report ? [record.data.report.generatedAt, ...(record.data.report.sourceWindow ? [record.data.report.sourceWindow.end] : [])] : [])];
       const stale = sourceTimes.some(time => Date.parse(evaluatedAt) - Date.parse(time) > maxAgeSeconds * 1000);
       if (stale) problems.push(`stale:${record.id}`);
       current.push({ ...record, conflict, valid: !invalid.has(record.id), stale });
@@ -152,7 +154,7 @@ export function aggregate(records, { evaluatedAt = new Date().toISOString(), fin
       record.valid = false; problems.push(`occurrence-correlation:${record.id}`);
     }
   }
-  const runs = current.filter(record => record.kind === 'run').map(record => ({ ...record, execution: usable(record) ? record.data.execution : 'unknown', evidenceCoverage: usable(record) ? record.data.coverage : 'unavailable', reportAvailability: !usable(record) ? 'conflict-or-incomplete' : record.data.report === null ? 'missing' : 'available', actualTiming: record.data.timing ?? { startedAt: null, lastHeartbeatAt: null, endedAt: null, observedAt: null, sourceRef: null }, assurance: 'reported', publication: 'pending', userDelivery: 'pending' }));
+  const runs = current.filter(record => record.kind === 'run').map(record => ({ ...record, execution: usable(record) ? record.data.execution : 'unknown', evidenceCoverage: usable(record) ? record.data.coverage : 'unavailable', reportAvailability: !usable(record) ? 'conflict-or-incomplete' : record.data.report === null ? 'missing' : record.data.report.availability ?? 'available', actualTiming: record.data.timing ?? { startedAt: null, lastHeartbeatAt: null, endedAt: null, observedAt: null, sourceRef: null }, assurance: 'reported', publication: 'pending', userDelivery: 'pending' }));
   const receipts = kind => current.filter(record => record.kind === kind).map(record => {
     const subject = byDigest.get(record.data.subject);
     const subjectKnown = subject?.kind === 'run' && subject.namespace === record.namespace && subject.automationId === record.automationId && !invalid.has(record.data.subject) && current.some(item => item.id === record.data.subject && usable(item)) && Date.parse(record.recordedAt) >= Date.parse(subject.recordedAt);
@@ -182,7 +184,7 @@ export function aggregate(records, { evaluatedAt = new Date().toISOString(), fin
   const issues = current.filter(record => record.kind === 'issue');
   for (const issue of issues) if (issue.data.state !== 'resolved') problems.push(`issue-${issue.data.state}:${issue.id}`);
   if (!complete) problems.push('incomplete-scan');
-  return { schemaVersion: 1, status: problems.length ? 'needs-attention' : 'ready', evaluatedAt, assurance: 'validated-recorded-claims', findings: [...new Set(problems)].sort(), scan: { complete, records: byDigest.size }, pendingPublicationQueue: runs.filter(run => run.publication !== 'verified').map(run => ({ subject: run.id, namespace: run.namespace, state: run.publication, action: 'reporting-only-parent-owned' })), inventoryCoverage: { knownAutomations: automations.length, scope: 'registered-only', unregisteredAutomations: 'unknown', nativeDiscovery: 'parent-owned' }, automations, occurrences, runs, publications, deliveries, issues, records: current, limits: ['Records do not authenticate execution, schedule firing, publication or user delivery.', 'Concurrent readers may precede later writes. This is a bounded scan, not an atomic snapshot.', 'Local publication only. Native Drive mapping, sync and notification remain external gates.'] };
+  return { schemaVersion: 1, status: problems.length ? 'needs-attention' : 'ready', evaluatedAt, assurance: 'validated-recorded-claims', findings: [...new Set(problems)].sort(), scan: { complete, records: byDigest.size }, pendingPublicationQueue: runs.filter(run => run.publication !== 'verified').map(run => ({ subject: run.id, namespace: run.namespace, state: run.publication, action: 'reporting-only-parent-owned' })), inventoryCoverage: { knownAutomations: automations.length, scope: 'registered-only', unregisteredAutomations: 'unknown', nativeDiscovery: 'parent-owned' }, automations, occurrences, runs, publications, deliveries, issues, records: current, limits: ['Records do not authenticate execution, schedule firing, publication or user delivery.', 'Concurrent readers may precede later writes. This is a bounded scan, not an atomic snapshot.', 'Local publication only. Native publication, private transport and notification remain external gates.'] };
 }
 async function scan(selected, evaluatedAt) {
   const records = []; const findings = []; let count = 0; let complete = true;
@@ -227,24 +229,62 @@ async function publish(selected, record, evaluatedAt) {
   } finally { await unlink(temporary); }
   return { status, id: hash, publication: 'local-readback-verified', nativePublication: 'pending', userDelivery: 'pending', assurance: 'reported' };
 }
+function summaryView(result, request) {
+  const limit = request.limit ?? 20;
+  need(Number.isSafeInteger(limit) && limit > 0 && limit <= 200, 'Expected limit 1..200');
+  need(request.findingCursor === undefined || typeof request.findingCursor === 'string' && request.findingCursor.length <= 500, 'Invalid finding cursor');
+  const findings = result.findings.filter(value => !request.findingCursor || value > request.findingCursor);
+  const shown = findings.slice(0, limit);
+  const tally = (values, field) => values.reduce((counts, item) => { const key = item[field]; counts[key] = (counts[key] ?? 0) + 1; return counts; }, {});
+  return {
+    schemaVersion: result.schemaVersion, status: result.status, evaluatedAt: result.evaluatedAt, assurance: result.assurance,
+    counts: Object.fromEntries(['automations', 'occurrences', 'runs', 'publications', 'deliveries', 'issues'].map(key => [key, result[key].length])),
+    execution: tally(result.runs, 'execution'), evidenceCoverage: tally(result.runs, 'evidenceCoverage'), reportAvailability: tally(result.runs, 'reportAvailability'),
+    publication: tally(result.runs, 'publication'), userDelivery: tally(result.runs, 'userDelivery'),
+    pendingPublicationCount: result.pendingPublicationQueue.length, findings: shown,
+    findingPage: { total: result.findings.length, shown: shown.length, nextCursor: findings.length > limit ? shown.at(-1) : null },
+    inventoryCoverage: result.inventoryCoverage, scan: result.scan, limits: result.limits,
+  };
+}
+function detailView(result, request) {
+  const summary = summaryView(result, request); const limit = request.limit ?? 50; const cursor = request.cursor ?? null;
+  need(cursor === null || digest(cursor), 'Expected digest cursor');
+  const pagination = {};
+  for (const key of ['automations', 'occurrences', 'runs', 'publications', 'deliveries', 'issues']) {
+    const values = result[key].filter(record => !cursor || record.id > cursor);
+    summary[key] = values.slice(0, limit); pagination[key] = { total: result[key].length, shown: summary[key].length, nextCursor: values.length > limit ? summary[key].at(-1).id : null };
+  }
+  summary.pagination = pagination; return summary;
+}
 export async function automationReporting(request, { evaluatedAt = new Date().toISOString() } = {}) {
   need(object(request) && actions.includes(request.action), 'Unknown reporting action');
-  fields(request, ['action', 'directory'], ['namespace', 'record', 'id', 'automationId', 'query', 'cursor', 'limit', 'maxAgeSeconds']);
+  fields(request, ['action', 'directory'], ['namespace', 'record', 'id', 'automationId', 'query', 'cursor', 'limit', 'maxAgeSeconds', 'findingCursor']);
   need(stamp(evaluatedAt), 'Invalid evaluation clock');
   const selected = await directory(request.directory);
   if (['validate', 'dry-run', 'publish-own-record'].includes(request.action)) {
     const record = validateRecord(request.record, evaluatedAt);
     need(id(request.namespace) && record.namespace === request.namespace, 'Producer may publish only its own namespace');
     if (request.action === 'publish-own-record') return publish(selected, record, evaluatedAt);
+    const namespace = join(selected, record.namespace);
+    try { need((await lstat(namespace)).isDirectory() && await realpath(namespace) === namespace, 'Namespace must be ordinary directory'); }
+    catch (error) { if (error.code !== 'ENOENT' || record.previous !== null) throw error; }
+    if (record.previous !== null) {
+      const previous = validateRecord(strictJson(await ordinary(join(selected, record.namespace, `${record.previous}.json`))), evaluatedAt);
+      need(recordDigest(previous) === record.previous && predecessorOK(record, previous), 'Missing or invalid predecessor');
+    }
     return { status: request.action === 'validate' ? 'valid' : 'dry-run', id: recordDigest(record), writes: false, nativePublication: 'pending', userDelivery: 'pending' };
   }
+  need(request.automationId === undefined || id(request.automationId), 'Invalid automation filter');
+  need(request.namespace === undefined || id(request.namespace), 'Invalid namespace filter');
   const snapshot = await scan(selected, evaluatedAt);
+  snapshot.records = snapshot.records.filter(record => (!request.namespace || record.namespace === request.namespace) && (!request.automationId || record.automationId === request.automationId));
   const result = aggregate(snapshot.records, { ...snapshot, evaluatedAt, maxAgeSeconds: request.maxAgeSeconds ?? 86400 });
-  if (['status', 'inspect', 'diagnose', 'reconcile'].includes(request.action)) return result;
+  if (['status', 'diagnose', 'reconcile'].includes(request.action)) return summaryView(result, request);
+  if (request.action === 'inspect') return detailView(result, request);
   if (request.action === 'get') {
     need(digest(request.id), 'Expected exact record digest');
     const record = snapshot.records.find(record => recordDigest(record) === request.id);
-    return { status: record ? result.status : 'needs-attention', record: record ?? null, findings: record ? result.findings : [...result.findings, 'missing-record'], scan: result.scan };
+    return { status: record ? result.status : 'needs-attention', record: record ?? null, findings: record ? summaryView(result, request).findings : [...summaryView(result, request).findings, 'missing-record'], findingPage: summaryView(result, request).findingPage, scan: result.scan };
   }
   const limit = request.limit ?? 50; const cursor = request.cursor ?? null;
   need(Number.isSafeInteger(limit) && limit > 0 && limit <= 200 && (cursor === null || digest(cursor)), 'Expected limit 1..200 and digest cursor');
@@ -253,5 +293,5 @@ export async function automationReporting(request, { evaluatedAt = new Date().to
   need(request.namespace === undefined || id(request.namespace), 'Invalid namespace filter');
   const candidates = [...snapshot.records].map(record => ({ id: recordDigest(record), ...record })).sort((a, b) => a.id.localeCompare(b.id)).filter(record => (!cursor || record.id > cursor) && (!request.namespace || record.namespace === request.namespace) && (!request.automationId || record.automationId === request.automationId) && (!request.query || canonical(record).toLowerCase().includes(request.query.toLowerCase())));
   const items = candidates.slice(0, limit);
-  return { status: result.status, items, nextCursor: candidates.length > limit ? items.at(-1).id : null, findings: result.findings, scan: result.scan, limits: ['Cursor pagination is over observed immutable IDs; concurrent additions before the cursor require a fresh scan.'] };
+  return { status: result.status, items, nextCursor: candidates.length > limit ? items.at(-1).id : null, findings: summaryView(result, request).findings, findingPage: summaryView(result, request).findingPage, scan: result.scan, limits: ['Cursor pagination is over observed immutable IDs; concurrent additions before the cursor require a fresh scan.'] };
 }

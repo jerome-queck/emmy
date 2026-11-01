@@ -66,21 +66,21 @@ test('atomic publication races converge, branches survive and dry-run has no wri
   assert.deepEqual(results.map(item => item.status).sort(), ['identical', 'published']);
   const bytes = await readFile(join(directory, 'producer', `${recordDigest(run)}.json`), 'utf8'); assert.equal(bytes, canonical(run) + '\n');
   await execute({ ...run, data: { ...run.data, execution: 'failed' } });
-  const result = await automationReporting({ action: 'status', directory }, { evaluatedAt: at }); assert.equal(result.runs.length, 2);
+  const result = await automationReporting({ action: 'inspect', directory }, { evaluatedAt: at }); assert.equal(result.runs.length, 2);
   await assert.rejects(automationReporting({ action: 'publish-own-record', directory, namespace: 'other', record: run }, { evaluatedAt: at }), /own namespace/);
 }));
 test('corruption, stray entries, symlinks and partial temp bytes cannot grant completion', async () => fixture(async directory => {
   await mkdir(join(directory, 'producer')); await writeFile(join(directory, 'producer', '.pending-crash'), '{');
   await writeFile(join(directory, 'producer', `${recordDigest(run)}.json`), canonical(run));
   await writeFile(join(directory, 'producer', `${'f'.repeat(64)}.json`), '{');
-  const result = await automationReporting({ action: 'status', directory }, { evaluatedAt: at });
+  const result = await automationReporting({ action: 'inspect', directory }, { evaluatedAt: at });
   assert.equal(result.scan.complete, false); assert.equal(result.runs[0].execution, 'unknown');
   await symlink(directory, join(directory, 'alias'));
   await assert.rejects(automationReporting({ action: 'status', directory: join(directory, 'alias') }, { evaluatedAt: at }), /ordinary directories/);
 }));
 test('bounded namespace inventory reports incomplete rather than silently omitting', async () => fixture(async directory => {
   for (let i = 0; i < 201; i++) await mkdir(join(directory, `namespace-${i}`));
-  const result = await automationReporting({ action: 'status', directory }, { evaluatedAt: at });
+  const result = await automationReporting({ action: 'inspect', directory }, { evaluatedAt: at });
   assert.equal(result.scan.complete, false); assert.equal(result.status, 'needs-attention');
 }));
 test('terminal runs cannot regress; blocked and approval states remain explicit', async () => fixture(async directory => {
@@ -89,6 +89,7 @@ test('terminal runs cannot regress; blocked and approval states remain explicit'
   for (const execution of ['running', 'blocked', 'pending-approval', 'failed', 'unknown']) {
     const regressed = { ...run, revision: 1, previous: recordDigest(run), data: { ...run.data, execution } };
     await assert.rejects(execute(regressed), /predecessor/);
+    await assert.rejects(automationReporting({ action: 'dry-run', directory, namespace: 'producer', record: regressed }, { evaluatedAt: at }), /predecessor/);
     assert.equal(view([automation, occurrence, run, regressed]).runs[0].execution, 'unknown');
   }
   for (const execution of ['blocked', 'pending-approval']) {
@@ -98,6 +99,7 @@ test('terminal runs cannot regress; blocked and approval states remain explicit'
   const verified = receipt('publication', recordDigest(run)); await execute(verified);
   const regressed = { ...verified, revision: 1, previous: recordDigest(verified), data: { ...verified.data, state: 'accepted' } };
   await assert.rejects(execute(regressed), /predecessor/);
+    await assert.rejects(automationReporting({ action: 'dry-run', directory, namespace: 'producer', record: regressed }, { evaluatedAt: at }), /predecessor/);
 }));
 
 test('new invocation retry keeps exact expected occurrence bytes', () => {
@@ -118,3 +120,20 @@ test('actual run clocks stay sourced and ordered; record time never becomes even
   assert.throws(() => view([{ ...timed, data: { ...timed.data, timing: { ...timing, lastHeartbeatAt: '2026-11-01T00:00:00Z' } } }]), /out of order/);
   assert.throws(() => view([{ ...timed, data: { ...timed.data, timing: { ...timing, endedAt: '2026-11-02T00:00:00Z' } } }]), /event timestamp/);
 });
+test('all active workflows carry their own generic bounded reports without review-kind spoofing', () => {
+  for (const automationId of ['daily-briefing', 'ureca-pdf', 'krillion-daily', 'wooclap-tuesday', 'wooclap-wednesday']) {
+    const configured = { ...automation, automationId };
+    const slot = { ...occurrence, automationId };
+    const report = { schemaVersion: 1, type: 'automation-outcome', runId: run.key, provenance: 'scheduled', scheduledFor: at, status: 'completed', coverage: 'partial', availability: 'available', summary: `${automationId} bounded result retained.`, artifactLinks: [], sourceWindow: null, generatedAt: at };
+    const observed = { ...run, automationId, data: { ...run.data, report } };
+    const result=view([configured, slot, observed]);
+    assert.equal(result.runs[0].execution,'completed'); assert.equal(result.runs[0].reportAvailability,'available'); assert.equal(result.runs[0].userDelivery,'pending');
+    const unavailable={...observed,data:{...observed.data,report:{...report,availability:'unavailable',summary:'Output unavailable; action not replayed.'}}};
+    assert.equal(view([configured,slot,unavailable]).runs[0].reportAvailability,'unavailable');
+  }
+});
+
+test('preflight and publication both refuse an existing symlink namespace', async () => fixture(async directory => {
+  await mkdir(join(directory, 'actual')); await symlink(join(directory, 'actual'), join(directory, 'producer'));
+  for (const action of ['validate','dry-run','publish-own-record']) await assert.rejects(automationReporting({action,directory,namespace:'producer',record:run},{evaluatedAt:at}), /ordinary directory/);
+}));
