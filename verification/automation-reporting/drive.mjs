@@ -30,7 +30,7 @@ export async function driveAutomationReporting(root, evidence) {
   }`;
     candidate = replace(candidate, "const handle = await open(temporary, 'wx', 0o600);", checkpointSource);
     const path = join(directory, 'automation-reporting.mjs'); await writeFile(path, candidate);
-    for (const dependency of ['bounded-json.mjs', 'improvement-report.mjs', 'reporting-privacy.mjs', 'automation-reporting-outcome.mjs', 'automation-reporting-expectations.mjs']) await writeFile(join(directory, dependency), await readFile(join(root, 'src', dependency)));
+    for (const dependency of ['reporting-representation.mjs', 'bounded-json.mjs', 'improvement-report.mjs', 'reporting-privacy.mjs', 'automation-reporting-outcome.mjs', 'automation-reporting-expectations.mjs']) await writeFile(join(directory, dependency), await readFile(join(root, 'src', dependency)));
     const api = await import(pathToFileURL(path));
     const home = join(directory, 'home'); await mkdir(home);
     return { directory, path, api, home };

@@ -1,3 +1,4 @@
+import { chargeReportingJSON } from './reporting-representation.mjs';
 import { createHash, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
 import { open, lstat, realpath, mkdir, opendir, link, unlink } from 'node:fs/promises';
@@ -23,6 +24,7 @@ function fields(value, required, optional = []) {
   need(object(value) && required.every(key => Object.hasOwn(value, key)) && Object.keys(value).every(key => [...required, ...optional].includes(key)), `Expected members ${required.join(', ')}${optional.length ? `; optional ${optional.join(', ')}` : ''}`);
 }
 export function canonical(value) {
+  chargeReportingJSON(value);
   return JSON.stringify(value, (_, item) => object(item) ? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item);
 }
 export const recordDigest = value => createHash('sha256').update(canonical(value)).digest('hex');
@@ -142,7 +144,7 @@ function retrospectiveOK(record, previous) {
   if (retrospective(prior)) return metadataStable && canonical(report) === canonical(prior);
   return metadataStable && prior === null && ['completed', 'failed', 'skipped'].includes(previous.data.execution) && report.generation.basedOn === record.previous && report.sourceEvidence.recordedAt === previous.recordedAt && [report.sourceEvidence.observedAt, report.sourceWindow?.end].every(time => time === null || time === undefined || Date.parse(time) <= Date.parse(previous.recordedAt));
 }
-function predecessorOK(record, previous) {
+export function predecessorOK(record, previous) {
   const terminal = ['completed', 'failed', 'skipped'];
   const executionStable = record.kind !== 'run' || !previous || record.data.occurrenceKey === previous.data.occurrenceKey && (!terminal.includes(previous.data.execution) || record.data.execution === previous.data.execution);
   const receiptStable = !['publication', 'delivery'].includes(record.kind) || !previous || record.data.subject === previous.data.subject && (previous.data.state !== 'verified' || record.data.state === 'verified');

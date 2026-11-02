@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const dependencies = ['bounded-json.mjs', 'improvement-report.mjs', 'reporting-privacy.mjs', 'automation-reporting-outcome.mjs', 'automation-reporting-expectations.mjs'];
+const dependencies = ['reporting-representation.mjs', 'bounded-json.mjs', 'improvement-report.mjs', 'reporting-privacy.mjs', 'automation-reporting-outcome.mjs', 'automation-reporting-expectations.mjs'];
 const replace = (source, before, after) => { assert.equal(source.split(before).length, 2, `Expected exactly one unbound mutation anchor ${before}`); return source.replace(before, after); };
 export const unboundMutants = [ ['clocks', 'OriginalClockSafe'], ['basis', 'RetrospectiveBasisSafe'], ['metadata', 'RetrospectiveMetadataSafe'], ['immutable', 'AttachedReportImmutable'], ['representation', 'UnboundRepresentationSafe'] ];
 const clone = value => structuredClone(value);

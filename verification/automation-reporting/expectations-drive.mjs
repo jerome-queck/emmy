@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 
 const save = (path, value) => writeFile(path, `${JSON.stringify(value, null, 2)}\n`);
 const replace = (source, before, after) => { assert.equal(source.split(before).length, 2, `Expected one expectation mutation anchor ${before}`); return source.replace(before, after); };
-const dependencies = ['bounded-json.mjs', 'improvement-report.mjs', 'reporting-privacy.mjs', 'automation-reporting-outcome.mjs', 'automation-reporting-expectations.mjs'];
+const dependencies = ['reporting-representation.mjs', 'bounded-json.mjs', 'improvement-report.mjs', 'reporting-privacy.mjs', 'automation-reporting-outcome.mjs', 'automation-reporting-expectations.mjs'];
 export const expectationMutants = [
   ['authority', 'AuthoritySafe'], ['slot', 'ConfiguredSlotSafe'], ['target', 'TargetSafe'], ['owner', 'OwnerSafe'], ['dependency', 'DependencySafe'], ['complete', 'CompleteSafe'], ['withdrawal', 'WithdrawalSafe'], ['fresh', 'FreshSafe'], ['exact', 'ExactSlotSafe'], ['manual', 'ManualExcluded'], ['unbound', 'UnboundExcluded'], ['infer-success', 'NeverInferSuccess'], ['infer-failure', 'GraceNeverFailure'],
 ];

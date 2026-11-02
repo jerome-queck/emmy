@@ -1,3 +1,4 @@
+import { chargeReportingBytes, serializedSize } from './reporting-representation.mjs';
 import { createHash } from 'node:crypto';
 import { strictJson } from './bounded-json.mjs';
 import { canonical, recordDigest, validateRecord } from './automation-reporting.mjs';
@@ -10,19 +11,22 @@ const opaque = value => typeof value === 'string' && value.length > 0 && value.l
 const identity = value => typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$/.test(value);
 const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const stamp = value => typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{3})?Z$/.test(value) && Number.isFinite(Date.parse(value));
+function reportingBase64(bytes){chargeReportingBytes(Math.ceil(bytes.length/3)*4,'base64');return bytes.toString('base64');}
 export const historyHash = bytes => createHash('sha256').update(bytes).digest('hex');
-export const historyBytes = value => Buffer.from(canonical(value) + '\n');
+export const historyBytes = value => { chargeReportingBytes(serializedSize(value)+1); return Buffer.from(canonical(value) + '\n'); };
 export function historyFields(value, keys) {
   need(value && typeof value === 'object' && !Array.isArray(value) && keys.length === Object.keys(value).length && keys.every(key => Object.hasOwn(value, key)), `Expected history members ${keys.join(', ')}`);
 }
+const originalText=new WeakMap();
+export const historyOriginalText=value=>originalText.get(value);
 export function historyDecode(bytes, limit = CAPTURE_LIMITS.packetBytes) {
   need((typeof bytes === 'string' || Buffer.isBuffer(bytes)) && Buffer.byteLength(bytes) <= limit, 'History input exceeds bound');
-  return strictJson(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(Buffer.from(bytes)));
+  chargeReportingBytes(Buffer.byteLength(bytes),'decoded');const text=new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(Buffer.isBuffer(bytes)?bytes:Buffer.from(bytes));const value=strictJson(text);if(value&&typeof value==='object')originalText.set(value,text);return value;
 }
 export function historyRaw(encoded, limit) {
   need(typeof encoded === 'string' && encoded.length <= Math.ceil(limit / 3) * 4 && /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded), 'Expected bounded canonical base64');
-  const bytes = Buffer.from(encoded, 'base64');
-  need(bytes.length <= limit && bytes.toString('base64') === encoded, 'Invalid raw history bytes');
+  chargeReportingBytes(encoded.length/4*3-(encoded.endsWith('==')?2:encoded.endsWith('=')?1:0),'base64-decoded');const bytes = Buffer.from(encoded, 'base64');
+  chargeReportingBytes(Math.ceil(bytes.length/3)*4,'base64');need(bytes.length <= limit && bytes.toString('base64') === encoded, 'Invalid raw history bytes');
   return bytes;
 }
 export function validateHistoryReference(ref) {
@@ -37,7 +41,7 @@ export function validateDiscoveryScope(scope) {
   need(recordScope?.inventory?.mode === 'pages', 'Discovery record scope requires pages placeholder');
   const inventory = { schemaVersion: 1, kind: 'automation-reporting-history-inventory', rootFolderId: recordScope.rootFolderId, rootEntries: [], namespaces: [] };
   const bytes = historyBytes(inventory);
-  consumeCapture(historyBytes({ ...recordScope, inventory: { mode: 'pinned', id: 'scope-validation', sha256: historyHash(bytes) } }), historyBytes({ schemaVersion: 1, kind: 'automation-reporting-capture', inventory: { mode: 'pinned', id: 'scope-validation', bytesBase64: bytes.toString('base64') }, objects: [] }), { action: 'status' });
+  consumeCapture(historyBytes({ ...recordScope, inventory: { mode: 'pinned', id: 'scope-validation', sha256: historyHash(bytes) } }), historyBytes({ schemaVersion: 1, kind: 'automation-reporting-capture', inventory: { mode: 'pinned', id: 'scope-validation', bytesBase64: reportingBase64(bytes) }, objects: [] }), { action: 'status' });
   need(Array.isArray(scope.owners) && scope.owners.length > 0 && scope.owners.length <= CAPTURE_LIMITS.rootEntries, 'Bounded registered publication owners required');
   const owners = new Set(); const anchors = new Set(); const namespaces = new Set();
   const canonicalFolders = new Set([recordScope.rootFolderId, ...recordScope.namespaces.map(item => item.folderId)]);

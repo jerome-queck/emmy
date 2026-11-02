@@ -7,7 +7,7 @@ import { fixture, runRecord, evaluatedAt, bytesOf, sha256 } from '../../test/fix
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const source = 'automation-reporting-capture';
-const closure = ['bounded-json', 'reporting-privacy', 'improvement-report', 'automation-reporting-outcome', 'automation-reporting-expectations', 'automation-reporting', source];
+const closure = ['reporting-representation', 'bounded-json', 'reporting-privacy', 'improvement-report', 'automation-reporting-outcome', 'automation-reporting-expectations', 'automation-reporting', source];
 const entry = value => value.capture.inventory.namespaces[0].listing.pages[0].entries[0];
 const sourceBytes = await readFile(join(root, `src/${source}.mjs`), 'utf8');
 const cases = [

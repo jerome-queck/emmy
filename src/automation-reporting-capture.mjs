@@ -1,3 +1,4 @@
+import { chargeReportingBytes, serializedSize } from './reporting-representation.mjs';
 import { createHash } from 'node:crypto';
 import { strictJson } from './bounded-json.mjs';
 import { canonical, recordDigest, validateRecord, projectReadView } from './automation-reporting.mjs';
@@ -15,12 +16,12 @@ function fields(value, required) {
 }
 function decode(bytes, limit) {
   need((typeof bytes === 'string' || Buffer.isBuffer(bytes)) && Buffer.byteLength(bytes) <= limit, 'Capture input exceeds byte bound');
-  return strictJson(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(Buffer.from(bytes)));
+  chargeReportingBytes(Buffer.byteLength(bytes),'decoded');return strictJson(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(Buffer.isBuffer(bytes)?bytes:Buffer.from(bytes)));
 }
 function raw(value, limit) {
   need(typeof value === 'string' && value.length <= Math.ceil(limit / 3) * 4 && /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value), 'Invalid bounded canonical base64');
-  const bytes = Buffer.from(value, 'base64');
-  need(bytes.length <= limit && bytes.toString('base64') === value, 'Invalid base64 bytes');
+  chargeReportingBytes(value.length/4*3-(value.endsWith('==')?2:value.endsWith('=')?1:0),'base64-decoded');const bytes = Buffer.from(value, 'base64');
+  chargeReportingBytes(Math.ceil(bytes.length/3)*4,'base64');need(bytes.length <= limit && bytes.toString('base64') === value, 'Invalid base64 bytes');
   return bytes;
 }
 function scopeConfig(scope) {
@@ -69,7 +70,7 @@ function inventoryOf(capture, scope, state) {
     need(hash(bytes) === scope.inventory.sha256, 'Immutable inventory raw digest mismatch');
     const inventory = decode(bytes, CAPTURE_LIMITS.inventoryBytes);
     fields(inventory, ['schemaVersion', 'kind', 'rootFolderId', 'rootEntries', 'namespaces']);
-    need(inventory.schemaVersion === 1 && inventory.kind === 'automation-reporting-history-inventory' && inventory.rootFolderId === scope.rootFolderId && bytes.equals(Buffer.from(canonical(inventory) + '\n')), 'Invalid canonical full-history inventory');
+    chargeReportingBytes(serializedSize(inventory)+1);need(inventory.schemaVersion === 1 && inventory.kind === 'automation-reporting-history-inventory' && inventory.rootFolderId === scope.rootFolderId && bytes.equals(Buffer.from(canonical(inventory) + '\n')), 'Invalid canonical full-history inventory');
     return inventory;
   }
   fields(capture.inventory, ['mode', 'root', 'namespaces']);
@@ -120,7 +121,7 @@ function capturedRecords(capture, scope, evaluatedAt) {
     need(bytes.length === entry.size && hash(bytes) === entry.sha256, 'Record length or raw digest mismatch');
     totalBytes += bytes.length; need(totalBytes <= CAPTURE_LIMITS.totalRecordBytes, 'Aggregate record bytes exceed bound');
     const record = validateRecord(decode(bytes, CAPTURE_LIMITS.recordBytes), evaluatedAt);
-    need(bytes.equals(Buffer.from(canonical(record) + '\n')), 'Record requires exact canonical JSON and final newline');
+    chargeReportingBytes(serializedSize(record)+1);need(bytes.equals(Buffer.from(canonical(record) + '\n')), 'Record requires exact canonical JSON and final newline');
     need(record.namespace === entry.approved.namespace && entry.approved.automationIds.includes(record.automationId) && recordDigest(record) + '.json' === entry.name, 'Record scope or content digest mismatch');
     records.push(record);
   }
