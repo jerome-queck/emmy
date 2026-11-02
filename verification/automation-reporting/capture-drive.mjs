@@ -48,7 +48,6 @@ try {
         }
         await writeFile(join(selected, name + '.mjs'), text);
       }
-      // Import is outside the refusal catch. An import/parser failure never kills a mutant.
       const { consumeCapture } = await import(pathToFileURL(join(selected, source + '.mjs')).href);
       let result; let refusal;
       try { result = consumeCapture(bytesOf(value.scope), bytesOf(value.capture), { action: 'inspect', limit: 200 }, { evaluatedAt }); }

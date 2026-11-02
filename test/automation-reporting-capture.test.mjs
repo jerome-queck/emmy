@@ -24,7 +24,7 @@ test('capture uses identical full-history filesystem projection for every read a
       const local = await automationReporting({ ...request, directory }, { evaluatedAt });
       assert.deepEqual(withoutProof(consume(value, request)), local, JSON.stringify(request));
     }
-    assert.equal(consume(value).runs.length, 3); // all attempts survive; superseded bytes stay get/list-readable
+    assert.equal(consume(value).runs.length, 3);
     const output = consume(value); assert.equal(output.capture.providerLatest, 'not-established'); assert.equal(output.capture.writes, false);
     assert.equal(output.resultSha256, consume(value).resultSha256);
     assert.notEqual(output.resultSha256, consume(value, { action: 'inspect', maxAgeSeconds: 0 }).resultSha256);

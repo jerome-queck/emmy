@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "automation-reporting-history-inventory-v1.schema.json",
-  "description": "Structural shape only. Runtime also validates exact raw bytes, identities, pins, pagination, aggregate bounds and complete history.",
+  "description": "Structural shape only. Runtime also validates exact raw bytes, identities, pins, pagination, aggregate bounds and supplied inventory consistency.",
   "type": "object",
   "required": [
     "schemaVersion",
