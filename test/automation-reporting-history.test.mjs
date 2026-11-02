@@ -407,3 +407,41 @@ test('crash oracle rejects early uncertainty in isolated actual source and resto
   }
   assert.equal(results[0].sourceSha256,results[2].sourceSha256);await writeFile(join(root,'report.json'),JSON.stringify({results},null,2));
 });
+
+for(const timing of ['before-successor','claimed-successor','older-ancestor']) for(const conflict of [false,true]) test('current ancestor receipts gate '+timing+' handoff with '+(conflict?'conflicting':'matching')+' late response',async()=>{
+  const value=await setup();try {
+    const request=await prepared(value);const original=value.drive.uploadImmutable.bind(value.drive);let announce,release;
+    const started=new Promise(resolve=>announce=resolve);const held=new Promise(resolve=>release=resolve);let once=true;
+    value.drive.uploadImmutable=async args=>{const response=await original(args);if(once){once=false;announce(response);await held;return conflict?{...response,id:'conflicting-returned-id'}:response;}return response;};
+    const running=publishHistory(request,value.drive).then(result=>({result}),error=>({error:error.message}));const response=await started;
+    await recoverPublicationId({...request,actionId:'record-0:upload',id:response.id,evidence:{source:'synthetic-exact-upload-response',response}});
+    const first=await publishHistory(request,value.drive);assert.equal(first.status,'published');
+    let successor=await secondGeneration(value,first);
+    if(timing==='claimed-successor') await advanceThrough(value,successor,'record-0:download');
+    if(timing==='older-ancestor') {
+      const second=await publishHistory(successor,value.drive);assert.equal(second.status,'published');
+      const inventory=historyDecode(Buffer.from(value.drive.files.get(second.inventory.id).bytesBase64,'base64'));
+      const third=await prepareHistoryBatch({...value.input,generation:3,previous:{reference:second.inventory,inventory},captureStartedAt:'2026-01-04T00:00:00Z',captureEndedAt:'2026-01-04T00:00:01Z'});
+      successor={stateDirectory:value.stateDirectory,batchId:third.batchId};
+      await advanceThrough(value,successor,'record-0:download');
+    }
+    const snapshots=[];
+    for(const name of (await readdir(value.stateDirectory)).filter(name=>/^[a-f0-9]{64}$/.test(name)||name.startsWith('owner-'))) {
+      for(const file of await readdir(join(value.stateDirectory,name))) snapshots.push({path:join(value.stateDirectory,name,file),bytes:await readFile(join(value.stateDirectory,name,file))});
+    }
+    const calls=value.drive.calls.length;release();const late=await running;
+    assert.equal(value.drive.calls.length,calls,'late evidence itself performs no remote work');
+    for(const item of snapshots)assert.deepEqual(await readFile(item.path),item.bytes,'all prior batch, owner, receipt, recovery and closure bytes retained');
+    const journal=join(value.stateDirectory,request.batchId);const events=await Promise.all((await readdir(journal)).filter(name=>/^\d/.test(name)).map(async name=>JSON.parse(await readFile(join(journal,name)))));
+    const receipts=events.filter(event=>event.kind==='response'&&event.actionId==='record-0:upload');assert.equal(receipts.length,1);assert.equal(receipts[0].response.id,conflict?'conflicting-returned-id':response.id);
+    if(conflict) {
+      assert.match(late.error,/Recovery disagrees/);
+      const next=await publicationAction(successor);assert.equal(next.status,'blocked','contradictory ancestor cannot grant any further publication permission');assert.notEqual(next.execute,true);
+      assert.equal((await publishHistory(successor,value.drive)).status,'blocked');assert.equal(value.drive.calls.length,calls,'blocked successor performs zero new adapter effects');
+      for(const item of snapshots)assert.deepEqual(await readFile(item.path),item.bytes);
+    } else {
+      assert.equal(late.result.status,timing==='before-successor'?'published':'blocked');
+      assert.equal((await publishHistory(successor,value.drive)).status,'published','matching late receipt preserves valid handoff');assert.ok(value.drive.calls.length>calls);
+    }
+  } finally {await rm(value.root,{recursive:true,force:true});}
+});
