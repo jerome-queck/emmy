@@ -183,6 +183,10 @@ async function publicationOwner(state,checkpoint) {
   for(let index=0;index<entries.length;index++) {
     need(entries[index]===String(index).padStart(8,'0')+'.json','Owner journal gap');const raw=await readBytes(join(directory,entries[index]),CAPTURE_LIMITS.scopeBytes);const claim=historyDecode(raw,CAPTURE_LIMITS.scopeBytes);
     need(claim.sequence===index && claim.previous===previous && claim.owner===state.batch.owner && claim.scopeSha256===historyHash(canonical(state.batch.scope)) && raw.equals(historyBytes(claim)),'Publication owner binding changed'); last=claim;previous=historyHash(raw);
+    if(claim.batchId!==historyHash(historyBytes(state.batch))) {
+      const ancestor=await load({stateDirectory:dirname(state.path),batchId:claim.batchId});const current=derive(ancestor);
+      need(ancestor.batch.owner===claim.owner && same(ancestor.batch.scope,state.batch.scope) && current.done && current.status==='published' && current.generation===claim.generation,'Earlier owner generation lacks currently valid publication evidence');
+    }
   }
   if(last?.batchId===historyHash(historyBytes(state.batch))) return;
   const batchId=historyHash(historyBytes(state.batch));
