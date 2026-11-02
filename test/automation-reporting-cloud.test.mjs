@@ -81,6 +81,7 @@ test('cloud bundle executes outside repository with exact product validation and
     assert.equal(/^import .*from ['"]\.\//m.test(source), false);
     const manifest = JSON.parse(await readFile(join(root, '.local/reporting-cloud/manifest.json'), 'utf8'));
     assert.equal(manifest.sha256, hash(Buffer.from(source))); assert.equal(manifest.bytes, Buffer.byteLength(source));
+    assert.equal(manifest.generator.path,'scripts/build-reporting-cloud.mjs');const generator=await readFile(join(root,manifest.generator.path));assert.equal(manifest.generator.sha256,hash(generator));assert.equal(manifest.generator.bytes,generator.length);if(manifest.generator.sourceState==='working-tree')assert.equal(manifest.sourceState,'working-tree');
     for (const entry of manifest.sources) { const actual = await readFile(join(root, entry.path)); assert.equal(entry.sha256, hash(actual)); assert.equal(entry.bytes, actual.length); assert.ok(['working-tree','committed'].includes(entry.sourceState)); if (entry.sourceState === 'committed') { assert.match(entry.commit, /^[a-f0-9]{40}$/); } else { assert.equal(entry.commit,null); assert.equal(manifest.sourceState,'working-tree'); } }
     const schema = await readFile(join(root, 'schemas/automation-reporting-v1.schema.json'));
     assert.equal(manifest.schema.sha256, hash(schema));

@@ -7,9 +7,9 @@ try {
   else if(action==='live') {
     if(flag)throw new Error('live accepts bounded JSON lines containing action and file');
     const runtime={};const input=Buffer.alloc(4096);let used=0;
-    while(true){const count=readSync(0,input,used,1,null);if(!count){if(used)throw new Error('Incomplete live request envelope');break;}used++;if(input[used-1]===10){const envelope=JSON.parse(input.toString('utf8',0,used));const result=await runBoundedHistoryFile(envelope.action,envelope.file,{runtime,transportBytes:used});console.log(JSON.stringify(result));used=0;}else if(used===input.length)throw new Error('Live request envelope exceeds4096-byte bound');}
+    while(true){const count=readSync(0,input,used,1,null);if(!count){if(used)throw new Error('Incomplete live request envelope');break;}used++;if(input[used-1]===10){const envelope=JSON.parse(input.toString('utf8',0,used));const result=await runBoundedHistoryFile(envelope.action,envelope.file,{runtime,transportBytes:used,launch:envelope.launch});console.log(JSON.stringify(result));used=0;}else if(used===input.length)throw new Error('Live request envelope exceeds4096-byte bound');}
   } else {
-    if(flag!=='--file'||extra.length)throw new Error('Expected begin|advance|next|respond|recover|retry-read --file ABSOLUTE_REQUEST');
-    console.log(JSON.stringify(await runBoundedHistoryFile(action,path)));
+    if(flag!=='--file'||extra.length!==2||extra[0]!=='--launch'||Buffer.byteLength(extra[1])>2048)throw new Error('Expected begin|advance|next|respond|recover|retry-read --file ABSOLUTE_REQUEST --launch JSON');
+    console.log(JSON.stringify(await runBoundedHistoryFile(action,path,{launch:JSON.parse(extra[1])})));
   }
 } catch(error) {console.error(JSON.stringify({status:'blocked',reason:error.message}));process.exitCode=2;}
