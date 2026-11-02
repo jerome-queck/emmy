@@ -48,7 +48,7 @@
     },
     {
       "name": "dispatch",
-      "description": "Resolve an explicit saved destination from fresh discovery, recover private bindings, and return read-only native dispatch advice.",
+      "description": "Resolve a saved destination, recover private bindings, and advise creation, monitoring or fresh-task handover. --context-needed never permits conversation reuse.",
       "options": [
         {
           "name": "id"
