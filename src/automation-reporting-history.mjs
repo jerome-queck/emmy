@@ -216,15 +216,24 @@ function toolAction(intent,artifact) {
   if(intent.method==='uploadImmutable')return {operation:'upload_file',arguments:{file_name:args.name,parent_folder_id:args.parentId,mime_type:'application/json',file_uri:artifact.path},artifact};
   return {operation:'update_file',arguments:{fileId:args.id,mime_type:'application/json',file_uri:artifact.path},artifact};
 }
+function publicationEvidence(state, result) {
+  const metadataActions = new Set(state.events.filter(event => event.kind === 'intent' && event.method === 'getMetadata').map(event => event.actionId));
+  const trashObservations = state.events.filter(event => event.kind === 'response' && metadataActions.has(event.actionId)).map(event => {
+    const trashed = event.response?.trashed;
+    return {role:event.actionId.split(':')[0],actionId:event.actionId,id:event.response?.id,trashed,metadataState:trashed===null?'requested-field-unavailable':typeof trashed==='boolean'?'reported':'invalid-response',metadataSha256:historyHash(canonical(event.response))};
+  });
+  const value = {...result,trashObservations,activeAvailability:'not-established',providerLatest:'not-established'};
+  return {...value,resultSha256:historyHash(canonical(value))};
+}
 async function nextAction(state,checkpoint) {
   let next;
-  try {await publicationOwner(state,checkpoint);next=derive(state);} catch(error) {return {status:'blocked',generationClosed:state.events.some(event=>event.kind==='generation-closed'),reason:error.message};}
+  try {await publicationOwner(state,checkpoint);next=derive(state);} catch(error) {return publicationEvidence(state,{status:'blocked',generationClosed:state.events.some(event=>event.kind==='generation-closed'),reason:error.message});}
   if(next.closure) {await append(state,next.closure,checkpoint); return nextAction(state,checkpoint);}
-  if(next.done) return next;
+  if(next.done) return publicationEvidence(state,next);
   let created=next.existing===undefined;
   if(created) created=(await append(state,next.value,checkpoint)).created;
   const artifact=['uploadImmutable','updatePointer'].includes(next.value.method)?await uploadArtifact(state,next.value,checkpoint):null;
-  return {tool:toolAction(next.value,artifact),...(artifact===null?{}:{artifact}),status:!created&&['uploadImmutable','updatePointer'].includes(next.value.method)?'uncertain':'action-required',execute:created||!['uploadImmutable','updatePointer'].includes(next.value.method),action:next.value,generationClosed:state.events.some(event=>event.kind==='generation-closed')};
+  return publicationEvidence(state,{tool:toolAction(next.value,artifact),...(artifact===null?{}:{artifact}),status:!created&&['uploadImmutable','updatePointer'].includes(next.value.method)?'uncertain':'action-required',execute:created||!['uploadImmutable','updatePointer'].includes(next.value.method),action:next.value,generationClosed:state.events.some(event=>event.kind==='generation-closed')});
 }
 export async function publicationAction(request,{checkpoint=noCheckpoint}={}) { return nextAction(await load(request),checkpoint); }
 function guardResponse(value) {

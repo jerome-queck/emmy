@@ -88,10 +88,29 @@ export function validateHistoryInventory(inventory, scope, owner) {
   else { historyFields(inventory.previous, ['generation','inventory']); need(inventory.previous.generation === inventory.generation - 1, 'Missing inventory predecessor generation'); validateHistoryReference(inventory.previous.inventory); need(inventory.previous.inventory.parentId === owner.inventoryParentId, 'Predecessor outside approved inventory parent'); }
   return inventory;
 }
+function reportedTrash(raw) {
+  need(raw.isError !== true, 'Drive metadata tool error response');
+  need(!Object.hasOwn(raw, 'structuredContent') || raw.structuredContent && typeof raw.structuredContent === 'object' && !Array.isArray(raw.structuredContent), 'Invalid structured Drive metadata');
+  const sources = [raw, raw?.structuredContent].filter(value => value && typeof value === 'object' && Object.hasOwn(value, 'trashed'));
+  for (const source of sources) need(source.trashed === false, 'Explicit invalid or true trash metadata');
+  return sources.length ? false : null;
+}
+export function normalizeDriveMetadata(raw) {
+  need(raw && typeof raw === 'object' && !Array.isArray(raw), 'Original Drive metadata object required');
+  const trashed = reportedTrash(raw);
+  const source = Object.hasOwn(raw, 'structuredContent') ? raw.structuredContent : raw;
+  const size = typeof source.size === 'string' && /^[1-9][0-9]*$/.test(source.size) ? Number(source.size) : source.size;
+  need(Number.isSafeInteger(size) && size > 0, 'Invalid Drive metadata size');
+  const metadata = {id:source.id,name:source.name ?? source.title,parents:source.parents ?? source.parent_ids,size,mimeType:source.mimeType ?? source.mime_type,trashed,raw};
+  need(opaque(metadata.id) && opaque(metadata.name) && Array.isArray(metadata.parents) && metadata.parents.length === 1 && opaque(metadata.parents[0]), 'Exact Drive metadata identity/location required');
+  return validateRemoteMetadata(metadata,{id:metadata.id,name:metadata.name,parentId:metadata.parents[0]});
+}
 export function validateRemoteMetadata(metadata, expected, limit = CAPTURE_LIMITS.inventoryBytes) {
   historyFields(metadata, ['id','name','parents','size','mimeType','trashed','raw']);
   need(metadata.raw !== null && typeof metadata.raw === 'object' && Buffer.byteLength(canonical(metadata.raw)) <= CAPTURE_LIMITS.inventoryBytes, 'Retained original metadata response required');
-  need(metadata.id === expected.id && metadata.name === expected.name && Array.isArray(metadata.parents) && same(metadata.parents, [expected.parentId]) && metadata.trashed === false && ['application/json','application/octet-stream'].includes(metadata.mimeType) && Number.isSafeInteger(metadata.size) && metadata.size > 0 && metadata.size <= limit && (expected.size === undefined || metadata.size === expected.size), 'Wrong exact remote ID/location/type/length');
+  const reported = reportedTrash(metadata.raw);
+  need((metadata.trashed === false || metadata.trashed === null) && (reported === null || metadata.trashed === reported), 'Invalid or contradictory normalized trash metadata');
+  need(metadata.id === expected.id && metadata.name === expected.name && Array.isArray(metadata.parents) && same(metadata.parents, [expected.parentId]) && ['application/json','application/octet-stream'].includes(metadata.mimeType) && Number.isSafeInteger(metadata.size) && metadata.size > 0 && metadata.size <= limit && (expected.size === undefined || metadata.size === expected.size), 'Wrong exact remote ID/location/type/length');
   return metadata;
 }
 export function validateRemoteDownload(download, expected, limit = CAPTURE_LIMITS.inventoryBytes) {
@@ -125,11 +144,12 @@ function discovery(scopeBytes, packetBytes, checkpoint) {
   historyFields(packet, ['schemaVersion','kind','anchorsBefore','anchorsAfter','inventories','objects']);
   need(packet.schemaVersion === 1 && packet.kind === 'automation-reporting-discovery-capture', 'Expected discovery acquisition packet');
   const before = uniqueReadbacks(packet.anchorsBefore); const after = uniqueReadbacks(packet.anchorsAfter); const inventories = uniqueReadbacks(packet.inventories); const objects = uniqueReadbacks(packet.objects);
-  const steps = []; const pending = []; const current = []; const usedInventories = new Set(); const usedObjects = new Set(); const checkpoints = [];
+  const trashObservations = []; const steps = []; const pending = []; const current = []; const usedInventories = new Set(); const usedObjects = new Set(); const checkpoints = [];
   const acquire = (kind, expected, values, limit) => {
     const value=values.get(expected.id);
     if(value===undefined) { steps.push({kind,expected,method:'get_file_metadata',args:{fileId:expected.id,fields:'id,name,parents,size,mimeType,trashed'}}); return null; }
     historyFields(value,['metadata','download']); validateRemoteMetadata(value.metadata,expected,limit);
+    trashObservations.push({role:kind,id:expected.id,trashed:value.metadata.trashed,metadataSha256:historyHash(canonical(value.metadata))});
     if(value.download===null) { steps.push({kind,expected,method:'fetch',args:{url:`https://drive.google.com/file/d/${encodeURIComponent(expected.id)}/view`,download_raw_file:true,include_base64:false},rawAcquisition:'Materialize returned file reference; read complete bounded original bytes locally. No provider inline base64.'}); return null; }
     return readback(value,expected,limit);
   };
@@ -177,11 +197,12 @@ function discovery(scopeBytes, packetBytes, checkpoint) {
   need([...before.keys(),...after.keys()].every(id=>scope.owners.some(owner=>owner.anchor.id===id)), 'Unregistered anchor readback');
   if (!steps.length) need(usedInventories.size === inventories.size && usedObjects.size === objects.size, 'Unlisted acquisition objects');
   need(steps.length <= CAPTURE_LIMITS.files + CAPTURE_LIMITS.rootEntries * 2, 'Acquisition step bound exceeded');
-  return {scope,packet,steps,pending,current,checkpoint:{schemaVersion:1,owners:checkpoints}};
+  return {scope,packet,steps,pending,current,trashObservations,checkpoint:{schemaVersion:1,owners:checkpoints}};
 }
 export function planDiscovery(scopeBytes, packetBytes, { checkpoint = null } = {}) {
   const result = discovery(scopeBytes,packetBytes,checkpoint);
-  return {schemaVersion:1,status:result.steps.length?'acquisition-required':result.pending.length?'publication-pending':'acquired',pending:result.pending,steps:result.steps, boundary:'complete registered admitted producer history only; unregistered writers and provider latest unknown',writes:false};
+  const plan = {schemaVersion:1,status:result.steps.length?'acquisition-required':result.pending.length?'publication-pending':'acquired',pending:result.pending,steps:result.steps,trashObservations:result.trashObservations,activeAvailability:'not-established',providerLatest:'not-established', boundary:'complete registered admitted producer history only; unregistered writers and provider latest unknown',writes:false};
+  return {...plan,resultSha256:historyHash(canonical(plan))};
 }
 export function consumeDiscovery(scopeBytes, packetBytes, request, { evaluatedAt = new Date().toISOString(), checkpoint = null } = {}) {
   const result = discovery(scopeBytes,packetBytes,checkpoint);
@@ -190,6 +211,6 @@ export function consumeDiscovery(scopeBytes, packetBytes, request, { evaluatedAt
   const bytes = historyBytes(inventory); const scope = {...result.scope.recordScope,inventory:{mode:'pinned',id:'validated-discovery-inventory',sha256:historyHash(bytes)}};
   const capture = {schemaVersion:1,kind:'automation-reporting-capture',inventory:{mode:'pinned',id:scope.inventory.id,bytesBase64:bytes.toString('base64')},objects:result.packet.objects.map(value=>({id:value.metadata.id,bytesBase64:value.download.bytesBase64}))};
   const view = consumeCapture(historyBytes(scope),historyBytes(capture),request,{evaluatedAt});
-  const provenance={scopeSha256:historyHash(scopeBytes),packetSha256:historyHash(packetBytes),priorCheckpointSha256:checkpoint===null?null:historyHash(canonical(checkpoint)),checkpoint:result.checkpoint,boundary:'complete registered admitted producer history only',unregisteredWriters:'unknown',providerLatest:'not-established',pointerAtomicity:'not-established',writes:false};
+  const provenance={scopeSha256:historyHash(scopeBytes),packetSha256:historyHash(packetBytes),priorCheckpointSha256:checkpoint===null?null:historyHash(canonical(checkpoint)),checkpoint:result.checkpoint,trashObservations:result.trashObservations,activeAvailability:'not-established',boundary:'complete registered admitted producer history only',unregisteredWriters:'unknown',providerLatest:'not-established',pointerAtomicity:'not-established',writes:false};
   return {...view,discovery:provenance,resultSha256:historyHash(canonical({view,discovery:provenance}))};
 }

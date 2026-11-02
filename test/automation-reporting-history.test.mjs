@@ -111,6 +111,11 @@ test('standalone discovers and consumes exact immutable generations outside chec
     const build=spawnSync(process.execPath,['scripts/build-reporting-cloud.mjs'],{encoding:'utf8'});assert.equal(build.status,0,build.stderr);const artifact=join(value.root,'cloud.mjs');await writeFile(artifact,await readFile('.local/reporting-cloud/automation-reporting-cloud-v2.mjs'));const scopePath=join(value.root,'scope.json');const packetPath=join(value.root,'capture.json');await writeFile(scopePath,historyBytes(value.scope));await writeFile(packetPath,historyBytes(packet));
     const run=command=>spawnSync(process.execPath,[artifact,command,'--scope',scopePath,'--capture',packetPath,...(command==='discover-consume'?['--action','inspect','--evaluated-at',evaluatedAt]:[])],{cwd:value.root,encoding:'utf8'});
     assert.equal(run('discover-plan').status,0);const output=run('discover-consume');assert.equal(output.status,0,output.stderr);assert.equal(JSON.parse(output.stdout).scan.records,1);
+    for(const collection of ['anchorsBefore','anchorsAfter','inventories','objects'])for(const value of packet[collection])value.metadata.trashed=null;
+    await writeFile(packetPath,historyBytes(packet));const unknown=run('discover-consume');assert.equal(unknown.status,0,unknown.stderr);assert.equal(JSON.parse(unknown.stdout).discovery.activeAvailability,'not-established');assert.ok(JSON.parse(unknown.stdout).discovery.trashObservations.every(item=>item.trashed===null));
+    const provider=join(value.root,'metadata.json');const response={structuredContent:{id:'one',title:'one.json',parent_ids:['parent'],mime_type:'application/json',size:'12'}};await writeFile(provider,historyBytes(response));
+    const normalize=()=>spawnSync(process.execPath,[artifact,'discover-metadata','--file',provider],{cwd:value.root,encoding:'utf8'});const normalized=normalize();assert.equal(normalized.status,0,normalized.stderr);assert.equal(JSON.parse(normalized.stdout).trashed,null);assert.deepEqual(JSON.parse(normalized.stdout).raw,response);assert.deepEqual(historyDecode(await readFile(provider)),response);
+    response.structuredContent.trashed=true;await writeFile(provider,historyBytes(response));assert.equal(normalize().status,1);
     packet.objects=[];await writeFile(packetPath,historyBytes(packet));assert.equal(run('discover-consume').status,1);
     const cliRequest=join(value.root,'request.json');await writeFile(cliRequest,historyBytes(request));const next=spawnSync(process.execPath,['scripts/automation-reporting-history.mjs','next','--file',cliRequest],{encoding:'utf8'});assert.equal(next.status,0,next.stderr);assert.equal(JSON.parse(next.stdout).status,'published');
   } finally {await rm(value.root,{recursive:true,force:true});}
@@ -444,4 +449,91 @@ for(const timing of ['before-successor','claimed-successor','older-ancestor']) f
       assert.equal((await publishHistory(successor,value.drive)).status,'published','matching late receipt preserves valid handoff');assert.ok(value.drive.calls.length>calls);
     }
   } finally {await rm(value.root,{recursive:true,force:true});}
+});
+
+test('unknown trash metadata permits exact content closure and retains separate observations',async()=>{
+  const value=await setup();try {
+    const original=value.drive.getMetadata.bind(value.drive);value.drive.getMetadata=async args=>({...await original(args),trashed:null});
+    const request=await prepared(value);const published=await publishHistory(request,value.drive);assert.equal(published.status,'published');
+    assert.equal(published.activeAvailability,'not-established');assert.ok(published.trashObservations.every(item=>item.trashed===null));
+    const packet=await value.drive.packet(value.scope);packet.anchorsBefore[0].metadata.trashed=false;
+    const view=consume(value,packet);assert.equal(view.scan.complete,true);assert.equal(view.discovery.activeAvailability,'not-established');
+    assert.deepEqual(view.discovery.trashObservations.filter(item=>item.role.startsWith('anchor')).map(item=>item.trashed),[false,null]);
+    assert.notEqual(view.resultSha256,consume(value,{...packet,anchorsBefore:packet.anchorsAfter}).resultSha256);
+    assert.equal(planDiscovery(historyBytes(value.scope),historyBytes(packet)).trashObservations.length,4);
+    const count=value.drive.calls.length;assert.deepEqual(await publishHistory(request,value.drive),published);assert.equal(value.drive.calls.length,count);
+    for(const collection of ['anchorsBefore','anchorsAfter','inventories','objects']) for(const state of [true,'false',undefined]) {
+      const changed=structuredClone(packet);if(state===undefined)delete changed[collection][0].metadata.trashed;else changed[collection][0].metadata.trashed=state;
+      assert.throws(()=>consume(value,changed),collection+' '+state);
+    }
+    for(const collection of ['anchorsBefore','anchorsAfter','inventories','objects']) for(const state of [null,false]) {
+      const changed=structuredClone(packet);changed[collection][0].metadata.trashed=state;changed[collection][0].metadata.raw={structuredContent:{trashed:true}};assert.throws(()=>consume(value,changed),/trash/i);
+    }
+    for(const change of [p=>{p.objects[0].metadata.parents=['wrong'];},p=>{p.objects[0].metadata.size=CAPTURE_LIMITS.recordBytes+1;},p=>{p.objects[0].download.bytesBase64='eA==';},p=>{p.objects[0].download.bytesBase64=Buffer.from(Buffer.from(p.objects[0].download.bytesBase64,'base64').toString().replace('completed','skipped  ')).toString('base64');},p=>{p.objects[0].download.complete=false;}]) {const changed=structuredClone(packet);change(changed);assert.throws(()=>consume(value,changed));}
+  } finally {await rm(value.root,{recursive:true,force:true});}
+});
+
+test('Drive metadata normalizer preserves actual omission and refuses explicit invalid trash',async()=>{
+  const {normalizeDriveMetadata}=await import('../src/automation-reporting-discovery.mjs');assert.equal(typeof normalizeDriveMetadata,'function');
+  const raw={id:'one',name:'one.json',parents:['parent'],size:'12',mimeType:'application/json'};
+  const metadata=normalizeDriveMetadata(raw);assert.equal(metadata.trashed,null);assert.deepEqual(metadata.raw,raw);assert.equal(Object.hasOwn(raw,'trashed'),false);assert.equal(metadata.size,12);
+  const wrapped={content:[{type:'text',text:'Action completed'}],structuredContent:{id:'one',title:'one.json',parent_ids:['parent'],mime_type:'application/json',size:'12'}};
+  assert.deepEqual(normalizeDriveMetadata(wrapped),{...metadata,raw:wrapped});
+  assert.equal(normalizeDriveMetadata({...raw,trashed:false}).trashed,false);
+  assert.throws(()=>normalizeDriveMetadata({...wrapped,isError:true}),/tool error/);
+  for(const structuredContent of [null,[],42,'metadata'])assert.throws(()=>normalizeDriveMetadata({...raw,structuredContent}),/structured/);
+  for(const trashed of [true,null,'false',0])assert.throws(()=>normalizeDriveMetadata({...raw,trashed}),/trash/i);
+});
+
+test('every publication role refuses known trash and invalid metadata before its raw fetch',async()=>{
+  for(const role of [1,2,3,4])for(const state of [true,'false',undefined,'raw-true']) {
+    const value=await setup();try {
+      const original=value.drive.getMetadata.bind(value.drive);let count=0;
+      value.drive.getMetadata=async args=>{const response={...await original(args),trashed:null};if(++count===role){if(state===undefined)delete response.trashed;else if(state==='raw-true')response.raw={trashed:true};else response.trashed=state;}return response;};
+      const request=await prepared(value);const result=await publishHistory(request,value.drive);assert.equal(result.status,'blocked');assert.equal(value.drive.calls.filter(call=>call.method==='downloadRaw').length,role-1);
+      assert.equal(result.generationClosed,role>=3);const calls=value.drive.calls.length;assert.equal((await publishHistory(request,value.drive)).status,'blocked');assert.equal(value.drive.calls.length,calls);
+      assert.equal(value.drive.calls.filter(call=>call.method==='updatePointer').length,role===4?1:0);
+    }finally{await rm(value.root,{recursive:true,force:true});}
+  }
+});
+
+test('unknown metadata retry and pointer interruption retain journal and never duplicate mutations',async()=>{
+  const {retryPublicationRead}=await import('../src/automation-reporting-history.mjs');
+  for(const fault of ['metadata','raw','pointer']) {
+    const value=await setup();try {
+      const metadata=value.drive.getMetadata.bind(value.drive);value.drive.getMetadata=async args=>({...await metadata(args),trashed:null});
+      const raw=value.drive.downloadRaw.bind(value.drive);let once=true;
+      if(fault==='metadata'){const normal=value.drive.getMetadata;value.drive.getMetadata=async args=>{const result=await normal(args);if(once){once=false;return {...result,size:0};}return result;};}
+      if(fault==='raw')value.drive.downloadRaw=async args=>{const result=await raw(args);if(once){once=false;return {...result,bytesBase64:'eA=='};}return result;};
+      let pending;const update=value.drive.updatePointer.bind(value.drive);if(fault==='pointer')value.drive.updatePointer=async args=>{pending=args;throw new Error('held effect');};
+      const request=await prepared(value);const first=await publishHistory(request,value.drive);assert.equal(first.status,fault==='pointer'?'uncertain':'blocked');
+      const journal=join(value.stateDirectory,request.batchId);const old=await Promise.all((await readdir(journal)).filter(name=>/^\d/.test(name)).map(async name=>({name,bytes:await readFile(join(journal,name),'utf8')})));
+      const last=old.map(item=>JSON.parse(item.bytes)).filter(event=>event.kind==='intent').at(-1);
+      if(fault==='pointer'){assert.ok(first.trashObservations.every(item=>item.trashed===null));await update(pending);}
+      await retryPublicationRead({...request,actionId:last.actionId,evidence:{reason:'explicit exact-ID retry after retained failure'}});
+      const result=await publishHistory(request,value.drive);assert.equal(result.status,'published');assert.ok(result.trashObservations.some(item=>item.trashed===null));
+      for(const item of old)assert.equal(await readFile(join(journal,item.name),'utf8'),item.bytes);
+      const file=join(value.root,'request.json');await writeFile(file,historyBytes(request));const reopened=spawnSync(process.execPath,['scripts/automation-reporting-history.mjs','next','--file',file],{encoding:'utf8'});assert.equal(reopened.status,0,reopened.stderr);assert.deepEqual(JSON.parse(reopened.stdout),result);
+      assert.equal(value.drive.calls.filter(call=>call.method==='uploadImmutable').length,2);assert.equal(value.drive.calls.filter(call=>call.method==='updatePointer').length,1);
+    }finally{await rm(value.root,{recursive:true,force:true});}
+  }
+});
+
+test('normalized trash cannot hide retained raw false, null, malformed or wrapper contradiction',()=>{
+  const expected={id:'one',name:'one.json',parentId:'parent'};
+  const metadata={id:'one',name:'one.json',parents:['parent'],size:12,mimeType:'application/json',trashed:null,raw:{}};
+  for(const raw of [{isError:true},{structuredContent:null},{trashed:false},{trashed:null},{trashed:'false'},{trashed:0},{trashed:true,structuredContent:{trashed:false}},{trashed:false,structuredContent:{trashed:true}}])assert.throws(()=>validateRemoteMetadata({...metadata,raw},expected),/trash|tool error|structured/i);
+  assert.doesNotThrow(()=>validateRemoteMetadata({...metadata,trashed:false,raw:{trashed:false}},expected));
+});
+
+test('unknown metadata preserves full two-generation lineage and persisted checkpoints',async()=>{
+  const value=await setup();try {
+    const metadata=value.drive.getMetadata.bind(value.drive);value.drive.getMetadata=async args=>({...await metadata(args),trashed:null});
+    const first=await publishHistory(await prepared(value),value.drive);const packet=await value.drive.packet(value.scope);const checkpoint=consume(value,packet).discovery.checkpoint;
+    const additional=runRecord('second-null-generation');await writeFile(join(value.directory,'own',recordDigest(additional)+'.json'),historyBytes(additional));
+    const request=await secondGeneration(value,first);const second=await publishHistory(request,value.drive);assert.equal(second.status,'published');const nextPacket=await value.drive.packet(value.scope);assert.equal(nextPacket.inventories.length,2);
+    const view=consume(value,nextPacket,{checkpoint});assert.equal(view.scan.records,2);assert.equal(view.scan.complete,true);assert.ok(view.discovery.trashObservations.every(item=>item.trashed===null));
+    assert.throws(()=>consume(value,packet,{checkpoint:view.discovery.checkpoint}),/regression|fork/);
+    nextPacket.inventories.pop();assert.throws(()=>consume(value,nextPacket,{checkpoint}),/Incomplete/);
+  }finally{await rm(value.root,{recursive:true,force:true});}
 });
