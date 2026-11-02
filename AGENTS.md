@@ -17,7 +17,7 @@ Run the installed pstack maintenance workflows when features or covered code cha
 
 ## Standing thread and model policy
 
-Create a fresh project-bound thread for each distinct new objective. Continue an existing thread only when continuing that same objective and its context is needed. A shared repository or topic is insufficient. Rediscover uncertain dispatches before retrying so an ambiguous launch cannot create duplicate work.
+Create a fresh project-bound task for every nontrivial unit or follow-on phase, even within the same objective. Read prior tasks for evidence, normally without messaging them. Transfer a concise evidence-based handover referencing those tasks, exact artifacts and revisions, verified outcomes, open findings, authority and remaining checks. Do not resume old conversations for further substantive work. Preserve monitoring of already-running operations without duplicating or restarting their effects. Rediscover uncertain dispatches before retrying. Independent review and separately assigned merge work also use fresh tasks. Keep dispatcher transport bounded and separate from implementation. Automation archive-on-success does not extend to ordinary tasks.
 
 When private project bindings select an authorized persistent native dispatcher, recover it and the objective through the trusted installed `dispatch` command before routing. Keep that dispatcher pinned for coordination. It creates fresh coding children; implementation belongs to those children. Use [private dispatch recovery](docs/native-dispatch.md), existing source authorization and parent-owned native progress. The command is read-only advice, not a native hook or access grant. Exact dispatcher and job identities remain private.
 

@@ -179,9 +179,13 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
   assertAdvice('remote-restored-with-fresh-reported-source', remoteRestore, 'create-via-dispatcher');
   remoteRestore.records.find(record => record.category === 'target').homeEpoch = 'wrong-epoch';
   assertAdvice('remote-restore-cannot-borrow-pre-epoch-source', remoteRestore, null);
-  const continued = make(); continued.contextNeeded = true; assertAdvice('same-objective-context-needed', continued, 'continue-child');
+  const continued = make(); continued.contextNeeded = true; assertAdvice('same-objective-follow-on-preserves-running-monitor', continued, 'read-or-wait');
   const completed = make(); completed.records.at(-1).tasks[0].status = 'completed'; assertAdvice('native-completion-is-outcome-inspection', completed, 'inspect-outcome');
-  completed.contextNeeded = true; assertAdvice('authorized-completed-context-continuation', completed, 'continue-child');
+  completed.contextNeeded = true; assertAdvice('completed-follow-on-requires-fresh-task', completed, 'prepare-fresh-task');
+  for (const input of [completed, { ...completed, records: [...completed.records].reverse() }]) {
+    const handover = dispatch.dispatchDecision(input);
+    check('dispatch-recovery', { case: 'fresh-task-handover-retains-prior-identity', actual: handover }, handover.followOn?.next === 'fresh-project-task' && handover.followOn?.priorThreadId === 'ready-child' && !handover.nativeCreateRequest, 'Fresh-task advice references the prior task and cannot launch duplicate work.');
+  }
   for (const resolution of [undefined, 'confirmed-no-effect']) {
     const input = make({ phase: 'uncertain' }); const uncertain = input.records.at(-1); const absence = make({ phase: 'absent' }).records.at(-1);
     absence.supersedes = { hash: uncertain.hash, reason: 'Explicit targeted native no-effect rediscovery.' }; absence.dispatch.resolution = resolution; absence.dispatch.attemptKey = uncertain.dispatch.attemptKey; absence.hash = records.digest({ resolution: resolution ?? null });
