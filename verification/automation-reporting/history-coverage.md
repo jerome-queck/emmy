@@ -1,6 +1,6 @@
 # Admitted-history publication lifecycle mapping
 
-This new bounded model is separate from the four existing TLC graphs and 25 paired model/source witnesses. Those pins, graphs and assumptions remain unchanged. The lifecycle model adds no TLC claim.
+This new bounded model is separate from the four existing TLC graphs and 25 paired model/source witnesses. Those models, invariants, bounds and original paired witnesses remain unchanged. The lifecycle model adds no TLC claim.
 
 Run `node verification/automation-reporting/history-model.mjs` and `node --test test/automation-reporting-history.test.mjs`. The explicit transition graph exhausts 950 states and 1737 edges with one owner, two competing callbacks, two source records, two generations at most one crash, and one explicit readback refresh. A generation includes its full source objects plus one immutable inventory. Correct no-effect/unknown creates and pointer intents can terminate uncertain. The implementation bounds read refresh to twenty attempts per exact object readback; the model abstracts this to one refresh to check safety, not arbitrary retry convergence. No liveness is asserted. Baseline and restored graphs must agree. Five model mutations must return their named violated invariant and finite path.
 
