@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "automation-reporting-discovery-anchor-v1.schema.json",
+  "description": "One approved stable exact-ID anchor per publication owner. Generation zero is an explicit bootstrap, not accepted history. Mutable discovery advice, not CAS or provider latest.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "owner",
+    "generation",
+    "inventory"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "automation-reporting-discovery-anchor"
+    },
+    "owner": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "inventory": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "parentId",
+            "name",
+            "size",
+            "sha256"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 400
+            },
+            "parentId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 400
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 400
+            },
+            "size": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4194304
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "generation": {
+            "const": 0
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "inventory": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "inventory": {
+            "type": "object",
+            "required": [
+              "id",
+              "parentId",
+              "name",
+              "size",
+              "sha256"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 400
+              },
+              "parentId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 400
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 400
+              },
+              "size": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4194304
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

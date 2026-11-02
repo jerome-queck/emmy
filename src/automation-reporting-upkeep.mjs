@@ -1,3 +1,4 @@
+import { prepareHistoryBatch, publishHistory } from './automation-reporting-history.mjs';
 import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { open, lstat, realpath, opendir, link, unlink } from 'node:fs/promises';
@@ -135,7 +136,7 @@ export async function readUpkeepPlan(file) {
   return strictJson(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
 }
 
-export async function applyUpkeep(plan, { checkpoint = async () => {} } = {}) {
+export async function applyUpkeep(plan, { checkpoint = async () => {}, publication = null, adapter = null } = {}) {
   need(plan?.schemaVersion === 1 && safeId(plan.namespace) && safeId(plan.fromNamespace), 'Invalid plan');
   need(Array.isArray(plan.moves) && plan.moves.length <= 5000 && Array.isArray(plan.directories) && Array.isArray(plan.findings), 'Invalid bounded plan');
   need(same(await directoryIdentity(plan.root.path), plan.root) && same(await directoryIdentity(plan.source.path), plan.source), 'Store identity changed');
@@ -195,5 +196,10 @@ export async function applyUpkeep(plan, { checkpoint = async () => {} } = {}) {
       await checkpoint('moved', { source: item.source, target: item.target });
     }
   }
-  return { schemaVersion: 1, status: findings.length ? 'needs-attention' : repaired ? 'repaired' : 'noop', writes: repaired > 0, repaired, findings, assumptions };
+  let historyPublication = null;
+  if (publication !== null) {
+    const batch = await prepareHistoryBatch({ ...publication, directory: plan.root.path });
+    historyPublication = adapter === null ? batch : await publishHistory({ stateDirectory: publication.stateDirectory, batchId: batch.batchId }, adapter);
+  }
+  return { ...(historyPublication === null ? {} : { historyPublication }), schemaVersion: 1, status: findings.length ? 'needs-attention' : repaired ? 'repaired' : 'noop', writes: repaired > 0, repaired, findings, assumptions };
 }

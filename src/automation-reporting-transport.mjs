@@ -1,3 +1,4 @@
+import { prepareHistoryBatch, publishHistory } from './automation-reporting-history.mjs';
 import { resolve } from 'node:path';
 import { realpath } from 'node:fs/promises';
 import { automationReporting, aggregate, validateRecord, recordDigest, requireExistingNamespace } from './automation-reporting.mjs';
@@ -86,7 +87,7 @@ async function readHistory(directory, namespace, evaluatedAt) {
   return [...records.values()];
 }
 
-export async function transportAutomationReporting({ sourceDirectory, directory, namespace, dryRun = false }, { evaluatedAt = new Date().toISOString() } = {}) {
+export async function transportAutomationReporting({ sourceDirectory, directory, namespace, dryRun = false, publication = null }, { adapter = null, evaluatedAt = new Date().toISOString() } = {}) {
   need(typeof namespace === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$/.test(namespace), 'Explicit namespace required');
   need(typeof dryRun === 'boolean', 'Invalid dry-run flag');
   need(typeof sourceDirectory === 'string' && typeof directory === 'string', 'Source and target directories required');
@@ -100,5 +101,10 @@ export async function transportAutomationReporting({ sourceDirectory, directory,
   const targetView = validateHistory([...target, ...projection.records], evaluatedAt);
   const results = [];
   if (!dryRun) for (const record of projection.records) results.push(await automationReporting({ action: 'publish-own-record', directory, namespace, record, synced: true }, { evaluatedAt }));
-  return { schemaVersion: 1, status: dryRun ? 'dry-run' : 'local-synced-store-readback-verified', writes: !dryRun && results.some(result => result.status === 'published'), records: projection.records.length, mapping: projection.mapping, skipped: projection.skipped, normalizations: projection.normalizations, conflicts: { sourceCurrentRecords: projection.conflictedCurrentRecords, projectedTargetCurrentRecords: targetView.records.filter(record => record.conflict).length }, publication: 'pending-remote-verification', userDelivery: 'pending', evidencePolicy: 'Each projected run binds its exact original source record digest; raw evidence references remain in the local fallback.', receiptPolicy: 'Original exact-subject publication and delivery receipts skipped; create target receipts after actual remote readback.', results };
+  let historyPublication = null;
+  if (!dryRun && publication !== null) {
+    const batch = await prepareHistoryBatch({ ...publication, directory }, { evaluatedAt });
+    historyPublication = adapter === null ? batch : await publishHistory({ stateDirectory: publication.stateDirectory, batchId: batch.batchId }, adapter);
+  }
+  return { schemaVersion: 1, status: dryRun ? 'dry-run' : 'local-synced-store-readback-verified', writes: !dryRun && results.some(result => result.status === 'published'), records: projection.records.length, mapping: projection.mapping, skipped: projection.skipped, normalizations: projection.normalizations, conflicts: { sourceCurrentRecords: projection.conflictedCurrentRecords, projectedTargetCurrentRecords: targetView.records.filter(record => record.conflict).length }, ...(historyPublication === null ? {} : { historyPublication }), publication: 'pending-remote-verification', userDelivery: 'pending', evidencePolicy: 'Each projected run binds its exact original source record digest; raw evidence references remain in the local fallback.', receiptPolicy: 'Original exact-subject publication and delivery receipts skipped; create target receipts after actual remote readback.', results };
 }

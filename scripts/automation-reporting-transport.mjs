@@ -1,12 +1,13 @@
 #!/usr/bin/env node
+import { readHistoryRequest } from '../src/automation-reporting-history.mjs';
 import { assertNoCredentials } from '../src/reporting-privacy.mjs';
 import { transportAutomationReporting } from '../src/automation-reporting-transport.mjs';
 
 try {
   const args = process.argv.slice(2); const request = {};
-  const flags = { '--source-directory': 'sourceDirectory', '--directory': 'directory', '--namespace': 'namespace', '--mapping-cursor': 'mappingCursor' };
+  const flags = { '--source-directory': 'sourceDirectory', '--directory': 'directory', '--namespace': 'namespace', '--mapping-cursor': 'mappingCursor', '--publication-file': 'publicationFile' };
   if (args.length === 1 && ['--help', '-h'].includes(args[0])) {
-    process.stdout.write(JSON.stringify({ ok: true, help: 'automation-reporting-transport --source-directory <private-fallback> --directory <verified-synced-Records> --namespace <owner> [--dry-run] [--mapping-cursor <source-digest>]. Mapping and normalization pages show at most 50 entries. Local publication only; remote verification remains pending.' }) + '\n');
+    process.stdout.write(JSON.stringify({ ok: true, help: 'automation-reporting-transport --source-directory <private-fallback> --directory <verified-synced-Records> --namespace <owner> [--dry-run] [--mapping-cursor <source-digest>] [--publication-file <private-history-request>]. Mapping and normalization pages show at most 50 entries. Local publication only; remote verification remains pending.' }) + '\n');
   } else {
     while (args.length) {
       const flag = args.shift(); const key = flag === '--dry-run' ? 'dryRun' : flags[flag];
@@ -17,7 +18,8 @@ try {
       request[key] = value;
     }
     if (!request.sourceDirectory || !request.directory || !request.namespace) throw new Error('Source directory, target directory and namespace required');
-    const { mappingCursor = null, ...transportRequest } = request;
+    const { mappingCursor = null, publicationFile = null, ...transportRequest } = request;
+    if (publicationFile !== null) transportRequest.publication = await readHistoryRequest(publicationFile);
     if (mappingCursor !== null && !/^[a-f0-9]{64}$/.test(mappingCursor)) throw new Error('Expected source digest mapping cursor');
     const { mapping, results, normalizations, ...data } = await transportAutomationReporting(transportRequest);
     const page = values => {
