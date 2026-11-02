@@ -368,8 +368,7 @@ test('overlapping callback preserves a late pointer RPC response after old readb
 });
 
 
-test('late same-owner upload callback retains original response after exact-ID recovery without another mutation',async()=>{
-  for(const conflict of [false,true]) {
+for(const conflict of [false,true]) test('late same-owner upload callback retains '+(conflict?'conflicting':'matching')+' original response after exact-ID recovery without another mutation',async()=>{
     const value=await setup();try {
       const request=await prepared(value);const original=value.drive.uploadImmutable.bind(value.drive);let announce,release;
       const started=new Promise(resolve=>announce=resolve);const held=new Promise(resolve=>release=resolve);let first=true;
@@ -383,11 +382,11 @@ test('late same-owner upload callback retains original response after exact-ID r
       const actual=events.filter(event=>event.kind==='response'&&event.actionId==='record-0:upload');assert.equal(actual.length,1,'actual delayed upload response retained');
       assert.equal(canonical(actual[0].response),canonical(conflict?{...response,id:'conflicting-returned-id'}:response));
       for(const entry of before)assert.deepEqual(await readFile(join(journal,entry.name)),entry.bytes,'prior recovery and closure bytes retained');
+      const retainedNames=await readdir(journal);await assert.rejects(recordPublicationResponse({...request,actionId:'record-0:upload',response:{...response,raw:{authorization:'Bearer abcdefghijklmnopqrstuvwxyz123456'}}}),/Credential/);assert.deepEqual(await readdir(journal),retainedNames,'late credentials refuse before persistence');
       assert.equal(value.drive.calls.length,calls,'late response grants no new remote effect');assert.equal(value.drive.calls.filter(call=>call.method==='uploadImmutable').length,2);
       if(conflict){assert.match(late.error,/Recovery disagrees with returned exact ID/);assert.equal((await publicationAction(request)).status,'blocked');}
       else {assert.equal(late.result.status,'published');assert.equal((await publicationAction(request)).status,'published');}
     } finally {await rm(value.root,{recursive:true,force:true});}
-  }
 });
 
 
@@ -396,10 +395,10 @@ test('crash oracle rejects early uncertainty in isolated actual source and resto
   await cp('src',join(root,'src'),{recursive:true});await cp('test',join(root,'test'),{recursive:true});
   const sourcePath=join(root,'src','automation-reporting-history.mjs');const source=await readFile(sourcePath,'utf8');
   const anchor="  const anchor={schemaVersion:1,kind:'automation-reporting-discovery-anchor'";assert.equal(source.split(anchor).length-1,1);
-  const results=[];
+  const results=[];const environment={...process.env};delete environment.NODE_TEST_CONTEXT;
   for(const variant of ['baseline','mutant','restored']) {
     await writeFile(sourcePath,variant==='mutant'?source.replace(anchor,"  if(!state.events.some(e=>e.kind==='recovery')) return {done:true,status:'uncertain',execute:false};\n"+anchor):source);
-    const result=spawnSync(process.execPath,['--test','--test-name-pattern=^fresh-process crash','test/automation-reporting-history.test.mjs'],{cwd:root,encoding:'utf8'});
+    const result=spawnSync(process.execPath,['--test','--test-name-pattern=^fresh-process crash','test/automation-reporting-history.test.mjs'],{cwd:root,encoding:'utf8',env:environment});
     await writeFile(join(root,variant+'.stdout.log'),result.stdout);await writeFile(join(root,variant+'.stderr.log'),result.stderr);
     const output=result.stdout+result.stderr;assert.equal(result.error,undefined);
     if(variant==='mutant') {assert.equal(result.status,1);assert.match(output,/crash baseline must publish/);assert.match(output,/'uncertain'/);assert.match(output,/'published'/);assert.doesNotMatch(output,/SyntaxError|ERR_MODULE_NOT_FOUND/);}

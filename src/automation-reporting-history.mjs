@@ -104,6 +104,7 @@ function responses(state,key) {return state.events.filter(event=>event.kind==='r
 function responseOf(state,key) {const found=responses(state,key); need(found.length<=1,'Conflicting publication responses'); return found[0]?.response;}
 function knownId(state,key,response) {
   const recoveries=state.events.filter(event=>event.kind==='recovery'&&event.actionId===key); need(recoveries.length<=1,'Conflicting exact-ID recoveries');
+  need(recoveries[0]===undefined || response?.id===undefined || recoveries[0].id===response.id,'Recovery disagrees with returned exact ID');
   const id=recoveries[0]?.id??response?.id;
   return typeof id==='string'&&/^[a-zA-Z0-9_-]{1,400}$/.test(id)?id:null;
 }
@@ -231,8 +232,10 @@ async function retainResponse(state,actionId,response,checkpoint) {
   const intent=state.events.find(event=>event.kind==='intent'&&event.actionId===actionId); need(intent,'Response needs retained exact intent');
   need(response!==undefined && Buffer.byteLength(canonical(response))<=CAPTURE_LIMITS.packetBytes,'Bounded actual response required'); guardResponse(response);
   const existing=responseOf(state,actionId); if(existing!==undefined) {need(same(existing,response),'Publication response conflict'); return {status:'identical'};}
-  need(intent.method==='updatePointer' || !state.events.some(event=>event.kind==='intent'&&event.sequence>intent.sequence),'Stale response after later effect refused');
-  await append(state,{kind:'response',actionId,response},checkpoint); return {status:'retained'};
+  need(intent.method==='updatePointer' || (intent.method==='uploadImmutable' && state.events.some(event=>event.kind==='recovery'&&event.actionId===actionId)) || !state.events.some(event=>event.kind==='intent'&&event.sequence>intent.sequence),'Stale response after later effect refused');
+  await append(state,{kind:'response',actionId,response},checkpoint);
+  if(intent.method==='uploadImmutable') knownId(state,actionId,response);
+  return {status:'retained'};
 }
 export async function recordPublicationResponse({stateDirectory,batchId,actionId,response},{checkpoint=noCheckpoint}={}) { return retainResponse(await load({stateDirectory,batchId}),actionId,response,checkpoint); }
 export async function recoverPublicationId({stateDirectory,batchId,actionId,id,evidence},{checkpoint=noCheckpoint}={}) {
