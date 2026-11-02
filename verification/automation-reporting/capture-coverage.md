@@ -1,6 +1,6 @@
 # Capture boundary review mapping
 
-This mapping is proposed for independent source review. It does not advance `coverage.json`, its reviewed commit or any digest pin. The existing four TLC graphs and25 paired model/source witnesses remain required. Their assumption of already captured records does not prove provider pagination, JSON parsing, complete raw-byte acquisition, arbitrary history completeness or cloud transport.
+This mapping records the independently reviewed capture boundary. The reviewed source closure includes the shared read-view extraction and capture owner. The existing four TLC graphs and25 paired model/source witnesses remain required. Their assumption of already captured records does not prove provider pagination, JSON parsing, complete raw-byte acquisition, arbitrary history completeness or cloud transport.
 
 | Production owner | Behavior | Behavioral witness |
 | --- | --- | --- |
