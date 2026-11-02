@@ -11,6 +11,7 @@ import { historyBytes, historyHash } from '../src/automation-reporting-discovery
 let sequence=0;
 const fresh=request=>({...request,jobId:'boundary-'+sequence++,executionId:'only'});
 const ref=(value,current)=>({stateDirectory:value.stateDirectory,captureId:current.captureId,cursor:current.cursor});
+async function register(value){const result=await beginBoundedHistory(fresh(value.request));assert.equal(result.status,'incomplete',JSON.stringify(result));return result;}
 async function launch(request){const info=await lstat(request.stateDirectory,{bigint:true});return {stateDirectory:request.stateDirectory,jobId:request.jobId,executionId:request.executionId,controllerDev:String(info.dev),controllerIno:String(info.ino),...(request.jobLedger?{jobLedger:request.jobLedger}:{}),...(request.attemptDeadline?{attemptDeadline:request.attemptDeadline}:{})};}
 async function fileCall(value,action,request,{path=join(value.base,'request-'+sequence+++'.json'),write=true,cli=false}={}){
   if(write)await writeFile(path,historyBytes(request));const metadata=await launch(request);
@@ -21,11 +22,12 @@ async function seal(value,initial){let current=initial??await beginBoundedHistor
 
 test('file acquisition reserves cumulative allowance before body and retains exact refusal ledger',async()=>{
   const value=await boundedFixture(1,832);try{
+    await register(value);
     const initial=await fileCall(value,'begin',{...value.request,jobId:'cumulative',executionId:'one',padding:'x'.repeat(110000)},{cli:true});assert.equal(initial.status,'incomplete',JSON.stringify(initial));
     const first=await fileCall(value,'advance',{...ref(value,initial),jobId:'cumulative',executionId:'two',jobLedger:initial.jobLedger,padding:'x'.repeat(100000)},{cli:true});assert.equal(first.status,'prepared',JSON.stringify(first));
     const body={...ref(value,first),jobId:'cumulative',executionId:'three',jobLedger:first.jobLedger,padding:'x'.repeat(80000)};
     const stopped=await fileCall(value,'advance',body,{cli:true});assert.equal(stopped.status,'budget-stop');assert.equal(stopped.execute,false);assert.ok(stopped.jobLedger);assert.ok(stopped.actuals.chargedBytes<=HISTORY_JOB_CAP);
-    assert.equal(stopped.actuals.readBytes-first.actuals.readBytes,first.jobLedger.size,'Only prior ledger acquired; oversized continuation body stays unread');
+    assert.equal(stopped.actuals.readBytes-first.actuals.readBytes,first.jobLedger.size+stopped.control.registration.size,'Only prior ledger and registered profile acquired; oversized continuation body stays unread');
     const durable=await readFile(join(value.stateDirectory,'bounded-jobs','cumulative-'+stopped.jobLedger.cursor+'.json'));assert.equal(historyHash(durable),stopped.jobLedger.cursor);assert.deepEqual(JSON.parse(durable).actuals,stopped.actuals);
     const repeated=await fileCall(value,'advance',{...body,jobLedger:stopped.jobLedger,padding:'changed'},{cli:true});assert.equal(repeated.status,'execution-already-claimed');assert.equal(repeated.execute,false);assert.ok(repeated.control.readBytes<=4096);assert.equal(repeated.actuals,undefined);
   }finally{await rm(value.base,{recursive:true,force:true});}
@@ -33,8 +35,8 @@ test('file acquisition reserves cumulative allowance before body and retains exa
 
 test('file launch refuses unknown metadata before body and makes expired refusals durable',async()=>{
   const value=await boundedFixture(1,832);try{
-    const missing=join(value.base,'absent.json');assert.equal((await runBoundedHistoryFile('begin',missing)).status,'controller-refused');
-    const request=fresh({...value.request,attemptDeadline:'2001-01-01T00:00:00Z'});const expired=await fileCall(value,'begin',request,{path:missing,write:false});assert.equal(expired.status,'controller-refused');assert.equal(expired.actuals.readBytes,0);assert.equal(expired.control.readBytes,0);assert.ok(expired.control.writeBytes>0);
+    const missing=join(value.base,'absent.json');assert.equal((await runBoundedHistoryFile('begin',missing)).status,'controller-refused');await register(value);
+    const request=fresh({...value.request,attemptDeadline:'2001-01-01T00:00:00Z'});const expired=await fileCall(value,'begin',request,{path:missing,write:false});assert.equal(expired.status,'controller-refused');assert.equal(expired.actuals.readBytes,0);assert.ok(expired.control.readBytes>0&&expired.control.readBytes<=4096);assert.ok(expired.control.writeBytes>0);
     const claim=JSON.parse(await readFile(join(value.stateDirectory,'bounded-jobs','execution-'+request.jobId+'-'+request.executionId+'.claim')));assert.equal(claim.status,'refused');assert.equal(claim.knownActuals.readBytes,0);assert.equal(claim.reservedBytes,HISTORY_JOB_CAP);assert.match(claim.uncertainty,/unavailable/);
     const duplicate=await fileCall(value,'begin',{...request,padding:'changed'},{path:missing,write:false,cli:true});assert.equal(duplicate.status,'execution-already-claimed');assert.equal(duplicate.execute,false);
     const extra=await runBoundedHistoryFile('begin',missing,{launch:{...await launch(fresh(value.request)),scope:value.request.scope}});assert.equal(extra.status,'controller-refused');
@@ -44,12 +46,12 @@ test('file launch refuses unknown metadata before body and makes expired refusal
 test('missing corrupt changed oversized and exhausted file requests cannot escape accounting or replay',async()=>{
   for(const kind of ['missing','corrupt','changed','oversized','exhausted']){
     const value=await boundedFixture(1,832);try{
-      const request=fresh(value.request);const file=join(value.base,'input.json');
+      await register(value);const request=fresh(value.request);const file=join(value.base,'input.json');
       if(kind==='corrupt')await writeFile(file,'{invalid');else if(kind==='changed')await writeFile(file,historyBytes({...request,jobId:'other-job'}));else if(kind==='oversized')await writeFile(file,Buffer.alloc(HISTORY_JOB_CAP,120));else if(kind!=='missing')await writeFile(file,historyBytes(request));
       if(kind==='exhausted')request.jobLedger={cursor:'a'.repeat(64),size:100,chargedBytes:HISTORY_JOB_CAP-1,startedAt:Date.now(),deadline:Date.now()+120000};
       const result=await fileCall(value,'begin',request,{path:file,write:false});assert.equal(result.execute,false);assert.ok(['blocked','budget-stop','controller-refused'].includes(result.status),JSON.stringify(result));
-      if(kind==='exhausted'){assert.equal(result.control.readBytes,0);assert.ok(result.control.writeBytes>0);continue;}
-      assert.ok(result.jobLedger,kind);assert.ok(result.actuals.chargedBytes<=HISTORY_JOB_CAP);assert.equal(result.actuals.categories.acquired??0,['missing','oversized'].includes(kind)?0:(await lstat(file)).size);
+      if(kind==='exhausted'){assert.ok(result.control.readBytes>0&&result.control.readBytes<=4096);assert.ok(result.control.writeBytes>0);continue;}
+      assert.ok(result.jobLedger,kind);assert.ok(result.actuals.chargedBytes<=HISTORY_JOB_CAP);assert.equal(result.actuals.categories.acquired??0,result.control.registration.size+(['missing','oversized'].includes(kind)?0:(await lstat(file)).size));
       const repeated=await fileCall(value,'begin',request,{path:file,write:false,cli:true});assert.equal(repeated.status,'execution-already-claimed');assert.equal(repeated.execute,false);
     }finally{await rm(value.base,{recursive:true,force:true});}
   }
@@ -91,9 +93,37 @@ test('copied-source contradiction faults preserve owner invalidation before any 
 
 test('generated bounded CLI executes outside checkout with exact source semantics and launch refusal',async()=>{
   const value=await boundedFixture(1,832);try{
-    const build=spawnSync(process.execPath,['scripts/build-reporting-cloud.mjs'],{encoding:'utf8'});assert.equal(build.status,0,build.stderr);const manifest=JSON.parse(await readFile('.local/reporting-cloud/manifest.json'));const artifact=await readFile('.local/reporting-cloud/'+manifest.artifact);assert.equal(historyHash(artifact),manifest.sha256);const executable=join(value.base,'cloud.mjs');await writeFile(executable,artifact);
+    await register(value);const build=spawnSync(process.execPath,['scripts/build-reporting-cloud.mjs'],{encoding:'utf8'});assert.equal(build.status,0,build.stderr);const manifest=JSON.parse(await readFile('.local/reporting-cloud/manifest.json'));const artifact=await readFile('.local/reporting-cloud/'+manifest.artifact);assert.equal(historyHash(artifact),manifest.sha256);const executable=join(value.base,'cloud.mjs');await writeFile(executable,artifact);
     const request=fresh(value.request);const metadata=await launch(request);const input=join(value.base,'generated-request.json');await writeFile(input,historyBytes(request));const args=[executable,'history-bounded','begin','--file',input,'--launch',JSON.stringify(metadata)];const run=()=>spawnSync(process.execPath,args,{cwd:value.base,encoding:'utf8'});const initial=run();assert.equal(initial.status,0,initial.stderr);const actual=JSON.parse(initial.stdout);const expected=await beginBoundedHistory(fresh(value.request));for(const key of ['status','captureId','cursor','phase','execute'])assert.equal(actual[key],expected[key],key);assert.ok(actual.actuals.chargedBytes<=HISTORY_JOB_CAP);
     await rm(input);const repeated=run();assert.equal(repeated.status,0,repeated.stderr);assert.equal(JSON.parse(repeated.stdout).status,'execution-already-claimed');assert.equal(JSON.parse(repeated.stdout).execute,false);
     const unsafe=spawnSync(process.execPath,[executable,'history-bounded','begin','--file',input],{cwd:value.base,encoding:'utf8'});assert.equal(unsafe.status,1);assert.match(unsafe.stderr,/launch/);
   }finally{await rm(value.base,{recursive:true,force:true});}
+});
+
+test('unregistered and source-overlapping file launches refuse before bodies or source writes',async()=>{
+  for(const overlap of [false,true]){
+    const value=await boundedFixture(1,832);try{
+      const stateDirectory=overlap?value.directory:value.stateDirectory;const before=await readdir(stateDirectory);const request=fresh({...value.request,stateDirectory});const path=join(value.base,'unregistered.json');await writeFile(path,historyBytes(request));const result=await runBoundedHistoryFile('begin',path,{launch:await launch(request)});assert.equal(result.status,'controller-refused');assert.equal(result.execute,false);assert.equal(result.control.readBytes,0);assert.equal(result.control.writeBytes,0);assert.deepEqual(await readdir(stateDirectory),before);
+    }finally{await rm(value.base,{recursive:true,force:true});}
+  }
+});
+
+test('registered profile rejects changed source owner and scope before source observations',async()=>{
+  for(const kind of ['source','owner','scope']){
+    const value=await boundedFixture(1,832);try{
+      await register(value);const request=fresh(value.request);if(kind==='source')request.directory=value.stateDirectory;if(kind==='owner')request.owner='another-owner';if(kind==='scope')request.scope={...request.scope,recordScope:{...request.scope.recordScope,rootFolderId:'changed-root'}};
+      const sourceBefore=await readdir(value.directory);const result=await fileCall(value,'begin',request);assert.equal(result.status,'blocked');assert.match(result.reason,/registered source, owner or scope/);assert.ok(result.jobLedger);assert.equal(result.actuals.reservedProviderCalls,0);assert.deepEqual(await readdir(value.directory),sourceBefore);assert.equal(result.actuals.readBytes,result.control.registration.size+(await lstat(join(value.base,(await readdir(value.base)).find(name=>name.startsWith('request-'))))).size);
+    }finally{await rm(value.base,{recursive:true,force:true});}
+  }
+});
+
+test('large error reasons retain exact known bytes and bounded durable output',async()=>{
+  const value=await boundedFixture(1,832);try{
+    const bad=fresh({...value.request,directory:'/'+'x'.repeat(180000)});const direct=await beginBoundedHistory(bad);assert.equal(direct.status,'blocked');assert.equal(direct.reasonTruncated,true);assert.ok(direct.reason.length<=256);assert.ok(direct.jobLedger);assert.ok(direct.actuals.chargedBytes<=HISTORY_JOB_CAP);
+    await register(value);const file=await fileCall(value,'begin',fresh(bad));assert.equal(file.status,'blocked');assert.ok(file.jobLedger);assert.match(file.reason,/registered source/);assert.ok(file.actuals.readBytes>180000);const bytes=await readFile(join(value.stateDirectory,'bounded-jobs',file.jobId+'-'+file.jobLedger.cursor+'.json'));assert.equal(historyHash(bytes),file.jobLedger.cursor);assert.deepEqual(JSON.parse(bytes).actuals,file.actuals);assert.ok(Buffer.byteLength(JSON.stringify(file))<=8192);
+  }finally{await rm(value.base,{recursive:true,force:true});}
+});
+
+test('unknown and inherited operation names refuse through actual CLI before any input or state work',async()=>{
+  const value=await boundedFixture(1,832);try{await register(value);const request=fresh(value.request);const metadata=await launch(request);const before=await readdir(join(value.stateDirectory,'bounded-jobs'));const absent=join(value.base,'unread-missing.json');for(const action of ['unknown','constructor','toString','__proto__']){const result=spawnSync(process.execPath,['scripts/automation-reporting-bounded.mjs',action,'--file',absent,'--launch',JSON.stringify(metadata)],{encoding:'utf8'});assert.equal(result.status,0,result.stderr);const refused=JSON.parse(result.stdout);assert.equal(refused.status,'controller-refused');assert.equal(refused.execute,false);assert.deepEqual(await readdir(join(value.stateDirectory,'bounded-jobs')),before);}}finally{await rm(value.base,{recursive:true,force:true});}
 });
