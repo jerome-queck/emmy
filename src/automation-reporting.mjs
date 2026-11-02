@@ -355,19 +355,22 @@ export async function automationReporting(request, { evaluatedAt = new Date().to
     }
     return { status: request.action === 'validate' ? 'valid' : 'dry-run', id: recordDigest(record), writes: false, nativePublication: 'pending', userDelivery: 'pending' };
   }
+  return projectReadView(request, await scan(selected, evaluatedAt), { evaluatedAt });
+}
+export function projectReadView(request, snapshot, { evaluatedAt = new Date().toISOString() } = {}) {
+  need(object(request) && ['status', 'diagnose', 'reconcile', 'inspect', 'list', 'get'].includes(request.action), 'Unknown reporting read action');
   need(request.automationId === undefined || id(request.automationId), 'Invalid automation filter');
   need(request.namespace === undefined || id(request.namespace), 'Invalid namespace filter');
-  const snapshot = await scan(selected, evaluatedAt);
   const ownScope = record => (!request.namespace || record.namespace === request.namespace) && (!request.automationId || record.automationId === request.automationId);
   const ownedRecords = snapshot.records.filter(ownScope);
   const result = aggregate(snapshot.records, { ...snapshot, evaluatedAt, maxAgeSeconds: request.maxAgeSeconds ?? 86400, controlAuthority: request.controlAuthority ?? null });
   if (request.namespace || request.automationId) scopeReadView(result, request, ownedRecords);
-  snapshot.records = ownedRecords;
+
   if (['status', 'diagnose', 'reconcile'].includes(request.action)) return summaryView(result, request);
   if (request.action === 'inspect') return detailView(result, request);
   if (request.action === 'get') {
     need(digest(request.id), 'Expected exact record digest');
-    const record = snapshot.records.find(record => recordDigest(record) === request.id);
+    const record = ownedRecords.find(record => recordDigest(record) === request.id);
     return { status: record ? result.status : 'needs-attention', record: record ?? null, findings: record ? summaryView(result, request).findings : [...summaryView(result, request).findings, 'missing-record'], findingPage: summaryView(result, request).findingPage, scan: result.scan };
   }
   const limit = request.limit ?? 50; const cursor = request.cursor ?? null;
@@ -375,7 +378,7 @@ export async function automationReporting(request, { evaluatedAt = new Date().to
   need(request.query === undefined || typeof request.query === 'string' && request.query.length <= 200, 'Invalid bounded search');
   need(request.automationId === undefined || id(request.automationId), 'Invalid automation filter');
   need(request.namespace === undefined || id(request.namespace), 'Invalid namespace filter');
-  const candidates = [...snapshot.records].map(record => ({ id: recordDigest(record), ...record })).sort((a, b) => a.id.localeCompare(b.id)).filter(record => (!cursor || record.id > cursor) && (!request.namespace || record.namespace === request.namespace) && (!request.automationId || record.automationId === request.automationId) && (!request.query || canonical(record).toLowerCase().includes(request.query.toLowerCase())));
+  const candidates = [...ownedRecords].map(record => ({ id: recordDigest(record), ...record })).sort((a, b) => a.id.localeCompare(b.id)).filter(record => (!cursor || record.id > cursor) && (!request.namespace || record.namespace === request.namespace) && (!request.automationId || record.automationId === request.automationId) && (!request.query || canonical(record).toLowerCase().includes(request.query.toLowerCase())));
   const items = candidates.slice(0, limit);
   return { status: result.status, items, nextCursor: candidates.length > limit ? items.at(-1).id : null, findings: summaryView(result, request).findings, findingPage: summaryView(result, request).findingPage, scan: result.scan, limits: ['Cursor pagination is over observed immutable IDs; concurrent additions before the cursor require a fresh scan.'] };
 }

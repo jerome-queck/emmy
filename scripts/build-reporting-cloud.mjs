@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const names = ['bounded-json', 'reporting-privacy', 'improvement-report', 'automation-reporting-outcome', 'automation-reporting-expectations', 'automation-reporting', 'automation-reporting-binding'];
+const names = ['bounded-json', 'reporting-privacy', 'improvement-report', 'automation-reporting-outcome', 'automation-reporting-expectations', 'automation-reporting', 'automation-reporting-binding', 'automation-reporting-capture'];
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const sources = [];
 let bundle = '#!/usr/bin/env node\n// Generated from the exact product modules. Do not edit.\nconst modules = {};\n';
@@ -35,7 +35,7 @@ const { constants: cloudConstants } = await import('node:fs');
 const { isAbsolute: cloudAbsolute, resolve: cloudResolve, dirname: cloudDirname, parse: cloudParse } = await import('node:path');
 const { createHash: cloudHash } = await import('node:crypto');
 const cloudNeed = (ok, message) => { if (!ok) throw new Error(message); };
-async function cloudRead(path, limit = 32769) {
+async function cloudRead(path, limit = 32769, raw = false) {
   const handle = await cloudOpen(path, cloudConstants.O_RDONLY | cloudConstants.O_NOFOLLOW | cloudConstants.O_NONBLOCK);
   try {
     const stat = await handle.stat();
@@ -43,7 +43,7 @@ async function cloudRead(path, limit = 32769) {
     const bytes = Buffer.alloc(limit + 1); let count = 0;
     while (count < bytes.length) { const read = await handle.read(bytes, count, bytes.length - count, null); if (!read.bytesRead) break; count += read.bytesRead; }
     cloudNeed(count <= limit, 'Input exceeds byte bound');
-    return new TextDecoder('utf-8', { fatal: true }).decode(bytes.subarray(0, count));
+    return raw ? bytes.subarray(0, count) : new TextDecoder('utf-8', { fatal: true }).decode(bytes.subarray(0, count));
   } finally { await handle.close(); }
 }
 async function cloudOutput(path, bytes) {
@@ -72,10 +72,30 @@ async function cloudOutput(path, bytes) {
 }
 async function cloudMain(args) {
   if (args.length === 1 && args[0] === '--help') {
-    console.log('Node 24+ standard libraries only. prepare --namespace OWN --automation-id ID --file INPUT --to ABSOLUTE_OUTPUT; verify --namespace OWN --automation-id ID --file CANONICAL --id SHA256. bind --namespace OWN --automation-id ID --control-namespace CONTROL --control-automation-id ID --file MANIFEST --to PRIVATE_OUTPUT [--scheduled-for EXACT_UTC --nominal-slot-evidence REF]. Binding is a bounded reported control snapshot, not authentication or global latest history. prepare/verify validate schema, time, identity and export privacy only. Namespace history, native publication, delivery and underlying work require independent evidence.'); return;
+    console.log('consume --scope FILE --capture FILE --action status|inspect|list|get --evaluated-at UTC [--namespace NS --automation-id ID --id SHA256 --query TEXT --cursor SHA256 --limit N --max-age-seconds N --finding-cursor TEXT]. Reads already acquired bounded history; no provider calls. Node 24+ standard libraries only. prepare --namespace OWN --automation-id ID --file INPUT --to ABSOLUTE_OUTPUT; verify --namespace OWN --automation-id ID --file CANONICAL --id SHA256. bind --namespace OWN --automation-id ID --control-namespace CONTROL --control-automation-id ID --file MANIFEST --to PRIVATE_OUTPUT [--scheduled-for EXACT_UTC --nominal-slot-evidence REF]. Binding is a bounded reported control snapshot, not authentication or global latest history. prepare/verify validate schema, time, identity and export privacy only. Namespace history, native publication, delivery and underlying work require independent evidence.'); return;
   }
   cloudNeed(Number(process.versions.node.split('.')[0]) >= 24, 'Node 24+ required; runtime unavailable is a blocker');
   const [command, ...flags] = args;
+  if (command === 'consume') {
+    const options = {};
+    const required = ['--scope', '--capture', '--action', '--evaluated-at'];
+    const optional = { '--namespace': 'namespace', '--automation-id': 'automationId', '--id': 'id', '--query': 'query', '--cursor': 'cursor', '--limit': 'limit', '--max-age-seconds': 'maxAgeSeconds', '--finding-cursor': 'findingCursor' };
+    cloudNeed(flags.length % 2 === 0, 'Expected paired consume options');
+    for (let at = 0; at < flags.length; at += 2) {
+      cloudNeed([...required, ...Object.keys(optional)].includes(flags[at]) && !Object.hasOwn(options, flags[at]) && flags[at + 1]?.length > 0, 'Invalid or duplicate consume option');
+      options[flags[at]] = flags[at + 1];
+    }
+    cloudNeed(required.every(key => Object.hasOwn(options, key)), 'Missing scope, capture, action or evaluation time');
+    const request = { action: options['--action'] };
+    for (const [flag, key] of Object.entries(optional)) if (Object.hasOwn(options, flag)) {
+      if (['limit', 'maxAgeSeconds'].includes(key)) cloudNeed(/^(?:0|[1-9][0-9]*)$/.test(options[flag]), 'Expected bounded integer option');
+      request[key] = ['limit', 'maxAgeSeconds'].includes(key) ? Number(options[flag]) : options[flag];
+    }
+    const consumer = modules['automation-reporting-capture'];
+    const scope = await cloudRead(options['--scope'], consumer.CAPTURE_LIMITS.scopeBytes, true);
+    const capture = await cloudRead(options['--capture'], consumer.CAPTURE_LIMITS.packetBytes, true);
+    console.log(JSON.stringify(consumer.consumeCapture(scope, capture, request, { evaluatedAt: options['--evaluated-at'] }))); return;
+  }
   if (command === 'bind') {
     const options = {};
     const required = ['--namespace','--automation-id','--control-namespace','--control-automation-id','--file','--to'];
@@ -128,6 +148,13 @@ const controlSchemaBytes = await readFile(join(root, 'schemas/automation-reporti
 await writeFile(join(directory, 'automation-reporting-v2.schema.json'), controlSchemaBytes, { mode: 0o600 });
 const outcomeSchemaBytes = await readFile(join(root, 'schemas/automation-reporting-v3.schema.json'));
 await writeFile(join(directory, 'automation-reporting-v3.schema.json'), outcomeSchemaBytes, { mode: 0o600 });
-const manifest = { schemaVersion: 2, sourceState: sources.every(source => source.sourceState === 'committed') ? 'committed' : 'working-tree', artifact, sha256: sha256(bundle), bytes: Buffer.byteLength(bundle), sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), sources, schema: { path: 'schemas/automation-reporting-v1.schema.json', sha256: sha256(schemaBytes), bytes: schemaBytes.length }, controlSchema: { path: 'schemas/automation-reporting-v2.schema.json', sha256: sha256(controlSchemaBytes), bytes: controlSchemaBytes.length }, outcomeSchema: { path: 'schemas/automation-reporting-v3.schema.json', sha256: sha256(outcomeSchemaBytes), bytes: outcomeSchemaBytes.length }, supportedOutcomeVersions: [1, 2], capabilities: ['Readable scheduled-unbound outcomes with explicit original evidence and generation provenance.', 'Legacy prepare/verify schema and privacy validation.', 'Exact nominal-slot binding to a bounded reported control snapshot.'], limitations: ['Legacy readers and tools refuse nested outcome version 2; install compatible readers first.', 'Runtime must provide Node 24+ standard libraries.', 'Prepare/verify are schema/privacy only; producer ancestry requires namespace history.', 'Binding validates supplied control closure only, not authentication or globally latest unseen history.', 'No native publication, delivery or underlying-work verification.'] };
+const captureSchemaNames = ['automation-reporting-read-scope-v1', 'automation-reporting-capture-v1', 'automation-reporting-history-inventory-v1'];
+const captureSchemas = [];
+for (const name of captureSchemaNames) {
+  const path = `schemas/${name}.schema.json`; const bytes = await readFile(join(root, path));
+  await writeFile(join(directory, `${name}.schema.json`), bytes, { mode: 0o600 });
+  captureSchemas.push({ path, sha256: sha256(bytes), bytes: bytes.length });
+}
+const manifest = { captureSchemas, schemaVersion: 2, sourceState: sources.every(source => source.sourceState === 'committed') ? 'committed' : 'working-tree', artifact, sha256: sha256(bundle), bytes: Buffer.byteLength(bundle), sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), sources, schema: { path: 'schemas/automation-reporting-v1.schema.json', sha256: sha256(schemaBytes), bytes: schemaBytes.length }, controlSchema: { path: 'schemas/automation-reporting-v2.schema.json', sha256: sha256(controlSchemaBytes), bytes: controlSchemaBytes.length }, outcomeSchema: { path: 'schemas/automation-reporting-v3.schema.json', sha256: sha256(outcomeSchemaBytes), bytes: outcomeSchemaBytes.length }, supportedOutcomeVersions: [1, 2], capabilities: ['Supported read-only consume of separately approved scope and complete raw-byte history capture.', 'Readable scheduled-unbound outcomes with explicit original evidence and generation provenance.', 'Legacy prepare/verify schema and privacy validation.', 'Exact nominal-slot binding to a bounded reported control snapshot.'], limitations: ['Consume validates supplied history and exact bytes; provider authentication and globally latest history are not established.', 'Actual complete acquisition mechanism and cloud runtime require separate acceptance.', 'Legacy readers and tools refuse nested outcome version 2; install compatible readers first.', 'Runtime must provide Node 24+ standard libraries.', 'Prepare/verify are schema/privacy only; producer ancestry requires namespace history.', 'Binding validates supplied control closure only, not authentication or globally latest unseen history.', 'No native publication, delivery or underlying-work verification.'] };
 await writeFile(join(directory, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n', { mode: 0o600 });
 console.log(JSON.stringify({ artifact: '.local/reporting-cloud/' + artifact, sha256: manifest.sha256, bytes: manifest.bytes }));

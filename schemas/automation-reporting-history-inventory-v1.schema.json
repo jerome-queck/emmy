@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "automation-reporting-history-inventory-v1.schema.json",
+  "description": "Structural shape only. Runtime also validates exact raw bytes, identities, pins, pagination, aggregate bounds and complete history.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "rootFolderId",
+    "rootEntries",
+    "namespaces"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "automation-reporting-history-inventory"
+    },
+    "rootFolderId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 400,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "rootEntries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "parentId",
+          "type"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$"
+          },
+          "parentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+          },
+          "type": {
+            "const": "folder"
+          }
+        }
+      },
+      "maxItems": 200
+    },
+    "namespaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "namespace",
+          "folderId",
+          "entries"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$"
+          },
+          "folderId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "name",
+                "parentId",
+                "type",
+                "size",
+                "sha256"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 400,
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                },
+                "name": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}\\.json$"
+                },
+                "parentId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 400,
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                },
+                "type": {
+                  "const": "file"
+                },
+                "size": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 32769
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              }
+            },
+            "maxItems": 5000
+          }
+        }
+      },
+      "maxItems": 200
+    }
+  }
+}
