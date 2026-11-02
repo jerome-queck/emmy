@@ -12,7 +12,7 @@ let sequence=0;
 const fresh=request=>({...request,jobId:'boundary-'+sequence++,executionId:'only'});
 const ref=(value,current)=>({stateDirectory:value.stateDirectory,captureId:current.captureId,cursor:current.cursor});
 async function register(value){const result=await beginBoundedHistory(fresh(value.request));assert.equal(result.status,'incomplete',JSON.stringify(result));return result;}
-async function launch(request){const info=await lstat(request.stateDirectory,{bigint:true});return {stateDirectory:request.stateDirectory,jobId:request.jobId,executionId:request.executionId,controllerDev:String(info.dev),controllerIno:String(info.ino),...(request.jobLedger?{jobLedger:request.jobLedger}:{}),...(request.attemptDeadline?{attemptDeadline:request.attemptDeadline}:{})};}
+async function launch(request){const info=await lstat(request.stateDirectory,{bigint:true});return {stateDirectory:request.stateDirectory,jobId:request.jobId,executionId:request.executionId,controllerDev:String(info.dev),controllerIno:String(info.ino),...(request.actionId?{captureId:request.captureId,cursor:request.cursor,actionId:request.actionId}:{}),...(request.recoverReceipt?{recoverReceipt:{open:request.recoverReceipt.open}}:{}),...(request.jobLedger?{jobLedger:request.jobLedger}:{}),...(request.attemptDeadline?{attemptDeadline:request.attemptDeadline}:{})};}
 async function fileCall(value,action,request,{path=join(value.base,'request-'+sequence+++'.json'),write=true,cli=false}={}){
   if(write)await writeFile(path,historyBytes(request));const metadata=await launch(request);
   if(!cli)return runBoundedHistoryFile(action,path,{launch:metadata});
