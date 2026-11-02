@@ -1,28 +1,30 @@
 {
   "schemaVersion": 1,
   "kind": "bounded-tla-automation-reporting-safety",
-  "sourceCommit": "f2e574768c400cd46043ad8b1314479ccca65651",
-  "reviewBasis": "Independent source review accepted the exact narrow reporting source closure committed at sourceCommit and its source-to-model mapping against the public initialBaseCommit. Each source hash matches that committed file. The report validator retains its complete validation function and pure helpers while excluding unrelated storage, claims and readers. Reporting publication retains exclusive pending open, complete write/close, atomic hard link, exact readback and temporary-only unlink. Aggregation retains complete valid conflict-free capture, dependency, staleness, reported-assurance, terminal execution and receipt stability guards. The three bounded models, named production mapping, assumptions, bounds and all nineteen paired model/source controls remain unchanged. Controller, binding, transport, parser completeness, provider truth, actual scheduling and delivery remain separate behavioral or native acceptance boundaries. The integration adds only reporting command metadata, bounded request routing, credential-safe diagnostics and its registered test/behavior/model checks. Strict stale-source refusals were retained before this reviewed provenance update; they do not count as source mutation witnesses. Private operational reports and historical build logs are not exported source provenance. Independent committed-source review accepted scheduled-unbound outcome v2 and exact source/model correspondence. The run envelope, terminal/receipt invariants and publication awaits are unchanged. Original source clocks, exact retrospective null-report terminal basis, immutable coverage/timing/telemetry and identical report carry map to the new bounded UnboundOutcome model; scheduled-unbound is an explicit excluded expectation candidate. All original nineteen paired model/source controls remain, with six added intended pairs. Parser, original clock boundaries, source-to-target basis mapping, legacy byte preservation, export, cloud tool and dashboard have separate behavioral checks. Unknown nominal identity never becomes manual or a fabricated slot. Compatible readers accept old records; old readers refuse new nested versions. Initial source drift refusals remain retained and are not mutation witnesses. Source and every listed verification artifact hash describe this exact reviewed committed source, with no relaxed invariant or bound. Independent review accepted the direct capture consumer and the exact read-view extraction at5bdd198. Only the shared read projection changed in the prior formal source closure; publication and aggregation guards and awaits are unchanged. The four models, invariants, bounds and25 paired model/source controls are unchanged. Capture parsing, inventory consistency, pagination and standalone consumption have a separate reviewed behavioral mapping and fifteen additional actual-source mutation pairs. These pins establish reviewed bytes, not additional TLC properties or provider completeness. The strict changed-source refusal was observed and retained before this update. Independent source, privacy, finite-model and current-evidence handoff reviews accepted the complete admitted-history publication extension through b85d48e. The production source closure is committed at sourceCommit. Historical closure cannot override a later retained contradictory receipt. Unique mutation dispatch, unknown pointer uncertainty, exact-ID recovery, pre-download role bounds, retained late responses and current ancestor validation have concrete source regressions. The crash oracle independently rejects an early-uncertainty production mutation and restores the exact 96-cutoff sequence and 84/8/4 partition. The existing four TLC models, invariants, bounds and twenty-five paired model/source controls remain unchanged. New publication/discovery semantics belong to their separate finite lifecycle graph and behavioral mapping, not expanded TLC proof. The explicit graph preserves held pointer effects and checks five properties at 950 states and 1737 edges with five designated counterexamples and eight actual-source witness pairs. Source/mapping drift refusals were retained before this reviewed pin update. No provider authentication, globally latest history, CAS, arbitrary in-flight operation quiescence, complete hidden admission, deployment, workload or delivery proof follows. Independent exact committed-source review accepted nullable requested trash metadata at f2e5747. Required normalized false or null preserves exact admitted content closure while reporting per-role availability observations. Positive trash, tool errors, malformed fields and retained-raw contradictions refuse. Original responses and anchor phases remain visible; active availability and provider latest are not established. The standalone normalizer adds no provider calls or writes. These are behavioral boundary controls outside the unchanged finite graph and TLC models; no invariant, bound, source pair or crash class is weakened. The stale-source refusal was retained before this refresh.",
+  "sourceCommit": "63f03d4fe057636d54e83f46cafd3cd6b96b3415",
+  "reviewBasis": "Independent source review accepted the exact narrow reporting source closure committed at sourceCommit and its source-to-model mapping against the public initialBaseCommit. Each source hash matches that committed file. The report validator retains its complete validation function and pure helpers while excluding unrelated storage, claims and readers. Reporting publication retains exclusive pending open, complete write/close, atomic hard link, exact readback and temporary-only unlink. Aggregation retains complete valid conflict-free capture, dependency, staleness, reported-assurance, terminal execution and receipt stability guards. The three bounded models, named production mapping, assumptions, bounds and all nineteen paired model/source controls remain unchanged. Controller, binding, transport, parser completeness, provider truth, actual scheduling and delivery remain separate behavioral or native acceptance boundaries. The integration adds only reporting command metadata, bounded request routing, credential-safe diagnostics and its registered test/behavior/model checks. Strict stale-source refusals were retained before this reviewed provenance update; they do not count as source mutation witnesses. Private operational reports and historical build logs are not exported source provenance. Independent committed-source review accepted scheduled-unbound outcome v2 and exact source/model correspondence. The run envelope, terminal/receipt invariants and publication awaits are unchanged. Original source clocks, exact retrospective null-report terminal basis, immutable coverage/timing/telemetry and identical report carry map to the new bounded UnboundOutcome model; scheduled-unbound is an explicit excluded expectation candidate. All original nineteen paired model/source controls remain, with six added intended pairs. Parser, original clock boundaries, source-to-target basis mapping, legacy byte preservation, export, cloud tool and dashboard have separate behavioral checks. Unknown nominal identity never becomes manual or a fabricated slot. Compatible readers accept old records; old readers refuse new nested versions. Initial source drift refusals remain retained and are not mutation witnesses. Source and every listed verification artifact hash describe this exact reviewed committed source, with no relaxed invariant or bound. Independent review accepted the direct capture consumer and the exact read-view extraction at5bdd198. Only the shared read projection changed in the prior formal source closure; publication and aggregation guards and awaits are unchanged. The four models, invariants, bounds and25 paired model/source controls are unchanged. Capture parsing, inventory consistency, pagination and standalone consumption have a separate reviewed behavioral mapping and fifteen additional actual-source mutation pairs. These pins establish reviewed bytes, not additional TLC properties or provider completeness. The strict changed-source refusal was observed and retained before this update. Independent source, privacy, finite-model and current-evidence handoff reviews accepted the complete admitted-history publication extension through b85d48e. The production source closure is committed at sourceCommit. Historical closure cannot override a later retained contradictory receipt. Unique mutation dispatch, unknown pointer uncertainty, exact-ID recovery, pre-download role bounds, retained late responses and current ancestor validation have concrete source regressions. The crash oracle independently rejects an early-uncertainty production mutation and restores the exact 96-cutoff sequence and 84/8/4 partition. The existing four TLC models, invariants, bounds and twenty-five paired model/source controls remain unchanged. New publication/discovery semantics belong to their separate finite lifecycle graph and behavioral mapping, not expanded TLC proof. The explicit graph preserves held pointer effects and checks five properties at 950 states and 1737 edges with five designated counterexamples and eight actual-source witness pairs. Source/mapping drift refusals were retained before this reviewed pin update. No provider authentication, globally latest history, CAS, arbitrary in-flight operation quiescence, complete hidden admission, deployment, workload or delivery proof follows. Independent exact committed-source review accepted nullable requested trash metadata at f2e5747. Required normalized false or null preserves exact admitted content closure while reporting per-role availability observations. Positive trash, tool errors, malformed fields and retained-raw contradictions refuse. Original responses and anchor phases remain visible; active availability and provider latest are not established. The standalone normalizer adds no provider calls or writes. These are behavioral boundary controls outside the unchanged finite graph and TLC models; no invariant, bound, source pair or crash class is weakened. The stale-source refusal was retained before this refresh. Independent committed-source and mapping review accepted the bounded history correction at sourceCommit. Shared canonical/capture/discovery changes add diagnostic accounting hooks and an exported unchanged predecessor predicate; they add no ordinary publication awaits or aggregation guard changes. The exact accounting dependency and bounded owner are pinned for source provenance. Existing four TLC graphs, invariants, bounds, twenty-five paired model/source witnesses, fifteen capture witnesses, separate 950-state history graph and eight history source pairs retain their original scope. Bounded receipt acquisition, owner-turn CAS, checkpoint custody, mutable read fences, audit operation reservations and terminal accounting-only ledgers have their separate behavioral mapping and actual-source baseline/mutant/restored controls. They are not additional TLC or lifecycle-model theorems. Strict source-drift refusal was retained before this reviewed metadata update. Local synthetic bounds do not establish actual connector/helper calls, fleet peak capacity, cloud acceptance, installation or recurring invocation.",
   "sourceFiles": {
-    "src/automation-reporting.mjs": "abe3061fe80ca37819148493849755f2b0c822bf8442286f6498eca85325837a",
+    "src/automation-reporting.mjs": "9501028bb24987824a0a80e6abad6c283d082a9ae7ac497211ea9f82779a4093",
     "src/improvement-report.mjs": "e808baf21a07ff5ff7d414669c35bddda99e478162f3db5de7e6cca3613cbe21",
     "src/bounded-json.mjs": "4bf4230dd0b8775f56482cf429112c1a7456f83b78cad19ae05e1b00987e8a71",
     "src/reporting-privacy.mjs": "43092f368882ef5782315e57999eb3ea5c3cfd3e3db0e37677059921b4a69a45",
     "src/automation-reporting-outcome.mjs": "169f7a4128757570f2ccf822bcc4cc8a7b9871dff8906b7a0f23ce4836ed8ef9",
     "src/automation-reporting-expectations.mjs": "05f7ee215756e1d5e7afccba55e76dacd62e23f0b4bbe1f00106ca063ebbe352",
-    "src/automation-reporting-capture.mjs": "4c4f139acd87ed6a175e216849a141ba5375ba110cee96b144ed22efe01e6b22",
-    "src/automation-reporting-discovery.mjs": "2a2acb628842b5e98893274082269f6d7f43a64cca8dbc4aa94beedcb58491f9",
+    "src/automation-reporting-capture.mjs": "41e12246e283e360e4756c3944c98291aa8dbf6f13c71195936d7a9da778793e",
+    "src/automation-reporting-discovery.mjs": "18c37fc648f61948084d86b8c790effb4e91b15dca110e963d969c89f22bdff2",
     "src/automation-reporting-export.mjs": "5b9795aa6aafc55dd10132ebbe5bd4bad0ec6c8d6e2ff8b4bb31bc74ae5fa18c",
     "src/automation-reporting-history.mjs": "dc63e55ddf6613034cd1fb8702ba5e1fd6f19489873099d3ecbedf16d876ba6f",
     "src/automation-reporting-transport.mjs": "0c437643a3de5c3db14b51bf503535601b133fc6744109514669b5535065e35d",
     "src/automation-reporting-upkeep.mjs": "91b3a1ff44e10d8b135be712c50aa4c5dcb8c91526506e5029324bba9349a89b",
-    "src/automation-reporting-binding.mjs": "c228ec3fee0b3cccb2b159b690d12e483db58d52c78649366708c16d059b5e68"
+    "src/automation-reporting-binding.mjs": "c228ec3fee0b3cccb2b159b690d12e483db58d52c78649366708c16d059b5e68",
+    "src/reporting-representation.mjs": "832a09cc4931f2faaa245e403cdebadc72eab53aa3b542f499d8af0029f500df",
+    "src/automation-reporting-bounded.mjs": "d7e5391865fb831e739b3b9e9fb003403226251a9e24a52b9d93a48d8e2fb40f"
   },
   "verificationFiles": {
     "verification/automation-reporting/AutomationReporting.tla": "950df3edff88fb86a48af82552e483a9419903c8c7e24a93a1b882a3b16271d7",
     "verification/automation-reporting/worker.mjs": "53227abdc8737bcc3a820342f5877d4a20b0f10e4af696f3fa2bfef57ebfcbbd",
     "verification/automation-reporting/stale-mutant.cfg": "1d922c9ca497b31059d876cfc2291a0ee2d93829400f76049a02da03d2b69ced",
-    "verification/automation-reporting/drive.mjs": "888c89558559cab408ddfa83032bda9c3f02e8137d505e5bb4abbad360cf014b",
+    "verification/automation-reporting/drive.mjs": "13e1efb4a3fe2e5d6d2f5a32be2d8bd1c2b8f6e47d36e975fa03e3f14a85bc4e",
     "verification/automation-reporting/terminal-mutant.cfg": "2323400188f8714cbef0c9b9be5458da7e22677bd4a6ab8a8d8a4326996f0e32",
     "verification/automation-reporting/view.mjs": "778ca820999fca6b65feb2f628f8651256de8ef422e7f194ad4e6700251c5495",
     "verification/automation-reporting/run-view.mjs": "96bdf62508e2b6f9dce446cfc3103fd1f375a0f47427bfa96176b73fa0417573",
@@ -49,26 +51,26 @@
     "verification/automation-reporting/expectation-slot-mutant.cfg": "d354e9541929de93cbbeddab721519a8d30328ad628212222098eb439bb75a69",
     "verification/automation-reporting/expectation-target-mutant.cfg": "689e1e7aa99b426d8881fb2306d1f686dfa1b1828b74319bc80d3fcb7552bd69",
     "verification/automation-reporting/expectation-withdrawal-mutant.cfg": "53edee56b122eeda6cd304d5f48c1d067aa4a6b47e842873d2e6c8ef033b2b76",
-    "verification/automation-reporting/expectations-drive.mjs": "101a542fa830f6b74a1b9b859926aea899e5dd8964cef71db103dc9e8fc7cbc5",
+    "verification/automation-reporting/expectations-drive.mjs": "5c57c2a8bda9d41838ff4abcacc88ab0d536a3b89a3be6f19fa47110f0c69e76",
     "verification/automation-reporting/expectations.cfg": "02eee66974146033ce99949bec6945b8df49e266e0fcd1c84caa71a313d6ac80",
     "verification/automation-reporting/unbound-immutable-mutant.cfg": "bdc10adc7e00b037c543ed8175128164cf9b5315bab2287ddebe072b9d3a6695",
     "verification/automation-reporting/unbound-clocks-mutant.cfg": "c9d23496ac1f6612a6819814de852e5fb79a80762a58e222cd172735a3286806",
     "verification/automation-reporting/unbound.cfg": "0e9b699871963f249c2106ae7b10b1a0aa5a2cfd7d9bcc2489a6359243601b55",
-    "verification/automation-reporting/unbound-drive.mjs": "a6c2d60ab1d3292db935efb8945260ef14216422584edc893b48663ecf81e13b",
+    "verification/automation-reporting/unbound-drive.mjs": "7b7de4e94102f287a9a3df159e43d1b82d0ba4fa5aa4c2269a45d98198135c8d",
     "verification/automation-reporting/unbound-metadata-mutant.cfg": "b9ad31cc8819b8867e700ac69cbe09fcb10d1e1da4aee291946eacc6b3840fb8",
     "verification/automation-reporting/UnboundOutcome.tla": "882213b684f3f1d8d77fe1b939ca521136d6f57a7f6e0193ae5c8eda51bd8daf",
     "verification/automation-reporting/expectation-unbound-mutant.cfg": "bdbcd0c7ff8f56009fd7627c0c40a4ea949d16a58dfacf8406f2cfa30cdbca78",
     "verification/automation-reporting/unbound-basis-mutant.cfg": "aa517bfe381398268788be274a7547b3b30d8340e77527ca9f465f125698408f",
     "verification/automation-reporting/unbound-representation-mutant.cfg": "15f5c90e0ce1bf353f00fdcd147b2d3eec30183d527822edfd2e0d4f76c503bc",
     "verification/automation-reporting/capture-coverage.md": "d1e97c24c3950b3ed1981856e6285cd3f7319fca3754c582705467b2ad15fea8",
-    "verification/automation-reporting/capture-drive.mjs": "7a9677cf9e9cfb75e4b398610cf3e453b9724e9ec71f375167d6acca8a0906b7",
+    "verification/automation-reporting/capture-drive.mjs": "0e356a940de3e51b7acceb2e97a4318f9d8d00017007f00135cea35fff328abf",
     "test/fixtures/reporting-capture.mjs": "f4d0d9b98ade70a5bc4053896742f92717eea64a137b9c56f9e4b0af3ff6bc19",
     "test/automation-reporting-capture.test.mjs": "d36a93589173358437460bea5ae13b340c3028df576f07f5823f4b87dd496615",
-    "scripts/build-reporting-cloud.mjs": "248d7bad75f9b569e42d61704c0bc5c262241a69ff0b350832b014e9543398ed",
+    "scripts/build-reporting-cloud.mjs": "32fb59051bdaf914136515f4eb85febf69e86d397e726fdb0bceb6a2470493b6",
     "schemas/automation-reporting-read-scope-v1.schema.json": "4e58f09b041417e62349629b762b6acbc878ff1abe4ce3ffd79649f33d38159a",
     "schemas/automation-reporting-capture-v1.schema.json": "514bf549b6559440528fad808c9e97c3749552d6c6454bd5ce475903a3260164",
     "schemas/automation-reporting-history-inventory-v1.schema.json": "5836f40d07fbc28cc85ffeaab7e26796b069c542a45e27c752a796e06617ed97",
-    ".agents/skills/verify/features/automation-reporting.md": "02f306dde9fa55de0d87e64cca0fc8e04261cd13bdaae79305b252db61af8fd9",
+    ".agents/skills/verify/features/automation-reporting.md": "5b99118147464a534ca8cb7be9b95a7e65ee874a688097abf3cd120abc46da8d",
     "docs/automation-reporting.md": "e49cd4903c22e266a7488cda5c14c0d156cddd9ecd0017084f41eca19ee7ceac",
     "package.json": "b52a0ab5cec8a68fdbe9edde66945ba146e22b36369c1585251ee3df19593c56",
     "schemas/automation-reporting-discovery-anchor-v1.schema.json": "5068451ae1cc33bcb0325f2e71708b95af095f5a930457376d39bc7e305fd94a",
@@ -77,8 +79,8 @@
     "scripts/automation-reporting-history.mjs": "c310d561e8b581403d7f387d267081d7fbb0544ab1964e63a8afc4e84a9504b8",
     "scripts/automation-reporting-transport.mjs": "d488b062b8bcf85db04ce15bfe5f3d053d51bece49765148c4acf0fbfe5e2d27",
     "scripts/automation-reporting-upkeep.mjs": "7bca009ec72a4b26169e1526dd553495232aa530fd0004659d006139aaa675f8",
-    "scripts/check.mjs": "94ede74dd2483c420cb42d8fce03281328a8e1ad68c95ce0dda5e8b8d639952f",
-    "test/automation-reporting-history.test.mjs": "94690b03e01044a3bef89616e9fd0e95f837c61ea642ce01f7c04aec2e95b208",
+    "scripts/check.mjs": "b76e95a487ec16927cee54f34b932cb345960f0a40eda56fef4d5bb9f561c57d",
+    "test/automation-reporting-history.test.mjs": "e13f64a1bc893ba4e672bf6d9319a0a25c5cfe95ff167fc4e7a557e531076ddf",
     "test/fixtures/reporting-history-worker.mjs": "4b0a8139aebaec19ffb35c0910a18388f124cefd866ed89a6a8b88704323a043",
     "test/fixtures/reporting-history.mjs": "9d7f843aa0d173d7fa4cd953d480062bd9746e1ac52cdb70e626d96631a5e7d8",
     "verification/automation-reporting/history-coverage.md": "1ad43ed25666cd24b188b8327b21ffe0bd47d4b299834633e1aae0c73e0b66fe",
@@ -86,8 +88,21 @@
     "verification/automation-reporting/history-model.mjs": "4aa793629a43be76cadcf5736bf3b62f71129cd080ce6917ae099d7890985623",
     "test/automation-reporting-transport.test.mjs": "e5304c09da235f8fb798a4d432e05b45a50d5c9de129e652e6e8c068856e1d87",
     "test/automation-reporting-upkeep.test.mjs": "9cf98dfbbb44d3403715b9a9ed7c708bc4b9739b770b220add229fb6c8e3d909",
-    "test/automation-reporting-cloud.test.mjs": "914a7819e4dd14852986ff4138e8baa7905b6a8716c816fd36187030e67e2641",
-    "docs/reporting-cloud-consumer.md": "3cb6055fd49c0a57e2e12e112bb1407fba6667fbeb4fa2356a5545c020775550"
+    "test/automation-reporting-cloud.test.mjs": "d87ec3f5cd71bb4120f3b793104a7e05dd8308ac471e540c40ba2c57a01d5edd",
+    "docs/reporting-cloud-consumer.md": "65caf49bb96b170350d5d7ac7ed900a1338d064f87651dd36a46564d6a313f7c",
+    "scripts/automation-reporting-bounded.mjs": "4c03e58ed47408fc14c817b9cf014f67915299e4d0b5abc80ec4ec30a7b92d50",
+    "test/automation-reporting-bounded.test.mjs": "95ceffeb8d0f12ccd7c3837c556285735d9f103d2728e3bc1dac3331c9632db0",
+    "test/automation-reporting-bounded-boundaries.test.mjs": "3bfeead5456c8249560d648fa16964512b2d2ee334c0ed5ff41938a9e22c2719",
+    "test/automation-reporting-bounded-mutations.test.mjs": "16bae589a93b261d3ad4a39da3b33bff6d267c2fdf72d024affde6799882ebf7",
+    "test/automation-reporting-owner-turns.test.mjs": "ecae63cb93be00390c29056eed22d30418864be960932a9a1e39c40e2b53d187",
+    "test/automation-reporting-receipts.test.mjs": "5218321a501545a87ea86e7671b0a61b0689a6badbc6d5fec1ce4b9d6ecb654d",
+    "test/fixtures/reporting-bounded-turn-worker.mjs": "973f380255bf12aadeea84589283073d3bdbca565c06e79b713324bece2d5764",
+    "test/fixtures/reporting-bounded.mjs": "e75e92591a31f99629099b6de2d02bf60a582c5b1022cf5980528ac7a8c3e72d",
+    "verification/automation-reporting/bounded-accounting.md": "2573ac021a20149b2f9fa186868f2644e89d91e20b16792451243722a34f664d",
+    "verification/automation-reporting/bounded-capacity.mjs": "c6c65b4b5829a806c83cb4839c6e9407e0a4032d6cec994adad6636f10961c6b",
+    "verification/automation-reporting/bounded-coverage.md": "2cf0737d893852220cefbe10d0fadde69773c0c3ebe325cd5ee854c925e734a6",
+    "verification/automation-reporting/bounded-fixture.mjs": "14dc741ffd9be61cbcbda0c5a06c85cd14245b83ed69275342d10905fca71545",
+    "docs/reporting-bounded-history.md": "98dd11144f86bc3158949ca62c4c4eb03b89ba1f0337ea1463a89af0573ed3c8"
   },
   "tool": {
     "release": "TLA+ tools 1.7.4",
@@ -303,6 +318,21 @@
         "UnboundOutcome.OriginalClockSafe"
       ],
       "boundary": "outcomeSourceTimes supplies original observedAt, original recordedAt and sourceWindow.end only. aggregate compares each supplied original clock to configured maximum age, preserving old evidence despite new report/wrapper clocks. Finite originalClock classes old, fresh and unknown abstract the oldest supplied original clock after validated UTC parsing; fresh includes exact age equality. Actual-source controls check equality and one millisecond beyond, old windows and null clocks. Full UTC parsing and arithmetic are not exhaustively enumerated by TLC."
+    },
+    {
+      "source": "src/automation-reporting-bounded.mjs",
+      "functions": [
+        "beginBoundedHistory",
+        "advanceBoundedHistory",
+        "advanceBoundedPublication",
+        "respondBoundedPublication",
+        "recoverBoundedPublication",
+        "retryBoundedPublicationRead",
+        "runBoundedHistoryFile",
+        "boundedControllerStatus"
+      ],
+      "model": [],
+      "boundary": "Exact independently reviewed source provenance and separate behavioral controls only. This owner does not change the four TLC models or separate history lifecycle enumeration. See bounded-coverage.md and bounded-accounting.md for receipt, deadline, custody, read identity, cumulative accounting, operation reserve and immutable owner-turn assumptions and controls."
     }
   ],
   "sourceState": "reviewed-commit",
@@ -746,6 +776,38 @@
       "Definitive no-effect resolution or liveness for unresolved pointer RPCs.",
       "Arbitrary secrecy, power-loss durability, deployment/adoption, workload execution and delivery.",
       "Trash-state policy and active availability are not represented in the finite graph; nullable behavior is checked separately."
+    ]
+  },
+  "boundedHistoryBoundary": {
+    "mapping": "verification/automation-reporting/bounded-coverage.md",
+    "accounting": "verification/automation-reporting/bounded-accounting.md",
+    "kind": "behavioral-source-controls-outside-existing-models",
+    "command": "npm run check",
+    "source": [
+      "src/automation-reporting-bounded.mjs",
+      "src/reporting-representation.mjs"
+    ],
+    "tests": [
+      "test/automation-reporting-bounded.test.mjs",
+      "test/automation-reporting-bounded-boundaries.test.mjs",
+      "test/automation-reporting-bounded-mutations.test.mjs",
+      "test/automation-reporting-owner-turns.test.mjs",
+      "test/automation-reporting-receipts.test.mjs"
+    ],
+    "bounds": {
+      "evidenceBytesPerTicket": 262144,
+      "providerPermissionsPerTicket": 32,
+      "filesystemReadWriteOperationsPerTicket": 10000,
+      "acquisitionWindowMilliseconds": 120000,
+      "terminalFinalizationMilliseconds": 2000,
+      "terminalRepresentationReserveBytes": 8192,
+      "ownerHeadEdgesPerPass": 32
+    },
+    "excluded": [
+      "Actual connector and materialization helper call counts or native acquisition capability.",
+      "Fleet retained-job peak capacity, operational admission, reviewed archive execution and recurring invocation.",
+      "Cloud acceptance, installation, deployment, globally latest history and external exactly-once effects.",
+      "Exhaustive staged schedules, hostile OS, fully forged private producer state and power-loss durability."
     ]
   }
 }
