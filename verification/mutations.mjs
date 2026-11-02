@@ -6,6 +6,9 @@ import { fleetMutations } from './fleet-mutations.mjs';
 
 export const mutations = [
   ...morningMutations,
+  { id: 'dispatch-reuse-completed-conversation', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["contextNeeded ? 'prepare-fresh-task' : 'inspect-outcome'", "contextNeeded ? 'continue-child' : 'inspect-outcome'"]] },
+  { id: 'dispatch-restart-running-follow-on', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["'inspect-outcome' : 'read-or-wait', followOn:", "'inspect-outcome' : 'create-via-dispatcher', followOn:"]] },
+  { id: 'dispatch-drop-prior-task-handover', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["priorThreadId: task.nativeId", "priorThreadId: null"]] },
   { id: 'dispatch-hardcode-coordinator-high', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["spec.coordinatorRequestedSettings ?? ordinarySettings", "ordinarySettings"]] },
   { id: 'dispatch-borrow-child-model-policy', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["spec.coordinatorRequestedSettings ?? ordinarySettings", "spec.coordinatorRequestedSettings ?? requested"]] },
   { id: 'dispatch-ignore-coordinator-override-source', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["!coordinatorRequested.scopedOverrideRef", "false"]] },

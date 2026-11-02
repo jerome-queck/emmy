@@ -149,15 +149,29 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   assert.ok((await advise(3)).reasons.includes('prior-launch-no-effect-readback-needed'));
   current = await retain(await observation(adopted, 'absent', current, { resolution: 'confirmed-no-effect' }));
   const retry = await advise(); assert.equal(retry.next, 'create-via-dispatcher'); assert.notEqual(retry.attemptKey, create.attemptKey);
+  assert.match(retry.nativeCreateRequest.prompt, /Every nontrivial unit or follow-on phase.*fresh project-bound task/);
+  assert.match(retry.nativeCreateRequest.prompt, /Read prior tasks for evidence, normally without messaging them/);
+  assert.match(retry.nativeCreateRequest.prompt, /Automation archive-on-success does not apply to ordinary tasks/);
   current = await retain(await observation(adopted, 'attempted', current));
   const child = readback('synthetic-ready-child', { correlationKey: adopted.dispatch.correlationKey });
   current = await retain(await observation(adopted, 'ready', current, { child, afterCursor: 'synthetic-wait-cursor' }));
   const ready = await advise(); assert.equal(ready.next, 'read-or-wait'); assert.equal(ready.readyThreadId, child.threadId); assert.equal(ready.afterCursor, 'synthetic-wait-cursor');
-  assert.equal((await advise(0, ['--context-needed'])).next, 'continue-child');
+  assert.equal((await advise(0, ['--context-needed'])).next, 'read-or-wait');
   retainedEffect = await retain(await standalone('uncertain', retainedEffect));
   assert.ok((await advise(3, ['--context-needed'])).reasons.includes('native-effect-rediscovery-needed'));
   retainedEffect = await retain(await standalone('absent', retainedEffect));
-  assert.equal((await advise(0, ['--context-needed'])).next, 'continue-child');
+  assert.equal((await advise(0, ['--context-needed'])).next, 'read-or-wait');
+  const completedInput = await observation(adopted, 'ready', current, { child: readback(child.threadId, { correlationKey: adopted.dispatch.correlationKey }), afterCursor: 'synthetic-completed-cursor' });
+  completedInput.tasks[0].status = 'completed';
+  current = await retain(completedInput);
+  assert.equal((await advise()).next, 'inspect-outcome');
+  const followOn = await advise(0, ['--context-needed']);
+  assert.equal(followOn.next, 'prepare-fresh-task');
+  assert.equal(followOn.followOn.next, 'fresh-project-task');
+  assert.equal(followOn.followOn.priorThreadId, child.threadId);
+  assert.equal(followOn.afterCursor, 'synthetic-completed-cursor');
+  assert.equal(followOn.nativeCreateRequest, undefined);
+  current = await retain(await observation(adopted, 'ready', current, { child: readback(child.threadId, { correlationKey: adopted.dispatch.correlationKey }) }));
   const recovered = await cli(['dispatch', '--project', target.projectId, '--as-of', now()]);
   assert.equal(recovered.dispatcher.threadId, dispatcher.threadId); assert.deepEqual(recovered.jobs.find(job => job.id === adopted.id).readyThreadIds, [child.threadId]);
   const advance = async childChange => {
@@ -212,7 +226,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   const wrappedRecord = (await readStore(restoredHome)).records.find(record => record.observer === wrapped.observer);
   const fresh = await observation(adopted, 'ready', wrappedRecord, { child: readback(child.threadId, { correlationKey: adopted.dispatch.correlationKey }) }); fresh.homeEpoch = restored.epoch;
   await cli(['reconcile', '--id', adopted.id, '--import', await file({ schemaVersion: 1, records: [fresh] }), '--as-of', now()], 3, restoredHome);
-  assert.equal((await advise(0, ['--context-needed'], restoredHome)).next, 'continue-child');
+  assert.equal((await advise(0, ['--context-needed'], restoredHome)).next, 'read-or-wait');
   const legacy = structuredClone(definition); legacy.id = 'legacy-objective'; delete legacy.dispatch; await adopt(legacy);
   const legacyTask = await observation(adopted, 'ready', null, { child: readback(child.threadId, { correlationKey: adopted.dispatch.correlationKey }) });
   legacyTask.responsibilityId = legacy.id; delete legacyTask.dispatch; await retain(legacyTask);
@@ -267,5 +281,5 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
     for (const secret of [dispatcher.threadId, dispatcher.selectionRef, definition.dispatch.correlationKey, child.threadId]) assert.equal(publicBytes.includes(secret), false, `Private dispatch state absent from ${path}`);
   }
   report.dispatch = { privateHome, retainedAttemptHash: attemptHash, readyThreadId: child.threadId, bindingDigest: digest(await readFile(bindingsPath)), archiveManifestHash: archived.manifest.hash, restoredEpoch: restored.epoch, sourceAssurance: 'synthetic reported native evidence', providerExecution: 'unverified', effectiveChildAccess: 'unverified' };
-  scenario('native-dispatch', 'Fresh-process private bootstrap recovery, exact supported request and skill, read-only decisions, attempted/pending/uncertain/no-effect/ready controls, duplicate imports, native membership/settings/policy refusal, standing scope, same-objective continuation, distinct objective reuse refusal and suspended archive restore. No native executor ran.');
+  scenario('native-dispatch', 'Fresh-process private bootstrap recovery, exact supported request and skill, read-only decisions, attempted/pending/uncertain/no-effect/ready controls, duplicate imports, native membership/settings/policy refusal, standing scope, fresh-task handovers, preserved running monitoring, distinct objective reuse refusal and suspended archive restore. No native executor ran.');
 }
