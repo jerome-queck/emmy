@@ -19,20 +19,20 @@ export async function driveBounded(value,{invoke=null,maxJobs=64,publish=true,li
     if(ticket>maxJobs)throw new Error('Synthetic flight exceeds available ticket ceiling');
     const request={stateDirectory:value.stateDirectory,...details,jobId:jobPrefix+'ticket-'+ticket,executionId:'callback-'+callback++,...(ledger?{jobLedger:ledger}:{})};const result=await (invoke?invoke(action,request):operations[action](request,{runtime}));
     if(result.jobLedger){ledger=result.jobLedger;tickets.set(ticket,result.actuals);}
-    calls.push({action,status:result.status,jobId:request.jobId,actuals:result.actuals});
-    if(result.status==='budget-stop'){ledger=null;return call(action,details);}
-    if(result.status==='blocked'||result.status==='uncertain'||result.status==='execution-already-claimed')throw new Error(JSON.stringify(result));
+    calls.push({action,status:result.status,jobId:request.jobId,actuals:result.actuals,...(result.budgetStopped?{budgetStopped:true}:{}),...(result.ownerHeadCheckpoint?{ownerHeadCheckpoint:result.ownerHeadCheckpoint}:{})});
+    if(result.status==='budget-stop'){if(result.openReceipt)throw new Error('Accepted receipt requires separate exact recovery: '+JSON.stringify(result));ledger=null;return call(action,details);}if(result.budgetStopped||result.ownerHeadCheckpoint)ledger=null;
+    if(result.status==='blocked'||result.status==='uncertain'||result.status==='execution-already-claimed'||result.status==='receipt-held')throw new Error(JSON.stringify(result));
     return result;
   };
   current=await call('begin',value.request);
   while(current.status!=='prepared')current=await call('advance',{captureId:current.captureId,cursor:current.cursor});
   const captured={...current};if(!publish)return {current,captured,calls,tickets:[...tickets.values()],drive};
   while(current.status!=='published') {
-    const next=await call('next',{captureId:current.captureId,cursor:current.cursor});current=next;
+    const next=await call('next',{captureId:current.captureId,cursor:current.cursor,...(current.ownerHeadCheckpoint?{ownerHeadCheckpoint:current.ownerHeadCheckpoint}:{})});current=next;
     if(next.status!=='action-required')continue;
     let args=next.action.args;if(args.file_uri)args={...args,bytesBase64:(await readFile(args.file_uri)).toString('base64')};const response=await drive[next.action.method](args);let rawPath;
     if(next.action.method==='downloadRaw'){rawPath=join(value.base,'response-'+next.actionId+'.json');await writeFile(rawPath,Buffer.from(response.bytesBase64,'base64'));delete response.bytesBase64;}
-    await call('respond',{captureId:current.captureId,cursor:current.cursor,actionId:next.actionId,response,...(rawPath?{rawPath}:{})});
+    const details={captureId:current.captureId,cursor:current.cursor,actionId:next.actionId,response,...(rawPath?{rawPath}:{})};let retained=await call('respond',details);while(retained.status==='incomplete'&&retained.ownerHeadCheckpoint&&!retained.openReceipt)retained=await call('respond',{...details,ownerHeadCheckpoint:retained.ownerHeadCheckpoint});
   }
   return {current,captured,calls,tickets:[...tickets.values()],drive};
 }
