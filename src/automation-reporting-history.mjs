@@ -98,7 +98,7 @@ async function load({stateDirectory,batchId}) {
 }
 async function append(state,data,checkpoint) {
   const event={sequence:state.events.length,previous:state.previous,...data}; const bytes=historyBytes(event); const path=join(state.path,String(event.sequence).padStart(8,'0')+'.json');
-  const created=await immutable(path,bytes,checkpoint); await checkpoint(data.kind+'-persisted'); if(created) {state.events.push(event);state.previous=historyHash(bytes);} return {event,created};
+  const created=await immutable(path,bytes,checkpoint); await checkpoint(data.kind+'-persisted'); state.events.push(event);state.previous=historyHash(bytes); return {event,created};
 }
 function responses(state,key) {return state.events.filter(event=>event.kind==='response'&&event.actionId===key);}
 function responseOf(state,key) {const found=responses(state,key); need(found.length<=1,'Conflicting publication responses'); return found[0]?.response;}
@@ -118,23 +118,23 @@ function readAttempt(state,base) {
   need(retries.length<=20 && retries.every((event,index)=>event.attempt===index+1),'Readback retry chain/bound invalid');
   return {actionId:base+(retries.length?':retry-'+retries.length:''),attempt:retries.length};
 }
-function readActions(state,key,expected) {
+function readActions(state,key,expected,limit) {
   const metadataAttempt=readAttempt(state,key+':metadata'); const metadataKey=metadataAttempt.actionId;
   const metadata=responseOf(state,metadataKey);
   if(metadata===undefined) return action(state,metadataKey,'getMetadata',{id:expected.id},expected);
-  validateRemoteMetadata(metadata,expected);
+  validateRemoteMetadata(metadata,expected,limit);
   const downloadKey=readAttempt(state,key+':download'+(metadataAttempt.attempt?':metadata-'+metadataAttempt.attempt:'')).actionId;
   const download=responseOf(state,downloadKey);
   if(download===undefined) return action(state,downloadKey,'downloadRaw',{id:expected.id},expected);
-  const bytes=validateRemoteDownload(download,{...expected,size:metadata.size},expected.name.endsWith('.json')&&expected.size<=CAPTURE_LIMITS.recordBytes?CAPTURE_LIMITS.recordBytes:CAPTURE_LIMITS.inventoryBytes);
+  const bytes=validateRemoteDownload(download,{...expected,size:metadata.size},limit);
   return {bytes,metadata,download};
 }
 
 function immutableActions(state,key,location,bytes) {
   const upload=responseOf(state,key+':upload'); const id=knownId(state,key+':upload',upload);
   if(id===null) return action(state,key+':upload','uploadImmutable',{name:location.name,parentId:location.parentId,bytesBase64:bytes.toString('base64')},{...location,size:bytes.length,sha256:historyHash(bytes)});
-  need(upload===undefined || upload.raw!==null && typeof upload.raw==='object','Original upload response required');
-  const expected={id,...location,size:bytes.length,sha256:historyHash(bytes)}; const result=readActions(state,key,expected);
+  need(state.events.some(event=>event.kind==='recovery'&&event.actionId===key+':upload'&&event.id===id) || upload?.raw!==null && typeof upload?.raw==='object','Original upload response or retained exact-ID recovery required');
+  const expected={id,...location,size:bytes.length,sha256:historyHash(bytes)}; const result=readActions(state,key,expected,key==='inventory'?CAPTURE_LIMITS.inventoryBytes:CAPTURE_LIMITS.recordBytes);
   return result.bytes?{reference:expected,...result}:result;
 }
 function derive(state) {
@@ -152,7 +152,7 @@ function derive(state) {
   if(!closed) return {closure:{kind:'generation-closed',inventory:inventoryResult.reference,generation:inventory.generation}};
   need(same(closed.inventory,inventoryResult.reference),'Closed generation reference mismatch');
   const anchor={schemaVersion:1,kind:'automation-reporting-discovery-anchor',owner:state.batch.owner,generation:inventory.generation,inventory:inventoryResult.reference}; const bytes=historyBytes(anchor);
-  const before=readActions(state,'anchor-before',state.owner.anchor);
+  const before=readActions(state,'anchor-before',state.owner.anchor,CAPTURE_LIMITS.scopeBytes);
   if(!before.bytes) return before;
   const previous=historyDecode(before.bytes,CAPTURE_LIMITS.scopeBytes);
   need(before.bytes.equals(historyBytes(previous)),'Anchor prior body must be exact canonical JSON');
@@ -162,17 +162,16 @@ function derive(state) {
     if(expectedPrevious===null) need(same(previous,{schemaVersion:1,kind:'automation-reporting-discovery-anchor',owner:state.batch.owner,generation:0,inventory:null}),'Bootstrap anchor must be explicit empty same-owner anchor');
     else need(same(previous,{schemaVersion:1,kind:'automation-reporting-discovery-anchor',owner:state.batch.owner,generation:expectedPrevious.generation,inventory:expectedPrevious.inventory}),'Anchor does not match exact preceding generation');
   }
-  let pointerVerified=false;
-  for(let attempt=0;attempt<20;attempt++) {
-    const key='anchor-update-'+attempt;
-    const intent=state.events.find(event=>event.kind==='intent'&&event.actionId===key);
-    if(!alreadyCurrent && !intent) return action(state,key,'updatePointer',{id:state.owner.anchor.id,name:state.owner.anchor.name,parentId:state.owner.anchor.parentId,bytesBase64:bytes.toString('base64')},{...state.owner.anchor,size:bytes.length,sha256:historyHash(bytes)});
-    const after=readActions(state,'anchor-after-'+attempt,state.owner.anchor);
-    if(!after.bytes) return after;
-    if(after.bytes.equals(bytes)) {pointerVerified=true;break;}
+  const key='anchor-update-0';
+  const intent=state.events.find(event=>event.kind==='intent'&&event.actionId===key);
+  if(!alreadyCurrent && !intent) return action(state,key,'updatePointer',{id:state.owner.anchor.id,name:state.owner.anchor.name,parentId:state.owner.anchor.parentId,bytesBase64:bytes.toString('base64')},{...state.owner.anchor,size:bytes.length,sha256:historyHash(bytes)});
+  const after=readActions(state,'anchor-after-0',state.owner.anchor,CAPTURE_LIMITS.scopeBytes);
+  if(!after.bytes) return after;
+  const pointerVerified=after.bytes.equals(bytes);
+  if(!pointerVerified) {
     need(!alreadyCurrent && after.bytes.equals(before.bytes),'Discovery anchor changed to unrecognized bytes');
+    return {done:true,status:'uncertain',execute:false,generationClosed:true,generation:inventory.generation,inventory:inventoryResult.reference,reason:'Pointer mutation unresolved; old readback does not rule out a future effect; refresh exact-ID readback only'};
   }
-  need(pointerVerified,'Discovery anchor update retry bound exhausted; closed generation retained');
   if(!state.events.some(event=>event.kind==='pointer-closed')) return {closure:{kind:'pointer-closed',anchor:state.owner.anchor,inventory:inventoryResult.reference,generation:inventory.generation}};
   return {done:true,status:'published',generation:inventory.generation,inventory:inventoryResult.reference,anchor:state.owner.anchor,assurance:'validated-retained-adapter-readbacks',providerLatest:'not-established',delivery:'not-inferred'};
 }
@@ -220,7 +219,7 @@ async function nextAction(state,checkpoint) {
   let created=next.existing===undefined;
   if(created) created=(await append(state,next.value,checkpoint)).created;
   const artifact=['uploadImmutable','updatePointer'].includes(next.value.method)?await uploadArtifact(state,next.value,checkpoint):null;
-  return {tool:toolAction(next.value,artifact),...(artifact===null?{}:{artifact}),status:!created&&next.value.method==='uploadImmutable'?'uncertain':'action-required',execute:created||next.value.method!=='uploadImmutable',action:next.value,generationClosed:state.events.some(event=>event.kind==='generation-closed')};
+  return {tool:toolAction(next.value,artifact),...(artifact===null?{}:{artifact}),status:!created&&['uploadImmutable','updatePointer'].includes(next.value.method)?'uncertain':'action-required',execute:created||!['uploadImmutable','updatePointer'].includes(next.value.method),action:next.value,generationClosed:state.events.some(event=>event.kind==='generation-closed')};
 }
 export async function publicationAction(request,{checkpoint=noCheckpoint}={}) { return nextAction(await load(request),checkpoint); }
 function guardResponse(value) {
@@ -232,7 +231,7 @@ async function retainResponse(state,actionId,response,checkpoint) {
   const intent=state.events.find(event=>event.kind==='intent'&&event.actionId===actionId); need(intent,'Response needs retained exact intent');
   need(response!==undefined && Buffer.byteLength(canonical(response))<=CAPTURE_LIMITS.packetBytes,'Bounded actual response required'); guardResponse(response);
   const existing=responseOf(state,actionId); if(existing!==undefined) {need(same(existing,response),'Publication response conflict'); return {status:'identical'};}
-  need(!state.events.some(event=>event.kind==='intent'&&event.sequence>intent.sequence),'Stale response after later effect refused');
+  need(intent.method==='updatePointer' || !state.events.some(event=>event.kind==='intent'&&event.sequence>intent.sequence),'Stale response after later effect refused');
   await append(state,{kind:'response',actionId,response},checkpoint); return {status:'retained'};
 }
 export async function recordPublicationResponse({stateDirectory,batchId,actionId,response},{checkpoint=noCheckpoint}={}) { return retainResponse(await load({stateDirectory,batchId}),actionId,response,checkpoint); }
@@ -261,12 +260,13 @@ export async function retryPublicationRead({stateDirectory,batchId,actionId,evid
 }
 export async function publishHistory(request,adapter,{checkpoint=noCheckpoint}={}) {
   need(adapter && ['uploadImmutable','getMetadata','downloadRaw','updatePointer'].every(method=>typeof adapter[method]==='function'),'Explicit supported Drive adapter required; no autonomous local connector');
-  const state=await load(request);
+  let state=await load(request);
   for(let index=0;index<CAPTURE_LIMITS.files*3+100;index++) {
     const next=await nextAction(state,checkpoint); if(next.status!=='action-required'||!next.execute) return next;
     let response;
     try {response=await adapter[next.action.method]({...next.action.args,...(next.artifact?{artifact:next.artifact}:{})});} catch(error) {response={error:'adapter-call-failed',message:typeof error.message==='string'?error.message:'unknown'};}
     await checkpoint('remote-effect-returned');
+    state=await load(request);
     await retainResponse(state,next.action.actionId,response,checkpoint);
   }
   throw new Error('Publication action bound exceeded');

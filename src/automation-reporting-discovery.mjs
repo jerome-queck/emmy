@@ -88,10 +88,10 @@ export function validateHistoryInventory(inventory, scope, owner) {
   else { historyFields(inventory.previous, ['generation','inventory']); need(inventory.previous.generation === inventory.generation - 1, 'Missing inventory predecessor generation'); validateHistoryReference(inventory.previous.inventory); need(inventory.previous.inventory.parentId === owner.inventoryParentId, 'Predecessor outside approved inventory parent'); }
   return inventory;
 }
-export function validateRemoteMetadata(metadata, expected) {
+export function validateRemoteMetadata(metadata, expected, limit = CAPTURE_LIMITS.inventoryBytes) {
   historyFields(metadata, ['id','name','parents','size','mimeType','trashed','raw']);
   need(metadata.raw !== null && typeof metadata.raw === 'object' && Buffer.byteLength(canonical(metadata.raw)) <= CAPTURE_LIMITS.inventoryBytes, 'Retained original metadata response required');
-  need(metadata.id === expected.id && metadata.name === expected.name && Array.isArray(metadata.parents) && same(metadata.parents, [expected.parentId]) && metadata.trashed === false && ['application/json','application/octet-stream'].includes(metadata.mimeType) && Number.isSafeInteger(metadata.size) && metadata.size > 0 && (expected.size === undefined || metadata.size === expected.size), 'Wrong exact remote ID/location/type/length');
+  need(metadata.id === expected.id && metadata.name === expected.name && Array.isArray(metadata.parents) && same(metadata.parents, [expected.parentId]) && metadata.trashed === false && ['application/json','application/octet-stream'].includes(metadata.mimeType) && Number.isSafeInteger(metadata.size) && metadata.size > 0 && metadata.size <= limit && (expected.size === undefined || metadata.size === expected.size), 'Wrong exact remote ID/location/type/length');
   return metadata;
 }
 export function validateRemoteDownload(download, expected, limit = CAPTURE_LIMITS.inventoryBytes) {
@@ -103,7 +103,7 @@ export function validateRemoteDownload(download, expected, limit = CAPTURE_LIMIT
   return bytes;
 }
 function readback(value, expected, limit) {
-  historyFields(value, ['metadata','download']); validateRemoteMetadata(value.metadata, expected);
+  historyFields(value, ['metadata','download']); validateRemoteMetadata(value.metadata, expected, limit);
   return validateRemoteDownload(value.download, { ...expected, size:value.metadata.size }, limit);
 }
 function uniqueReadbacks(values) {
@@ -129,7 +129,7 @@ function discovery(scopeBytes, packetBytes, checkpoint) {
   const acquire = (kind, expected, values, limit) => {
     const value=values.get(expected.id);
     if(value===undefined) { steps.push({kind,expected,method:'get_file_metadata',args:{fileId:expected.id,fields:'id,name,parents,size,mimeType,trashed'}}); return null; }
-    historyFields(value,['metadata','download']); validateRemoteMetadata(value.metadata,expected);
+    historyFields(value,['metadata','download']); validateRemoteMetadata(value.metadata,expected,limit);
     if(value.download===null) { steps.push({kind,expected,method:'fetch',args:{url:`https://drive.google.com/file/d/${encodeURIComponent(expected.id)}/view`,download_raw_file:true,include_base64:false},rawAcquisition:'Materialize returned file reference; read complete bounded original bytes locally. No provider inline base64.'}); return null; }
     return readback(value,expected,limit);
   };
