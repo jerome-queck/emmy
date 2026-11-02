@@ -13,9 +13,10 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { prepareHistoryBatch, publicationAction, recordPublicationResponse, recoverPublicationId, publishHistory } from '../src/automation-reporting-history.mjs';
-import { historyBytes, historyDecode, historyHash, planDiscovery, consumeDiscovery } from '../src/automation-reporting-discovery.mjs';
+import { historyBytes, historyDecode, historyHash, planDiscovery, consumeDiscovery, validateRemoteMetadata } from '../src/automation-reporting-discovery.mjs';
 import { transportAutomationReporting, sanitizeRecords } from '../src/automation-reporting-transport.mjs';
 import { planUpkeep, applyUpkeep } from '../src/automation-reporting-upkeep.mjs';
+import { CAPTURE_LIMITS } from '../src/automation-reporting-capture.mjs';
 import { recordDigest } from '../src/automation-reporting.mjs';
 import { runRecord, evaluatedAt } from './fixtures/reporting-capture.mjs';
 import { FakeDrive, historyScope, emptyPacket } from './fixtures/reporting-history.mjs';
@@ -213,5 +214,109 @@ test('explicit bounded readback retry after restart preserves failed raw respons
 test('concrete upload artifact and supported tool arguments bind exact durable bytes before effect',async()=>{
   const publisher=await import('../src/automation-reporting-history.mjs');const value=await setup();try {const request=await prepared(value);const next=await publicationAction(request);assert.equal(next.tool.operation,'upload_file');assert.equal(next.tool.arguments.file_uri,next.artifact.path);const bytes=await readFile(next.artifact.path);assert.equal(bytes.length,next.artifact.size);assert.equal(historyHash(bytes),next.artifact.sha256);assert.equal(bytes.toString('base64'),next.action.args.bytesBase64);assert.deepEqual(await publisher.materializePublicationUpload({...request,actionId:next.action.actionId}),next.artifact);
     const response=await value.drive.uploadImmutable(next.action.args);await recordPublicationResponse({...request,actionId:next.action.actionId,response});const metadata=await publicationAction(request);assert.equal(metadata.tool.operation,'get_file_metadata');assert.equal(metadata.tool.arguments.fileId,response.id);await recordPublicationResponse({...request,actionId:metadata.action.actionId,response:await value.drive.getMetadata(metadata.action.args)});const raw=await publicationAction(request);assert.equal(raw.tool.operation,'fetch');assert.equal(raw.tool.arguments.download_raw_file,true);assert.equal(raw.tool.arguments.include_base64,false);
+  } finally {await rm(value.root,{recursive:true,force:true});}
+});
+
+async function advanceThrough(value,request,actionId) {
+  for(let index=0;index<40;index++) {
+    const next=await publicationAction(request);assert.equal(next.status,'action-required',JSON.stringify(next));
+    await recordPublicationResponse({...request,actionId:next.action.actionId,response:await value.drive[next.action.method](next.action.args)});
+    if(next.action.actionId===actionId)return;
+  }
+  assert.fail('Named action not reached');
+}
+async function secondGeneration(value,first) {
+  const inventory=historyDecode(Buffer.from(value.drive.files.get(first.inventory.id).bytesBase64,'base64'));
+  const batch=await prepareHistoryBatch({...value.input,generation:2,previous:{reference:first.inventory,inventory},captureStartedAt:'2026-01-03T00:00:00Z',captureEndedAt:'2026-01-03T00:00:01Z'});
+  return {stateDirectory:value.stateDirectory,batchId:batch.batchId};
+}
+
+test('same-owner callbacks grant exactly one pointer dispatch before generation handoff',async()=>{
+  const value=await setup();try {
+    const request=await prepared(value);await advanceThrough(value,request,'anchor-before:download');
+    const callbacks=await Promise.all([publicationAction(request),publicationAction(request)]);
+    assert.equal(callbacks.filter(next=>next.execute).length,1,'Only one callback may issue a pointer mutation');
+    assert.ok(callbacks.every(next=>next.action.method==='updatePointer'));
+    const winner=callbacks.find(next=>next.execute);await recordPublicationResponse({...request,actionId:winner.action.actionId,response:await value.drive.updatePointer(winner.action.args)});
+    const first=await publishHistory(request,value.drive);assert.equal(first.status,'published');
+    assert.equal((await publishHistory(await secondGeneration(value,first),value.drive)).status,'published');
+    assert.equal(JSON.parse(Buffer.from(value.drive.files.get('anchor-one').bytesBase64,'base64')).generation,2);
+    assert.equal(value.drive.calls.filter(call=>call.method==='updatePointer').length,2);
+  } finally {await rm(value.root,{recursive:true,force:true});}
+});
+
+test('unknown pointer RPC with a held effect cannot retry or hand off on an old read',async()=>{
+  const {retryPublicationRead}=await import('../src/automation-reporting-history.mjs');
+  const value=await setup();try {
+    const request=await prepared(value);const original=value.drive.updatePointer.bind(value.drive);let pending=null;let attempts=0;
+    value.drive.updatePointer=async args=>{attempts++;pending=args;throw new Error('RPC timeout with effect still pending');};
+    const first=await publishHistory(request,value.drive);assert.equal(first.status,'uncertain');assert.equal(first.generationClosed,true);assert.equal(attempts,1);
+    const journal=join(value.stateDirectory,request.batchId);const old=await Promise.all((await readdir(journal)).filter(name=>/^\d/.test(name)).map(async name=>({name,bytes:await readFile(join(journal,name),'utf8')})));
+    const closed=old.map(entry=>JSON.parse(entry.bytes)).find(event=>event.kind==='generation-closed');
+    const next=await secondGeneration(value,closed);assert.equal((await publishHistory(next,value.drive)).status,'blocked');assert.equal(attempts,1);
+    assert.equal((await publishHistory(request,value.drive)).status,'uncertain');assert.equal(attempts,1);
+    await original(pending);
+    const last=old.map(entry=>JSON.parse(entry.bytes)).filter(event=>event.kind==='intent').at(-1);
+    await retryPublicationRead({...request,actionId:last.actionId,evidence:{reason:'Held single RPC has now returned; refresh exact-ID readback'}});
+    assert.equal((await publishHistory(request,value.drive)).status,'published');
+    value.drive.updatePointer=original;assert.equal((await publishHistory(next,value.drive)).status,'published');
+    for(const event of old)assert.equal(await readFile(join(journal,event.name),'utf8'),event.bytes);
+    assert.equal(value.drive.calls.filter(call=>call.method==='updatePointer').length,2);
+  } finally {await rm(value.root,{recursive:true,force:true});}
+});
+
+test('upload create error survives exact-ID recovery and fresh-process verification byte for byte',async()=>{
+  for(const fault of [null,'id','parent','hash']) {
+    const value=await setup();try {
+      const request=await prepared(value);const original=value.drive.uploadImmutable.bind(value.drive);let once=true;
+      value.drive.uploadImmutable=async args=>{const response=await original(args);if(once){once=false;throw new Error('create succeeded; response lost');}return response;};
+      assert.equal((await publishHistory(request,value.drive)).status,'uncertain');
+      const journal=join(value.stateDirectory,request.batchId);const old=await Promise.all((await readdir(journal)).filter(name=>/^\d/.test(name)).map(async name=>({name,bytes:await readFile(join(journal,name),'utf8')})));
+      const failed=old.map(entry=>JSON.parse(entry.bytes)).find(event=>event.kind==='response');assert.equal(failed.response.error,'adapter-call-failed');
+      await recoverPublicationId({...request,actionId:failed.actionId,id:fault==='id'?'wrong-id':'remote-1',evidence:{source:'synthetic-retained-exact-create-response',id:'remote-1'}});
+      if(fault==='parent')value.drive.files.get('remote-1').parentId='wrong';
+      if(fault==='hash')value.drive.files.get('remote-1').bytesBase64=Buffer.from('x'.repeat(Buffer.from(value.drive.files.get('remote-1').bytesBase64,'base64').length)).toString('base64');
+      await writeFile(join(value.root,'input.json'),historyBytes(value.input));await value.drive.save(join(value.root,'remote.json'));
+      const resumed=spawnSync(process.execPath,['test/fixtures/reporting-history-worker.mjs',value.root,'0'],{encoding:'utf8'});assert.equal(resumed.status,0,resumed.stderr);
+      assert.equal(JSON.parse(resumed.stdout).result.status,fault===null?'published':'blocked');
+      for(const event of old)assert.equal(await readFile(join(journal,event.name),'utf8'),event.bytes);
+    } finally {await rm(value.root,{recursive:true,force:true});}
+  }
+});
+
+test('per-role known metadata bounds stop acquisition before fetch or adapter download',async()=>{
+  const value=await setup();try {
+    const request=await prepared(value);await publishHistory(request,value.drive);const full=await value.drive.packet(value.scope);
+    for(const [field,limit] of [['anchorsBefore',CAPTURE_LIMITS.scopeBytes],['anchorsAfter',CAPTURE_LIMITS.scopeBytes],['inventories',CAPTURE_LIMITS.inventoryBytes],['objects',CAPTURE_LIMITS.recordBytes]]) {
+      for(const extra of [0,1]) {
+        const packet=structuredClone(full);const item=packet[field][0];item.metadata.size=limit+extra;item.download=null;
+        if(field==='inventories') {const anchor=JSON.parse(Buffer.from(packet.anchorsBefore[0].download.bytesBase64,'base64'));anchor.inventory.size=limit+extra;const bytes=historyBytes(anchor);packet.anchorsBefore[0].download.bytesBase64=bytes.toString('base64');packet.anchorsBefore[0].metadata.size=bytes.length;}
+        if(extra===1)assert.throws(()=>planDiscovery(historyBytes(value.scope),historyBytes(packet)),/bound|length/);
+        else if(field.startsWith('anchors'))assert.ok(planDiscovery(historyBytes(value.scope),historyBytes(packet)).steps.some(step=>step.method==='fetch'));
+        const expected={id:item.metadata.id,name:item.metadata.name,parentId:item.metadata.parents[0]};
+        if(extra)assert.throws(()=>validateRemoteMetadata(item.metadata,expected,limit),/bound|length/);else assert.doesNotThrow(()=>validateRemoteMetadata(item.metadata,expected,limit));
+      }
+    }
+  } finally {await rm(value.root,{recursive:true,force:true});}
+  for(const role of ['anchor-before','anchor-after','inventory','record']) {
+    const value=await setup();try {
+      const request=await prepared(value);const original=value.drive.getMetadata.bind(value.drive);let badId=null;let anchorReads=0;
+      value.drive.getMetadata=async args=>{const response=await original(args);const file=value.drive.files.get(args.id);if(args.id==='anchor-one')anchorReads++;
+        const matches=role==='anchor-before'?args.id==='anchor-one'&&anchorReads===1:role==='anchor-after'?args.id==='anchor-one'&&anchorReads===2:role==='inventory'?file.name.startsWith('history-'):args.id!=='anchor-one'&&!file.name.startsWith('history-');
+        if(matches){badId=args.id;return {...response,size:(role.startsWith('anchor')?CAPTURE_LIMITS.scopeBytes:role==='inventory'?CAPTURE_LIMITS.inventoryBytes:CAPTURE_LIMITS.recordBytes)+1};}return response;};
+      const output=await publishHistory(request,value.drive);assert.equal(output.status,'blocked',role);assert.ok(badId,role);
+      const calls=value.drive.calls;const lastMetadata=calls.findLastIndex(call=>call.method==='getMetadata'&&call.id===badId);assert.ok(!calls.slice(lastMetadata+1).some(call=>call.method==='downloadRaw'&&call.id===badId),role+' download refused before effect');
+    } finally {await rm(value.root,{recursive:true,force:true});}
+  }
+});
+
+test('identical concurrent generation closures advance both callback snapshots once',async()=>{
+  const value=await setup();try {
+    const request=await prepared(value);await advanceThrough(value,request,'inventory:download');
+    let closures=0;let release;const barrier=new Promise(resolve=>{release=resolve;});
+    const checkpoint=async name=>{if(name==='generation-closed-persisted'){closures++;if(closures===2)release();if(closures>2)throw new Error('Identical concurrent closure replay exceeded bound');await barrier;}};
+    const callbacks=await Promise.all([publicationAction(request,{checkpoint}),publicationAction(request,{checkpoint})]);
+    assert.equal(closures,2);assert.ok(callbacks.every(next=>next.status==='action-required'));assert.ok(callbacks.every(next=>next.action.method==='getMetadata'));
+    assert.equal((await publishHistory(request,value.drive)).status,'published');
   } finally {await rm(value.root,{recursive:true,force:true});}
 });
