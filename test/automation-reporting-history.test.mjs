@@ -17,7 +17,7 @@ import { historyBytes, historyDecode, historyHash, planDiscovery, consumeDiscove
 import { transportAutomationReporting, sanitizeRecords } from '../src/automation-reporting-transport.mjs';
 import { planUpkeep, applyUpkeep } from '../src/automation-reporting-upkeep.mjs';
 import { CAPTURE_LIMITS } from '../src/automation-reporting-capture.mjs';
-import { recordDigest } from '../src/automation-reporting.mjs';
+import { canonical, recordDigest } from '../src/automation-reporting.mjs';
 import { runRecord, evaluatedAt } from './fixtures/reporting-capture.mjs';
 import { FakeDrive, historyScope, emptyPacket } from './fixtures/reporting-history.mjs';
 async function setup(records=[runRecord()]) {
@@ -118,8 +118,13 @@ test('standalone discovers and consumes exact immutable generations outside chec
 
 test('fresh-process crash at every durable boundary retains source and refuses unknown creates',async()=>{
   const baseline=await setup();let total;
+  const persisted=kind=>['bytes-prepared','bytes-committed',kind+'-persisted'];
+  const readAction=[...persisted('intent'),'remote-effect-returned',...persisted('response')];
+  const mutationAction=[...persisted('intent'),'bytes-prepared','bytes-committed','remote-effect-returned',...persisted('response')];
+  const immutableObject=[...mutationAction,...readAction,...readAction];
+  const expectedCheckpoints=['source-captured','bytes-prepared','bytes-committed','batch-prepared','bytes-prepared','bytes-committed','owner-claimed',...immutableObject,...immutableObject,...persisted('generation-closed'),...readAction,...readAction,...mutationAction,...readAction,...readAction,...persisted('pointer-closed')];
   const worker=(value,cutoff)=>spawnSync(process.execPath,['test/fixtures/reporting-history-worker.mjs',value.root,String(cutoff)],{encoding:'utf8'});
-  try {await writeFile(join(baseline.root,'input.json'),historyBytes(baseline.input));await baseline.drive.save(join(baseline.root,'remote.json'));const run=worker(baseline,0);assert.equal(run.status,0,run.stderr);total=JSON.parse(run.stdout).count;assert.ok(total>50);} finally {await rm(baseline.root,{recursive:true,force:true});}
+  try {await writeFile(join(baseline.root,'input.json'),historyBytes(baseline.input));await baseline.drive.save(join(baseline.root,'remote.json'));const run=worker(baseline,0);assert.equal(run.status,0,run.stderr);const baselineOutput=JSON.parse(run.stdout);assert.equal(baselineOutput.result.status,'published','crash baseline must publish');assert.deepEqual(JSON.parse(await readFile(join(baseline.root,'trace.json'))),expectedCheckpoints,'declared exact checkpoint sequence');total=baselineOutput.count;assert.equal(total,96,'declared durable checkpoint count');await mkdir('.local/consumer-evidence',{recursive:true});await writeFile('.local/consumer-evidence/history-baseline-checkpoints.json',await readFile(join(baseline.root,'trace.json')));} finally {await rm(baseline.root,{recursive:true,force:true});}
   const outcomes=[];
   for(let cutoff=1;cutoff<=total;cutoff++) {
     const value=await setup();try {
@@ -129,11 +134,24 @@ test('fresh-process crash at every durable boundary retains source and refuses u
       if(output.result.status==='uncertain') {
         const next=await publicationAction({stateDirectory:value.stateDirectory,batchId:output.batch.batchId});let proof=null;try {proof=JSON.parse(await readFile(join(value.root,'last-return.json')));}catch(error){if(error.code!=='ENOENT')throw error;}
         if(next.action?.method==='uploadImmutable' && proof?.method==='uploadImmutable') {await recoverPublicationId({stateDirectory:value.stateDirectory,batchId:output.batch.batchId,actionId:next.action.actionId,id:proof.response.id,evidence:{source:'synthetic-retained-provider-response',response:proof.response}});restarted=worker(value,0);assert.equal(restarted.status,0,restarted.stderr);output=JSON.parse(restarted.stdout);drive=await FakeDrive.load(join(value.root,'remote.json'));}
-        else {assert.equal(next.execute,false);outcomes.push({cutoff,status:next.action?.method==='uploadImmutable'?'uncertain-no-returned-id':'uncertain-pointer-no-effect-proof'});continue;}
+        else {
+          assert.equal(next.execute,false);
+          if(next.action?.method==='uploadImmutable') {assert.ok([9,10,11,12,32,33,34,35].includes(cutoff),'unknown create only at declared cutoffs');assert.notEqual(proof?.method,'uploadImmutable');outcomes.push({cutoff,status:'uncertain-no-returned-id'});}
+          else {
+            assert.ok([72,73,74,75].includes(cutoff),'pointer uncertainty only at declared cutoffs');assert.equal(next.generationClosed,true);assert.equal(next.inventory.id,'remote-2');
+            const events=await Promise.all((await readdir(join(value.stateDirectory,output.batch.batchId))).filter(name=>/^\d/.test(name)).map(async name=>JSON.parse(await readFile(join(value.stateDirectory,output.batch.batchId,name)))));
+            const closed=events.filter(event=>event.kind==='generation-closed');assert.equal(closed.length,1);assert.deepEqual(closed[0].inventory,next.inventory);
+            const intent=events.find(event=>event.kind==='intent'&&event.method==='updatePointer');assert.equal(intent.actionId,'anchor-update-0');assert.equal(intent.args.id,value.scope.owners[0].anchor.id);assert.equal(historyDecode(Buffer.from(intent.args.bytesBase64,'base64')).inventory.id,closed[0].inventory.id);
+            assert.equal(events.some(event=>event.kind==='pointer-closed'),false);assert.equal(drive.calls.filter(call=>call.method==='updatePointer').length,0);assert.equal(drive.calls.filter(call=>call.method==='uploadImmutable').length,2);
+            outcomes.push({cutoff,status:'uncertain-pointer-no-effect-proof'});
+          }
+          continue;
+        }
       }
       assert.equal(output.result.status,'published',`cutoff ${cutoff}: ${JSON.stringify(output.result)}`);assert.equal(drive.calls.filter(call=>call.method==='uploadImmutable').length,2,`no duplicate upload cutoff ${cutoff}`);assert.equal(consume(value,await drive.packet(value.scope)).scan.records,1);assert.equal((await readdir(join(value.directory,'own'))).length,1);outcomes.push({cutoff,status:'published'});
     } finally {await rm(value.root,{recursive:true,force:true});}
   }
+  assert.deepEqual(outcomes.filter(item=>item.status==='uncertain-no-returned-id').map(item=>item.cutoff),[9,10,11,12,32,33,34,35]);assert.deepEqual(outcomes.filter(item=>item.status==='uncertain-pointer-no-effect-proof').map(item=>item.cutoff),[72,73,74,75]);assert.equal(outcomes.filter(item=>item.status==='published').length,84);
   await mkdir('.local/consumer-evidence',{recursive:true});await writeFile('.local/consumer-evidence/history-crash-boundaries.json',JSON.stringify({total,outcomes},null,2));
 });
 
@@ -347,4 +365,46 @@ test('overlapping callback preserves a late pointer RPC response after old readb
     assert.ok(events.some(event=>event.kind==='response'&&event.actionId==='anchor-update-0'&&event.response.raw.id==='anchor-one'));
     assert.equal(value.drive.calls.filter(call=>call.method==='updatePointer').length,1);
   } finally {await rm(value.root,{recursive:true,force:true});}
+});
+
+
+test('late same-owner upload callback retains original response after exact-ID recovery without another mutation',async()=>{
+  for(const conflict of [false,true]) {
+    const value=await setup();try {
+      const request=await prepared(value);const original=value.drive.uploadImmutable.bind(value.drive);let announce,release;
+      const started=new Promise(resolve=>announce=resolve);const held=new Promise(resolve=>release=resolve);let first=true;
+      value.drive.uploadImmutable=async args=>{const response=await original(args);if(first){first=false;announce(response);await held;return conflict?{...response,id:'conflicting-returned-id'}:response;}return response;};
+      const running=publishHistory(request,value.drive).then(result=>({result}),error=>({error:error.message}));const response=await started;
+      await recoverPublicationId({...request,actionId:'record-0:upload',id:response.id,evidence:{source:'synthetic-exact-provider-create-response',response}});
+      assert.equal((await publishHistory(request,value.drive)).status,'published');
+      const journal=join(value.stateDirectory,request.batchId);const before=await Promise.all((await readdir(journal)).filter(name=>/^\d/.test(name)).map(async name=>({name,bytes:await readFile(join(journal,name))})));
+      const calls=value.drive.calls.length;release();const late=await running;
+      const events=await Promise.all((await readdir(journal)).filter(name=>/^\d/.test(name)).map(async name=>JSON.parse(await readFile(join(journal,name)))));
+      const actual=events.filter(event=>event.kind==='response'&&event.actionId==='record-0:upload');assert.equal(actual.length,1,'actual delayed upload response retained');
+      assert.equal(canonical(actual[0].response),canonical(conflict?{...response,id:'conflicting-returned-id'}:response));
+      for(const entry of before)assert.deepEqual(await readFile(join(journal,entry.name)),entry.bytes,'prior recovery and closure bytes retained');
+      assert.equal(value.drive.calls.length,calls,'late response grants no new remote effect');assert.equal(value.drive.calls.filter(call=>call.method==='uploadImmutable').length,2);
+      if(conflict){assert.match(late.error,/Recovery disagrees with returned exact ID/);assert.equal((await publicationAction(request)).status,'blocked');}
+      else {assert.equal(late.result.status,'published');assert.equal((await publicationAction(request)).status,'published');}
+    } finally {await rm(value.root,{recursive:true,force:true});}
+  }
+});
+
+
+test('crash oracle rejects early uncertainty in isolated actual source and restored controls publish',async()=>{
+  const root=join(await realpath('.'),'.local','consumer-evidence','crash-oracle-'+Date.now());await mkdir(root,{recursive:true});
+  await cp('src',join(root,'src'),{recursive:true});await cp('test',join(root,'test'),{recursive:true});
+  const sourcePath=join(root,'src','automation-reporting-history.mjs');const source=await readFile(sourcePath,'utf8');
+  const anchor="  const anchor={schemaVersion:1,kind:'automation-reporting-discovery-anchor'";assert.equal(source.split(anchor).length-1,1);
+  const results=[];
+  for(const variant of ['baseline','mutant','restored']) {
+    await writeFile(sourcePath,variant==='mutant'?source.replace(anchor,"  if(!state.events.some(e=>e.kind==='recovery')) return {done:true,status:'uncertain',execute:false};\n"+anchor):source);
+    const result=spawnSync(process.execPath,['--test','--test-name-pattern=^fresh-process crash','test/automation-reporting-history.test.mjs'],{cwd:root,encoding:'utf8'});
+    await writeFile(join(root,variant+'.stdout.log'),result.stdout);await writeFile(join(root,variant+'.stderr.log'),result.stderr);
+    const output=result.stdout+result.stderr;assert.equal(result.error,undefined);
+    if(variant==='mutant') {assert.equal(result.status,1);assert.match(output,/crash baseline must publish/);assert.match(output,/'uncertain'/);assert.match(output,/'published'/);assert.doesNotMatch(output,/SyntaxError|ERR_MODULE_NOT_FOUND/);}
+    else {assert.equal(result.status,0,output);assert.equal(JSON.parse(await readFile(join(root,'.local','consumer-evidence','history-crash-boundaries.json'))).total,96);}
+    results.push({variant,status:result.status,sourceSha256:historyHash(await readFile(sourcePath)),behavior:variant==='mutant'?'baseline-uncertain-rejected-before-cutoffs':'96-cutoffs-passed'});
+  }
+  assert.equal(results[0].sourceSha256,results[2].sourceSha256);await writeFile(join(root,'report.json'),JSON.stringify({results},null,2));
 });
