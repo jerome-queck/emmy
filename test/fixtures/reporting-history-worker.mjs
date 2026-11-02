@@ -1,0 +1,10 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { prepareHistoryBatch, publishHistory } from '../../src/automation-reporting-history.mjs';
+import { FakeDrive } from './reporting-history.mjs';
+const [root,cutoff]=process.argv.slice(2);let count=0;const trace=[];
+const checkpoint=async name=>{count++;trace.push(name);await writeFile(join(root,'trace.json'),JSON.stringify(trace));if(count===Number(cutoff))process.exit(73);};
+const input=JSON.parse(await readFile(join(root,'input.json')));const drive=await FakeDrive.load(join(root,'remote.json'));
+const adapter={};
+for(const method of ['uploadImmutable','getMetadata','downloadRaw','updatePointer']) adapter[method]=async args=>{const response=await drive[method](args);await drive.save(join(root,'remote.json'));await writeFile(join(root,'last-return.json'),JSON.stringify({method,response}));return response;};
+const batch=await prepareHistoryBatch(input,{checkpoint});const result=await publishHistory({stateDirectory:input.stateDirectory,batchId:batch.batchId},adapter,{checkpoint});console.log(JSON.stringify({batch,result,count}));

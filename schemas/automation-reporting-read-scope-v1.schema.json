@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "automation-reporting-read-scope-v1.schema.json",
+  "description": "Structural shape only. Runtime also validates exact raw bytes, identities, pins, pagination, aggregate bounds and supplied inventory consistency.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "rootFolderId",
+    "namespaces",
+    "inventory",
+    "controlAuthority"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "automation-reporting-read-scope"
+    },
+    "rootFolderId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 400,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "namespaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "namespace",
+          "folderId",
+          "automationIds"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$"
+          },
+          "folderId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+          },
+          "automationIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        }
+      },
+      "maxItems": 200,
+      "minItems": 1
+    },
+    "inventory": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "const": "pages"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "mode",
+            "id",
+            "sha256"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "const": "pinned"
+            },
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 400,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        }
+      ]
+    },
+    "controlAuthority": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "namespace",
+            "automationId"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "namespace": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$"
+            },
+            "automationId": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

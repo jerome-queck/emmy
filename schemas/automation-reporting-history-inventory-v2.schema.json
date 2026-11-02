@@ -1,0 +1,339 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "automation-reporting-history-inventory-v2.schema.json",
+  "description": "Structural shape only. Runtime checks canonical raw bytes, exact IDs/parents, all admitted source history, source clocks, lineage, hashes and bounds. Not provider latest or global completeness.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "rootFolderId",
+    "rootEntries",
+    "namespaces",
+    "owner",
+    "generation",
+    "previous",
+    "sourceSet",
+    "sourceSetSha256",
+    "captureInterval",
+    "sourceClocks",
+    "sourceBoundary"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "kind": {
+      "const": "automation-reporting-history-inventory"
+    },
+    "rootFolderId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 400,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "rootEntries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "parentId",
+          "type"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$"
+          },
+          "parentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+          },
+          "type": {
+            "const": "folder"
+          }
+        }
+      },
+      "maxItems": 200
+    },
+    "namespaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "namespace",
+          "folderId",
+          "entries"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$"
+          },
+          "folderId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400,
+            "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "name",
+                "parentId",
+                "type",
+                "size",
+                "sha256"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 400,
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                },
+                "name": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}\\.json$"
+                },
+                "parentId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 400,
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+                },
+                "type": {
+                  "const": "file"
+                },
+                "size": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 32769
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              }
+            },
+            "maxItems": 5000
+          }
+        }
+      },
+      "maxItems": 200
+    },
+    "owner": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "previous": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "generation",
+            "inventory"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "generation": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "inventory": {
+              "type": "object",
+              "required": [
+                "id",
+                "parentId",
+                "name",
+                "size",
+                "sha256"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 400
+                },
+                "parentId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 400
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 400
+                },
+                "size": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 4194304
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "sourceSet": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": {
+        "type": "object",
+        "required": [
+          "namespace",
+          "digest",
+          "size",
+          "sha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "namespace": {
+            "type": "string"
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32769
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "sourceSetSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "captureInterval": {
+      "type": "object",
+      "required": [
+        "startedAt",
+        "endedAt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "endedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "sourceClocks": {
+      "type": "object",
+      "required": [
+        "recordedAt",
+        "originalEvidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "recordedAt": {
+          "type": "object",
+          "required": [
+            "min",
+            "max"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "max": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "originalEvidence": {
+          "type": "object",
+          "required": [
+            "min",
+            "max"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "max": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "sourceBoundary": {
+      "type": "object",
+      "required": [
+        "admissionId",
+        "throughGeneration",
+        "completeAdmittedHistory"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "admissionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "throughGeneration": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "completeAdmittedHistory": {
+          "const": true
+        }
+      }
+    }
+  }
+}

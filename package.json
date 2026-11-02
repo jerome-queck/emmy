@@ -6,6 +6,13 @@
   "engines": { "node": ">=24" },
   "scripts": {
     "agent": "node scripts/agent.mjs",
+    "reporting": "node scripts/automation-reporting.mjs",
+    "reporting:history": "node scripts/automation-reporting-history.mjs",
+    "reporting:transport": "node scripts/automation-reporting-transport.mjs",
+    "reporting:upkeep": "node scripts/automation-reporting-upkeep.mjs",
+    "build:reporting-cloud": "node scripts/build-reporting-cloud.mjs",
+    "verify:reporting-capture": "node verification/automation-reporting/capture-drive.mjs",
+    "verify:reporting": "node scripts/verify-automation-reporting.mjs",
     "check": "node scripts/check.mjs",
     "check:links": "node scripts/check-markdown-links.mjs",
     "verify:behavior": "node scripts/verify-behavior.mjs",
