@@ -192,7 +192,7 @@ async function flatCalendarExchange(t, events, change = value => value, payloadE
   const request = { schemaVersion: 1, role: 'calendar', account: 'primary@example.test', environment: 'dot-cloud', surface: 'connector', requestedCalendarId: 'calendar-1', resourceIds: source.resourceIds, window: source.window, maxReads: 1, maxBytes: 1048576 };
   const observation = change({ source, requestedCalendarId: 'calendar-1', provenance: { environment: 'dot-cloud', surface: 'connector', tool: 'calendar.search', sourceRef: 'synthetic-calendar-read-1' }, nextCursor: null });
   const sidecar = Buffer.from(JSON.stringify(observation));
-  const raw = Buffer.from(JSON.stringify(wrapper({ events, ...payloadExtra })));
+  const raw = Buffer.from(JSON.stringify(wrapper({ events, next_page_token: null, ...payloadExtra })));
   const path = join(directory, 'flat.raw'); await writeFile(path, raw);
   const projection = { contract: 'calendar-search-flat-v1', observationBytes: sidecar.toString('base64'), observationSha256: digest(sidecar) };
   const manifest = { schemaVersion: 1, request, captures: [{ readRequest: briefingCloudReadRequest(request), path, sha256: digest(raw), byteCount: raw.length, projection }] };
@@ -262,7 +262,7 @@ test('flat Calendar rejects raw cursor divergence and malformed native tokens be
   }
   const missing = await flatCalendarExchange(t, [], o => ({ ...o, nextCursor: 'invented' }));
   await assert.rejects(missing.run(), /Failed acquisition/);
-  for (const extra of [{}, { next_page_token: null }]) {
+  for (const extra of [{ next_page_token: null }]) {
     const x = await flatCalendarExchange(t, [], undefined, extra);
     const result = await x.run(); assert.equal(result.acquisition.complete, true); assert.deepEqual(result.source.items, []);
   }
@@ -393,4 +393,30 @@ test('structured Calendar success cannot conceal a recognized JSON error in reta
     const x = await flatCalendarExchange(t, [], undefined, {}, payload => ({ isError: false, structuredContent: payload, content: [{ type: 'text', text }] }));
     assert.equal((await x.run()).acquisition.complete, true);
   }
+});
+
+
+test('flat Calendar absent raw token cannot accept complete sidecar or invented continuation', async t => {
+  for (const change of [o => o, o => ({ ...o, source: { ...o.source, complete: false } }), o => ({ ...o, source: { ...o.source, paginationComplete: false } }), o => ({ ...o, nextCursor: 'invented', source: { ...o.source, complete: false, paginationComplete: false } })]) {
+    const x = await flatCalendarExchange(t, [], change, { next_page_token: undefined });
+    await assert.rejects(x.run(), /Failed acquisition/);
+    const file = join(x.directory, 'missing-token-manifest.json'); await writeFile(file, JSON.stringify(x.manifest));
+    const child = spawnSync(process.execPath, [resolve('scripts/briefing-cloud-exchange.mjs'), 'acquire', file, join(x.directory, 'missing-token-cli')], { encoding: 'utf8' });
+    assert.notEqual(child.status, 0); assert.equal(child.stdout, ''); assert.match(child.stderr, /Failed acquisition/);
+  }
+});
+
+test('flat Calendar absent raw token preserves only explicit partial unknown pagination through CLI', async t => {
+  const x = await flatCalendarExchange(t, [flatEvent()], o => ({ ...o, source: { ...o.source, complete: false, paginationComplete: false } }), { next_page_token: undefined });
+  const result = await x.run();
+  assert.equal(result.acquisition.complete, false); assert.equal(result.acquisition.reads, 1);
+  assert.equal(result.acquisition.responses[0].response.nextCursor, null);
+  assert.equal(result.source.complete, false); assert.equal(result.source.paginationComplete, false);
+  assert.ok(result.source.gaps.includes('Calendar pagination unknown: raw next_page_token absent'));
+  const file = join(x.directory, 'missing-token-partial-manifest.json'); await writeFile(file, JSON.stringify(x.manifest));
+  const child = spawnSync(process.execPath, [resolve('scripts/briefing-cloud-exchange.mjs'), 'acquire', file, join(x.directory, 'missing-token-partial-cli')], { encoding: 'utf8' });
+  assert.equal(child.status, 0, child.stderr); assert.deepEqual(JSON.parse(child.stdout).source, result.source);
+  x.input.calendar = result.source; const called = await x.compile(x.input);
+  assert.equal(called.status, 3, called.stdout);
+  assert.ok(called.result.gaps.includes('calendar: Calendar pagination unknown: raw next_page_token absent'));
 });
