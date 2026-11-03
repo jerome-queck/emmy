@@ -11,7 +11,7 @@ const clean = briefingHumanText;
 function shape(value, fields) { need(value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === fields.length && fields.every(key => Object.hasOwn(value, key)), `Plan members must be ${fields.join(', ')}`); }
 function strings(value) { need(list(value) && value.every(text) && unique(value), 'Bounded unique text required'); }
 function source(value, asOf, gaps, role) {
-  if (value.observedAt === null || value.capturedAt === null) { need(value.observedAt === null && value.capturedAt === null && value.complete === false && value.paginationComplete === false && list(value.gaps) && value.gaps.every(text), 'Unavailable source cannot invent clocks or completeness'); gaps.push(`${role} original source clock unavailable`, ...value.gaps.map(gap => `${role}: ${gap}`)); return; }
+  if (value.observedAt === null || value.capturedAt === null) { need(value.observedAt === null && value.capturedAt === null && value.complete === false && value.paginationComplete === false && list(value.gaps) && value.gaps.every(text) && list(value.items) && value.items.length === 0 && (value.inboxIds ?? value.acquiredResourceIds)?.length === 0, 'Unavailable source cannot invent clocks, completeness or acquired items'); gaps.push(`${role} original source clock unavailable`, ...value.gaps.map(gap => `${role}: ${gap}`)); return; }
   need(stamp(value.observedAt) && stamp(value.capturedAt) && value.observedAt <= value.capturedAt && value.capturedAt <= asOf, 'Original source/acquisition clocks required');
   need(typeof value.complete === 'boolean' && typeof value.paginationComplete === 'boolean', 'Explicit coverage required'); strings(value.gaps);
   if (!value.complete || !value.paginationComplete) gaps.push(`${role} acquisition incomplete`);
@@ -53,8 +53,9 @@ export function preparePolicyBriefing(input) {
   const tasks = new Map();
   for (const task of input.tasks.items) {
     shape(task, ['nativeId', 'listId', 'title', 'status', 'ownerDismissed', 'manuallyMoved', 'doDate', 'deadline']);
-    need(text(task.nativeId) && text(task.title) && input.tasks.acquiredResourceIds.includes(task.listId) && ['needsAction', 'completed', 'cancelled'].includes(task.status) && typeof task.ownerDismissed === 'boolean' && typeof task.manuallyMoved === 'boolean' && (task.doDate === null || /^\d{4}-\d\d-\d\d$/.test(task.doDate)) && (task.deadline === null || stamp(task.deadline)), 'Exact native Task status required');
+    need(text(task.nativeId) && text(task.title) && input.tasks.acquiredResourceIds.includes(task.listId) && ['needsAction', 'completed', 'cancelled'].includes(task.status) && [task.ownerDismissed, task.manuallyMoved].every(value => value === null || typeof value === 'boolean') && (task.doDate === null || typeof task.doDate === 'string' && /^\d{4}-\d\d-\d\d$/.test(task.doDate)) && (task.deadline === null || stamp(task.deadline)), 'Exact native Task status required');
     need(!tasks.has(task.nativeId), 'Conflicting duplicate Task identity'); tasks.set(task.nativeId, task);
+    if (task.status === 'needsAction' && (task.ownerDismissed === null || task.manuallyMoved === null)) gaps.push('Task dismissal or move status unknown');
   }
   const seen = new Map(); const events = [];
   for (const event of input.calendar.items) {
@@ -67,6 +68,7 @@ export function preparePolicyBriefing(input) {
     if (event.end <= start || event.start >= end || event.status === 'cancelled') continue;
     const task = event.taskId && tasks.get(event.taskId);
     if (task && (task.status !== 'needsAction' || task.ownerDismissed || task.manuallyMoved)) continue;
+    if (task && (task.ownerDismissed === null || task.manuallyMoved === null || task.doDate !== null && task.doDate > input.day)) continue;
     if (event.taskId && !task) gaps.push('Calendar Task projection has no matching native completion evidence');
     events.push(event);
   }
@@ -103,7 +105,7 @@ export function preparePolicyBriefing(input) {
   const section = (title, rows) => `## ${title}\n\n${rows.length ? rows.join('\n') : 'None declared.'}`;
   const timed = events.filter(row => !row.allDay).sort((a, b) => a.start.localeCompare(b.start) || a.nativeId.localeCompare(b.nativeId)).map(row => `- ${row.start < start ? '00:00' : new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(row.start))} ${clean(row.title)}`);
   const allDay = events.filter(row => row.allDay).sort((a, b) => a.title.localeCompare(b.title)).map(row => `- All day ${clean(row.title)}`);
-  const taskRows = [...tasks.values()].filter(row => row.status === 'needsAction' && !row.ownerDismissed && !row.manuallyMoved).map(row => `- ${clean(row.title)}${row.deadline ? `. Deadline ${row.deadline}` : row.doDate ? `. Study do-date ${row.doDate}` : ''}`);
+  const taskRows = [...tasks.values()].filter(row => row.status === 'needsAction' && row.ownerDismissed === false && row.manuallyMoved === false && (row.deadline !== null || row.doDate === null || row.doDate <= input.day)).map(row => `- ${clean(row.title)}${row.doDate ? `. Study do-date ${row.doDate}` : ''}${row.deadline ? `. Deadline ${row.deadline}` : ''}`);
   const body = `# Daily briefing ${input.day}\n\n${section('Needs action/review', judgments.filter(row => row.classification.action === 'keep').map(mailLine))}\n\n${section('Owed replies and open deadlines', obligations.map(row => `- ${clean(row.label)}${row.deadline ? `. Deadline ${row.deadline}` : ''}.`))}\n\n${section('Trashed (recoverable)', judgments.filter(row => row.classification.action === 'trash').map(mailLine))}\n\n${section('Archived', judgments.filter(row => row.classification.action === 'archive').map(mailLine))}\n\n${section('Today', ['SGT', ...allDay, ...timed])}\n\n${section('Tasks', taskRows)}\n\n${section('Emmy checks', reportChecks.map(item => `- ${clean(item.kind)} (${new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Singapore',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(item.scheduledFor))} SGT). ${clean(item.state)}.${item.attempts.length ? ' ' + item.attempts.map(attempt => clean(attempt.summary)).filter(Boolean).join(' ') : ''}`))}\n\n${section('Counts', [`- Reviewed ${messages} Inbox messages; ${conversations.size} conversations; ${contexts} expanded-context messages.`, `- Verified moves ${mailOutcomes.filter(row => row.status === 'verified').length}; uncertain ${mailOutcomes.filter(row => row.status === 'uncertain').length}. Remaining dispositions proposed. Delivery remains separate.`])}\n\n${section('Learning changes', learningChanges.map(entry => `- Proposed ${clean(entry.action)} for ${clean(entry.scope)}. Source ${clean(entry.authority.date)}; ${clean(entry.kind)}. Policy adoption remains separate.`))}\n\n${section('Evidence coverage', gaps.map(gap => `- ${clean(gap)}`))}\n`;
   need(Buffer.byteLength(body) <= 262144, 'Briefing body exceeds bound');
   return { contract: 'daily-briefing-v3', day: input.day, policyDigest: digest(input.policy), body, bodyDigest: digest(body), coverage: gaps.length ? 'partial' : 'complete-declared', gaps, checksTerminal, inputDigest: digest(input), judgments, counts: { messages, conversations: conversations.size, expandedContextMessages: contexts }, checks };

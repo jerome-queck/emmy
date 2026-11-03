@@ -6,6 +6,7 @@ const sha = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const array = (value, limit = 128) => Array.isArray(value) && value.length <= limit;
 const purposes = ['invoice', 'receipt', 'statement', 'notice', 'other'];
 const actions = ['keep', 'archive', 'trash'];
+const contextFlags = ['complete', 'safeUnreadInspection', 'actionRequired', 'reviewRequired', 'ambiguous', 'seriousSecurity', 'unresolved', 'consequential', 'academic', 'research', 'personal', 'billing', 'terms', 'securityWarning', 'informational', 'orderReceipt', 'invitation', 'directMessage', 'recognizedLogin'];
 function shape(value, fields) { need(value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === fields.length && fields.every(key => Object.hasOwn(value, key)), `Policy members must be ${fields.join(', ')}`); }
 function authority(value) { shape(value, ['sourceRef', 'date', 'scope']); need(text(value.sourceRef) && /^\d{4}-\d\d-\d\d$/.test(value.date) && text(value.scope), 'Narrow dated owner provenance required'); }
 function match(value, exact = false) {
@@ -67,6 +68,10 @@ export function classifyBriefingMail(review, policy) {
   const evidence = validatePolicyEvidence(review.policyEvidence);
   const { before, context, adapter } = review;
   need(['gmail', 'outlook'].includes(adapter) && before && context && array(review.facts, 20) && review.facts.every(text), 'Mail review required');
+  shape(before, adapter === 'gmail' ? ['nativeId', 'threadId', 'subject', 'sender', 'unread', 'labels'] : ['nativeId', 'threadId', 'subject', 'sender', 'unread', 'folder', 'folderId']);
+  need(['nativeId', 'threadId', 'subject', 'sender'].every(key => text(before[key])) && typeof before.unread === 'boolean', 'Invalid mail snapshot');
+  need(adapter === 'gmail' ? array(before.labels, 64) && before.labels.every(text) && new Set(before.labels).size === before.labels.length : text(before.folder) && text(before.folderId), 'Invalid mail snapshot location');
+  need(Object.keys(context).length === contextFlags.length + 2 && contextFlags.every(key => Object.hasOwn(context, key) && typeof context[key] === 'boolean') && text(context.category) && sha(context.threadDigest), 'Explicit boolean mail context and exact thread attribution required');
   const result = (action, reason, rule = null) => ({ action, reason, rule, policyVersion: 3, policyDigest: digest(policy) });
   const keep = reason => result('keep', reason);
   if (adapter === 'gmail' ? !before.labels.includes('INBOX') : before.folder !== 'Inbox') return keep('already-outside-inbox');

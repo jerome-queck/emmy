@@ -44,6 +44,10 @@ export async function driveMorningV3({ home, bindings, target, run, report }) {
     await call({ operation: 'result', jobKey: ticket.key, ticket: ticket.ticket, checkpoint: 1, outcome: 'completed', usage: { reads: 1, bytes: 4096 }, receipt: captured.receipt }, [captured.ref]);
     await command('source', { sourceId: entity.id, jobKey: ticket.key, receipt: captured.receipt, paginationComplete: true, cached: false, resourceIds: entity.id === 'calendar-inventory' ? ['calendar'] : entity.id === 'task-inventory' ? ['tasks'] : [], messageIds: ['gmail', 'outlook'].includes(entity.id) ? [`${entity.id}-one`] : [], window: ['calendar', 'tasks'].includes(entity.id) ? window : null }, [captured.ref]);
   }
+  for (const key of ['complete', 'safeUnreadInspection', 'personal']) {
+    const invalid = structuredClone(reviews); invalid[0].context[key] = 'false';
+    await command('review', { items: invalid }, reviewRefs, 2);
+  }
   await command('review', { items: reviews }, reviewRefs);
   const assessedAt = now(); const calendarInput = { intent: { window: { ...window, timeZone: 'Asia/Singapore' } } };
   const assessments = morningAssessments(assessedAt, window); assessments.calendar.input = calendarInput;
@@ -57,13 +61,30 @@ export async function driveMorningV3({ home, bindings, target, run, report }) {
   const daySource = role => { const receipts = [captures.get(role).receipt, captures.get(role === 'calendar' ? 'calendar-inventory' : 'task-inventory').receipt]; return { observedAt: receipts.map(receipt => receipt.observedAt).sort()[0], capturedAt: receipts.map(receipt => receipt.capturedAt).sort().at(-1), complete: true, paginationComplete: true, gaps: [], window, resourceIds: [role], acquiredResourceIds: [role], items: [] }; };
   const checks = assessBriefingReporting({ action: 'checks', asOf: assessedAt, results: [] }).expected.filter(check => check.state !== 'not-due').map(check => ({ kind: check.kind, scheduledFor: check.scheduledFor, requestId: `synthetic-request-${check.kind}`, attemptId: `synthetic-attempt-${check.kind}`, state: 'terminal', execution: 'completed', coverage: 'complete', availability: 'available', sourceEnd: assessedAt, observedAt: assessedAt, recordedAt: assessedAt, snapshotDigest: digest(check.kind), summary: 'Synthetic completed check.' }));
   const planInput = { schemaVersion: 3, day, asOf: assessedAt, policy, mail: ['gmail', 'outlook'].map(adapter => { const captured = captures.get(adapter).receipt; return { adapter, account: policy.accounts[adapter].account, surface: adapter === 'gmail' ? 'connector' : 'browser', environment: 'dot-cloud', observedAt: captured.observedAt, capturedAt: captured.capturedAt, complete: true, paginationComplete: true, gaps: [], inboxIds: [`${adapter}-one`], items: reviews.filter(item => item.adapter === adapter), expandedContextCount: 1 }; }), calendar: daySource('calendar'), tasks: daySource('tasks'), obligations: [], checks };
+  const futureDay = new Date(Date.parse(start) + 2 * 86400000 + 8 * 3600000).toISOString().slice(0, 10);
+  const task = { nativeId: 'synthetic-future-study', listId: 'tasks', title: 'Synthetic future study', status: 'needsAction', ownerDismissed: false, manuallyMoved: false, doDate: futureDay, deadline: null };
+  planInput.tasks.items = [task, { ...task, nativeId: 'synthetic-deadline', title: 'Synthetic upcoming deadline', deadline: new Date(Date.parse(window.end) + 86400000).toISOString() }];
   const learningRefs = []; const observations = [];
   for (const nativeId of ['synthetic-observed-one', 'synthetic-observed-two']) {
     const event = { actor: 'synthetic-verified-owner', actorVerified: true, labelOnly: false, account: policy.accounts.gmail.account, nativeId, observedAt: assessedAt, scope: 'synthetic-routine-promotions', action: 'trash' };
     const raw = await evidence(`synthetic-learning-${nativeId}`, event); learningRefs.push(raw); observations.push({ ...event, sourceRef: raw.sourceRef, sourceDigest: raw.sha256 });
   }
   planInput.learning = { history: [], entries: [{ id: 'synthetic-preference', kind: 'observed-preference', risk: 'low-risk', authority: policy.authority, scope: 'synthetic-routine-promotions', action: 'trash', observations, counterexamples: [] }] };
+  const unknownInput = structuredClone(planInput);
+  unknownInput.tasks.items.push({ ...task, nativeId: 'synthetic-unknown', title: 'Synthetic unknown overlay', ownerDismissed: null, doDate: day });
+  const unknown = await run(['daily-briefing', '--file', await file('unknown-task-prepare', { action: 'prepare', input: unknownInput })], 3, selected);
+  assert.doesNotMatch(unknown.body, /Synthetic unknown overlay/);
+  assert.ok(unknown.gaps.includes('Task dismissal or move status unknown'));
+  const unknownRaw = await receipt('unknown-task-result', unknown, assessedAt); const unknownSource = await receipt('unknown-task-input', unknownInput);
+  await command('seal', { ...assessments, deterministic: { input: unknownInput, result: unknown, receipt: unknownRaw.receipt, inputReceipt: unknownSource.receipt } }, [...assessmentRefs, unknownRaw.ref, unknownSource.ref, owner, ...learningRefs]);
+  assert.equal(view.state.morningRuns[0].sealed.deterministic.input.tasks.items.at(-1).ownerDismissed, null);
   const prepared = await run(['daily-briefing', '--file', await file('prepare', { action: 'prepare', input: planInput })], 0, selected);
+  assert.doesNotMatch(prepared.body, /Synthetic future study|Synthetic unknown overlay/);
+  assert.match(prepared.body, /Synthetic upcoming deadline.*Study do-date.*Deadline/);
+  for (const key of ['complete', 'safeUnreadInspection', 'personal']) {
+    const invalid = structuredClone(planInput); invalid.mail[0].items[0].context[key] = 'false';
+    await run(['daily-briefing', '--file', await file('strict-mail-refused', { action: 'prepare', input: invalid })], 2, selected);
+  }
   const planRaw = await receipt('deterministic-result', prepared, assessedAt); const planSource = await receipt('deterministic-input', planInput);
   const deterministic = { input: planInput, result: prepared, receipt: planRaw.receipt, inputReceipt: planSource.receipt };
   {

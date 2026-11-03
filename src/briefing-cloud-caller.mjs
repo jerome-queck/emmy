@@ -34,10 +34,10 @@ export function projectBriefingPage(payload, projection, metadata) {
   need(stamp(observedAt), 'Actual source clock or declared current read-start observation required');
   let unreadPreserved;
   if (projection.contract === 'gmail-readonly-page-v1') { need(metadata.role === 'gmail', 'Read-only Gmail contract cannot normalize another adapter'); unreadPreserved = true; }
-  else { need(metadata.role === 'outlook', 'Outlook UI contract cannot normalize another adapter'); unreadPreserved = same(extract(payload, projection.unreadBeforePointer), extract(payload, projection.unreadAfterPointer)); }
-  const complete = projection.completePointer ? extract(payload, projection.completePointer) : payload.complete ?? true;
+  else { need(metadata.role === 'outlook', 'Outlook UI contract cannot normalize another adapter'); const before = extract(payload, projection.unreadBeforePointer); const after = extract(payload, projection.unreadAfterPointer); need(typeof before === 'boolean' && typeof after === 'boolean', 'Explicit boolean Outlook unread evidence required'); unreadPreserved = before === after; }
+  const complete = projection.completePointer ? extract(payload, projection.completePointer) : payload.complete;
   need(typeof complete === 'boolean', 'Explicit provider coverage must be boolean');
-  return { items, nextCursor: cursor, observedAt, observationBasis: sourceClock === null ? 'current-read-start' : 'original-provider-clock', complete: cursor === null && complete, unreadPreserved };
+  return { items, nextCursor: cursor, observedAt, observationBasis: sourceClock === null ? 'current-read-start' : 'original-provider-clock', complete, unreadPreserved };
 }
 async function retain(response, metadata, adapters) {
   need(response && (Buffer.isBuffer(response.raw) || typeof response.raw === 'string'), 'Caller must expose original serialized response bytes');
@@ -72,7 +72,7 @@ export async function acquireBriefingSource(request, adapters) {
     need(claim.outcome === 'admitted' && ticket && ticket.status === 'attempted' && text(ticket.ticket) && ticket.input?.id === request.admission.requestId && ticket.input.entityIds?.includes(request.admission.sourceId) && ticket.attemptReads === 0 && ticket.attemptBytes === 0 && stamp(ticket.deadline) && ticket.deadline >= adapters.now() && request.maxReads <= ticket.remainingReads && request.maxBytes <= ticket.remainingBytes, 'Null, replayed, expired, mismatched or insufficient canonical ticket forbids new reads');
     request = { ...request, admission: { ...request.admission, ticket: ticket.ticket, deadline: ticket.deadline } };
   }
-  const responses = []; const cursors = new Set(); let cursor = null; let reads = 0; let bytes = 0; let complete = false; let failure = null; let awaitingRaw = false;
+  const responses = []; const cursors = new Set(); let cursor = null; let reads = 0; let bytes = 0; let complete = false; let pagesComplete = true; let failure = null; let awaitingRaw = false;
   try {
     while (reads < request.maxReads) {
       const startedAt = adapters.now(); need(stamp(startedAt), 'Actual source start clock required');
@@ -88,7 +88,8 @@ export async function acquireBriefingSource(request, adapters) {
       if (request.purpose === 'check-progress') { need(request.role === 'reporting' && page.requestId === request.targetRequestId && page.attemptId === request.targetAttemptId, 'Progress read crossed the same admitted check'); complete = true; break; }
       need(page && stamp(page.observedAt) && page.observedAt <= capturedAt && typeof page.complete === 'boolean' && (page.nextCursor === null || text(page.nextCursor)), 'Provider page must retain original source clock, coverage and cursor');
       if (request.role === 'outlook' || request.role === 'gmail') need(page.unreadPreserved === true, 'Mail read did not establish original unread preservation');
-      if (page.nextCursor === null) { complete = page.complete; break; }
+      pagesComplete = pagesComplete && page.complete;
+      if (page.nextCursor === null) { cursor = null; complete = pagesComplete; break; }
       need(!cursors.has(page.nextCursor), 'Repeated provider cursor'); cursors.add(page.nextCursor); cursor = page.nextCursor;
     }
     if (!complete && !failure) failure = reads === request.maxReads && cursor !== null ? 'read-budget-exhausted' : 'partial-provider-coverage';

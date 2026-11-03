@@ -51,7 +51,7 @@ test('implementation authority and unsupported delivery never call a native tool
 });
 test('representative provider envelope projects exact raw IDs and rejects divergent normalized state', async t => {
   const storage = await sink(t); let calls = 0;
-  const provider = { structuredContent: { messages: [{ id: 'actual-provider-id' }], nextPageToken: null } };
+  const provider = { structuredContent: { messages: [{ id: 'actual-provider-id' }], nextPageToken: null, complete: true } };
   const projection = { contract: 'gmail-readonly-page-v1', itemsPointer: '/messages', cursorPointer: '/nextPageToken', observedAtPointer: null };
   const adapters = { ...storage, policy: policy(), now: () => at, read: async () => { calls++; return { raw: JSON.stringify(provider), projection }; }, completeAcquisition: async () => {} };
   const result = await acquireBriefingSource(request, adapters); assert.equal(result.complete, true); assert.equal(result.responses[0].response.items[0].id, 'actual-provider-id'); assert.equal(result.responses[0].response.observationBasis, 'current-read-start');
@@ -95,7 +95,7 @@ test('actual prepare CLI refuses malformed evidence and preserves date/unknown T
   };
   for (const [key, value] of [['complete', 'false'], ['safeUnreadInspection', 'false'], ['personal', null]]) {
     const input = plan(); input.mail[0].items[0].context[key] = value;
-    const called = await invoke(input); assert.equal(called.status, 1, called.stdout);
+    const called = await invoke(input); assert.equal(called.status, 2, called.stdout);
     assert.equal(JSON.parse(called.stdout).ok, false);
   }
   const input = plan();

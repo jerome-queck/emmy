@@ -23,7 +23,7 @@ test('protected serious issues stay; scoped owner overrides apply; unbound excep
   r.policyEvidence.recordPurpose = 'notice'; r.context.category = 'blackboard-notification'; assert.equal(classifyBriefingMail(r, p).action, 'trash');
   r.before.nativeId = 'exact-1'; assert.equal(classifyBriefingMail(r, p).action, 'trash');
   r.before.nativeId = 'other'; r.context.seriousSecurity = false; r.context.category = 'reference'; r.policyEvidence.recordPurpose = 'statement'; assert.equal(classifyBriefingMail(r, p).action, 'keep');
-  r.before.nativeId = 'reading-1'; r.adapter = 'outlook'; r.before.folder = 'Inbox'; assert.equal(classifyBriefingMail(r, p).action, 'keep');
+  r.before.nativeId = 'reading-1'; r.adapter = 'outlook'; delete r.before.labels; r.before.folder = 'Inbox'; r.before.folderId = 'inbox-native'; assert.equal(classifyBriefingMail(r, p).action, 'keep');
 });
 test('OpenAI FYI scope never becomes unrelated-provider Trash; conflicting selectors fail closed', () => {
   const p = policy(); const r = review(); r.policyEvidence.recordPurpose = 'notice'; r.context.category = 'routine-account-fyi';

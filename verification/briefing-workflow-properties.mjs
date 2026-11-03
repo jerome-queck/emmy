@@ -1,7 +1,7 @@
 import { policy as fixturePolicy, review, rule, plan as fixturePlan, at } from '../test/fixtures/briefing-policy.mjs';
 import { digest } from '../src/records.mjs';
 
-export const briefingWorkflowCases = 19;
+export const briefingWorkflowCases = 25;
 export function verifyBriefingWorkflow({ policy, plan, reporting }, check) {
   let cases = 0;
   const expect = (name, value, message) => { cases++; check('morning-contract', { case: `v3-workflow/${name}` }, value, message); };
@@ -39,11 +39,28 @@ export function verifyBriefingWorkflow({ policy, plan, reporting }, check) {
   expect('decision-conflict', rejects(() => policy.assessBriefingLearning(p, { ...entry, action: 'trash' }, [entry])), 'A reused decision ID cannot silently lose a correction.');
   const self = fixturePolicy(); self.rules = [rule('seerr-available', { category: 'verified-self-seerr-available' })]; routine.context.category = 'verified-self-seerr-available';
   expect('seerr', rejects(() => policy.classifyBriefingMail(routine, self)), 'Seerr requires exact self sender and both subject markers.');
+  const dated = fixturePlan(); const task = { nativeId: 'dated', listId: 'tasks-1', title: 'Future study', status: 'needsAction', ownerDismissed: false, manuallyMoved: false, doDate: '2026-11-05', deadline: null }; dated.tasks.items = [task];
+  expect('future-do-date', !plan.preparePolicyBriefing(dated).body.includes('Future study'), 'Future study do-dates do not enter current Tasks.');
+  task.deadline = '2026-11-06T00:00:00.000Z';
+  expect('future-deadline', plan.preparePolicyBriefing(dated).body.includes('Future study. Study do-date 2026-11-05. Deadline'), 'A real upcoming deadline remains separately labelled.');
+  task.deadline = null; task.doDate = dated.day; task.ownerDismissed = null;
+  const unknownTask = plan.preparePolicyBriefing(dated);
+  expect('unknown-task', !unknownTask.body.includes('Future study') && unknownTask.gaps.includes('Task dismissal or move status unknown'), 'Unknown overlays cannot become false active status.');
+  const invalid = review(); invalid.context.complete = 'false';
+  expect('strict-complete', rejects(() => policy.classifyBriefingMail(invalid, p)), 'String completeness cannot authorize a disposition.');
+  invalid.context.complete = true; delete invalid.context.personal;
+  expect('strict-protection', rejects(() => policy.classifyBriefingMail(invalid, p)), 'Missing protected context cannot become false.');
+  const unavailable = fixturePlan(); Object.assign(unavailable.mail[0], { observedAt: null, capturedAt: null, complete: false, paginationComplete: false });
+  expect('unavailable-items', rejects(() => plan.preparePolicyBriefing(unavailable)), 'Unknown source clocks cannot claim acquired mail.');
   if (cases !== briefingWorkflowCases) throw new Error(`Briefing workflow domain changed ${cases}`);
   return cases;
 }
 const mutation = (id, source, find, replacement, name) => ({ id: `briefing-${id}`, source: `src/${source}.mjs`, property: 'morning-contract', edits: [[find, replacement]], counterexample: `v3-workflow/${name}` });
 export const briefingWorkflowMutations = [
+  mutation('future-task', 'briefing-plan', 'row.doDate <= input.day', 'true', 'future-do-date'),
+  mutation('unknown-task', 'briefing-plan', 'row.ownerDismissed === false', 'row.ownerDismissed !== true', 'unknown-task'),
+  mutation('strict-context', 'briefing-policy', 'need(Object.keys(context).length', 'need(true || Object.keys(context).length', 'strict-complete'),
+  mutation('unavailable-items', 'briefing-plan', ' && list(value.items) && value.items.length === 0 && (value.inboxIds ?? value.acquiredResourceIds)?.length === 0', '', 'unavailable-items'),
   mutation('receipt-facts', 'briefing-policy', "if (!review.facts.length) return keep('useful-receipt-facts-required');", "if (false) return keep('useful-receipt-facts-required');", 'receipt-no-facts'),
   mutation('record-purpose', 'briefing-policy', 'duplicate.recordPurpose === evidence.recordPurpose && duplicate.contentSha256', 'true && duplicate.contentSha256', 'different-purpose'),
   mutation('copy-native-id', 'briefing-policy', '(copy.nativeId ?? copy.id) === proof.nativeId && ', '', 'raw-identity'),

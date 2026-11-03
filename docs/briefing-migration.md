@@ -19,6 +19,10 @@ Exit 2 means invalid input. Exit 3 retains a partial report, pending checks, unv
 
 `src/briefing-plan.mjs` owns the fixed human report. It counts messages, conversations, expanded context, and actual declared outcomes separately. Original source clocks remain unchanged. Native Task completion, cancellation, dismissal, and manual movement suppress only associated projections. Calendar deduplication uses occurrence identity, never title. Codes and personalized account links refuse rendering.
 
+Mail context flags require actual booleans, including completeness, safe unread inspection, and every protected-context flag. Missing, null, string, and numeric flags refuse compilation. Explicit false completeness or safe inspection retains the message and discloses a gap. The pure classifier validates exact native snapshot fields and the thread digest before policy decisions.
+
+Tasks accept `boolean | null` dismissal and movement declarations. Null means unknown and adds a coverage gap. Only explicit false values permit an active Task row or linked Calendar projection. Today and overdue study do-dates appear with undated active Tasks. Future study do-dates stay out of today's list and projections. A declared deadline retains separate deadline context, including for future study. Partial captures retain their original coverage; unavailable clocks cannot carry purported acquired items.
+
 Check acquisition keeps every attempt. Pending work follows the same admitted request through paced supported reads without a timeout that invents failure. Terminal failure, missing, offline, denial, and owner intervention remain separate blockers. Completed work with partial coverage stays completed. The lifecycle check is a single October 31 occurrence. Verified prior same-room message/body/readback and snapshot identities can suppress unchanged completed checks. New failures remain visible. `checkHistory` is independently checked against retained journal delivery. Acquisition alone never establishes delivery.
 
 ## Cloud caller
@@ -26,6 +30,8 @@ Check acquisition keeps every attempt. Pending work follows the same admitted re
 `src/briefing-cloud-caller.mjs` runs only in a caller that supplies existing supported tools, an exact fleet CLI or bridge adapter, a durable raw sink, and actual clocks. Local Node has no cloud connector access. The module has no credentials, scheduler, daemon, uploader, or default tool implementation.
 
 `acquireBriefingSource` validates pinned mailbox identity, environment, and finite budgets. School Outlook requires the cloud browser. It retains original serialized tool bytes before parsing. Structured values must agree with those bytes. Provider responses can use a tested extraction contract that retains exact pointer witnesses. A current read-start observation is labelled separately from a provider source clock. Reporting clocks must come from the original report. Unsupported response shapes remain gaps. Reporting reads require a new actual LC1 claim, matching request/source, unexpired ticket, and sufficient original limits. Replayed or null claims grant no reads. `completeAcquisition` returns accounting to the existing owner.
+
+Projected provider pages require explicit boolean coverage. Outlook before and after unread fields require booleans; matching unknown values cannot prove preservation. Acquisition accumulates page coverage, so a complete terminal page cannot erase an earlier partial page. Pagination termination and page completeness remain separate facts.
 
 `awaitBriefingChecks` reacquires the same pending request. Interruption retains pending state and forbids a complete briefing. It sends no status message.
 
