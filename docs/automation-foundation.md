@@ -32,7 +32,7 @@ Report preparation returns exact artifact bytes, semantic IDs, byte hashes and t
 
 ## Read one known artifact
 
-Use action `read` with the same procedure/configuration references, an `artifact` path/byte hash, its semantic `recordId`, and `maxAgeSeconds`. The reader verifies exact canonical bytes through the same validator as publication. It binds the report owner and procedure/configuration evidence references, then reports original age and available, partial, pending, stale or future status.
+Use action `read` with the same procedure/configuration references, an `artifact` path/byte hash, its semantic `recordId`, and `maxAgeSeconds`. The reader verifies exact canonical bytes through the same validator as publication. Non-null reports require terminal execution. Optional timing and telemetry use the same clock, ordering and count checks as the producer. It binds the report owner and procedure/configuration evidence references, then reports original age and available, partial, pending, stale or future status.
 
 The reader opens only the named files. It never enumerates a report root or reconstructs history. A byte hash includes the producer's newline; the semantic record ID does not. An exact revision read does not establish that no later revision or conflict exists. Use separately authorized exact discovery when that question matters.
 

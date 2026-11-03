@@ -428,7 +428,7 @@
       "functions": [
         "planAutomation"
       ],
-      "statement": "Versioned staged procedure plans bind supplied configuration, explicit scope, source pins, budgets and destinations without granting effects or native creation."
+      "statement": "Versioned staged plans bind supplied configuration, scope, source pins, budgets and destinations. Canonical run ingestion rejects invalid timing, telemetry and nonterminal reports without granting effects or native creation."
     },
     {
       "id": "cloud-admission",

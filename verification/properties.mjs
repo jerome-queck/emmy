@@ -425,7 +425,7 @@ export function verifyProperties({ work, responsibilities, records, dispatch, ca
   }
   if (enabled('process-incarnation')) { const result = verifyIncarnationPolicy({ incarnation }, check); if (result.cases !== bounds.processIncarnation.cases || counts['process-incarnation'] !== result.cases) throw new Error(`Incarnation bounds differ ${result.cases}`); }
   if (enabled('legacy-baseline')) { const result = verifyLegacyPolicy({ migration }, check); if (result.cases !== bounds.legacyBaseline.cases || counts['legacy-baseline'] !== result.cases) throw new Error(`Legacy bounds differ ${result.cases}`); }
-  if (enabled('automation-contract')) { const result = verifyAutomationContract(automation, check); if (result.cases !== bounds.automationContract.cases || counts['automation-contract'] !== result.cases) throw new Error('Automation bounds differ'); }
+  if (enabled('automation-contract')) { const result = verifyAutomationContract(automation, check, reporting); if (result.cases !== bounds.automationContract.cases || counts['automation-contract'] !== result.cases) throw new Error('Automation bounds differ'); }
   if (enabled('morning-contract')) { const result = verifyMorningPolicy({ morning, fleet, collection, policy, plan, reporting }, check); if (result.cases !== bounds.morningContract.cases || counts['morning-contract'] !== result.cases) throw new Error(`Morning bounds differ ${result.cases}`); }
   if (enabled('fleet-contract')) { const result = verifyFleetPolicy({ fleet }, check); if (result.cases !== bounds.fleetContract.cases || counts['fleet-contract'] !== result.cases) throw new Error(`Fleet bounds differ ${result.cases}`); }
   return { counts, checks: Object.values(counts).reduce((sum, count) => sum + count, 0) };
