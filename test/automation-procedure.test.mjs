@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { digest } from '../src/content.mjs';
 import { planAutomation, automationProcedure } from '../src/automation-procedure.mjs';
-import { assessAutomationReporting } from '../src/automation-reporting.mjs';
+import { assessAutomationReporting, reportingCanonical, validateAutomationArtifact } from '../src/automation-reporting.mjs';
 import { assessBriefingReporting } from '../src/briefing-reporting.mjs';
 import { automationProcedureFixture as procedure, automationConfigurationFixture, automationOutcomeFixture } from '../verification/automation-fixtures.mjs';
 const at = '2026-11-03T01:00:00.000Z';
@@ -51,5 +51,75 @@ test('generic CLI reads exact pinned files, prepares the existing report format 
     const link = join(directory, 'link.json'); await symlink(a.path, link); await assert.rejects(automationProcedure({ ...request, artifact: { ...a, path: link } }, { now: at }), /ordinary file/);
     const stale = await automationProcedure({ ...request, maxAgeSeconds: 0 }, { now: '2026-11-03T01:00:00.001Z' }); assert.equal(stale.status, 'stale');
     assert.deepEqual(await readFile(a.path), Buffer.from(artifact.bytes)); assert.ok(before.includes('unrelated-malformed-history.json'));
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+const timing = { startedAt: '2026-11-03T00:00:00.000Z', lastHeartbeatAt: null, endedAt: '2026-11-03T00:30:00.000Z', observedAt: '2026-11-03T00:30:00.000Z', sourceRef: 'synthetic-clock' };
+const telemetry = { runtimeMs: 1800000, inputTokens: null, outputTokens: 0, sourceRef: 'synthetic-meter' };
+const runArtifact = record => ({ id: digest(reportingCanonical(record)), bytes: `${reportingCanonical(record)}\n` });
+const publication = artifact => ({ action: 'publication', parentId: 'synthetic-parent', artifact, attempt: { state: 'not-started', nativeId: null }, readback: null });
+const outcome = extra => ({ ...automationOutcomeFixture([], at), ...extra });
+const runRecord = input => assessAutomationReporting(input).artifacts.find(artifact => artifact.record.kind === 'run').record;
+const invalidMetadata = [
+  ['negative runtime', { telemetry: { ...telemetry, runtimeMs: -1 } }, /Measured telemetry/],
+  ['fractional tokens', { telemetry: { ...telemetry, inputTokens: 0.5 } }, /Measured telemetry/],
+  ['unsafe tokens', { telemetry: { ...telemetry, outputTokens: Number.MAX_SAFE_INTEGER + 1 } }, /Measured telemetry/],
+  ['missing telemetry member', { telemetry: { runtimeMs: 0, inputTokens: null, sourceRef: 'synthetic-meter' } }, /Expected members/],
+  ['extra timing member', { timing: { ...timing, extra: true } }, /Expected members/],
+  ['future observation', { timing: { ...timing, observedAt: '2099-01-01T00:00:00.000Z' } }, /Actual timing evidence/],
+  ['future endpoint', { timing: { ...timing, endedAt: at } }, /Actual timing evidence/],
+  ['reversed timing', { timing: { ...timing, startedAt: timing.endedAt, endedAt: timing.startedAt } }, /Actual timing order/],
+  ['invalid timing clock', { timing: { ...timing, startedAt: 'invalid-clock' } }, /Actual timing evidence/],
+  ['empty timing source', { timing: { ...timing, sourceRef: '' } }, /Actual timing evidence/],
+  ['null timing object', { timing: null }, /Expected members/],
+  ['null telemetry object', { telemetry: null }, /Expected members/]
+];
+for (const [name, change, error] of invalidMetadata) test(`report ingestion rejects ${name} in publication and predecessors`, () => {
+  const record = runRecord(outcome()); Object.assign(record.data, change);
+  const artifact = runArtifact(record);
+  assert.throws(() => validateAutomationArtifact(artifact), error);
+  assert.throws(() => assessAutomationReporting(publication(artifact)), error);
+  assert.throws(() => assessAutomationReporting(outcome({ predecessorChain: [record] })), error);
+});
+for (const execution of ['unknown', 'running', 'blocked', 'pending-approval']) test(`report ingestion rejects non-null ${execution} report`, () => {
+  const record = runRecord(outcome()); record.data.execution = execution; record.data.report.status = execution;
+  const artifact = runArtifact(record);
+  assert.throws(() => validateAutomationArtifact(artifact), /terminal/);
+  assert.throws(() => assessAutomationReporting(publication(artifact)), /terminal/);
+  assert.throws(() => assessAutomationReporting(outcome({ predecessorChain: [record] })), /terminal/);
+});
+test('valid optional evidence and historical null reports retain exact wire bytes', () => {
+  const base = outcome();
+  const scheduledFor = '2026-11-03T02:00:00.000Z';
+  const binding = { scheduledFor, occurrenceKey: `slot-${digest(reportingCanonical([base.namespace, base.automationId, scheduledFor]))}`, observationDueAt: '2026-11-03T03:00:00.000Z', nominalSlotEvidenceRef: 'synthetic-slot', observedAt: at, validThrough: '2026-11-04T00:00:00.000Z' };
+  for (const input of [base, outcome({ execution: 'running' }), outcome({ origin: 'scheduled', binding }), outcome({ timing, telemetry }), outcome({ timing: { ...timing, startedAt: null, endedAt: null }, telemetry: { ...telemetry, runtimeMs: null, outputTokens: null } })]) {
+    const record = runRecord(input); const artifact = runArtifact(record);
+    assert.deepEqual(validateAutomationArtifact(artifact), record);
+    assert.equal(assessAutomationReporting(publication(artifact)).state, 'prepared-only');
+    assert.equal(runArtifact(validateAutomationArtifact(artifact)).bytes, artifact.bytes);
+    if (record.data.report === null && record.data.execution === 'completed') assert.throws(() => assessAutomationReporting({ ...input, predecessorChain: [record] }), /Retrospective attachment/);
+    else assert.equal(assessAutomationReporting({ ...input, predecessorChain: [record] }).artifacts.at(-1).record.revision, 1);
+  }
+});
+test('generic CLI refuses coerced revisions and malformed canonical report evidence', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'emmy-automation-validation-'));
+  try {
+    const save = async (name, value) => { const path = join(directory, name); const bytes = typeof value === 'string' ? value : JSON.stringify(value); await writeFile(path, bytes); return { path, sha256: digest(bytes) }; };
+    const configuration = automationConfigurationFixture();
+    const request = { action: 'plan', procedure: await save('procedure.json', procedure), configuration: await save('configuration.json', configuration) };
+    const plan = await automationProcedure(request);
+    const cliPath = fileURLToPath(new URL('../scripts/agent.mjs', import.meta.url));
+    const cli = async value => { const file = await save('request.json', value); return spawnSync(process.execPath, [cliPath, 'automation', '--file', file.path], { encoding: 'utf8' }); };
+    for (const revision of [[configuration.source.revision], null, 123]) {
+      const result = await cli({ ...request, configuration: await save('invalid-configuration.json', { ...configuration, source: { ...configuration.source, revision } }) });
+      assert.equal(result.status, 2, result.stdout); assert.match(result.stderr, /Exact source release/);
+    }
+    const input = automationOutcomeFixture(plan.reportEvidenceRefs, at);
+    for (const [name, change, error] of [...invalidMetadata, ['running report', { execution: 'running' }, /terminal/]]) {
+      const record = runRecord(input); Object.assign(record.data, change); if (name === 'running report') record.data.report.status = 'running';
+      const artifact = runArtifact(record);
+      const result = await cli({ ...request, action: 'read', artifact: await save('artifact.json', artifact.bytes), recordId: artifact.id, maxAgeSeconds: 315360000 });
+      assert.equal(result.status, 2, `${name}: ${result.stdout}`); assert.match(result.stderr, error);
+    }
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
