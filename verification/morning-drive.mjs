@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { digest, readStore, validateReferences } from '../src/records.mjs';
 import { compactAssessments } from './morning-compact-fixtures.mjs';
 import { morningAssessments, morningDelivery, morningEntities, morningItem } from './morning-fixtures.mjs';
+import { driveMorningV3 } from './morning-v3-drive.mjs';
 export async function driveMorning({ home, bindings, target, run, scenario, report }) {
   const selected = join(home, 'morning-drive'); await mkdir(selected, { recursive: true }); await writeFile(join(selected, 'bindings.json'), JSON.stringify(bindings));
   let ordinal = 0; let view;
@@ -96,5 +97,6 @@ export async function driveMorning({ home, bindings, target, run, scenario, repo
   await command('action-result', { adapter: 'outlook', nativeId: 'outlook-one', intentDigest: refreshedAttempt.intentDigest, receipt: freshAfterReceipt.receipt, after: freshAfter, outcome: 'verified' }, [freshAfterReceipt.ref]);
   assert.deepEqual(view.state.morningRuns[0].delivery, originalIdentity); assert.equal(view.state.morningRuns[0].sealed.body, originalBody); assert.equal(view.state.morningRuns[0].items[1].reviewHistory.length, 1);
   const retained = await readStore(selected); const corrupted = structuredClone(retained.records); const reviewedRecord = corrupted.find(record => record.action?.operation === 'morning' && record.action.command.step === 'review'); reviewedRecord.fileDigests = {}; assert.throws(() => validateReferences(corrupted), /receipt bytes|context bytes/); report.morning = { synthetic: true, records: retained.records.length, reviewedIds: view.state.morningRuns[0].items.map(row => row.before.nativeId), presentation: sealed.presentation, privateDiagnosticDigest: sealed.diagnostic.bodyDigest, exactBodyDigest: sealed.bodyDigest, exactSummaryDigest: summary.bodyDigest, nativeToolsInvoked: false, actualDelivery: 'not-tested' };
-  scenario('morning-run', 'Fresh-process fleet-backed morning acquisition, exact context/body bytes, reviewed sender/subject/disposition, send/readback-before-cleanup, unread-preserved same-ID action, duplicate-safe replay exact same-message summary edit and generation-bound selected-ID refresh without replacing original delivery or terminal moves. Synthetic parent declarations only.');
+  await driveMorningV3({ home, bindings, target, run, report });
+  scenario('morning-run', 'Fresh-process fleet-backed morning acquisition, exact context/body bytes, reviewed sender/subject/disposition, send/readback-before-cleanup, unread-preserved same-ID action, duplicate-safe replay exact same-message summary edit and generation-bound selected-ID refresh without replacing original delivery or terminal moves. V3 also drives the production cloud caller through actual journal CLI, interrupted send and exact ChatGPT readback. Synthetic parent declarations only.');
 }

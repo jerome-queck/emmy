@@ -625,6 +625,16 @@ try {
     try { assert.equal((await readStore(report.retainedFleet)).records.length, report.fleet.records); report.fleetRetentionVerifiedAfterCleanup = true; }
     catch (error) { report.status = 'failed'; report.fleetRetentionError = error.message; process.exitCode = 1; }
   }
+  if (report.morningV3 && report.retainedMorning) {
+    try {
+      const selected = join(report.retainedMorning, 'v3'); const retained = await readStore(selected);
+      assert.equal(retained.records.length, report.morningV3.records, 'V3 journal survives temporary-root cleanup');
+      const last = retained.records.filter(record => record.type === 'fleet-step').sort((a, b) => a.seq - b.seq).at(-1);
+      assert.equal(last.state.morningRuns.at(-1).sealed.bodyDigest, report.morningV3.bodyDigest);
+      for (const receipt of report.morningV3.rawReceipts) { const bytes = await readFile(join(selected, receipt.relativePath)); assert.equal(digest(bytes), receipt.sha256); assert.equal(bytes.length, receipt.byteCount); }
+      report.morningV3RetentionVerifiedAfterCleanup = true;
+    } catch (error) { report.status = 'failed'; report.morningV3RetentionError = error.message; process.exitCode = 1; }
+  }
   if (report.dispatch && report.retainedDispatch) {
     try {
       assert.equal(digest(await readFile(join(report.retainedDispatch, 'bindings.json'))), report.dispatch.bindingDigest);

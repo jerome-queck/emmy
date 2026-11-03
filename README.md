@@ -1,6 +1,6 @@
 # Emmy
 
-The [deterministic briefing pilot](docs/deterministic-briefing.md) compiles exact source files to one immutable local report. It remains held for complete saved-policy comparison, effect migration and parent-observed ChatGPT delivery. It changes no installed release or automation.
+The [deterministic briefing pilot](docs/deterministic-briefing.md) retains exact immutable local reports. The [v3 migration](docs/briefing-migration.md) adds private policy, a cloud caller contract, and ChatGPT delivery through the existing morning journal. Deployment and the parent-observed pilot remain held. No installed release or automation changes.
 
 Emmy is Jerome's ChatGPT Dot. This repository gives one chief of staff durable responsibility context, current evidence checks, retained failures and repairs, and bounded next proposals.
 

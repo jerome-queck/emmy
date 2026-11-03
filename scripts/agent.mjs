@@ -52,9 +52,16 @@ try {
     case 'reconcile':
       data = await reconcile(home, { id: options.id, imports: options.import ? await readJson(resolve(options.import)) : null, asOf: timestamp(options['as-of'], 'as-of'), catalog });
       exitCode = data.status === 'current' ? 0 : 3; break;
-    case 'daily-briefing':
-      data = await dailyBriefing(await readDailyBriefingRequest(resolve(options.file)));
-      exitCode = ['published', 'identical', 'available'].includes(data.status) ? 0 : 3; break;
+    case 'daily-briefing': {
+      const request = await readDailyBriefingRequest(resolve(options.file));
+      data = await dailyBriefing(request);
+      exitCode = request.action === 'prepare' ? data.checksTerminal && data.coverage === 'complete-declared' ? 0 : 3
+        : request.action === 'policy' ? 0
+        : request.action === 'reporting' ? data.readyForBriefing === false || data.publication === 'unverified' ? 3 : 0
+        : request.action === 'learning' ? data.status === 'held' ? 3 : 0
+        : ['published', 'identical', 'available'].includes(data.status) ? 0 : 3;
+      break;
+    }
     case 'briefing':
       data = await briefing(home, { file: options.file ? resolve(options.file) : null });
       exitCode = data.mode === 'guidance' ? (['current', 'pinned'].includes(data.guidance.state) ? 0 : 3) : (data.status === 'checked' ? 0 : 3); break;

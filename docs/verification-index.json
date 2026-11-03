@@ -141,7 +141,7 @@
     },
     {
       "name": "daily-briefing",
-      "description": "Compile a held briefing pilot from exact byte references or read its dedicated immutable occurrence slot without native effects.",
+      "description": "Validate private briefing policy, prepare fixed reports and reporting contracts, or compile/read exact held artifact slots without native effects.",
       "options": [
         {
           "name": "file",

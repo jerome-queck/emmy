@@ -1,8 +1,10 @@
 import { compactAssessments } from './morning-compact-fixtures.mjs';
 import { canonical, digest } from '../src/records.mjs';
 import { morningAssessments, morningCommand, morningDelivery, morningAt, morningEntities, morningItem, morningOpen, morningReceipt, morningRoot, morningWindow } from './morning-fixtures.mjs';
-export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 75, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
-export function verifyMorningPolicy({ morning, fleet, collection }, check) {
+import { morningV3Open, morningV3Policy, morningV3Plan } from './morning-v3-fixtures.mjs';
+import { verifyBriefingWorkflow, briefingWorkflowCases, briefingWorkflowMutations } from './briefing-workflow-properties.mjs';
+export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 83 + briefingWorkflowCases, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations, explicit predecessor-inactive migration acceptance and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
+export function verifyMorningPolicy({ morning, fleet, collection, policy, plan, reporting }, check) {
   let cases = 0;
   const expect = (name, value, message) => { cases++; check('morning-contract', { case: name }, value, message); };
   const rejects = action => { try { action(); return false; } catch { return true; } };
@@ -16,17 +18,17 @@ export function verifyMorningPolicy({ morning, fleet, collection }, check) {
   expect('rule/both-markers', morning.classifyMail(self, morningOpen.accounts.gmail.account, [{ id: 'seerr-available', version: 1, ownerRef: 'owner' }]).action !== 'trash', 'Self-sent notifications need both exact subject markers.');
   expect('facts/required', morning.classifyMail({ ...item, context: { ...item.context, orderReceipt: true } }, morningOpen.accounts.gmail.account, grants).action === 'keep', 'Useful order facts are required before an archive can be proposed.');
   expect('policy/version', morning.classifyMail(item, morningOpen.accounts.gmail.account, grants).policyVersion === 2, 'Every classification retains its policy version and digest.');
-  const prepare = () => {
-    const state = fleet.fleetInitial(morningRoot); morning.morningTransition(state, morningOpen, morningRoot, morningAt);
+  const prepare = (open = morningOpen) => {
+    const state = fleet.fleetInitial(morningRoot); morning.morningTransition(state, open, morningRoot, morningAt);
     const run = state.morningRuns[0];
     for (const source of run.sources) {
       const receipt = morningReceipt(source.id); const key = digest(source.id);
       state.jobs.push({ key, status: 'completed', input: { kind: 'briefing-source-read', entityIds: [source.entityId] }, receipts: [receipt] });
       morning.morningTransition(state, { step: 'source', runId: run.id, sourceId: source.id, jobKey: key, receipt, paginationComplete: true, cached: false, messageIds: ['gmail', 'outlook'].includes(source.role) ? [`${source.role}-one`] : [], resourceIds: source.role === 'calendar-inventory' ? ['calendar'] : source.role === 'task-inventory' ? ['tasks'] : [], window: ['calendar', 'tasks'].includes(source.role) ? morningWindow : null }, morningRoot, morningAt);
     }
-    const step = (step, fields = {}, at = morningAt) => morning.morningTransition(state, morningCommand(step, fields), morningRoot, at);
+    const step = (step, fields = {}, at = morningAt) => morning.morningTransition(state, morningCommand(step, { ...(['send-ack', 'send-resolve', 'edit-ack', 'edit-resolve'].includes(step) ? { scope: open.delivery.scope } : {}), ...fields }), morningRoot, at);
     step('review', { items: [morningItem(), morningItem('outlook')] });
-    const seal = () => step('seal', morningAssessments());
+    const seal = () => step('seal', { ...morningAssessments(), ...(open.policyVersion === 3 ? { deterministic: morningV3Plan(run) } : {}) });
     const send = () => { seal(); step('send-intent', { sendRef: 'send', bodyDigest: run.sealed.bodyDigest }); };
     const deliver = () => { send(); step('send-ack', { sendRef: 'send', bodyDigest: run.sealed.bodyDigest, deliveredBodyDigest: run.sealed.bodyDigest, nativeId: 'message', readbackRef: 'readback' }); };
     const intent = () => step('action-intent', { adapter: 'gmail', nativeId: 'gmail-one', action: 'trash', before: item.before, receipt: item.receipt, destination: null });
@@ -119,10 +121,28 @@ export function verifyMorningPolicy({ morning, fleet, collection }, check) {
   expect('capture/invalid-utf8', rejects(() => collection.parseRawCapture(Buffer.from([123,34,120,34,58,34,255,34,125]))), 'Invalid UTF8 response bytes remain uninterpretable.');
   expect('capture/duplicate-keys', rejects(() => collection.parseRawCapture(Buffer.from('{"readOnly":false,"readOnly":true}'))), 'Duplicate contradictory raw keys cannot normalize away evidence.');
   const unicode = JSON.stringify({ text: '你好😀' }); expect('capture/utf8-count', collection.parseRawCapture(Buffer.from(unicode)).bytes === Buffer.byteLength(unicode), 'Portable serialized UTF8 accounting matches retained Unicode JSON bytes.');
+  const v3Open = command => morning.morningTransition(fleet.fleetInitial(morningRoot), command, morningRoot, morningAt);
+  expect('v3/predecessor', rejects(() => v3Open({ ...morningV3Open, migration: { ...morningV3Open.migration, predecessorStateDigest: digest('different-history') } })), 'Migration binds the exact retained predecessor state.');
+  expect('v3/inactive', rejects(() => v3Open({ ...morningV3Open, migration: { ...morningV3Open.migration, predecessorInactive: false } })), 'Only accepted inactive predecessor authority admits the new writer.');
+  expect('v3/future-acceptance', rejects(() => v3Open({ ...morningV3Open, migration: { ...morningV3Open.migration, acceptedAt: '2027-01-01T00:00:00.000Z' } })), 'Future acceptance cannot authorize current migration.');
+  expect('v3/chatgpt-only', rejects(() => v3Open({ ...morningV3Open, delivery: morningDelivery })), 'Migration binds the configured exact ChatGPT room.');
+  const receiptReview = { ...item, context: { ...item.context, billing: true, orderReceipt: true }, facts: ['Invoice payment and amount retained.'], policyEvidence: { recordPurpose: 'invoice', duplicate: null, priorFactsDelivery: null } };
+  expect('v3/invoice', morning.classifyMail(receiptReview, morningOpen.accounts.gmail.account, [], 3, morningV3Policy).action === 'archive', 'Actual invoices archive after useful facts without treating generic billing as unresolved action.');
+  fixture = prepare(morningV3Open);
+  expect('v3/compiler-required', rejects(() => fixture.step('seal', morningAssessments())), 'Version three cannot seal without its deterministic compiler artifact.');
+  const v3Plan = morningV3Plan(fixture.run);
+  expect('v3/compiler-body', rejects(() => fixture.step('seal', { ...morningAssessments(), deterministic: { ...v3Plan, result: { ...v3Plan.result, body: 'forged body', bodyDigest: digest('forged body') } } })), 'A caller cannot replace the actual deterministic body with matching self-supplied digest.');
+  fixture.seal(); expect('v3/compiler-exact', fixture.run.sealed.body === v3Plan.result.body && fixture.run.sealed.deterministic.result.policyDigest === digest(morningV3Policy), 'Exact configured compiler output enters the existing journal owner.');
+  cases += verifyBriefingWorkflow({ policy, plan, reporting }, check);
   return { cases };
 }
 const mutant = (id, before, after, counterexample) => ({ id: `morning-${id}`, source: 'src/morning.mjs', property: 'morning-contract', edits: [[before, after]], counterexample });
 export const morningMutations = [
+  ...briefingWorkflowMutations,
+  mutant('v3-predecessor-bypass', 'command.migration.predecessorStateDigest === digest(state.morningRuns)', 'true', 'v3/predecessor'),
+  mutant('v3-inactive-bypass', 'migration.predecessorInactive === true', 'true', 'v3/inactive'),
+  mutant('v3-future-acceptance', 'Date.parse(command.migration.acceptedAt) <= Date.parse(at)', 'true', 'v3/future-acceptance'),
+  mutant('v3-forged-compiler', 'same(preparePolicyBriefing(input), result)', 'true', 'v3/compiler-body'),
   { id: 'capture-ignore-tool-error', source: 'src/morning-collection.mjs', property: 'morning-contract', edits: [['response?.isError === true', 'false']], counterexample: 'capture/tool-error' },
   { id: 'capture-replace-invalid-utf8', source: 'src/morning-collection.mjs', property: 'morning-contract', edits: [["export function parseRawCapture(raw) { const response = strictJson(new TextDecoder('utf-8', { fatal: true })", "export function parseRawCapture(raw) { const response = strictJson(new TextDecoder('utf-8', { fatal: false })"]], counterexample: 'capture/invalid-utf8' },
   { id: 'capture-duplicate-keys', source: 'src/morning-collection.mjs', property: 'morning-contract', edits: [['const response = strictJson(', 'const response = JSON.parse(']], counterexample: 'capture/duplicate-keys' },

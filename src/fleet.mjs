@@ -1,5 +1,6 @@
 import { validateCollection } from './morning-collection.mjs';
 import { morningEvidence, deliveryReadback as deliveryReadbackScope } from './morning.mjs';
+import { validateDuplicateCaptures } from './briefing-policy.mjs';
 import { link, mkdir, rm, writeFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -39,7 +40,7 @@ export async function fleetPendingTurns(home, records) {
 export async function fleet(home, { file }) {
   const input = await boundedJson(file, 1048576);
   shape(input, ['schemaVersion', 'responsibilityId', 'expectedHead', 'action', 'evidence'], 'fleet envelope');
-  if (input.action?.operation === 'morning' && input.action.command?.step === 'open') insist(input.action.command.policyVersion === 2 && input.action.command.delivery && input.action.command.cleanupMode === 'batched-v1', 'New morning runs require current pinned policy and exact delivery target');
+  if (input.action?.operation === 'morning' && input.action.command?.step === 'open') insist([2, 3].includes(input.action.command.policyVersion) && input.action.command.delivery && input.action.command.cleanupMode === 'batched-v1', 'New morning runs require current pinned policy and exact delivery target');
   if (input.action?.operation === 'group-send-intent') insist(input.action.delivery, 'New grouped sends require an exact authorized delivery target');
   insist(input.schemaVersion === 1 && typeof input.responsibilityId === 'string', 'Invalid fleet envelope'); actionInput(input.action, 2);
   if (input.action.operation === 'configure') insist(input.action.semanticsVersion === 2, 'New fleet roots require semanticsVersion two');
@@ -50,7 +51,10 @@ export async function fleet(home, { file }) {
   if (projected.status === 'ready' && projected.state.semanticsVersion !== 2) insist(input.action.operation === 'upgrade' || input.action.operation === 'resume' && projected.state.epochHash !== (current.epoch?.hash ?? null), 'Historical fleet semantics are replay-only; explicitly upgrade the exact predecessor before current writes');
   insist(projected.status === 'unconfigured' && input.action.operation === 'configure' || projected.status === 'ready', 'Fleet is unconfigured or has conflicting heads');
   if (projected.root) insist(effectKey(current.definition) === projected.root.effectKey, 'Fleet stable responsibility effect changed');
-  if (input.action.operation === 'morning' && !['open', 'status'].includes(input.action.command.step)) insist(projected.state?.morningRuns?.find(run => run.id === input.action.command.runId)?.policyVersion === 2, 'Historical morning policy is replay-only; no new native effects');
+  if (input.action.operation === 'morning' && !['open', 'status'].includes(input.action.command.step)) {
+    const run = projected.state?.morningRuns?.find(run => run.id === input.action.command.runId);
+    insist([2, 3].includes(run?.policyVersion) && (!projected.state?.morningMigration || run.policyVersion === 3), 'Historical morning policy is replay-only; no new native effects');
+  }
   const history = projected.state?.archived ? fleetHistory(records, projected.head) : null;
   const evidence = input.evidence ?? []; insist(Array.isArray(evidence) && evidence.length <= 64, 'Invalid fleet evidence bound');
   const files = {}; let totalBytes = 0;
@@ -88,14 +92,38 @@ export async function fleet(home, { file }) {
   }
   if (input.action.operation === 'morning') {
     const command = input.action.command;
+    if (command.step === 'open' && command.policyVersion === 3) {
+      const migrationIndex = evidence.findIndex(ref => ref.sourceRef === command.migration.sourceRef);
+      let migration; try { migration = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(files[`evidence-${migrationIndex}.bin`])); } catch { throw new Error('Briefing migration requires exact retained acceptance JSON'); }
+      insist(canonical(migration) === canonical(command.migration), 'Retained migration acceptance differs from requested policy and inactive predecessor');
+      insist(Object.values(files).some(raw => { try { return canonical(strictJson(new TextDecoder('utf-8', { fatal: true }).decode(raw))) === canonical(command.policy); } catch { return false; } }), 'Version three requires retained exact private policy JSON');
+    }
     if (command.step === 'source' && command.acquisition) {
       const index = evidence.findIndex(ref => ref.sourceRef === command.acquisition.collectionRef && ref.sha256 === command.receipt.sha256);
       let packet; try { packet = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(files[`evidence-${index}.bin`])); } catch { throw new Error('Source intake requires retained collection packet bytes'); }
       validateCollection(packet, command, projected.state.morningRuns.find(run => run.id === command.runId), new Map(evidence.map((ref, index) => [ref.sha256, files[`evidence-${index}.bin`]])));
     }
-    if (command.step === 'review') for (const item of command.items) insist(evidence.some(ref => ref.sha256 === item.context.threadDigest), 'Inspected thread context requires exact retained artifact bytes');
+    if (command.step === 'review') for (const item of command.items) {
+      insist(evidence.some(ref => ref.sha256 === item.context.threadDigest), 'Inspected thread context requires exact retained artifact bytes');
+      if (item.policyEvidence?.duplicate) {
+        const duplicate = item.policyEvidence.duplicate;
+        const duplicateIndex = evidence.findIndex(ref => ref.sourceRef === duplicate.sourceRef);
+        let proof; try { proof = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(files[`evidence-${duplicateIndex}.bin`])); } catch { throw new Error('Duplicate copy evidence requires retained exact bytes and identities'); }
+        insist(canonical(proof) === canonical({ nativeId: item.before.nativeId, recordPurpose: item.policyEvidence.recordPurpose, duplicate }), 'Retained duplicate proof differs from reviewed exact identities, purpose or bytes');
+        const currentIndex = evidence.findIndex(ref => ref.sha256 === duplicate.currentCaptureSha256);
+        const copyIndex = evidence.findIndex(ref => ref.sha256 === duplicate.copyCaptureSha256);
+        insist(currentIndex >= 0 && copyIndex >= 0, 'Duplicate requires both retained original provider captures');
+        validateDuplicateCaptures(item, files[`evidence-${currentIndex}.bin`], files[`evidence-${copyIndex}.bin`]);
+      }
+    }
     if (['send-intent', 'edit-intent'].includes(command.step)) insist(evidence.some(ref => ref.sha256 === command.bodyDigest), 'Morning send intent requires exact retained body bytes');
-    if (command.step === 'seal') for (const acceptance of [command.briefing, command.calendar]) {
+    if (command.step === 'seal' && command.deterministic?.input.learning) for (const entry of command.deterministic.input.learning.entries) for (const observation of entry.observations) {
+      const index = evidence.findIndex(ref => ref.sourceRef === observation.sourceRef && ref.sha256 === observation.sourceDigest);
+      let event; try { event = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(files[`evidence-${index}.bin`])); } catch { throw new Error('Learning observation requires exact retained actor event JSON'); }
+      const { sourceRef, sourceDigest, ...normalized } = observation;
+      insist(canonical(event) === canonical(normalized), 'Learning observation differs from retained actor, identity, scope or action');
+    }
+    if (command.step === 'seal') for (const acceptance of [command.briefing, command.calendar, ...(command.deterministic ? [command.deterministic] : [])]) {
       const index = evidence.findIndex(ref => ref.sha256 === acceptance.receipt.sha256 && ref.sourceRef === acceptance.receipt.sourceRef);
       let raw; try { raw = JSON.parse(files[`evidence-${index}.bin`].toString('utf8')); } catch { throw new Error('Morning assessment receipt must retain its actual JSON result bytes'); }
       insist(canonical(raw.data ?? raw) === canonical(acceptance.result), 'Morning assessment result differs from retained receipt bytes');

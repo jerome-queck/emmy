@@ -1,0 +1,56 @@
+# Daily briefing v3 contracts
+
+The v3 path compiles owner policy and source captures into a fixed report, then uses the existing fleet morning journal for delivery and mail effects. It remains uninstalled. Parent acceptance and one supervised pilot remain held. Version-one and version-two journals retain their historical rules and replay bytes.
+
+## Local commands
+
+`daily-briefing --file <request.json>` accepts these additional pure requests. None invokes a provider or writes a journal.
+
+| Action | Input | Result |
+| --- | --- | --- |
+| `policy` | Private policy v3 | Validated digest, unbound exception IDs, deployment hold |
+| `prepare` | Policy, exact mail reviews, full-day Calendar and native Tasks, obligations, check attempts | `daily-briefing-v3` report, judgments, counts, original gaps, terminal-check gate |
+| `reporting` | `checks`, `producer`, or `publication` request | Exact expected occurrences, compatible canonical records, or publication readback assessment |
+| `learning` | Policy, dated entry, prior history | Append decision, identical repeat, or held observation |
+
+Exit 2 means invalid input. Exit 3 retains a partial report, pending checks, unverified publication, or held learning. A validated policy returns exit 0 while deployment remains held. Existing `compile` and exact-slot `read` requests remain unchanged.
+
+`src/briefing-policy.mjs` owns the strict private schema, scoped exception precedence, receipt correction, duplicate extraction proof, and learning history. Exact exceptions precede category rules. Conflicting selectors or safety requirements refuse. Missing native identities stay unbound. Same-payment records with different purposes are distinct. A duplicate proof includes exact current/copy content bytes, capture digests, native IDs, and JSON extraction pointers. The fleet boundary independently opens those retained raw captures. These are attributable provider-extraction claims, not authenticated provider truth.
+
+`src/briefing-plan.mjs` owns the fixed human report. It counts messages, conversations, expanded context, and actual declared outcomes separately. Original source clocks remain unchanged. Native Task completion, cancellation, dismissal, and manual movement suppress only associated projections. Calendar deduplication uses occurrence identity, never title. Codes and personalized account links refuse rendering.
+
+Check acquisition keeps every attempt. Pending work follows the same admitted request through paced supported reads without a timeout that invents failure. Terminal failure, missing, offline, denial, and owner intervention remain separate blockers. Completed work with partial coverage stays completed. The lifecycle check is a single October 31 occurrence. Verified prior same-room message/body/readback and snapshot identities can suppress unchanged completed checks. New failures remain visible. `checkHistory` is independently checked against retained journal delivery. Acquisition alone never establishes delivery.
+
+## Cloud caller
+
+`src/briefing-cloud-caller.mjs` runs only in a caller that supplies existing supported tools, an exact fleet CLI or bridge adapter, a durable raw sink, and actual clocks. Local Node has no cloud connector access. The module has no credentials, scheduler, daemon, uploader, or default tool implementation.
+
+`acquireBriefingSource` validates pinned mailbox identity, environment, and finite budgets. School Outlook requires the cloud browser. It retains original serialized tool bytes before parsing. Structured values must agree with those bytes. Provider responses can use a tested extraction contract that retains exact pointer witnesses. A current read-start observation is labelled separately from a provider source clock. Reporting clocks must come from the original report. Unsupported response shapes remain gaps. Reporting reads require a new actual LC1 claim, matching request/source, unexpired ticket, and sufficient original limits. Replayed or null claims grant no reads. `completeAcquisition` returns accounting to the existing owner.
+
+`awaitBriefingChecks` reacquires the same pending request. Interruption retains pending state and forbids a complete briefing. It sends no status message.
+
+`executeBriefingEffect` first commits the exact intent through the existing fleet CLI. It invokes only the configured primary Gmail move, cloud Outlook UI move, or exact ChatGPT send/edit adapter. A repeated journal command grants zero effects. A lost response leaves the existing intent uncertain. The caller returns accepted results without acknowledging delivery or mail success. A separate exact-ID raw readback must pass the existing fleet command. The implementation run supplies no pilot authority.
+
+New archive facts require verified delivery and an available same-message edit. If editing is unavailable, the caller defers that archive. A later run can archive before its final report only when exact prior journal delivery proves unchanged context and facts. The report must be recompiled with all actual outcomes before send. Unavailable or archived-away prior proof holds the action.
+
+## Migration ownership
+
+A new v3 open includes the private policy and an acceptance packet binding its digest, the entire existing morning-run predecessor digest, inactive prior producer, source, and acceptance clock. The fleet boundary requires exact retained acceptance and policy JSON. The acceptance is an external owner claim. It does not prove provider idleness. Old uncertain effects block transfer. Once accepted, new v2 effects are refused in that controller. No second effect journal is created.
+
+`src/briefing-reporting.mjs` prepares compatible own producer records. Only trusted nominal scheduler input binds a scheduled occurrence. Missing or expired binding produces scheduled-unbound schema 2 with null unknown clocks. Invocation identity is retained across retries. Exact own predecessor chains preserve revisions and terminal execution. Retrospective attachment remains unauthorized. Accepted upload differs from verified publication, which requires exact native ID, parent, canonical bytes, and digest. Uncertain upload requests exact-ID discovery and never another create. Operational reporting remains auxiliary to the workload.
+
+The installed canonical reporting reader remains external. Its filtered output does not prove narrow acquisition. Normal reads consume validated fixed artifacts or indexes through the actual bridge. Missing or unusable output can justify a bounded fallback. No import, publication, workload replay, or new controller repairs a read gap.
+
+## Verification boundaries
+
+Run `node --test test/briefing-policy.test.mjs test/briefing-cloud-caller.test.mjs test/briefing-reporting.test.mjs test/morning-v3.test.mjs`, then `npm run check`. The fleet behavioral drive executes the production caller against actual fresh CLI processes with synthetic tools. It retains migration, input, output, lost-send, exact readback, move, and same-message-edit evidence. The optional installed-client compatibility test runs the retained frozen reporting client locally and explicitly skips when absent.
+
+The finite morning property includes scoped v3 cases and paired source mutations. Canonical publication TLC retains its existing writer/import steps and dependency assumptions. The derived-slot model remains separate. Neither proves source truth, arbitrary external exactly-once effects, effective access, schedules, cloud adoption, or live delivery.
+
+Rollback source or wiring while preserving compatible journal/report readers and every uncertain intent. Never reset a live store, restore old schedules, repeat a send, or delete history to roll back. The exact private deployment and one-pilot gates belong to the parent handoff.
+
+`retainBriefingInvocation` first recovers the stable run's retained identity. If the provider exposes none, it creates one labelled `producer-generated` UUID and waits for durable same-key retention before returning. The adapter must use the existing run's metadata and an exclusive create/readback. A retry returns the retained identity. A racing or mismatched provider identity holds effects. Invocation metadata is separate from trusted nominal scheduler evidence.
+
+Optional `learning` input contains prior history and new dated entries. The compiler reports append proposals in the same briefing and suppresses identical retained entries. Each observed-preference entry has an explicit risk class and exact attributable move observations matching its scope and action. Serious security, financial, consequential, ambiguous-actor, and counterexample cases require an explicit correction. Fleet sealing requires retained observation bytes and authority references. This records a proposal; the single pilot's policy stays pinned. Later policy adoption is a separate authorized transition.
+
+A due check with no attempted acquisition is `unstarted`. It keeps `checksTerminal` false. Absence of supplied results never proves a verified missing, denied, or offline source. An explicit terminal blocker can permit a briefing with the exact disclosed gap. When no admitted follow identity exists, `awaitBriefingChecks` returns acquisition-required and incomplete without polling, inventing a request, or starting another job. Existing pending identities still use paced bounded reads through their supported admission route.

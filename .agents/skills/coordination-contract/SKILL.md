@@ -9,7 +9,7 @@ description: Check Emmy's bounded responsibility, dispatch, calendar acceptance,
 
 Run `node scripts/verify-formal.mjs` with Node 24 or later for the responsibility checker. It requires no package install, solver, service, or account. `npm run verify:formal` also runs the merge-policy enumeration and the [publication model](../publication-contract/SKILL.md), which requires Java 21 and a hash-pinned TLC jar.
 
-The checker calls the actual mapped production functions. It checks 8,636 predicates across twenty-five named properties, kills 250 paired mutations of those actual source files, then reruns unchanged production. Earlier responsibility, dispatch, calendar, cloud and incarnation domains retain their promises. These are finite checks, not a universal proof.
+The checker calls the actual mapped production functions. It checks 8,663 predicates across twenty-five named properties, kills 262 paired mutations of those actual source files, then reruns unchanged production. Earlier responsibility, dispatch, calendar, cloud and incarnation domains retain their promises. These are finite checks, not a universal proof.
 
 Read each failed counterexample under `.local/verification/formal-*/`. A mutant counts only if it imports successfully and its designated property rejects the intended behavioral disagreement. Syntax/import errors, ambiguous edit anchors, unrelated exceptions, and surviving mutants fail verification. Failed attempts remain retained.
 
@@ -152,3 +152,9 @@ The model/speed policy correction adds 224 predicates and eleven paired mutation
 Measured overrun controls retain 2 reads and161853 bytes against131072 original bytes, blocked only. Nine added finite predicates and four source mutants cover exact accounting, real breach, monotone counts, read-only kind, strict success limits, expiry, deduplication and terminal identity. CLI controls additionally require exact retained response bytes and ended/no-effect proof. Existing null-byte accounting and historical replay remain unchanged.
 
 Ceiling regressions additionally cover maximum admission plus one, safe integer limits, lossy/unsafe numeric rejection and cumulative sum safety. Sixteen added finite cases and four source mutants preserve exact counters at protocol ceilings and label measurement-only retention. CLI controls distinguish complete response evidence from explicit bounded measurement proof when existing file/count/total retention bounds are exceeded. Raw-byte verification remains unavailable in that declared mode.
+
+### Held briefing version three
+
+The additive morning domain covers explicit inactive-predecessor migration, pinned private policy, ChatGPT destination, deterministic compiler equality, original inventory/clock binding, duplicate-copy extraction, code/link privacy, completed-Task projections, pending checks, and prior-facts fallback. Version-one and version-two replay retain their prior semantics. Read `verification/morning-properties.mjs` for the executed count and `verification/briefing-workflow-properties.mjs` for its declared nineteen-case policy domain and eight paired source mutations. Generated references do not advance source review.
+
+Canonical publication steps and graph edges remain unchanged. New policy, reporting, and caller functions retain declared interpretations, not provider truth. Actual raw bytes, exact delivery readbacks, source admission, and production caller sequencing remain behavioral boundaries. A finite pass does not authorize migration acceptance or a live pilot.
