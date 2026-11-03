@@ -1,9 +1,11 @@
 import { canonical, digest } from './records.mjs';
 import { assessBriefingReporting } from './briefing-reporting.mjs';
 import { validateBriefingPolicy } from './briefing-policy.mjs';
-import { strictJson } from './bounded-json.mjs';
+import { parseBriefingToolBytes, normalizeBriefingSource, projectBriefingPage } from './briefing-source-normalization.mjs';
 import { verifiedPriorBriefingFacts } from './morning.mjs';
 import { randomUUID } from 'node:crypto';
+
+export { projectBriefingPage } from './briefing-source-normalization.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const same = (a, b) => canonical(a) === canonical(b);
@@ -19,40 +21,13 @@ export async function retainBriefingInvocation(request, adapters) {
   validate(retained); need(request.providerInvocationId === null || retained.id === request.providerInvocationId, 'Concurrent retained invocation must be rediscovered before effects');
   return retained;
 }
-const extract = (object, path) => {
-  need(typeof path === 'string' && (path === '' || path.startsWith('/')), 'Exact JSON extraction pointer required');
-  let value = object;
-  for (const key of path === '' ? [] : path.slice(1).split('/').map(part => part.replace(/~1/g, '/').replace(/~0/g, '~'))) { need(!['__proto__', 'constructor', 'prototype'].includes(key) && value && Object.hasOwn(value, key), 'Missing provider extraction field'); value = value[key]; }
-  return value;
-};
-export function projectBriefingPage(payload, projection, metadata) {
-  need(projection && ['gmail-readonly-page-v1', 'outlook-ui-page-v1'].includes(projection.contract), 'Supported source extraction contract required');
-  const items = extract(payload, projection.itemsPointer); const cursor = extract(payload, projection.cursorPointer);
-  need(Array.isArray(items) && (cursor === null || text(cursor)), 'Provider items and explicit terminal cursor required');
-  const sourceClock = projection.observedAtPointer === null ? null : extract(payload, projection.observedAtPointer);
-  const observedAt = sourceClock ?? metadata.startedAt;
-  need(stamp(observedAt), 'Actual source clock or declared current read-start observation required');
-  let unreadPreserved;
-  if (projection.contract === 'gmail-readonly-page-v1') { need(metadata.role === 'gmail', 'Read-only Gmail contract cannot normalize another adapter'); unreadPreserved = true; }
-  else { need(metadata.role === 'outlook', 'Outlook UI contract cannot normalize another adapter'); const before = extract(payload, projection.unreadBeforePointer); const after = extract(payload, projection.unreadAfterPointer); need(typeof before === 'boolean' && typeof after === 'boolean', 'Explicit boolean Outlook unread evidence required'); unreadPreserved = before === after; }
-  const complete = projection.completePointer ? extract(payload, projection.completePointer) : payload.complete;
-  need(typeof complete === 'boolean', 'Explicit provider coverage must be boolean');
-  return { items, nextCursor: cursor, observedAt, observationBasis: sourceClock === null ? 'current-read-start' : 'original-provider-clock', complete, unreadPreserved };
-}
 async function retain(response, metadata, adapters) {
   need(response && (Buffer.isBuffer(response.raw) || typeof response.raw === 'string'), 'Caller must expose original serialized response bytes');
   const bytes = Buffer.from(response.raw);
   const kept = await adapters.retainRaw(bytes, { ...metadata, projection: response.projection ?? null, sha256: digest(bytes), byteCount: bytes.length });
   need(kept?.sha256 === digest(bytes) && kept.byteCount === bytes.length && text(kept.sourceRef), 'Raw retention must acknowledge exact bytes before parsing');
   try {
-    const parsed = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
-    need(parsed?.isError !== true, 'Provider tool error cannot establish complete acquisition');
-    let value = parsed;
-    if (parsed.structuredContent !== undefined) value = parsed.structuredContent;
-    else if (Array.isArray(parsed.content)) {
-      need(parsed.content.length === 1 && parsed.content[0].type === 'text', 'Tool response needs one supported exact JSON payload');
-      value = strictJson(parsed.content[0].text);
-    }
+    let value = parseBriefingToolBytes(bytes);
     if (response.projection) value = projectBriefingPage(value, response.projection, metadata);
     need(response.value === undefined || same(response.value, value), 'Structured tool value differs from retained raw response');
     return { response: value, raw: kept };
@@ -101,6 +76,14 @@ export async function acquireBriefingSource(request, adapters) {
     if (accepted?.outcome !== 'completed' || !accepted.state?.jobs?.some(job => job.ticket === result.ticket && job.status === 'completed')) return { ...result, complete: false, failure: 'canonical-acquisition-not-completed', accountingOutcome: accepted?.outcome ?? null };
   }
   return result;
+}
+
+export async function acquireBriefingPlanSource(request, adapters) {
+  need(['gmail', 'outlook', 'calendar', 'tasks'].includes(request?.role) && typeof adapters?.readRaw === 'function', 'Compiler source acquisition requires exact retained-byte readback');
+  const acquisition = await acquireBriefingSource(request, adapters);
+  const rawPages = [];
+  for (const page of acquisition.responses) rawPages.push(await adapters.readRaw(page.raw));
+  return { acquisition, source: normalizeBriefingSource(acquisition, rawPages) };
 }
 
 export async function awaitBriefingChecks(initial, adapters, { signal } = {}) {

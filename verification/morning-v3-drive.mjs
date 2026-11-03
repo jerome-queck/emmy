@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { canonical, digest, readStore } from '../src/records.mjs';
-import { executeBriefingEffect, acquireBriefingSource } from '../src/briefing-cloud-caller.mjs';
+import { executeBriefingEffect, acquireBriefingSource, acquireBriefingPlanSource } from '../src/briefing-cloud-caller.mjs';
 import { assessBriefingReporting } from '../src/briefing-reporting.mjs';
 import { morningEntities, morningItem, morningAssessments } from './morning-fixtures.mjs';
 import { morningV3Policy } from './morning-v3-fixtures.mjs';
@@ -61,6 +61,17 @@ export async function driveMorningV3({ home, bindings, target, run, report }) {
   const daySource = role => { const receipts = [captures.get(role).receipt, captures.get(role === 'calendar' ? 'calendar-inventory' : 'task-inventory').receipt]; return { observedAt: receipts.map(receipt => receipt.observedAt).sort()[0], capturedAt: receipts.map(receipt => receipt.capturedAt).sort().at(-1), complete: true, paginationComplete: true, gaps: [], window, resourceIds: [role], acquiredResourceIds: [role], items: [] }; };
   const checks = assessBriefingReporting({ action: 'checks', asOf: assessedAt, results: [] }).expected.filter(check => check.state !== 'not-due').map(check => ({ kind: check.kind, scheduledFor: check.scheduledFor, requestId: `synthetic-request-${check.kind}`, attemptId: `synthetic-attempt-${check.kind}`, state: 'terminal', execution: 'completed', coverage: 'complete', availability: 'available', sourceEnd: assessedAt, observedAt: assessedAt, recordedAt: assessedAt, snapshotDigest: digest(check.kind), summary: 'Synthetic completed check.' }));
   const planInput = { schemaVersion: 3, day, asOf: assessedAt, policy, mail: ['gmail', 'outlook'].map(adapter => { const captured = captures.get(adapter).receipt; return { adapter, account: policy.accounts[adapter].account, surface: adapter === 'gmail' ? 'connector' : 'browser', environment: 'dot-cloud', observedAt: captured.observedAt, capturedAt: captured.capturedAt, complete: true, paginationComplete: true, gaps: [], inboxIds: [`${adapter}-one`], items: reviews.filter(item => item.adapter === adapter), expandedContextCount: 1 }; }), calendar: daySource('calendar'), tasks: daySource('tasks'), obligations: [], checks };
+  for (const role of ['gmail', 'outlook', 'calendar', 'tasks']) {
+    const source = ['gmail', 'outlook'].includes(role) ? planInput.mail.find(row => row.adapter === role) : planInput[role];
+    const page = { ...source, ...(source.adapter ? { unreadPreserved: true } : {}), nextCursor: null };
+    const result = await acquireBriefingPlanSource({ schemaVersion: 1, role, account: policy.accounts[role]?.account ?? 'synthetic-owner', environment: 'dot-cloud', surface: role === 'outlook' ? 'browser' : 'connector', maxReads: 1, maxBytes: 1048576 }, {
+      policy, now, async read() { return { raw: canonical({ structuredContent: page }), value: page }; },
+      async retainRaw(bytes, metadata) { const ref = await evidence(`synthetic-normalization-${role}`, JSON.parse(bytes)); return { ...metadata, sourceRef: ref.path, sha256: ref.sha256, byteCount: (await readFile(ref.path)).length }; },
+      readRaw: ref => readFile(ref.sourceRef), async completeAcquisition() {}
+    });
+    assert.deepEqual(result.source, source);
+    if (source.adapter) planInput.mail[planInput.mail.indexOf(source)] = result.source; else planInput[role] = result.source;
+  }
   const futureDay = new Date(Date.parse(start) + 2 * 86400000 + 8 * 3600000).toISOString().slice(0, 10);
   const task = { nativeId: 'synthetic-future-study', listId: 'tasks', title: 'Synthetic future study', status: 'needsAction', ownerDismissed: false, manuallyMoved: false, doDate: futureDay, deadline: null };
   planInput.tasks.items = [task, { ...task, nativeId: 'synthetic-deadline', title: 'Synthetic upcoming deadline', deadline: new Date(Date.parse(window.end) + 86400000).toISOString() }];

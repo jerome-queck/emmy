@@ -12,7 +12,7 @@ for (const args of [
   ['--test', 'test/guidance-pin.test.mjs'],
   ['--test', 'test/process-incarnation.test.mjs', 'test/cloud-migration.test.mjs'],
   ['--test', 'test/fleet.test.mjs', 'test/fleet-overrun.test.mjs', 'test/fleet-history.test.mjs', 'test/fleet-semantics.test.mjs', 'test/morning.test.mjs', 'test/morning-compact.test.mjs', 'test/morning-collection.test.mjs'],
-  ['--test', 'test/token-review.test.mjs', 'test/improvement-report.test.mjs', 'test/daily-briefing.test.mjs', 'test/briefing-policy.test.mjs', 'test/briefing-cloud-caller.test.mjs', 'test/briefing-reporting.test.mjs', 'test/morning-v3.test.mjs'],
+  ['--test', 'test/token-review.test.mjs', 'test/improvement-report.test.mjs', 'test/daily-briefing.test.mjs', 'test/briefing-policy.test.mjs', 'test/briefing-cloud-caller.test.mjs', 'test/briefing-source-normalization.test.mjs', 'test/briefing-reporting.test.mjs', 'test/morning-v3.test.mjs'],
   ['scripts/verify-behavior.mjs'],
   ['--test', 'test/github-auto-merge.test.mjs'],
   ['scripts/verify-formal.mjs'],
