@@ -234,6 +234,11 @@ test('flat Calendar preserves moved recurrence identities and cancelled occurren
 });
 
 test('flat Calendar rejects missing provenance, scope, clocks and invented metadata', async t => {
+  const bound = await flatCalendarExchange(t, [flatEvent()]);
+  const crossed = structuredClone(bound.manifest); crossed.request.requestedCalendarId = 'other';
+  const { briefingCloudReadRequest } = await import('../src/briefing-cloud-exchange.mjs');
+  crossed.captures[0].readRequest = briefingCloudReadRequest(crossed.request);
+  await assert.rejects(bound.run(crossed), /Failed acquisition/);
   for (const change of [o => ({ ...o, requestedCalendarId: 'other' }), o => ({ ...o, provenance: null }), o => ({ ...o, source: { ...o.source, observedAt: null } }), o => ({ ...o, source: { ...o.source, acquiredResourceIds: ['other'] } }), o => ({ ...o, source: { ...o.source, window: { ...o.source.window, start: at } } }), o => ({ ...o, nextCursor: undefined })]) {
     const x = await flatCalendarExchange(t, [flatEvent()], change); await assert.rejects(x.run(), /Failed acquisition/);
   }
