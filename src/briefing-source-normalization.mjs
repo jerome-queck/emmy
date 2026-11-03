@@ -1,5 +1,6 @@
 import { canonical, digest } from './records.mjs';
 import { strictJson } from './bounded-json.mjs';
+import { calendarObservationClock } from './briefing-observation.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const same = (a, b) => canonical(a) === canonical(b);
@@ -33,6 +34,7 @@ function flatCalendarPage(payload, projection, metadata) {
   need(request?.role === 'calendar' && request.environment === 'dot-cloud' && request.surface === 'connector' && text(requestedCalendarId) && request.requestedCalendarId === requestedCalendarId && request.resourceIds?.includes(requestedCalendarId), 'Calendar sidecar must bind exact requested calendar');
   need(provenance?.environment === request.environment && provenance.surface === request.surface && text(provenance.tool) && text(provenance.sourceRef), 'Calendar source provenance required');
   need(source && same(source.resourceIds, request.resourceIds) && same(source.window, request.window) && same(source.acquiredResourceIds, [requestedCalendarId]), 'Calendar sidecar inventory/window differs from request');
+  if (Object.hasOwn(source, 'collectorObservation')) calendarObservationClock(source, metadata.capturedAt);
   need(Array.isArray(payload.events) && Array.isArray(source.gaps) && (nextCursor === null || text(nextCursor)), 'Calendar events and explicit observation coverage required');
   const paginationUnknown = !Object.hasOwn(payload, 'next_page_token');
   if (paginationUnknown) need(nextCursor === null && source.complete === false && source.paginationComplete === false, 'Absent Calendar next_page_token requires explicit partial unknown pagination');
@@ -44,7 +46,7 @@ function flatCalendarPage(payload, projection, metadata) {
     need((recurringEventId === null && originalStartTime === null) || text(recurringEventId) && typeof originalStartTime === 'string', 'Paired Calendar recurrence identity required');
     return { nativeId: event.id, calendarId: requestedCalendarId, iCalUID: null, start: calendarInstant(event.start), end: calendarInstant(event.end), allDay: null, title: event.summary, status: event.status, taskId: null, timeZone: null, recurringEventId, originalStartTime: originalStartTime === null ? null : calendarInstant(originalStartTime) };
   });
-  return { ...source, items, gaps: [...new Set([...source.gaps, ...(paginationUnknown ? ['Calendar pagination unknown: raw next_page_token absent'] : []), ...(items.length ? ['Calendar all-day type unknown', 'Calendar native Task linkage unknown', 'Calendar source timezone unknown'] : [])])], nextCursor };
+  return { ...source, items, gaps: [...new Set([...source.gaps, ...(source.collectorObservation?.basis === 'current-read-start' ? ['Calendar provider snapshot clocks unknown; collector current-read-start observation only'] : []), ...(paginationUnknown ? ['Calendar pagination unknown: raw next_page_token absent'] : []), ...(items.length ? ['Calendar all-day type unknown', 'Calendar native Task linkage unknown', 'Calendar source timezone unknown'] : [])])], nextCursor };
 }
 export function projectBriefingPage(payload, projection, metadata) {
   if (projection?.contract === 'calendar-search-flat-v1') return flatCalendarPage(payload, projection, metadata);
@@ -133,15 +135,19 @@ export function normalizeBriefingSource(acquisition, rawPages) {
       need(source && same(source.items, projected.items) && source.observedAt === projected.observedAt && source.complete === projected.complete, 'Compiler source witness differs from projected items, clock or coverage');
       page = { ...source, nextCursor: projected.nextCursor, unreadPreserved: projected.unreadPreserved };
     }
-    const fields = ['observedAt', 'capturedAt', 'complete', 'paginationComplete', 'gaps', 'items', 'nextCursor', ...(mail ? ['adapter', 'account', 'surface', 'environment', 'inboxIds', 'expandedContextCount', 'unreadPreserved'] : ['window', 'resourceIds', 'acquiredResourceIds'])];
+    const collector = Object.hasOwn(page, 'collectorObservation');
+    need(!collector || acquisition.role === 'calendar', 'Collector observation is Calendar-only');
+    const fields = ['observedAt', 'capturedAt', 'complete', 'paginationComplete', 'gaps', 'items', 'nextCursor', ...(collector ? ['collectorObservation'] : []), ...(mail ? ['adapter', 'account', 'surface', 'environment', 'inboxIds', 'expandedContextCount', 'unreadPreserved'] : ['window', 'resourceIds', 'acquiredResourceIds'])];
     need(page && Object.keys(page).length === fields.length && fields.every(key => Object.hasOwn(page, key)), 'Existing compiler source fields and explicit page evidence required');
-    need(stamp(page.observedAt) && stamp(page.capturedAt) && page.observedAt <= page.capturedAt && stamp(retained.capturedAt) && page.capturedAt <= retained.capturedAt, 'Original source and capture clocks required without fallback');
+    if (collector) calendarObservationClock(page, retained.capturedAt);
+    else need(stamp(page.observedAt) && stamp(page.capturedAt) && page.observedAt <= page.capturedAt && stamp(retained.capturedAt) && page.capturedAt <= retained.capturedAt, 'Original source and capture clocks required without fallback');
     need(typeof page.complete === 'boolean' && typeof page.paginationComplete === 'boolean' && Array.isArray(page.gaps) && page.gaps.every(gap => typeof gap === 'string' && gap.length > 0) && Array.isArray(page.items), 'Explicit source coverage and items required');
     need(page.nextCursor === null || typeof page.nextCursor === 'string' && page.nextCursor.length > 0, 'Explicit page cursor required');
     if (mail) need(page.adapter === acquisition.role && page.account === acquisition.account && page.surface === acquisition.surface && page.environment === acquisition.environment && page.unreadPreserved === true && Number.isSafeInteger(page.expandedContextCount) && page.expandedContextCount >= 0, 'Exact mailbox identity, context count and unread preservation required');
     return page;
   });
   const first = pages[0];
+  need(pages.every(page => Object.hasOwn(page, 'collectorObservation') === Object.hasOwn(first, 'collectorObservation') && page.collectorObservation?.basis === first.collectorObservation?.basis), 'Calendar pages must retain one explicit observation basis');
   const inventory = mail ? ['inboxIds'] : ['window', 'resourceIds'];
   need(pages.every(page => inventory.every(key => same(page[key], first[key]))), 'Pages must bind the same full source inventory and window');
   need(pages.every((page, index) => index === 0 ? acquisition.responses[index].raw.cursor === null : acquisition.responses[index].raw.cursor === pages[index - 1].nextCursor && pages[index - 1].nextCursor !== null), 'Retained pages must form the exact acquired cursor chain');
@@ -150,7 +156,8 @@ export function normalizeBriefingSource(acquisition, rawPages) {
   const terminal = pages.at(-1).nextCursor === null;
   const declaredComplete = pages.every(page => page.complete);
   need(typeof acquisition.complete === 'boolean' && acquisition.complete === (terminal && declaredComplete), 'Acquisition coverage differs from retained pages');
-  const source = { ...first, observedAt: pages.map(page => page.observedAt).sort()[0], capturedAt: pages.map(page => page.capturedAt).sort().at(-1), complete: declaredComplete, paginationComplete: terminal && pages.every(page => page.paginationComplete), gaps: [...new Set(pages.flatMap(page => page.gaps))], items: pages.flatMap(page => page.items) };
+  const source = { ...first, observedAt: first.observedAt === null ? null : pages.map(page => page.observedAt).sort()[0], capturedAt: first.capturedAt === null ? null : pages.map(page => page.capturedAt).sort().at(-1), complete: declaredComplete, paginationComplete: terminal && pages.every(page => page.paginationComplete), gaps: [...new Set(pages.flatMap(page => page.gaps))], items: pages.flatMap(page => page.items) };
+  if (first.collectorObservation) source.collectorObservation = { basis: first.collectorObservation.basis, startedAt: pages.map(page => page.collectorObservation.startedAt).sort()[0], endedAt: pages.map(page => page.collectorObservation.endedAt).sort().at(-1) };
   delete source.nextCursor; delete source.unreadPreserved;
   if (mail) source.expandedContextCount = pages.reduce((sum, page) => sum + page.expandedContextCount, 0);
   else source.acquiredResourceIds = [...new Set(pages.flatMap(page => { need(Array.isArray(page.acquiredResourceIds), 'Explicit acquired resource inventory required'); return page.acquiredResourceIds; }))];

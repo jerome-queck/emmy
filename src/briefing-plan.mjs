@@ -1,6 +1,7 @@
 import { digest } from './records.mjs';
 import { validateBriefingPolicy, classifyBriefingMail, briefingHumanText, assessBriefingLearning } from './briefing-policy.mjs';
 import { assessBriefingReporting } from './briefing-reporting.mjs';
+import { calendarObservationClock } from './briefing-observation.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const stamp = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
@@ -13,6 +14,16 @@ const clean = briefingHumanText;
 function shape(value, fields) { need(value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === fields.length && fields.every(key => Object.hasOwn(value, key)), `Plan members must be ${fields.join(', ')}`); }
 function strings(value) { need(list(value) && value.every(text) && unique(value), 'Bounded unique text required'); }
 function source(value, asOf, gaps, role) {
+  if (Object.hasOwn(value, 'collectorObservation')) {
+    need(role === 'calendar', 'Collector observation is Calendar-only');
+    const clock = calendarObservationClock(value, asOf);
+    if (value.collectorObservation.basis === 'current-read-start') gaps.push('calendar provider snapshot clocks unknown; collector current-read-start observation only');
+    need(typeof value.complete === 'boolean' && typeof value.paginationComplete === 'boolean', 'Explicit coverage required'); strings(value.gaps);
+    if (!value.complete || !value.paginationComplete) gaps.push(`${role} acquisition incomplete`);
+    if (Date.parse(asOf) - Date.parse(clock) > 300000) gaps.push(value.collectorObservation.basis === 'current-read-start' ? 'calendar collector observation stale' : 'calendar original source stale');
+    gaps.push(...value.gaps.map(gap => `${role}: ${gap}`));
+    return;
+  }
   if (value.observedAt === null || value.capturedAt === null) { need(value.observedAt === null && value.capturedAt === null && value.complete === false && value.paginationComplete === false && list(value.gaps) && value.gaps.every(text) && list(value.items) && value.items.length === 0 && (value.inboxIds ?? value.acquiredResourceIds)?.length === 0, 'Unavailable source cannot invent clocks, completeness or acquired items'); gaps.push(`${role} original source clock unavailable`, ...value.gaps.map(gap => `${role}: ${gap}`)); return; }
   need(stamp(value.observedAt) && stamp(value.capturedAt) && value.observedAt <= value.capturedAt && value.capturedAt <= asOf, 'Original source/acquisition clocks required');
   need(typeof value.complete === 'boolean' && typeof value.paginationComplete === 'boolean', 'Explicit coverage required'); strings(value.gaps);
@@ -46,7 +57,7 @@ export function preparePolicyBriefing(input) {
     if (missing.length) gaps.push(`${mail.adapter} ${missing.length} Inbox messages unreviewed`);
   }
   for (const [role, capture] of [['calendar', input.calendar], ['tasks', input.tasks]]) {
-    shape(capture, ['observedAt', 'capturedAt', 'complete', 'paginationComplete', 'gaps', 'window', 'resourceIds', 'acquiredResourceIds', 'items']);
+    shape(capture, ['observedAt', 'capturedAt', 'complete', 'paginationComplete', 'gaps', 'window', 'resourceIds', 'acquiredResourceIds', 'items', ...(role === 'calendar' && Object.hasOwn(capture, 'collectorObservation') ? ['collectorObservation'] : [])]);
     shape(capture.window, ['start', 'end']); need(capture.window.start === start && capture.window.end === end, 'Exact full Singapore day window required');
     strings(capture.resourceIds); strings(capture.acquiredResourceIds); need(capture.acquiredResourceIds.every(id => capture.resourceIds.includes(id)), 'Unknown acquired resource');
     source(capture, input.asOf, gaps, role); need(list(capture.items, 2000), 'Bounded day items required');

@@ -4,6 +4,7 @@ import { validateBriefingPolicy } from './briefing-policy.mjs';
 import { parseBriefingToolBytes, normalizeBriefingSource, projectBriefingPage } from './briefing-source-normalization.mjs';
 import { verifiedPriorBriefingFacts } from './morning.mjs';
 import { randomUUID } from 'node:crypto';
+import { calendarObservationClock } from './briefing-observation.mjs';
 
 export { projectBriefingPage } from './briefing-source-normalization.mjs';
 
@@ -61,7 +62,8 @@ export async function acquireBriefingSource(request, adapters) {
       if (bytes > request.maxBytes) { failure = 'measured-byte-budget-overrun'; break; }
       const page = retained.response;
       if (request.purpose === 'check-progress') { need(request.role === 'reporting' && page.requestId === request.targetRequestId && page.attemptId === request.targetAttemptId, 'Progress read crossed the same admitted check'); complete = true; break; }
-      need(page && stamp(page.observedAt) && page.observedAt <= capturedAt && typeof page.complete === 'boolean' && (page.nextCursor === null || text(page.nextCursor)), 'Provider page must retain original source clock, coverage and cursor');
+      const pageClock = request.role === 'calendar' && Object.hasOwn(page ?? {}, 'collectorObservation') ? calendarObservationClock(page, capturedAt) : page?.observedAt;
+      need(page && stamp(pageClock) && pageClock <= capturedAt && typeof page.complete === 'boolean' && (page.nextCursor === null || text(page.nextCursor)), 'Provider page must retain original source clock or explicit collector observation, coverage and cursor');
       if (request.role === 'outlook' || request.role === 'gmail') need(page.unreadPreserved === true, 'Mail read did not establish original unread preservation');
       pagesComplete = pagesComplete && page.complete;
       if (page.nextCursor === null) { cursor = null; complete = pagesComplete; break; }

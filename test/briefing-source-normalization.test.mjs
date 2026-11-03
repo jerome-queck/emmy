@@ -420,3 +420,105 @@ test('flat Calendar absent raw token preserves only explicit partial unknown pag
   assert.equal(called.status, 3, called.stdout);
   assert.ok(called.result.gaps.includes('calendar: Calendar pagination unknown: raw next_page_token absent'));
 });
+
+const collectorObservation = (extra = {}) => ({ basis: 'current-read-start', startedAt: '2026-11-02T23:59:00.000Z', endedAt: '2026-11-02T23:59:30.000Z', ...extra });
+const collectorSource = (source, extra = {}) => ({ ...source, observedAt: null, capturedAt: null, collectorObservation: collectorObservation(), ...extra });
+
+test('Calendar collector observation preserves unknown provider clocks through real exchange and CLI', async t => {
+  const x = await flatCalendarExchange(t, [flatEvent()], o => ({ ...o, source: collectorSource(o.source) }));
+  const result = await x.run();
+  assert.equal(result.source.observedAt, null); assert.equal(result.source.capturedAt, null);
+  assert.deepEqual(result.source.collectorObservation, collectorObservation());
+  assert.equal(result.acquisition.responses[0].raw.startedAt, at);
+  assert.notEqual(result.source.collectorObservation.startedAt, result.acquisition.responses[0].raw.startedAt);
+  assert.equal((await readFile(result.acquisition.responses[0].raw.sourceRef)).equals(x.raw), true);
+  x.input.calendar = result.source;
+  const called = await x.compile(x.input); assert.equal(called.status, 3, called.stdout);
+  assert.match(called.result.body, /Timing type unknown Midnight unknown/);
+  assert.ok(called.result.gaps.some(gap => /provider snapshot clocks unknown/.test(gap)));
+  assert.ok(!called.result.gaps.includes('calendar collector observation stale'));
+  assert.ok(!called.result.gaps.includes('calendar original source stale'));
+  assert.deepEqual((await x.run()).source, result.source);
+  const replay = structuredClone(result.acquisition); replay.responses[0].response.collectorObservation.startedAt = at;
+  assert.throws(() => normalizeBriefingSource(replay, [x.raw]), /projection differs/);
+});
+
+test('Calendar observation replay ages original collector start and never refreshes provider freshness', async t => {
+  const x = await flatCalendarExchange(t, [], o => ({ ...o, source: collectorSource(o.source, { collectorObservation: collectorObservation({ startedAt: '2026-11-02T23:54:59.999Z' }) }) }));
+  const result = await x.run(); x.input.calendar = result.source;
+  const called = await x.compile(x.input); assert.equal(called.status, 3, called.stdout);
+  assert.ok(called.result.gaps.includes('calendar collector observation stale'));
+  assert.ok(called.result.gaps.some(gap => /provider snapshot clocks unknown/.test(gap)));
+  const boundary = structuredClone(x.input); boundary.calendar.collectorObservation.startedAt = '2026-11-02T23:55:00.000Z';
+  assert.ok(!(await x.compile(boundary)).result.gaps.includes('calendar collector observation stale'));
+  const provider = await flatCalendarExchange(t, [], o => ({ ...o, source: { ...o.source, observedAt: '2026-11-02T23:50:00.000Z', collectorObservation: collectorObservation({ basis: 'original-provider-clock', endedAt: at }) } }));
+  const known = await provider.run(); provider.input.calendar = known.source;
+  const prepared = await provider.compile(provider.input);
+  assert.ok(prepared.result.gaps.includes('calendar original source stale'));
+  assert.equal(known.source.observedAt, '2026-11-02T23:50:00.000Z');
+  assert.equal(known.source.collectorObservation.basis, 'original-provider-clock');
+});
+
+test('Calendar collector observation refuses bad clocks unsupported basis and provider substitution', async t => {
+  const badObservations = [null, {}, { ...collectorObservation(), basis: 'provider-snapshot' }, { ...collectorObservation(), extra: true }, ...['startedAt', 'endedAt'].flatMap(key => [undefined, null, 42, 'invalid', '2026-11-02T23:59:00Z', '2026-11-03T00:00:00.001Z'].map(value => ({ ...collectorObservation(), [key]: value }))), { ...collectorObservation(), startedAt: at }, { ...collectorObservation(), basis: 'original-provider-clock' }];
+  for (const observation of badObservations) {
+    const x = await flatCalendarExchange(t, [], o => ({ ...o, source: collectorSource(o.source, { collectorObservation: observation }) }));
+    await assert.rejects(x.run(), /Failed acquisition/, JSON.stringify(observation));
+    const input = plan(); input.calendar = collectorSource(input.calendar, { collectorObservation: observation });
+    assert.equal((await x.compile(input)).status, 2, JSON.stringify(observation));
+  }
+  for (const extra of [{ observedAt: at }, { capturedAt: at }, { observedAt: at, capturedAt: at }, { collectorObservation: undefined }]) {
+    const x = await flatCalendarExchange(t, [], o => ({ ...o, source: collectorSource(o.source, extra) }));
+    await assert.rejects(x.run(), /Failed acquisition/);
+  }
+});
+
+test('Calendar collector observation retains missing inventory pagination and field gaps', async t => {
+  const x = await flatCalendarExchange(t, [flatEvent()], o => ({ ...o, source: collectorSource(o.source, { resourceIds: ['calendar-1', 'unread-calendar'], complete: false, paginationComplete: false, gaps: ['Calendar inventory unverified'] }) }));
+  x.manifest.request.resourceIds = ['calendar-1', 'unread-calendar'];
+  const { briefingCloudReadRequest } = await import('../src/briefing-cloud-exchange.mjs');
+  x.manifest.captures[0].readRequest = briefingCloudReadRequest(x.manifest.request);
+  const result = await x.run(); x.input.calendar = result.source;
+  assert.equal(result.acquisition.complete, false); assert.equal(result.source.paginationComplete, false);
+  const called = await x.compile(x.input); assert.equal(called.status, 3, called.stdout);
+  for (const gap of ['calendar acquisition incomplete', 'calendar resources missing', 'calendar: Calendar inventory unverified', 'calendar: Calendar all-day type unknown', 'calendar: Calendar native Task linkage unknown', 'calendar: Calendar source timezone unknown']) assert.ok(called.result.gaps.includes(gap), gap);
+});
+
+test('actual Calendar caller aggregates original collector bounds and refuses mixed page basis', async t => {
+  const { acquire, page, compile } = await setup(t);
+  const source = collectorSource(plan().calendar, { items: [], gaps: ['Calendar inventory unverified'] });
+  const first = page(source, { complete: false, nextCursor: 'more', collectorObservation: collectorObservation({ startedAt: '2026-11-02T23:50:00.000Z', endedAt: '2026-11-02T23:51:00.000Z' }) });
+  const second = page(source);
+  const result = await acquire('calendar', [first, second]);
+  assert.equal(result.source.observedAt, null); assert.equal(result.source.capturedAt, null);
+  assert.equal(result.source.collectorObservation.startedAt, first.collectorObservation.startedAt);
+  assert.equal(result.source.collectorObservation.endedAt, second.collectorObservation.endedAt);
+  assert.equal(result.source.complete, false);
+  const input = plan(); input.calendar = result.source;
+  assert.ok((await compile(input)).result.gaps.includes('calendar collector observation stale'));
+  const known = page(plan().calendar, { items: [], collectorObservation: collectorObservation({ basis: 'original-provider-clock', endedAt: at }) });
+  await assert.rejects(acquire('calendar', [first, known]), /one explicit observation basis/);
+  const absent = { ...second }; delete absent.collectorObservation;
+  await assert.rejects(acquire('calendar', [first, absent]), /Failed acquisition/);
+  for (const role of ['gmail', 'outlook', 'tasks']) {
+    const input = plan(); const capture = role === 'tasks' ? input.tasks : input.mail.find(row => row.adapter === role);
+    await assert.rejects(acquire(role, [page(collectorSource(capture))]), /Failed acquisition|Calendar-only/);
+  }
+});
+
+test('Calendar provider observation validates original clocks and unsupported basis with readable provider stamps', async t => {
+  for (const change of [
+    source => ({ ...source, collectorObservation: collectorObservation({ basis: 'unsupported', endedAt: at }) }),
+    source => ({ ...source, observedAt: null }),
+    source => ({ ...source, capturedAt: null }),
+    source => ({ ...source, observedAt: 'invalid' }),
+    source => ({ ...source, observedAt: '2026-11-03T00:00:00.001Z' }),
+    source => ({ ...source, observedAt: at, capturedAt: '2026-11-02T23:59:59.999Z' }),
+    source => ({ ...source, collectorObservation: collectorObservation({ basis: 'original-provider-clock' }) }),
+  ]) {
+    const x = await flatCalendarExchange(t, [], o => ({ ...o, source: change({ ...o.source, collectorObservation: collectorObservation({ basis: 'original-provider-clock', endedAt: at }) }) }));
+    await assert.rejects(x.run(), /Failed acquisition/);
+    x.input.calendar = { ...x.observation.source, items: [] };
+    assert.equal((await x.compile(x.input)).status, 2);
+  }
+});
