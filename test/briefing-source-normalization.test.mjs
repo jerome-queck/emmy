@@ -185,19 +185,19 @@ test('generic projections require exact clocks, complete coverage and byte-corre
   await assert.rejects(x.run(manifest), /Failed acquisition/);
 });
 
-async function flatCalendarExchange(t, events, change = value => value) {
+async function flatCalendarExchange(t, events, change = value => value, payloadExtra = {}, wrapper = payload => ({ content: [{ type: 'text', text: 'Original provider block retained verbatim.' }], structuredContent: payload })) {
   const { directory, compile } = await setup(t);
   const { briefingCloudReadRequest, acquireCapturedBriefingSource } = await import('../src/briefing-cloud-exchange.mjs');
   const input = plan(), source = { ...input.calendar }; delete source.items;
   const request = { schemaVersion: 1, role: 'calendar', account: 'primary@example.test', environment: 'dot-cloud', surface: 'connector', requestedCalendarId: 'calendar-1', resourceIds: source.resourceIds, window: source.window, maxReads: 1, maxBytes: 1048576 };
   const observation = change({ source, requestedCalendarId: 'calendar-1', provenance: { environment: 'dot-cloud', surface: 'connector', tool: 'calendar.search', sourceRef: 'synthetic-calendar-read-1' }, nextCursor: null });
   const sidecar = Buffer.from(JSON.stringify(observation));
-  const raw = Buffer.from(JSON.stringify({ content: [{ type: 'text', text: 'Original provider block retained verbatim.' }], structuredContent: { events } }));
+  const raw = Buffer.from(JSON.stringify(wrapper({ events, ...payloadExtra })));
   const path = join(directory, 'flat.raw'); await writeFile(path, raw);
   const projection = { contract: 'calendar-search-flat-v1', observationBytes: sidecar.toString('base64'), observationSha256: digest(sidecar) };
   const manifest = { schemaVersion: 1, request, captures: [{ readRequest: briefingCloudReadRequest(request), path, sha256: digest(raw), byteCount: raw.length, projection }] };
   const run = (value = manifest) => acquireCapturedBriefingSource(value, { directory: join(directory, 'retained-flat'), policy: input.policy, now: () => at });
-  return { run, manifest, input, compile, raw, sidecar, observation };
+  return { run, manifest, input, compile, raw, sidecar, observation, directory };
 }
 const flatEvent = (extra = {}) => ({ id: 'flat-1', summary: 'Midnight unknown', status: 'confirmed', start: '2026-11-03T00:00:00+08:00', end: '2026-11-04T00:00:00+08:00', recurring_event_id: null, original_start_time: null, ...extra });
 
@@ -252,4 +252,145 @@ test('flat Calendar retains partial coverage and original source clock without r
   const result = await x.run(); assert.equal(result.source.complete, false); assert.equal(result.source.paginationComplete, false); assert.equal(result.source.observedAt, '2026-11-02T23:50:00.000Z'); assert.equal(result.acquisition.complete, false);
   x.input.calendar = result.source; const called = await x.compile(x.input);
   assert.ok(called.result.gaps.includes('calendar acquisition incomplete')); assert.ok(called.result.gaps.includes('calendar original source stale')); assert.ok(called.result.gaps.includes('calendar: Provider selected inventory only'));
+});
+
+
+test('flat Calendar rejects raw cursor divergence and malformed native tokens before normalization', async t => {
+  for (const [token, nextCursor] of [['more', null], ['raw', 'sidecar'], [42, null], [false, null], [{}, null], [[], null], ['', null], [null, 'invented']]) {
+    const x = await flatCalendarExchange(t, [], o => ({ ...o, nextCursor }), { next_page_token: token });
+    await assert.rejects(x.run(), /Failed acquisition/, JSON.stringify({ token, nextCursor }));
+  }
+  const missing = await flatCalendarExchange(t, [], o => ({ ...o, nextCursor: 'invented' }));
+  await assert.rejects(missing.run(), /Failed acquisition/);
+  for (const extra of [{}, { next_page_token: null }]) {
+    const x = await flatCalendarExchange(t, [], undefined, extra);
+    const result = await x.run(); assert.equal(result.acquisition.complete, true); assert.deepEqual(result.source.items, []);
+  }
+});
+
+test('provider errors inside raw wrappers cannot be erased by flat or generic projections', async t => {
+  const errors = [{ error: { code: 403, message: 'Synthetic denied' } }, { error: 'Synthetic provider failure' }, { error: 'e'.repeat(2001) }, { isError: true }];
+  const wrappers = [payload => payload, payload => ({ isError: false, structuredContent: payload }), payload => ({ isError: false, content: [{ type: 'text', text: JSON.stringify(payload) }] }), payload => ({ isError: false, structuredContent: { isError: false, content: [{ type: 'text', text: JSON.stringify(payload) }] } })];
+  for (const error of errors) for (const wrapper of wrappers) {
+    const x = await flatCalendarExchange(t, [], undefined, error, wrapper);
+    await assert.rejects(x.run(), /Failed acquisition/);
+  }
+  const x = await exchange(t, 'tasks', plan().tasks, [], null, 'browser');
+  const payload = { rows: [], cursor: null, error: { code: 403, message: 'Synthetic denied' } };
+  const raw = Buffer.from(JSON.stringify({ isError: false, structuredContent: payload })); await writeFile(x.path, raw);
+  x.manifest.captures[0].sha256 = digest(raw); x.manifest.captures[0].byteCount = raw.length;
+  await assert.rejects(x.run(), /Failed acquisition/);
+  const valid = await flatCalendarExchange(t, [flatEvent({ summary: 'Discuss error handling' })], undefined, { error: null });
+  assert.equal((await valid.run()).acquisition.complete, true);
+});
+
+test('generic sidecar cannot supply a terminal cursor that contradicts native raw continuation', async t => {
+  for (const native of [{}, { next_page_token: 'next' }, { nextCursor: 'next' }]) {
+    const x = await exchange(t, 'tasks', plan().tasks, [], null, 'browser');
+    const payload = { rows: [], cursor: 'next', ...native };
+    const raw = Buffer.from(JSON.stringify({ structuredContent: payload })); await writeFile(x.path, raw);
+    const capture = x.manifest.captures[0]; capture.sha256 = digest(raw); capture.byteCount = raw.length;
+    const observation = { ...plan().tasks, nextCursor: null }; delete observation.items;
+    const sidecar = Buffer.from(JSON.stringify(observation)); capture.projection.observationBytes = sidecar.toString('base64'); capture.projection.observationSha256 = digest(sidecar); capture.projection.cursorPointer = '/observation/nextCursor';
+    await assert.rejects(x.run(), /Failed acquisition/);
+  }
+});
+
+test('generic cursor projection cannot discard native or compiler-source cursor witnesses', async t => {
+  for (const native of [{ next_page_token: 'next' }, { nextCursor: 'next' }]) {
+    const x = await exchange(t, 'tasks', plan().tasks, [], null, 'browser');
+    const raw = Buffer.from(JSON.stringify({ structuredContent: { rows: [], cursor: null, ...native } })); await writeFile(x.path, raw);
+    const capture = x.manifest.captures[0]; capture.sha256 = digest(raw); capture.byteCount = raw.length;
+    await assert.rejects(x.run(), /Failed acquisition/);
+  }
+  const x = await exchange(t, 'tasks', plan().tasks, [], null, 'browser');
+  const capture = x.manifest.captures[0]; const observation = { ...plan().tasks, nextCursor: 'next' }; delete observation.items;
+  const sidecar = Buffer.from(JSON.stringify(observation)); capture.projection.observationBytes = sidecar.toString('base64'); capture.projection.observationSha256 = digest(sidecar);
+  capture.projection.sourceFields.nextCursor = '/observation/nextCursor';
+  await assert.rejects(x.run(), /Failed acquisition/);
+});
+
+test('actual compiler rejects native Calendar identity conflicts across times, recurrence and provenance', async t => {
+  const variants = [
+    { start: '2026-11-03T01:00:00.000Z', end: '2026-11-03T02:00:00.000Z' },
+    { status: 'cancelled' },
+    { iCalUID: 'changed@example.test' },
+    { recurringEventId: 'series', originalStartTime: '2026-11-03T01:00:00.000Z' },
+  ];
+  for (const variant of variants) {
+    const x = await flatCalendarExchange(t, [flatEvent()]); x.input.calendar = (await x.run()).source;
+    x.input.calendar.items.push({ ...x.input.calendar.items[0], ...variant });
+    const called = await x.compile(x.input); assert.equal(called.status, 2, JSON.stringify(variant) + called.stdout);
+  }
+  const input = plan(); const { compile } = await setup(t);
+  input.calendar.items = [{ nativeId: 'same', calendarId: 'calendar-1', iCalUID: 'old@example.test', start: '2026-11-03T01:00:00.000Z', end: '2026-11-03T02:00:00.000Z', allDay: false, title: 'Generic native conflict', status: 'confirmed', taskId: null }];
+  input.calendar.items.push({ ...input.calendar.items[0], iCalUID: 'new@example.test', start: '2026-11-03T03:00:00.000Z', end: '2026-11-03T04:00:00.000Z' });
+  assert.equal((await compile(input)).status, 2);
+});
+
+test('identical Calendar copies dedup while same-native recurrence retains distinct originals', async t => {
+  const recurring = flatEvent({ summary: 'Legitimate occurrence', recurring_event_id: 'series', original_start_time: '2026-11-03T09:00:00+08:00', start: '2026-11-03T09:00:00+08:00', end: '2026-11-03T10:00:00+08:00' });
+  const x = await flatCalendarExchange(t, [recurring, { ...recurring }, { ...recurring, original_start_time: '2026-11-03T11:00:00+08:00', start: '2026-11-03T11:00:00+08:00', end: '2026-11-03T12:00:00+08:00' }]);
+  x.input.calendar = (await x.run()).source;
+  const called = await x.compile(x.input); assert.equal(called.status, 3, called.stdout);
+  assert.equal(called.result.body.match(/Legitimate occurrence/g).length, 2);
+  x.input.calendar.items.push({ ...x.input.calendar.items[0], recurringEventId: 'different-series', originalStartTime: '2026-11-03T05:00:00.000Z', start: '2026-11-03T05:00:00.000Z', end: '2026-11-03T06:00:00.000Z' });
+  assert.equal((await x.compile(x.input)).status, 2);
+});
+
+
+test('flat Calendar empty continuation binds both raw pages and preserves partial source evidence', async t => {
+  const { briefingCloudReadRequest } = await import('../src/briefing-cloud-exchange.mjs');
+  for (const partial of [false, true]) {
+    const x = await flatCalendarExchange(t, []);
+    const request = { ...x.manifest.request, maxReads: 2 }; x.manifest.request = request;
+    x.manifest.captures = [];
+    for (const [index, events, token] of [[0, [], 'more'], [1, [flatEvent()], null]]) {
+      const raw = Buffer.from(JSON.stringify({ isError: false, structuredContent: { events, next_page_token: token } }));
+      const path = join(x.directory, `page-${index}.raw`); await writeFile(path, raw);
+      const observation = { ...x.observation, source: { ...x.observation.source, ...(partial && index === 0 ? { complete: false, paginationComplete: false, gaps: ['Original incomplete inventory'] } : {}) }, nextCursor: token };
+      const sidecar = Buffer.from(JSON.stringify(observation));
+      x.manifest.captures.push({ readRequest: briefingCloudReadRequest(request, index === 0 ? null : 'more'), path, sha256: digest(raw), byteCount: raw.length, projection: { contract: 'calendar-search-flat-v1', observationBytes: sidecar.toString('base64'), observationSha256: digest(sidecar) } });
+    }
+    const result = await x.run(); assert.equal(result.acquisition.reads, 2); assert.equal(result.acquisition.complete, !partial); assert.equal(result.source.paginationComplete, !partial);
+    assert.equal(result.source.complete, !partial); assert.equal(result.source.items.length, 1);
+    x.input.calendar = result.source; const called = await x.compile(x.input); assert.equal(called.status, 3, called.stdout);
+    if (partial) assert.ok(called.result.gaps.includes('calendar: Original incomplete inventory'));
+    const file = join(x.directory, 'two-page-manifest.json'); await writeFile(file, JSON.stringify(x.manifest));
+    const child = spawnSync(process.execPath, [resolve('scripts/briefing-cloud-exchange.mjs'), 'acquire', file, join(x.directory, 'two-page-cli')], { encoding: 'utf8' });
+    assert.equal(child.status, 0, child.stderr); assert.equal(JSON.parse(child.stdout).source.items.length, 1);
+  }
+});
+
+test('actual caller retains rejected raw Calendar bytes and exchange CLI cannot publish a successful source', async t => {
+  const { acquireBriefingSource } = await import('../src/briefing-cloud-caller.mjs');
+  const x = await flatCalendarExchange(t, [], undefined, { next_page_token: 'hidden-continuation' });
+  const storage = await setup(t);
+  const result = await acquireBriefingSource(x.manifest.request, { ...storage.adapters, async read() { return { raw: x.raw, projection: x.manifest.captures[0].projection }; } });
+  assert.equal(result.complete, false); assert.equal(result.responses.length, 1); assert.equal(result.responses[0].response, null);
+  assert.equal((await readFile(result.responses[0].raw.sourceRef)).equals(x.raw), true);
+  const file = join(x.directory, 'rejected-manifest.json'); await writeFile(file, JSON.stringify(x.manifest));
+  const child = spawnSync(process.execPath, [resolve('scripts/briefing-cloud-exchange.mjs'), 'acquire', file, join(x.directory, 'refused-cli')], { encoding: 'utf8' });
+  assert.notEqual(child.status, 0); assert.equal(child.stdout, ''); assert.match(child.stderr, /Failed acquisition/);
+});
+
+test('conflicting flat nonrecurring raw records reach the compiler refusal after exact acquisition', async t => {
+  const x = await flatCalendarExchange(t, [flatEvent(), flatEvent({ start: '2026-11-03T11:00:00+08:00', end: '2026-11-03T12:00:00+08:00' })]);
+  const acquired = await x.run(); assert.equal(acquired.acquisition.complete, true); assert.equal(acquired.source.items.length, 2);
+  x.input.calendar = acquired.source; assert.equal((await x.compile(x.input)).status, 2);
+});
+
+
+test('structured Calendar success cannot conceal a recognized JSON error in retained sibling content', async t => {
+  for (const content of [
+    [{ type: 'text', text: JSON.stringify({ error: { code: 403, message: 'Synthetic denied' } }) }],
+    [{ type: 'text', text: 'Provider narrative remains retained.' }, { type: 'text', text: JSON.stringify({ isError: true }) }],
+  ]) {
+    const x = await flatCalendarExchange(t, [], undefined, {}, payload => ({ isError: false, structuredContent: payload, content }));
+    await assert.rejects(x.run(), /Failed acquisition/);
+  }
+  for (const text of ['Discuss error handling', JSON.stringify({ message: 'Discuss error handling', error: null })]) {
+    const x = await flatCalendarExchange(t, [], undefined, {}, payload => ({ isError: false, structuredContent: payload, content: [{ type: 'text', text }] }));
+    assert.equal((await x.run()).acquisition.complete, true);
+  }
 });
