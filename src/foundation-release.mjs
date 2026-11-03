@@ -27,7 +27,7 @@ function closure(files, entry) {
   visit(entry); return [...found].sort();
 }
 function validate(release) {
-  need(['emmy-foundation-v1', 'emmy-foundation-v2'].includes(release?.format) && /^[a-f0-9]{40}$/.test(release.revision) && release.minimumNode === 24 && release.effectsAuthorized === false && (release.format === 'emmy-foundation-v1' && release.distribution === undefined || ['runtime', 'portable'].includes(release.distribution)), 'Unsupported source release');
+  need(['emmy-foundation-v1', 'emmy-foundation-v2'].includes(release?.format) && typeof release.revision === 'string' && /^[a-f0-9]{40}$/.test(release.revision) && release.minimumNode === 24 && release.effectsAuthorized === false && (release.format === 'emmy-foundation-v1' && release.distribution === undefined || ['runtime', 'portable'].includes(release.distribution)), 'Unsupported source release');
   need(Array.isArray(release.files) && release.files.length > 0 && release.files.length <= 1000, 'Bounded source inventory required');
   let previous = '';
   for (const file of release.files) {
