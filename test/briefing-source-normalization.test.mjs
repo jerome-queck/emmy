@@ -112,3 +112,75 @@ test('existing mail projection reaches compiler only with exact retained compile
   }
   const called = await compile(input); assert.equal(called.result.inputDigest, digest(input));
 });
+
+async function exchange(t, role, source, items, itemFields, surface = 'connector') {
+  const { directory, compile } = await setup(t);
+  const { briefingCloudReadRequest, acquireCapturedBriefingSource } = await import('../src/briefing-cloud-exchange.mjs');
+  const request = { schemaVersion: 1, role, account: 'primary@example.test', environment: 'dot-cloud', surface, maxReads: 1, maxBytes: 1048576 };
+  const metadata = { ...source }; delete metadata.items;
+  const payload = { rows: items, cursor: null };
+  const observation = Buffer.from(JSON.stringify(metadata));
+  const raw = Buffer.from(JSON.stringify({ structuredContent: payload }));
+  const path = join(directory, 'original.raw'); await writeFile(path, raw);
+  const projection = { contract: 'compiler-fields-v1', observationBytes: observation.toString('base64'), observationSha256: digest(observation), sourceFields: Object.fromEntries(Object.keys(metadata).map(key => [key, `/observation/${key}`])), itemsPointer: '/provider/rows', cursorPointer: '/provider/cursor', itemFields };
+  const manifest = { schemaVersion: 1, request, captures: [{ readRequest: briefingCloudReadRequest(request), path, sha256: digest(raw), byteCount: raw.length, projection }] };
+  const run = async (value = manifest) => acquireCapturedBriefingSource(value, { directory: join(directory, 'retained'), policy: plan().policy, now: () => at });
+  return { manifest, run, compile, raw, path, directory };
+}
+
+test('cloud file exchange projects documented Calendar date fields through actual caller and CLI without shifting days', async t => {
+  const input = plan();
+  const fields = { nativeId: '/id', calendarId: '/calendarId', iCalUID: '/iCalUID', start: '/start/date', end: '/end/date', allDay: '/observation/allDay', title: '/summary', status: '/status', taskId: '/observation/taskId', timeZone: '/observation/calendarTimeZone' };
+  const event = { id: 'date-only', calendarId: 'calendar-1', iCalUID: 'date@example.test', start: { date: '2026-11-03' }, end: { date: '2026-11-04' }, summary: 'Source date holiday', status: 'confirmed', observation: { allDay: true, taskId: null, calendarTimeZone: 'Asia/Singapore' } };
+  const x = await exchange(t, 'calendar', input.calendar, [event], fields);
+  const result = await x.run(); input.calendar = result.source;
+  assert.equal(input.calendar.items[0].start, '2026-11-03'); assert.equal(input.calendar.items[0].end, '2026-11-04');
+  assert.equal(input.calendar.items[0].timeZone, 'Asia/Singapore');
+  const called = await x.compile(input); assert.equal(called.status, 3, called.stdout); assert.match(called.result.body, /All day Source date holiday/);
+  input.calendar.items[0].end = '2026-11-03'; input.calendar.items[0].start = '2026-11-02';
+  assert.doesNotMatch((await x.compile(input)).result.body, /Source date holiday/);
+  for (const zone of [null, '', '+08:00', 'Invalid/Zone', 'America/Los_Angeles', 'UTC']) {
+    input.calendar.items[0] = { ...result.source.items[0], timeZone: zone };
+    assert.equal((await x.compile(input)).status, 2);
+  }
+  input.calendar.items[0] = { ...result.source.items[0], start: '2026-02-30' };
+  assert.equal((await x.compile(input)).status, 2);
+  await writeFile(x.path, Buffer.from('changed'));
+  await assert.rejects(x.run(), /Failed acquisition/);
+  assert.equal((await readFile(result.acquisition.responses[0].raw.sourceRef)).equals(x.raw), true);
+});
+
+test('cloud browser Task observations retain unknown overlays through file exchange and actual CLI', async t => {
+  const input = plan();
+  const task = { id: 'task-ui', list: 'tasks-1', name: 'Browser observed task', state: 'needsAction', date: input.day, deadline: null };
+  const fields = { nativeId: '/id', listId: '/list', title: '/name', status: '/state', doDate: '/date', deadline: '/deadline' };
+  const x = await exchange(t, 'tasks', input.tasks, [task], fields, 'browser');
+  const result = await x.run(); input.tasks = result.source;
+  assert.equal(result.acquisition.surface, 'browser'); assert.equal(input.tasks.items[0].ownerDismissed, null); assert.equal(input.tasks.items[0].manuallyMoved, null);
+  const called = await x.compile(input); assert.equal(called.status, 3); assert.ok(called.result.gaps.includes('Task dismissal or move status unknown')); assert.doesNotMatch(called.result.body, /Browser observed task/);
+  const wrong = structuredClone(x.manifest); wrong.captures[0].readRequest.request.surface = 'connector';
+  await assert.rejects(x.run(wrong), /Failed acquisition/);
+  const missing = structuredClone(x.manifest); missing.captures[0].projection.itemFields.status = '/absent';
+  await assert.rejects(x.run(missing), /Failed acquisition/);
+  const extra = structuredClone(x.manifest); extra.captures.push(extra.captures[0]);
+  await assert.rejects(x.run(extra), /Unconsumed/);
+});
+
+test('generic projections require exact clocks, complete coverage and byte-correlated metadata', async t => {
+  const input = plan(); input.tasks.complete = false; input.tasks.gaps = ['Source inventory incomplete'];
+  const x = await exchange(t, 'tasks', input.tasks, [], null, 'browser');
+  const result = await x.run(); assert.equal(result.acquisition.complete, false); assert.equal(result.source.complete, false); assert.deepEqual(result.source.gaps, input.tasks.gaps);
+  const changed = structuredClone(result.acquisition); changed.responses[0].response.complete = true;
+  assert.throws(() => normalizeBriefingSource(changed, [x.raw]), /projection differs/);
+  const absent = structuredClone(x.manifest); absent.captures[0].projection.sourceFields.observedAt = '/missing-clock';
+  await assert.rejects(x.run(absent), /Failed acquisition/);
+  const sidecar = structuredClone(x.manifest); sidecar.captures[0].projection.observationBytes = Buffer.from(JSON.stringify({ ...input.tasks, complete: true })).toString('base64');
+  await assert.rejects(x.run(sidecar), /Failed acquisition/);
+  const oversized = structuredClone(x.manifest); oversized.captures[0].byteCount = 1;
+  await assert.rejects(x.run(oversized), /Failed acquisition/);
+  const file = join(x.directory, 'manifest.json'); await writeFile(file, JSON.stringify(x.manifest));
+  const child = spawnSync(process.execPath, [resolve('scripts/briefing-cloud-exchange.mjs'), 'acquire', file, join(x.directory, 'cli-retained')], { encoding: 'utf8' });
+  assert.equal(child.status, 0, child.stderr); assert.equal(JSON.parse(child.stdout).source.observedAt, at); assert.equal(JSON.parse(child.stdout).source.complete, false);
+  const manifest = structuredClone(x.manifest); manifest.captures[0].sha256 = '0'.repeat(64);
+  await assert.rejects(x.run(manifest), /Failed acquisition/);
+});

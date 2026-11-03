@@ -12,6 +12,26 @@ const extract = (object, path) => {
   return value;
 };
 export function projectBriefingPage(payload, projection, metadata) {
+  if (projection?.contract === 'compiler-fields-v1') {
+    if (projection.observationBytes !== undefined) {
+      need(typeof projection.observationBytes === 'string' && /^[a-f0-9]{64}$/.test(projection.observationSha256 ?? ''), 'Exact observation sidecar bytes and external hash required');
+      const bytes = Buffer.from(projection.observationBytes, 'base64');
+      need(bytes.toString('base64') === projection.observationBytes && bytes.length <= 4194304 && digest(bytes) === projection.observationSha256, 'Observation sidecar identity differs');
+      payload = { provider: payload, observation: strictJson(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) };
+    }
+    const fields = (object, mapping) => {
+      need(mapping && typeof mapping === 'object' && !Array.isArray(mapping), 'Explicit field pointer map required');
+      return Object.fromEntries(Object.entries(mapping).map(([key, pointer]) => {
+        need(!['__proto__', 'constructor', 'prototype'].includes(key), 'Unsafe output field');
+        return [key, extract(object, pointer)];
+      }));
+    };
+    const source = fields(payload, projection.sourceFields);
+    const items = extract(payload, projection.itemsPointer);
+    need(Array.isArray(items), 'Exact provider item array required');
+    source.items = projection.itemFields ? items.map(item => fields(item, projection.itemFields)) : items;
+    return { ...source, nextCursor: extract(payload, projection.cursorPointer) };
+  }
   need(projection && ['gmail-readonly-page-v1', 'outlook-ui-page-v1'].includes(projection.contract), 'Supported source extraction contract required');
   const items = extract(payload, projection.itemsPointer); const cursor = extract(payload, projection.cursorPointer);
   need(Array.isArray(items) && (cursor === null || text(cursor)), 'Provider items and explicit terminal cursor required');
@@ -38,9 +58,9 @@ export function parseBriefingToolBytes(bytes) {
 export function normalizeBriefingSource(acquisition, rawPages) {
   need(['gmail', 'outlook', 'calendar', 'tasks'].includes(acquisition?.role) && acquisition.environment === 'dot-cloud', 'Existing cloud briefing source required');
   const mail = ['gmail', 'outlook'].includes(acquisition.role);
-  need(acquisition.surface === (acquisition.role === 'outlook' ? 'browser' : 'connector'), 'Exact source surface required');
-  need(Array.isArray(rawPages) && rawPages.length > 0 && rawPages.length === acquisition.responses.length && rawPages.length === acquisition.reads && rawPages.length <= 100, 'Every attempted page requires exact retained bytes');
+  need((acquisition.role === 'tasks' ? ['browser', 'connector'] : [acquisition.role === 'outlook' ? 'browser' : 'connector']).includes(acquisition.surface), 'Exact source surface required');
   need(acquisition.failure === null || ['partial-provider-coverage', 'read-budget-exhausted'].includes(acquisition.failure), 'Failed acquisition cannot normalize acquired items');
+  need(Array.isArray(rawPages) && rawPages.length > 0 && rawPages.length === acquisition.responses.length && rawPages.length === acquisition.reads && rawPages.length <= 100, 'Every attempted page requires exact retained bytes');
   const pages = rawPages.map((bytes, index) => {
     const retained = acquisition.responses[index];
     need((Buffer.isBuffer(bytes) || typeof bytes === 'string') && digest(bytes) === retained.raw.sha256 && Buffer.byteLength(bytes) === retained.raw.byteCount, 'Retained raw source bytes or extraction contract differ');
@@ -49,7 +69,7 @@ export function normalizeBriefingSource(acquisition, rawPages) {
     const projected = projection == null ? payload : projectBriefingPage(payload, projection, retained.raw);
     need(same(projected, retained.response), 'Normalized projection differs from retained raw source');
     let page = projected;
-    if (projection != null) {
+    if (projection != null && projection.contract !== 'compiler-fields-v1') {
       need(Object.hasOwn(projected, 'compilerSource'), 'Projected page requires retained exact compiler source witness');
       const source = projected.compilerSource;
       need(source && same(source.items, projected.items) && source.observedAt === projected.observedAt && source.complete === projected.complete, 'Compiler source witness differs from projected items, clock or coverage');

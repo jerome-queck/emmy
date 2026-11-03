@@ -4,6 +4,8 @@ import { assessBriefingReporting } from './briefing-reporting.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const stamp = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
+const dateOnly = value => typeof value === 'string' && /^\d{4}-\d\d-\d\d$/.test(value) && new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) === value;
+const iana = value => { try { return typeof value === 'string' && (value === 'UTC' || value.includes('/')) && !!new Intl.DateTimeFormat('en', { timeZone: value }); } catch { return false; } };
 const text = value => typeof value === 'string' && value.length > 0 && value.length <= 2000 && !/[\x00-\x1f\x7f]/.test(value);
 const list = (value, max = 500) => Array.isArray(value) && value.length <= max;
 const unique = values => new Set(values).size === values.length;
@@ -59,13 +61,14 @@ export function preparePolicyBriefing(input) {
   }
   const seen = new Map(); const events = [];
   for (const event of input.calendar.items) {
-    shape(event, ['nativeId', 'calendarId', 'iCalUID', 'start', 'end', 'allDay', 'title', 'status', 'taskId']);
-    need(text(event.nativeId) && input.calendar.acquiredResourceIds.includes(event.calendarId) && (event.iCalUID === null || text(event.iCalUID)) && stamp(event.start) && stamp(event.end) && event.end > event.start && typeof event.allDay === 'boolean' && text(event.title) && ['confirmed', 'cancelled'].includes(event.status) && (event.taskId === null || text(event.taskId)), 'Invalid occurrence fields');
+    const dated = event.allDay === true && dateOnly(event.start) && dateOnly(event.end);
+    shape(event, ['nativeId', 'calendarId', 'iCalUID', 'start', 'end', 'allDay', 'title', 'status', 'taskId', ...(dated ? ['timeZone'] : [])]);
+    need(text(event.nativeId) && input.calendar.acquiredResourceIds.includes(event.calendarId) && (event.iCalUID === null || text(event.iCalUID)) && (dated ? iana(event.timeZone) && event.timeZone === 'Asia/Singapore' : stamp(event.start) && stamp(event.end)) && event.end > event.start && typeof event.allDay === 'boolean' && text(event.title) && ['confirmed', 'cancelled'].includes(event.status) && (event.taskId === null || text(event.taskId)), 'Invalid occurrence fields');
     const key = `${event.iCalUID ?? event.nativeId}/${event.start}`;
     const prior = seen.get(key);
-    if (prior) { need(prior.title === event.title && prior.end === event.end && prior.status === event.status && prior.taskId === event.taskId, 'Conflicting same-occurrence copies'); continue; }
+    if (prior) { need(prior.title === event.title && prior.end === event.end && prior.status === event.status && prior.taskId === event.taskId && prior.allDay === event.allDay && prior.timeZone === event.timeZone, 'Conflicting same-occurrence copies'); continue; }
     seen.set(key, event);
-    if (event.end <= start || event.start >= end || event.status === 'cancelled') continue;
+    if ((dated ? event.end <= input.day || event.start > input.day : event.end <= start || event.start >= end) || event.status === 'cancelled') continue;
     const task = event.taskId && tasks.get(event.taskId);
     if (task && (task.status !== 'needsAction' || task.ownerDismissed || task.manuallyMoved)) continue;
     if (task && (task.ownerDismissed === null || task.manuallyMoved === null || task.doDate !== null && task.doDate > input.day)) continue;

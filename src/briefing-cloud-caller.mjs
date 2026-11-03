@@ -36,7 +36,7 @@ async function retain(response, metadata, adapters) {
 
 export async function acquireBriefingSource(request, adapters) {
   need(request?.schemaVersion === 1 && ['gmail', 'outlook', 'calendar', 'tasks', 'reporting'].includes(request.role) && text(request.account) && request.environment === 'dot-cloud', 'Cloud-only exact source request required');
-  need(request.surface === (request.role === 'outlook' ? 'browser' : request.role === 'reporting' ? 'bridge' : 'connector'), 'School Outlook must use cloud UI; reporting must use actual bridge');
+  need((request.role === 'tasks' ? ['browser', 'connector'] : [request.role === 'outlook' ? 'browser' : request.role === 'reporting' ? 'bridge' : 'connector']).includes(request.surface), 'School Outlook must use cloud UI; reporting must use actual bridge');
   if (['gmail', 'outlook'].includes(request.role)) { validateBriefingPolicy(adapters.policy); need(request.account === adapters.policy.accounts[request.role].account, 'Source account differs from pinned primary mailbox'); }
   need(Number.isSafeInteger(request.maxReads) && request.maxReads > 0 && request.maxReads <= 100 && Number.isSafeInteger(request.maxBytes) && request.maxBytes > 0 && request.maxBytes <= 4194304, 'Finite read/byte budgets required');
   need(typeof adapters?.read === 'function' && typeof adapters.retainRaw === 'function' && typeof adapters.completeAcquisition === 'function', 'Supported caller read, raw retention and acquisition accounting required');
