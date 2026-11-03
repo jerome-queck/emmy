@@ -5,6 +5,8 @@ import { dailyFixture } from './daily-briefing-fixtures.mjs';
 export async function driveDailyBriefing({ home, run, scenario, report, evidenceDir }) {
   const directory = join(evidenceDir, 'daily-briefing'); await mkdir(directory, { recursive: true });
   const { input, save } = await dailyFixture(directory);
+  const foundation = await run(['daily-briefing', '--file', (await save('foundation-request.json', { action: 'foundation', input: {} })).path]);
+  assert.equal(foundation.id, 'emmy-operating-foundation'); assert.equal(foundation.state, 'staged'); assert.equal(foundation.effectsAuthorized, false);
   const request = await save('compile-request.json', { action: 'compile', directory, input });
   const first = await run(['daily-briefing', '--file', request.path]); assert.equal(first.status, 'published');
   assert.equal((await run(['daily-briefing', '--file', request.path])).status, 'identical');

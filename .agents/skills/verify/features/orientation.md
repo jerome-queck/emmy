@@ -17,3 +17,5 @@ A public catalog entry does not bind a host/path or establish access. Own privat
 Doctor exposes cooperative queue summaries, restored suspension and unresolved turn health. Pending escalation remains undelivered. It never interprets a sleeping process as suspended.
 
 Doctor also exposes fleet source/coverage age, pending/uncertain alerts and unfinished pure publication intents. `needsAssessment` requires a fleet assessment to persist newly stale sources; a read-only doctor does not claim it created or sent an alert.
+
+Pure canonical/hash helpers now live in `src/content.mjs`; strict JSON parsing lives in `src/strict-json.mjs`. Existing record and bounded-file modules retain compatibility re-exports. Ownership changed; declared parsing and reconciliation semantics remain unchanged.

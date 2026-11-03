@@ -96,3 +96,7 @@ Source maintenance must cover both initial compiler output and refreshed same-me
 
 
 Calendar collector observations retain explicit original cloud start/end and basis separately from nullable provider clocks. Run the normalization suite for real caller/exchange/prepare CLI controls covering unknown provider clocks, stale collector versus stale provider classification, invalid bounds/basis, replay, missing inventory and field gaps, and mixed page bases. File ingestion clocks never refresh collection evidence. Existing pagination/error/identity controls remain required. These synthetic checks add no provider-truth or finite/TLC claim. See [collector contract](../../../docs/briefing-cloud-exchange.md#calendar-collector-observation).
+
+## Common operating foundation
+
+Run `node --test test/foundation-release.test.mjs test/morning-observation.test.mjs` and the fleet focus. The release test rebuilds from an isolated Git snapshot with no historical capsule, checks whole-file hashes and forbidden closure dependencies, materializes a fresh pure consumer, and compares actual fresh-process output. The fleet drive retains a separate v3 collector packet to real CLI intake and same-journal seal, rejects changed packet observation, and performs no effects in that branch. Unknown provider clocks remain partial. Existing legacy and effect scenarios still run. `daily-briefing` action `foundation` exposes the versioned staged procedure and report expectation rules. These rules do not activate schedules. Parent acceptance and deployment remain separate.

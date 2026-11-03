@@ -1,4 +1,4 @@
-import { canonical, digest } from './records.mjs';
+import { canonical, digest } from './content.mjs';
 
 const same = (a, b) => canonical(a) === canonical(b);
 const hash = value => digest(canonical(value));

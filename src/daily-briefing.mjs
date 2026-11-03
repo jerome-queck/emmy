@@ -1,10 +1,8 @@
 import { createHash } from 'node:crypto';
 import { isAbsolute, join } from 'node:path';
-import { strictJson } from './bounded-json.mjs';
+import { strictJson } from './strict-json.mjs';
 import { ordinary, directory, publishSlot } from './immutable-slot.mjs';
-import { preparePolicyBriefing } from './briefing-plan.mjs';
-import { assessBriefingReporting } from './briefing-reporting.mjs';
-import { briefingPolicyDigest, assessBriefingLearning } from './briefing-policy.mjs';
+import { executeBriefing } from './briefing-core.mjs';
 
 const maximum = 1048576;
 const contract = 'daily-briefing-v1';
@@ -114,12 +112,8 @@ function artifact(raw, expectedIdentity) {
   return value;
 }
 export async function dailyBriefing(request, { now = new Date().toISOString() } = {}) {
-  if (['prepare', 'reporting', 'policy', 'learning'].includes(request?.action)) {
-    shape(request, ['action', 'input']);
-    if (request.action === 'prepare') { need(request.input.asOf <= now, 'Assessment clock is future'); return preparePolicyBriefing(request.input); }
-    if (request.action === 'reporting') return assessBriefingReporting(request.input);
-    if (request.action === 'learning') { shape(request.input, ['policy', 'entry', 'history']); return assessBriefingLearning(request.input.policy, request.input.entry, request.input.history); }
-    return { policyDigest: briefingPolicyDigest(request.input), unboundExceptions: request.input.unboundExceptions.map(row => row.id), effectsAuthorized: false, deployment: 'held' };
+  if (['foundation', 'prepare', 'reporting', 'policy', 'learning'].includes(request?.action)) {
+    return executeBriefing(request, { now });
   }
   need(['compile', 'read'].includes(request?.action), 'Use compile or read');
   shape(request, request.action === 'compile' ? ['action', 'directory', 'input'] : ['action', 'directory', 'identity', 'maxAgeSeconds']);

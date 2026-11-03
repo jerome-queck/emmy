@@ -1,3 +1,5 @@
+import { collectionBegin, collectionCollect, collectionFinish } from '../src/morning-collection.mjs';
+import { combineCalendarObservations } from '../src/briefing-observation.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -7,8 +9,8 @@ import { assessBriefingReporting } from '../src/briefing-reporting.mjs';
 import { morningEntities, morningItem, morningAssessments } from './morning-fixtures.mjs';
 import { morningV3Policy } from './morning-v3-fixtures.mjs';
 
-export async function driveMorningV3({ home, bindings, target, run, report }) {
-  const selected = join(home, 'morning-drive', 'v3'); await mkdir(selected, { recursive: true }); await writeFile(join(selected, 'bindings.json'), JSON.stringify(bindings));
+export async function driveMorningV3({ home, bindings, target, run, report, collectorMode = false }) {
+  const selected = join(home, 'morning-drive', collectorMode ? 'v3-collector' : 'v3'); await mkdir(selected, { recursive: true }); await writeFile(join(selected, 'bindings.json'), JSON.stringify(bindings));
   let ordinal = 0; let view;
   const now = () => new Date().toISOString();
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
@@ -36,6 +38,19 @@ export async function driveMorningV3({ home, bindings, target, run, report }) {
     reviews.push(item);
   }
   for (const entity of entities) {
+    if (collectorMode && ['calendar', 'calendar-inventory'].includes(entity.id)) {
+      const original = now(); const providerObservation = { observedAt: null, capturedAt: null, collectorObservation: { basis: 'current-read-start', startedAt: original, endedAt: original } };
+      const directory = join(selected, `collection-${entity.id}`);
+      collectionBegin(directory, { runId: day, sourceId: entity.id, scope: entity.scope, ownerRef: owner.sourceRef, provenance: 'ordinary-authorized', jobKey: null, ticket: null });
+      const raw = await file('collector-raw', { synthetic: true, providerObservation });
+      const wrapper = now(); collectionCollect(directory, { attempt: 1, observedAt: wrapper, capturedAt: wrapper, providerObservation, outcome: 'returned' }, raw);
+      const intake = collectionFinish(directory, { attempts: 1, coverage: { complete: true, gaps: [] }, paginationComplete: true, cached: false, resourceIds: entity.id === 'calendar-inventory' ? ['calendar'] : [], messageIds: [], window: entity.id === 'calendar' ? window : null });
+      captures.set(entity.id, { receipt: intake.command.receipt, providerObservation });
+      await command('source', intake.command, [...intake.evidence, owner]);
+      const changed = structuredClone(intake.command); changed.providerObservation.collectorObservation.startedAt = new Date(Date.parse(original) - 1).toISOString();
+      await command('source', changed, [...intake.evidence, owner], 2);
+      continue;
+    }
     await call({ operation: 'submit', job: { id: `v3-source-${entity.id}`, kind: 'briefing-source-read', occurrence: day, priority: 'morning', entityIds: [entity.id], purpose: 'Synthetic exact source acquisition.', maxReads: 1, maxBytes: 4096, steps: 1 } });
     const ticket = (await call({ operation: 'claim', ownerRef: owner.sourceRef })).ticket;
     const reviewed = reviews.find(item => item.adapter === entity.id);
@@ -59,8 +74,9 @@ export async function driveMorningV3({ home, bindings, target, run, report }) {
     if (role === 'briefing') { const generated = await receipt('briefing-generated', value.assessment); value.assessmentReceipt = generated.receipt; assessmentRefs.push(generated.ref); }
   }
   const daySource = role => { const receipts = [captures.get(role).receipt, captures.get(role === 'calendar' ? 'calendar-inventory' : 'task-inventory').receipt]; return { observedAt: receipts.map(receipt => receipt.observedAt).sort()[0], capturedAt: receipts.map(receipt => receipt.capturedAt).sort().at(-1), complete: true, paginationComplete: true, gaps: [], window, resourceIds: [role], acquiredResourceIds: [role], items: [] }; };
+  const calendarObservation = collectorMode ? combineCalendarObservations(['calendar-inventory', 'calendar'].map(role => captures.get(role).providerObservation), assessedAt) : null;
   const checks = assessBriefingReporting({ action: 'checks', asOf: assessedAt, results: [] }).expected.filter(check => check.state !== 'not-due').map(check => ({ kind: check.kind, scheduledFor: check.scheduledFor, requestId: `synthetic-request-${check.kind}`, attemptId: `synthetic-attempt-${check.kind}`, state: 'terminal', execution: 'completed', coverage: 'complete', availability: 'available', sourceEnd: assessedAt, observedAt: assessedAt, recordedAt: assessedAt, snapshotDigest: digest(check.kind), summary: 'Synthetic completed check.' }));
-  const planInput = { schemaVersion: 3, day, asOf: assessedAt, policy, mail: ['gmail', 'outlook'].map(adapter => { const captured = captures.get(adapter).receipt; return { adapter, account: policy.accounts[adapter].account, surface: adapter === 'gmail' ? 'connector' : 'browser', environment: 'dot-cloud', observedAt: captured.observedAt, capturedAt: captured.capturedAt, complete: true, paginationComplete: true, gaps: [], inboxIds: [`${adapter}-one`], items: reviews.filter(item => item.adapter === adapter), expandedContextCount: 1 }; }), calendar: daySource('calendar'), tasks: daySource('tasks'), obligations: [], checks };
+  const planInput = { schemaVersion: 3, day, asOf: assessedAt, policy, mail: ['gmail', 'outlook'].map(adapter => { const captured = captures.get(adapter).receipt; return { adapter, account: policy.accounts[adapter].account, surface: adapter === 'gmail' ? 'connector' : 'browser', environment: 'dot-cloud', observedAt: captured.observedAt, capturedAt: captured.capturedAt, complete: true, paginationComplete: true, gaps: [], inboxIds: [`${adapter}-one`], items: reviews.filter(item => item.adapter === adapter), expandedContextCount: 1 }; }), calendar: { ...daySource('calendar'), ...(calendarObservation ?? {}) }, tasks: daySource('tasks'), obligations: [], checks };
   for (const role of ['gmail', 'outlook', 'calendar', 'tasks']) {
     const source = ['gmail', 'outlook'].includes(role) ? planInput.mail.find(row => row.adapter === role) : planInput[role];
     const page = { ...source, ...(source.adapter ? { unreadPreserved: true } : {}), nextCursor: null };
@@ -89,7 +105,7 @@ export async function driveMorningV3({ home, bindings, target, run, report }) {
   const unknownRaw = await receipt('unknown-task-result', unknown, assessedAt); const unknownSource = await receipt('unknown-task-input', unknownInput);
   await command('seal', { ...assessments, deterministic: { input: unknownInput, result: unknown, receipt: unknownRaw.receipt, inputReceipt: unknownSource.receipt } }, [...assessmentRefs, unknownRaw.ref, unknownSource.ref, owner, ...learningRefs]);
   assert.equal(view.state.morningRuns[0].sealed.deterministic.input.tasks.items.at(-1).ownerDismissed, null);
-  const prepared = await run(['daily-briefing', '--file', await file('prepare', { action: 'prepare', input: planInput })], 0, selected);
+  const prepared = await run(['daily-briefing', '--file', await file('prepare', { action: 'prepare', input: planInput })], collectorMode ? 3 : 0, selected);
   assert.doesNotMatch(prepared.body, /Synthetic future study|Synthetic unknown overlay/);
   assert.match(prepared.body, /Synthetic upcoming deadline.*Study do-date.*Deadline/);
   for (const key of ['complete', 'safeUnreadInspection', 'personal']) {
@@ -124,6 +140,13 @@ export async function driveMorningV3({ home, bindings, target, run, report }) {
   await command('seal', { ...assessments, deterministic }, allRefs);
   assert.equal(view.state.morningRuns[0].sealed.body, prepared.body);
   assert.match(prepared.body, /Proposed trash for synthetic-routine-promotions/);
+  if (collectorMode) {
+    assert.equal(view.state.morningRuns[0].sealed.deterministic.input.calendar.observedAt, null);
+    assert.match(prepared.body, /provider snapshot clocks unknown/);
+    const replayed = await readStore(selected);
+    report.morningCollector = { synthetic: true, records: replayed.records.length, originalObservation: calendarObservation, sameJournalSeal: true, effects: 0, providerTruth: 'unverified' };
+    return;
+  }
   let sends = 0; let moves = 0; let edits = 0; const rawReceipts = [];
   const adapters = { now, fleet, retainRaw: async (raw, metadata) => { const relativePath = `${ordinal++}-tool-raw.bin`; const path = join(selected, relativePath); await writeFile(path, raw); const receipt = { sourceRef: path, sha256: digest(await readFile(path)), byteCount: raw.length, metadata }; rawReceipts.push({ relativePath, sha256: receipt.sha256, byteCount: receipt.byteCount, metadata }); return receipt; }, chatgpt: { send: async parameters => { sends++; assert.equal(parameters.room, policy.delivery.scope.resource); throw new Error('Synthetic lost response after accepted send'); }, edit: async () => { edits++; return { raw: '{"accepted":true}', value: { accepted: true } }; } }, gmail: { move: async () => { moves++; return { raw: '{"accepted":true}', value: { accepted: true } }; } }, outlookUI: { move: async () => { moves++; return { raw: '{"accepted":true}', value: { accepted: true } }; } } };
   const effect = async input => executeBriefingEffect({ schemaVersion: 1, envelope: input, pilotAuthority: { accepted: true, sourceRef: owner.sourceRef, environment: 'dot-cloud' } }, adapters);

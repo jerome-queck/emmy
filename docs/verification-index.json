@@ -141,7 +141,7 @@
     },
     {
       "name": "daily-briefing",
-      "description": "Validate private briefing policy, prepare fixed reports and reporting contracts, or compile/read exact held artifact slots without native effects.",
+      "description": "Read the staged operating contract, validate private briefing policy, prepare fixed reports and reporting contracts, or compile/read exact held artifact slots without native effects.",
       "options": [
         {
           "name": "file",

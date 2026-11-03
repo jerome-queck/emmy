@@ -1,8 +1,9 @@
-import { strictJson } from './bounded-json.mjs';
+import { combineCalendarObservations } from './briefing-observation.mjs';
+import { strictJson } from './strict-json.mjs';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { canonical } from './records.mjs';
+import { canonical } from './content.mjs';
 import { insist, shape, stamp, receiptInput } from './fleet-schema.mjs';
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const save = (path, value) => writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, { flag: 'wx', mode: 0o600 });
@@ -21,8 +22,9 @@ export function collectionBegin(directory, config) {
   insist(!existsSync(directory), 'Collection directory already exists; continue its retained attempts'); mkdirSync(directory, { mode: 0o700, recursive: true }); save(join(directory, 'config.json'), config); return config;
 }
 export function collectionCollect(directory, capture, rawPath) {
-  const config = read(join(directory, 'config.json')); shape(capture, ['attempt', 'observedAt', 'capturedAt', 'outcome', 'reason'], 'capture');
+  const config = read(join(directory, 'config.json')); shape(capture, ['attempt', 'observedAt', 'capturedAt', 'outcome', 'reason', 'providerObservation'], 'capture');
   insist(Number.isInteger(capture.attempt) && capture.attempt >= 1 && capture.attempt <= (config.provenance === 'ordinary-authorized' ? 62 : 32) && (capture.observedAt === null || stamp(capture.observedAt)) && stamp(capture.capturedAt) && (capture.observedAt === null || Date.parse(capture.observedAt) <= Date.parse(capture.capturedAt)) && ['returned', 'lost', 'denied', 'tool-error'].includes(capture.outcome), 'Invalid bounded capture');
+  if (capture.providerObservation !== undefined) combineCalendarObservations([capture.providerObservation], capture.capturedAt);
   const base = join(directory, String(capture.attempt)); insist(!existsSync(`${base}.json`) && !existsSync(`${base}.raw`), 'Capture attempt already retained');
   // Write supplied response bytes BEFORE any decoding, counter or JSON parsing.
   if (rawPath) writeFileSync(`${base}.raw`, readFileSync(rawPath), { flag: 'wx', mode: 0o600 });
@@ -49,6 +51,8 @@ export function collectionFinish(directory, details) {
   const acquisitionKnown = captures.every(capture => capture.outcome === 'returned' && stamp(capture.observedAt) && Number.isSafeInteger(capture.bytes));
   const toolError = captures.some(capture => capture.outcome === 'tool-error');
   insist(!details.coverage.complete || acquisitionKnown && !unknown && !denied && details.paginationComplete && !details.cached && details.coverage.gaps.length === 0, 'Unknown, denied or incomplete captures cannot claim complete acquisition');
+  const observations = captures.filter(capture => capture.providerObservation);
+  const providerObservation = observations.length ? combineCalendarObservations(captures.map(capture => capture.providerObservation), captures.map(capture => capture.capturedAt).sort().at(-1)) : undefined;
   const { envelope, ...content } = details;
   const packet = { schemaVersion: 1, kind: 'morning-collection-v1', ...config, ...content, captures, usage: { reads: captures.length, bytes: unknown ? null : captures.reduce((sum, capture) => sum + capture.bytes, 0), knownBytesLowerBound: captures.reduce((sum, capture) => sum + (capture.bytes ?? 0), 0), budgetCompliance: 'unverified' }, outcome: denied ? 'denied' : toolError ? 'tool-error' : !acquisitionKnown || unknown ? 'unknown' : details.coverage.complete ? 'complete' : 'partial' };
   const packetPath = resolve(join(directory, 'packet.json')); save(packetPath, packet); const bytes = readFileSync(packetPath); const collectionRef = `collection:${sha(bytes)}`;
@@ -56,7 +60,7 @@ export function collectionFinish(directory, details) {
   if (acquisitionKnown) {
   const receipt = { observer: 'Operator-supplied raw capture; declared evidence only', sourceRef: collectionRef, sha256: sha(bytes), scope: config.scope, observedAt: captures.reduce((first, capture) => capture.observedAt < first ? capture.observedAt : first, captures[0].observedAt), capturedAt: captures.reduce((last, capture) => capture.capturedAt > last ? capture.capturedAt : last, captures[0].capturedAt), coverage: details.coverage };
   receiptInput(receipt);
-  command = { step: 'source', runId: config.runId, sourceId: config.sourceId, jobKey: config.jobKey, receipt, paginationComplete: details.paginationComplete, cached: details.cached, resourceIds: details.resourceIds, messageIds: details.messageIds, window: details.window, ...(config.generation ? { generation: config.generation } : {}), acquisition: { provenance: config.provenance, ownerRef: config.ownerRef, collectionRef } };
+  command = { step: 'source', runId: config.runId, sourceId: config.sourceId, jobKey: config.jobKey, receipt, paginationComplete: details.paginationComplete, cached: details.cached, resourceIds: details.resourceIds, messageIds: details.messageIds, window: details.window, ...(config.generation ? { generation: config.generation } : {}), acquisition: { provenance: config.provenance, ownerRef: config.ownerRef, collectionRef }, ...(providerObservation ? { providerObservation } : {}) };
   }
   const evidence = [{ sourceRef: collectionRef, path: packetPath, sha256: sha(bytes) }, ...captures.filter(capture => capture.rawPath).map(capture => ({ sourceRef: `${collectionRef}/attempt/${capture.attempt}`, path: resolve(join(directory, capture.rawPath)), sha256: capture.sha256 }))];
   const result = { command, ...(!command ? { intakeHeld: 'Source acquisition held: error, lost response, invalid raw capture or unknown original source time; packet retained without a fresh receipt.' } : {}), evidence, ticketCompleted: false, nativeExecution: 'none', note: 'Add retained owner evidence and current journal envelope. Admitted provenance still requires its completed fleet job; ordinary provenance is never queue admission.' };
@@ -78,6 +82,9 @@ export function validateCollection(packet, command, run, retainedRaw) {
     insist(!parsed.toolError && parsed.bytes === capture.bytes && raw.length === capture.artifactBytes, 'Collection raw response error/accounting differs from retained packet');
   }
   insist(canonical(packet.coverage) === canonical(command.receipt.coverage) && packet.paginationComplete === command.paginationComplete && packet.cached === command.cached && canonical(packet.messageIds) === canonical(command.messageIds) && canonical(packet.resourceIds) === canonical(command.resourceIds) && canonical(packet.window) === canonical(command.window), 'Collection intake differs from retained scope/coverage');
+  const observations = packet.captures.filter(capture => capture.providerObservation);
+  const providerObservation = observations.length ? combineCalendarObservations(packet.captures.map(capture => capture.providerObservation), command.receipt.capturedAt) : undefined;
+  insist(canonical(providerObservation) === canonical(command.providerObservation), 'Collection original provider observation differs from retained packet');
   const observed = packet.captures.map(capture => capture.observedAt).sort(); const captured = packet.captures.map(capture => capture.capturedAt).sort();
   insist(observed[0] === command.receipt.observedAt && captured.at(-1) === command.receipt.capturedAt && packet.captures.every(capture => stamp(capture.observedAt) && stamp(capture.capturedAt) && Date.parse(capture.observedAt) <= Date.parse(capture.capturedAt)), 'Collection must preserve original source/fetch timestamps');
   insist(!command.receipt.coverage.complete || packet.outcome === 'complete' && packet.captures.every(capture => capture.outcome === 'returned' && capture.sha256 && Number.isSafeInteger(capture.bytes)), 'Unknown captures cannot claim completeness');

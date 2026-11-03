@@ -1,4 +1,4 @@
-import { digest } from './records.mjs';
+import { digest } from './content.mjs';
 import { validateBriefingPolicy, classifyBriefingMail, briefingHumanText, assessBriefingLearning } from './briefing-policy.mjs';
 import { assessBriefingReporting } from './briefing-reporting.mjs';
 import { calendarObservationClock } from './briefing-observation.mjs';

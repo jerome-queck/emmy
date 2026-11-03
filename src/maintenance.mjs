@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { briefingGuidance, commands, verification } from './metadata.mjs';
-import { digest } from './records.mjs';
+import { digest } from './content.mjs';
 
 export function generatedFiles(catalog, guidanceDocuments) {
   for (const command of commands) {

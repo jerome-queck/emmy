@@ -284,7 +284,7 @@ export async function reconcile(home, { id, imports, asOf, catalog }) {
     const fleetRecords = records.filter(record => record.type.startsWith('fleet-'));
     const state = { ...reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews, relatedDefinitions, relatedReviews, cloudRecords, fleetRecords, epoch, bindings, catalog, machine, asOf: effectiveAsOf }), requestedAsOf: asOf };
     const inputHashes = [...new Set([...definitions, ...observations, ...repairs, ...reviews, ...featureReviews, ...cloudRecords, ...fleetRecords, ...relatedDefinitions, ...relatedReviews, ...(epoch ? [epoch] : [])].map(record => record.hash))].sort();
-    const ruleDigest = digest(await Promise.all(['records.mjs', 'work.mjs', 'responsibilities.mjs', 'cloud.mjs', 'cloud-schema.mjs', 'fleet.mjs', 'fleet-state.mjs', 'fleet-schema.mjs', 'bounded-json.mjs'].map(name => readFile(new URL(name, import.meta.url), 'utf8'))));
+    const ruleDigest = digest(await Promise.all(['content.mjs', 'strict-json.mjs', 'records.mjs', 'work.mjs', 'responsibilities.mjs', 'cloud.mjs', 'cloud-schema.mjs', 'fleet.mjs', 'fleet-state.mjs', 'fleet-schema.mjs', 'bounded-json.mjs'].map(name => readFile(new URL(name, import.meta.url), 'utf8'))));
     const published = await publishRecord(home, { ...state, inputHashes, inputContext: { bindings, catalog, machine }, ruleDigest });
     results.push(published);
   }

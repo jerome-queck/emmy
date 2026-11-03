@@ -56,7 +56,7 @@ try {
       const request = await readDailyBriefingRequest(resolve(options.file));
       data = await dailyBriefing(request);
       exitCode = request.action === 'prepare' ? data.checksTerminal && data.coverage === 'complete-declared' ? 0 : 3
-        : request.action === 'policy' ? 0
+        : ['policy', 'foundation'].includes(request.action) ? 0
         : request.action === 'reporting' ? data.readyForBriefing === false || data.publication === 'unverified' ? 3 : 0
         : request.action === 'learning' ? data.status === 'held' ? 3 : 0
         : ['published', 'identical', 'available'].includes(data.status) ? 0 : 3;

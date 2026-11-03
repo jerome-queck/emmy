@@ -1,5 +1,6 @@
+import { briefingChecksV1 as checks } from './operating-contract.mjs';
 import { createHash } from 'node:crypto';
-import { strictJson } from './bounded-json.mjs';
+import { strictJson } from './strict-json.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -17,14 +18,7 @@ const terminal = ['completed', 'failed', 'skipped'];
 const executions = ['unknown', 'running', 'blocked', 'pending-approval', ...terminal];
 const coverages = ['complete', 'partial', 'unavailable'];
 const availabilities = ['available', 'unavailable'];
-const checks = {
-  maintenance: { automationId: 'emmy-daily-maintenance', minute: 195, start: '2026-10-31', maxAgeSeconds: 43200 },
-  suggestions: { automationId: 'emmy-daily-opportunities', minute: 270, start: '2026-10-31', maxAgeSeconds: 43200 },
-  cleanup: { automationId: 'daily-project-chat-cleanup', minute: 300, start: '2026-10-31', maxAgeSeconds: 43200 },
-  token: { automationId: 'emmy-token-optimisation', minute: 120, start: '2026-11-02', weekdays: [1, 4], maxAgeSeconds: 432000 },
-  weekly: { automationId: 'weekly-emmy-upkeep', minute: 120, start: '2026-11-01', weekdays: [0], maxAgeSeconds: 604800 },
-  lifecycle: { automationId: null, minute: 360, start: '2026-10-31', once: true, maxAgeSeconds: 43200 }
-};
+
 
 function safeExport(value) {
   if (typeof value === 'string') {

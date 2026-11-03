@@ -1,5 +1,5 @@
 import { ordinary, directory, publishSlot } from './immutable-slot.mjs';
-import { strictJson } from './bounded-json.mjs';
+import { strictJson } from './strict-json.mjs';
 import { lstat, open, mkdir, unlink, rmdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';

@@ -1,6 +1,6 @@
 import { constants } from 'node:fs';
 import { open } from 'node:fs/promises';
-import { strictJson } from './bounded-json.mjs';
+import { strictJson } from './strict-json.mjs';
 import { createHash } from 'node:crypto';
 
 const categories = ['repeated-reads-tools', 'retries', 'coordination', 'duplicate-instructions', 'stale-contradictory-context', 'truncation', 'model-fit'];

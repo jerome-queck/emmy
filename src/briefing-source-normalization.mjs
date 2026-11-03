@@ -1,5 +1,5 @@
-import { canonical, digest } from './records.mjs';
-import { strictJson } from './bounded-json.mjs';
+import { canonical, digest } from './content.mjs';
+import { strictJson } from './strict-json.mjs';
 import { calendarObservationClock } from './briefing-observation.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };

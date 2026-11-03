@@ -1,5 +1,5 @@
-import { canonical, digest } from './records.mjs';
-import { strictJson } from './bounded-json.mjs';
+import { canonical, digest } from './content.mjs';
+import { strictJson } from './strict-json.mjs';
 import { assessCalendarPolicy, sourceLabel } from './calendar-policy.mjs';
 
 const hash = value => digest(canonical(value));

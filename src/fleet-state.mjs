@@ -1,5 +1,5 @@
 import { morningTransition, morningView, deliveryReadback } from './morning.mjs';
-import { canonical, digest } from './records.mjs';
+import { canonical, digest } from './content.mjs';
 import { actionInput, fleetConfig, insist, jobInput, priorities } from './fleet-schema.mjs';
 
 const unfinished = job => !['completed', 'dead', 'blocked'].includes(job.status);

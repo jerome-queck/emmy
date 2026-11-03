@@ -1,4 +1,4 @@
-import { canonical, digest } from './records.mjs';
+import { canonical, digest } from './content.mjs';
 
 const SGT = 'Asia/Singapore';
 const BANGKOK = 'Asia/Bangkok';

@@ -1,4 +1,4 @@
-import { canonical, digest } from './records.mjs';
+import { canonical, digest } from './content.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const text = value => typeof value === 'string' && value.length > 0 && value.length <= 2000 && !/[\x00-\x1f\x7f]/.test(value);

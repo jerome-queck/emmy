@@ -9,7 +9,7 @@ description: Check Emmy's bounded responsibility, dispatch, calendar acceptance,
 
 Run `node scripts/verify-formal.mjs` with Node 24 or later for the responsibility checker. It requires no package install, solver, service, or account. `npm run verify:formal` also runs the merge-policy enumeration and the [publication model](../publication-contract/SKILL.md), which requires Java 21 and a hash-pinned TLC jar.
 
-The checker calls the actual mapped production functions. It checks 8,669 predicates across twenty-five named properties, kills 266 paired mutations of those actual source files, then reruns unchanged production. Earlier responsibility, dispatch, calendar, cloud and incarnation domains retain their promises. These are finite checks, not a universal proof.
+The checker calls the actual mapped production functions. It checks 8,676 predicates across twenty-five named properties, kills 272 paired mutations of those actual source files, then reruns unchanged production. Earlier responsibility, dispatch, calendar, cloud and incarnation domains retain their promises. These are finite checks, not a universal proof.
 
 Read each failed counterexample under `.local/verification/formal-*/`. A mutant counts only if it imports successfully and its designated property rejects the intended behavioral disagreement. Syntax/import errors, ambiguous edit anchors, unrelated exceptions, and surviving mutants fail verification. Failed attempts remain retained.
 
@@ -158,3 +158,7 @@ Ceiling regressions additionally cover maximum admission plus one, safe integer 
 The additive morning domain covers explicit inactive-predecessor migration, pinned private policy, ChatGPT destination, deterministic compiler equality, original inventory/clock binding, duplicate-copy extraction, code/link privacy, completed-Task projections, pending checks, and prior-facts fallback. Version-one and version-two replay retain their prior semantics. Read `verification/morning-properties.mjs` for the executed count and `verification/briefing-workflow-properties.mjs` for its declared twenty-five-case policy domain and twelve paired source mutations. Generated references do not advance source review.
 
 Canonical publication steps and graph edges remain unchanged. New policy, reporting, and caller functions retain declared interpretations, not provider truth. Actual raw bytes, exact delivery readbacks, source admission, and production caller sequencing remain behavioral boundaries. A finite pass does not authorize migration acceptance or a live pilot.
+
+### Calendar observation retention
+
+Seven additional `morning-contract` cases and six paired mutations bind original Calendar observations through v3 source capture and seal. Nullable provider clocks remain separate from actual acquisition receipts. Exact receipt reuse cannot strip or alter observations, even after replacement. The bounded cases cover sealing, collector equality, role/version, freshness, same-receipt immutability, and packet equality. Actual collection and CLI parsing need the behavioral driver. Provider truth and heterogeneous observation modes remain outside this claim.

@@ -2,7 +2,7 @@ import { lstat, mkdir, realpath, rename, rm, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { boundedFile, strictJson } from './bounded-json.mjs';
-import { digest } from './records.mjs';
+import { digest } from './content.mjs';
 
 const sha = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const revision = value => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value);

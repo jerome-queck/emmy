@@ -3,7 +3,7 @@ import { lstat, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/
 import { join } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { briefingGuidance } from './metadata.mjs';
-import { canonical, digest } from './records.mjs';
+import { canonical, digest } from './content.mjs';
 import { boundedJson } from './bounded-json.mjs';
 import { manageGuidancePin, selectedGuidance } from './guidance-pin.mjs';
 

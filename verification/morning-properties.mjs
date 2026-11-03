@@ -3,7 +3,7 @@ import { canonical, digest } from '../src/records.mjs';
 import { morningAssessments, morningCommand, morningDelivery, morningAt, morningEntities, morningItem, morningOpen, morningReceipt, morningRoot, morningWindow } from './morning-fixtures.mjs';
 import { morningV3Open, morningV3Policy, morningV3Plan } from './morning-v3-fixtures.mjs';
 import { verifyBriefingWorkflow, briefingWorkflowCases, briefingWorkflowMutations } from './briefing-workflow-properties.mjs';
-export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 83 + briefingWorkflowCases, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations, explicit predecessor-inactive migration acceptance and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
+export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 90 + briefingWorkflowCases, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations, explicit predecessor-inactive migration acceptance and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
 export function verifyMorningPolicy({ morning, fleet, collection, policy, plan, reporting }, check) {
   let cases = 0;
   const expect = (name, value, message) => { cases++; check('morning-contract', { case: name }, value, message); };
@@ -133,11 +133,41 @@ export function verifyMorningPolicy({ morning, fleet, collection, policy, plan, 
   const v3Plan = morningV3Plan(fixture.run);
   expect('v3/compiler-body', rejects(() => fixture.step('seal', { ...morningAssessments(), deterministic: { ...v3Plan, result: { ...v3Plan.result, body: 'forged body', bodyDigest: digest('forged body') } } })), 'A caller cannot replace the actual deterministic body with matching self-supplied digest.');
   fixture.seal(); expect('v3/compiler-exact', fixture.run.sealed.body === v3Plan.result.body && fixture.run.sealed.deterministic.result.policyDigest === digest(morningV3Policy), 'Exact configured compiler output enters the existing journal owner.');
+  const observation = { observedAt: null, capturedAt: null, collectorObservation: { basis: 'current-read-start', startedAt: morningAt, endedAt: morningAt } };
+  const observe = f => { for (const source of f.run.sources.filter(source => ['calendar', 'calendar-inventory'].includes(source.role))) f.step('source', { ...source.capture, jobKey: null, receipt: { ...source.capture.receipt, sourceRef: `${source.id}-original-observation` }, acquisition: { provenance: 'ordinary-authorized', ownerRef: f.run.ownerRef, collectionRef: `${source.id}-original-observation` }, providerObservation: structuredClone(observation) }); };
+  fixture = prepare(morningV3Open); observe(fixture);
+  const observedPlan = morningV3Plan(fixture.run); Object.assign(observedPlan.input.calendar, observation); observedPlan.result = plan.preparePolicyBriefing(observedPlan.input);
+  fixture.step('seal', { ...morningAssessments(), deterministic: observedPlan });
+  expect('collector/seal', fixture.run.sealed.deterministic.input.calendar.observedAt === null && fixture.run.sealed.body.includes('provider snapshot clocks unknown'), 'Original collector bounds seal without inventing provider clocks.');
+  const originalCapture = fixture.run.sources.find(source => source.role === 'calendar').capture; const strippedCapture = { ...originalCapture }; delete strippedCapture.providerObservation;
+  expect('collector/immutable', rejects(() => fixture.step('source', strippedCapture)), 'Same retained acquisition cannot erase unknown provider clocks.');
+  const changedPlan = structuredClone(observedPlan); changedPlan.input.calendar.collectorObservation.startedAt = '2026-10-25T00:59:59.999Z'; changedPlan.result = plan.preparePolicyBriefing(changedPlan.input);
+  expect('collector/binding', rejects(() => fixture.step('seal', { ...morningAssessments(), deterministic: changedPlan })), 'Compiler collector bounds bind the exact retained source observation.');
+  fixture = prepare(morningV3Open); let source = fixture.run.sources.find(source => source.role === 'gmail');
+  expect('collector/role', rejects(() => fixture.step('source', { ...source.capture, providerObservation: observation })), 'Mail cannot borrow Calendar observation semantics.');
+  fixture = prepare(); source = fixture.run.sources.find(source => source.role === 'calendar');
+  expect('collector/version', rejects(() => fixture.step('source', { ...source.capture, providerObservation: observation })), 'Legacy journal interpretation stays unchanged.');
+  fixture = prepare(morningV3Open); source = fixture.run.sources.find(source => source.role === 'calendar');
+  const old = structuredClone(observation); old.collectorObservation.startedAt = '2026-10-25T00:00:00.000Z';
+  const originalSource = source.capture; const staleSource = { ...originalSource, providerObservation: old }; source.capture = null;
+  expect('collector/freshness', rejects(() => fixture.step('source', staleSource)), 'Fresh wrapper receipt cannot refresh old collector observation.');
+  source.capture = originalSource;
+  const packetCommand = { ...source.capture, acquisition: { provenance: 'ordinary-authorized' }, providerObservation: observation };
+  const raw = Buffer.from('{"synthetic":true}'); const rawDigest = digest(raw);
+  const capturePacket = { schemaVersion: 1, kind: 'morning-collection-v1', runId: fixture.run.id, sourceId: packetCommand.sourceId, ownerRef: fixture.run.ownerRef, provenance: 'ordinary-authorized', jobKey: packetCommand.jobKey, scope: packetCommand.receipt.scope, outcome: 'complete', captures: [{ observedAt: morningAt, capturedAt: morningAt, outcome: 'returned', bytes: raw.length, artifactBytes: raw.length, sha256: rawDigest }], coverage: packetCommand.receipt.coverage, paginationComplete: packetCommand.paginationComplete, cached: packetCommand.cached, messageIds: packetCommand.messageIds, resourceIds: packetCommand.resourceIds, window: packetCommand.window };
+  expect('collector/packet', rejects(() => collection.validateCollection(capturePacket, packetCommand, fixture.run, new Map([[rawDigest, raw]]))), 'Command cannot invent an observation absent from its retained packet.');
   cases += verifyBriefingWorkflow({ policy, plan, reporting }, check);
   return { cases };
 }
 const mutant = (id, before, after, counterexample) => ({ id: `morning-${id}`, source: 'src/morning.mjs', property: 'morning-contract', edits: [[before, after]], counterexample });
 export const morningMutations = [
+  mutant('collector-immutable', '!same(prior.receipt, command.receipt) || same(prior.providerObservation, command.providerObservation)', 'true', 'collector/immutable'),
+  mutant('collector-role', "command.providerObservation === undefined || run.policyVersion === 3 && ['calendar', 'calendar-inventory'].includes(source.role)", 'command.providerObservation === undefined || run.policyVersion === 3', 'collector/role'),
+  mutant('collector-version', "command.providerObservation === undefined || run.policyVersion === 3 && ['calendar', 'calendar-inventory'].includes(source.role)", "command.providerObservation === undefined || ['calendar', 'calendar-inventory'].includes(source.role)", 'collector/version'),
+  mutant('collector-binding', 'same(inputSource.collectorObservation, observation?.collectorObservation)', 'true', 'collector/binding'),
+  mutant('collector-freshness', "if (command.providerObservation !== undefined) fresh({ ...command.receipt, observedAt: sourceClock(command) }, run, at);", '', 'collector/freshness'),
+  { id: 'morning-collector-packet', source: 'src/morning-collection.mjs', property: 'morning-contract', edits: [['canonical(providerObservation) === canonical(command.providerObservation)', 'true']], counterexample: 'collector/packet' },
+
   ...briefingWorkflowMutations,
   mutant('v3-predecessor-bypass', 'command.migration.predecessorStateDigest === digest(state.morningRuns)', 'true', 'v3/predecessor'),
   mutant('v3-inactive-bypass', 'migration.predecessorInactive === true', 'true', 'v3/inactive'),

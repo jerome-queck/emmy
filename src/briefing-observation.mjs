@@ -14,3 +14,15 @@ export function calendarObservationClock(source, asOf) {
   need(stamp(source.observedAt) && stamp(source.capturedAt) && source.observedAt <= source.capturedAt && source.capturedAt <= observation.endedAt, 'Original Calendar provider clocks required');
   return source.observedAt;
 }
+
+export function combineCalendarObservations(observations, asOf) {
+  need(Array.isArray(observations) && observations.length > 0 && observations.every(value => value && Object.keys(value).length === 3 && ['observedAt', 'capturedAt', 'collectorObservation'].every(key => Object.hasOwn(value, key))), 'Exact retained Calendar provider observations required');
+  for (const value of observations) calendarObservationClock(value, asOf);
+  const basis = observations[0].collectorObservation.basis;
+  need(observations.every(value => value.collectorObservation.basis === basis), 'Calendar observation bases cannot be mixed');
+  return {
+    observedAt: basis === 'current-read-start' ? null : observations.map(value => value.observedAt).sort()[0],
+    capturedAt: basis === 'current-read-start' ? null : observations.map(value => value.capturedAt).sort().at(-1),
+    collectorObservation: { basis, startedAt: observations.map(value => value.collectorObservation.startedAt).sort()[0], endedAt: observations.map(value => value.collectorObservation.endedAt).sort().at(-1) }
+  };
+}

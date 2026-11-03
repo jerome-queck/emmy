@@ -1,8 +1,8 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
-import { canonical, digest } from './records.mjs';
+import { canonical, digest } from './content.mjs';
 import { strictJson, boundedFile } from './bounded-json.mjs';
-import { acquireBriefingPlanSource } from './briefing-cloud-caller.mjs';
+import { acquireBriefingPlanSource } from './briefing-acquisition.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const same = (a, b) => canonical(a) === canonical(b);

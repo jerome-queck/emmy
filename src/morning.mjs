@@ -1,6 +1,7 @@
+import { calendarObservationClock, combineCalendarObservations } from './briefing-observation.mjs';
 import { assessBriefingPresentation } from './briefing.mjs';
 import { renderCompactMorning } from './morning-presentation.mjs';
-import { canonical, digest } from './records.mjs';
+import { canonical, digest } from './content.mjs';
 import { insist, shape, text, hash, stamp, receiptInput } from './fleet-schema.mjs';
 import { validateBriefingPolicy, validatePolicyEvidence, classifyBriefingMail, briefingPolicyDigest, briefingHumanText } from './briefing-policy.mjs';
 import { preparePolicyBriefing } from './briefing-plan.mjs';
@@ -38,7 +39,8 @@ const planDigest = item => digest({ before: item.before, context: item.context, 
 const planMap = run => Object.fromEntries(run.items.map(item => [item.key, planDigest(item)]));
 const uncertainRun = run => run.delivery?.status === 'uncertain' || run.summary?.delivery?.status === 'uncertain' || run.items.some(item => item.attempts.at(-1)?.status === 'uncertain');
 const terminalItem = item => item.attempts.some(attempt => attempt.status === 'verified');
-const globalGaps = (run, at) => [...(run.sealed?.gaps ?? []).map(gap => `Initial delivered coverage gap. ${gap}`), ...run.sources.flatMap(source => !source.capture ? [`${source.id} missing global acquisition`] : [!source.capture.paginationComplete || source.capture.cached || !source.capture.receipt.coverage.complete || source.capture.receipt.coverage.gaps.length ? `${source.id} incomplete global coverage` : null, Date.parse(at) - Date.parse(source.capture.receipt.observedAt) > 300000 ? `${source.id} stale global source` : null].filter(Boolean))];
+const sourceClock = capture => capture.providerObservation ? calendarObservationClock(capture.providerObservation, capture.receipt.capturedAt) : capture.receipt.observedAt;
+const globalGaps = (run, at) => [...(run.sealed?.gaps ?? []).map(gap => `Initial delivered coverage gap. ${gap}`), ...run.sources.flatMap(source => !source.capture ? [`${source.id} missing global acquisition`] : [!source.capture.paginationComplete || source.capture.cached || !source.capture.receipt.coverage.complete || source.capture.receipt.coverage.gaps.length || source.capture.providerObservation?.observedAt === null ? `${source.id} incomplete global coverage` : null, Date.parse(at) - Date.parse(sourceClock(source.capture)) > 300000 ? `${source.id} stale global source` : null].filter(Boolean))];
 const outcomeDigest = run => digest(run.items.map(item => ({ key: item.key, correction: item.correction, outcome: item.attempts.at(-1)?.status ?? 'not-attempted' })));
 export function mailSnapshot(value, adapter) {
   shape(value, adapter === 'gmail' ? ['nativeId', 'threadId', 'subject', 'sender', 'unread', 'labels'] : ['nativeId', 'threadId', 'subject', 'sender', 'unread', 'folder', 'folderId'], 'mail snapshot');
@@ -125,7 +127,7 @@ function deterministicSeal(state, run, command, at, entity) {
     const inputSource = input[role]; const inventory = run.sources.find(source => source.role === inventoryRole);
     insist(same(inputSource.window, runWindow(run.day)), 'Deterministic day metadata must retain exact Singapore window');
     if (!inventory?.capture) {
-      insist(inputSource.observedAt === null && inputSource.capturedAt === null && inputSource.complete === false && inputSource.paginationComplete === false && inputSource.resourceIds.length === 0 && inputSource.acquiredResourceIds.length === 0 && inputSource.items.length === 0, 'Missing day inventory must remain unknown and incomplete');
+      insist(inputSource.collectorObservation === undefined && inputSource.observedAt === null && inputSource.capturedAt === null && inputSource.complete === false && inputSource.paginationComplete === false && inputSource.resourceIds.length === 0 && inputSource.acquiredResourceIds.length === 0 && inputSource.items.length === 0, 'Missing day inventory must remain unknown and incomplete');
       continue;
     }
     const resources = run.sources.filter(source => source.role === role && source.capture);
@@ -134,12 +136,18 @@ function deterministicSeal(state, run, command, at, entity) {
     const complete = inventory.capture.resourceIds.every(id => acquired.includes(id)) && captures.every(capture => capture.receipt.coverage.complete);
     const paginationComplete = inventory.capture.resourceIds.every(id => acquired.includes(id)) && captures.every(capture => capture.paginationComplete);
     const providerGaps = [...new Set(captures.flatMap(capture => capture.receipt.coverage.gaps))];
-    insist(same([...inputSource.resourceIds].sort(), [...inventory.capture.resourceIds].sort()) && same([...inputSource.acquiredResourceIds].sort(), acquired) && inputSource.observedAt === captures.map(capture => capture.receipt.observedAt).sort()[0] && inputSource.capturedAt === captures.map(capture => capture.receipt.capturedAt).sort().at(-1) && inputSource.complete === complete && inputSource.paginationComplete === paginationComplete && same([...inputSource.gaps].sort(), providerGaps.sort()), 'Deterministic day metadata must bind actual inventory, acquired resources, original clocks and coverage');
+    const observed = captures.filter(capture => capture.providerObservation);
+    const observation = observed.length ? combineCalendarObservations(captures.map(capture => capture.providerObservation), at) : null;
+    insist(role === 'calendar' || !observation, 'Only Calendar has collector observations');
+    insist(same(inputSource.collectorObservation, observation?.collectorObservation), 'Deterministic Calendar collector observation must bind retained original bounds and basis');
+    const observedAt = observation ? observation.observedAt : captures.map(capture => capture.receipt.observedAt).sort()[0];
+    const capturedAt = observation ? observation.capturedAt : captures.map(capture => capture.receipt.capturedAt).sort().at(-1);
+    insist(same([...inputSource.resourceIds].sort(), [...inventory.capture.resourceIds].sort()) && same([...inputSource.acquiredResourceIds].sort(), acquired) && inputSource.observedAt === observedAt && inputSource.capturedAt === capturedAt && inputSource.complete === complete && inputSource.paginationComplete === paginationComplete && same([...inputSource.gaps].sort(), providerGaps.sort()), 'Deterministic day metadata must bind actual inventory, acquired resources, original clocks and coverage');
   }
   return result;
 }
 export function morningInput(command) {
-  const fields = { open: ['day', 'accounts', 'sources', 'rules', 'ownerRef', 'policyVersion', 'delivery', 'cleanupMode', 'policy', 'migration'], refresh: ['generation', 'items', 'sourceRef', 'reason'], source: ['sourceId', 'jobKey', 'receipt', 'paginationComplete', 'cached', 'resourceIds', 'messageIds', 'window', 'generation', 'acquisition'], review: ['items', 'generation'], correct: ['adapter', 'nativeId', 'sourceRef', 'reason', 'disposition'], seal: ['briefing', 'calendar', 'presentation', 'deterministic'], 'send-intent': ['sendRef', 'bodyDigest'], 'send-ack': ['sendRef', 'bodyDigest', 'readbackRef', 'deliveredBodyDigest', 'nativeId', 'scope', 'acquiredAt'], 'send-resolve': ['sendRef', 'bodyDigest', 'sourceRef', 'reason', 'outcome', 'scope', 'acquiredAt'], 'action-intent': ['adapter', 'nativeId', 'action', 'before', 'receipt', 'destination', 'generation'], 'action-result': ['adapter', 'nativeId', 'intentDigest', 'after', 'receipt', 'outcome'], summary: [], 'edit-intent': ['editRef', 'bodyDigest', 'nativeId'], 'edit-ack': ['editRef', 'bodyDigest', 'nativeId', 'readbackRef', 'deliveredBodyDigest', 'scope', 'acquiredAt'], 'edit-resolve': ['editRef', 'bodyDigest', 'nativeId', 'priorBodyDigest', 'readbackRef', 'sourceRef', 'reason', 'outcome', 'scope', 'acquiredAt'], 'edit-gap': ['sourceRef', 'reason'], status: [] };
+  const fields = { open: ['day', 'accounts', 'sources', 'rules', 'ownerRef', 'policyVersion', 'delivery', 'cleanupMode', 'policy', 'migration'], refresh: ['generation', 'items', 'sourceRef', 'reason'], source: ['sourceId', 'jobKey', 'receipt', 'paginationComplete', 'cached', 'resourceIds', 'messageIds', 'window', 'generation', 'acquisition', 'providerObservation'], review: ['items', 'generation'], correct: ['adapter', 'nativeId', 'sourceRef', 'reason', 'disposition'], seal: ['briefing', 'calendar', 'presentation', 'deterministic'], 'send-intent': ['sendRef', 'bodyDigest'], 'send-ack': ['sendRef', 'bodyDigest', 'readbackRef', 'deliveredBodyDigest', 'nativeId', 'scope', 'acquiredAt'], 'send-resolve': ['sendRef', 'bodyDigest', 'sourceRef', 'reason', 'outcome', 'scope', 'acquiredAt'], 'action-intent': ['adapter', 'nativeId', 'action', 'before', 'receipt', 'destination', 'generation'], 'action-result': ['adapter', 'nativeId', 'intentDigest', 'after', 'receipt', 'outcome'], summary: [], 'edit-intent': ['editRef', 'bodyDigest', 'nativeId'], 'edit-ack': ['editRef', 'bodyDigest', 'nativeId', 'readbackRef', 'deliveredBodyDigest', 'scope', 'acquiredAt'], 'edit-resolve': ['editRef', 'bodyDigest', 'nativeId', 'priorBodyDigest', 'readbackRef', 'sourceRef', 'reason', 'outcome', 'scope', 'acquiredAt'], 'edit-gap': ['sourceRef', 'reason'], status: [] };
   insist(command && Object.hasOwn(fields, command.step), 'Invalid morning step'); shape(command, ['step', 'runId', ...fields[command.step]], 'morning command'); insist(oneLine(command.runId), 'Invalid morning run identity');
   if (command.step === 'open') {
     insist(command.cleanupMode === undefined || command.cleanupMode === 'batched-v1', 'Unsupported cleanup mode');
@@ -159,6 +167,7 @@ export function morningInput(command) {
   if (command.step === 'source') {
     insist(oneLine(command.sourceId) && (hash(command.jobKey) || command.jobKey === null && command.acquisition?.provenance === 'ordinary-authorized'), 'Invalid morning source job');
     if (command.acquisition !== undefined) { shape(command.acquisition, ['provenance', 'ownerRef', 'collectionRef'], 'source acquisition'); insist(['ordinary-authorized', 'admitted'].includes(command.acquisition.provenance) && oneLine(command.acquisition.ownerRef) && oneLine(command.acquisition.collectionRef), 'Source acquisition requires explicit provenance and retained authority'); } receiptInput(command.receipt);
+    if (command.providerObservation !== undefined) combineCalendarObservations([command.providerObservation], command.receipt.capturedAt);
     insist(typeof command.paginationComplete === 'boolean' && typeof command.cached === 'boolean', 'Missing pagination/cache declaration');
     for (const key of ['resourceIds', 'messageIds']) insist(list(command[key]) && command[key].every(oneLine) && unique(command[key]), 'Invalid acquired source IDs');
     if (command.window !== null) { shape(command.window, ['start', 'end'], 'morning source window'); insist(stamp(command.window.start) && stamp(command.window.end), 'Invalid source window'); }
@@ -263,6 +272,7 @@ export function morningTransition(state, command, root, at) {
   }
   if (command.step === 'source') {
     const ordinary = command.acquisition?.provenance === 'ordinary-authorized';
+    insist(!run.delivery || command.providerObservation === undefined, 'Mail refresh cannot carry Calendar observation');
     if (ordinary) insist(command.jobKey === null && command.acquisition.ownerRef === run.ownerRef && !uncertainRun(run) && new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(at)) === run.day, 'Ordinary acquisition requires existing owner scope, same day and resolved effects');
     if (run.delivery) {
       insist(run.delivery.status === 'delivered' && run.cleanup && !uncertainRun(run) && command.generation === run.cleanup.generation, 'Same-run acquisition requires the current resolved refresh generation');
@@ -276,11 +286,14 @@ export function morningTransition(state, command, root, at) {
       run.cleanup.acquisitions.push({ ...command, coverageKind: 'selected-ids' }); return 'morning-refresh-acquired';
     }
     insist(!run.delivery, 'Delivered or uncertain morning body is immutable; inspect existing delivery'); const source = run.sources.find(row => row.id === command.sourceId); insist(source, 'Unknown morning source');
+    insist(command.providerObservation === undefined || run.policyVersion === 3 && ['calendar', 'calendar-inventory'].includes(source.role), 'Collector observation requires v3 Calendar source');
+    if (command.providerObservation !== undefined) fresh({ ...command.receipt, observedAt: sourceClock(command) }, run, at);
     const job = state.jobs.find(row => row.key === command.jobKey); insist(ordinary || job?.status === 'completed' && job.input.kind === 'briefing-source-read' && job.input.entityIds.includes(source.entityId) && job.receipts.some(receipt => same(receipt, command.receipt)), 'Morning acquisition requires its completed fleet read and exact retained receipt');
     insist(same(command.receipt.scope, entity(source.entityId).scope), 'Morning source crosses fleet scope'); fresh(command.receipt, run, at);
     if (['calendar', 'tasks'].includes(source.role)) insist(same(command.window, runWindow(run.day)), 'Calendar/Task acquisition must cover the full Singapore day');
-    insist(!source.capture || Date.parse(source.capture.receipt.observedAt) <= Date.parse(command.receipt.observedAt), 'Morning source cannot rewind');
-    if (ordinary && source.capture) { source.captureHistory ??= []; insist(source.captureHistory.length < 32, 'Source acquisition history bound reached'); source.captureHistory.push(source.capture); }
+    insist(!source.capture || Date.parse(sourceClock(source.capture)) <= Date.parse(sourceClock(command)), 'Morning source cannot rewind');
+    if (run.policyVersion === 3 && ['calendar', 'calendar-inventory'].includes(source.role)) for (const prior of [...(source.captureHistory ?? []), ...(source.capture ? [source.capture] : [])]) insist(!same(prior.receipt, command.receipt) || same(prior.providerObservation, command.providerObservation), 'Same Calendar acquisition cannot rewrite original provider observation');
+    if (source.capture && (ordinary || run.policyVersion === 3 && ['calendar', 'calendar-inventory'].includes(source.role) && (command.providerObservation || source.capture.providerObservation || source.captureHistory?.some(capture => capture.providerObservation)))) { source.captureHistory ??= []; insist(source.captureHistory.length < 32, 'Source acquisition history bound reached'); source.captureHistory.push(source.capture); }
     source.capture = command; run.sealed = null;
   }
   if (command.step === 'review') {
@@ -339,7 +352,7 @@ export function morningTransition(state, command, root, at) {
     if (run.cleanupMode === 'batched-v1') for (const item of run.items) { try { fresh(item.receipt, run, at); } catch { gaps.push(`${item.adapter} ${item.before.nativeId} stale thread context`); } }
     for (const source of run.sources) {
       if (!source.capture) { gaps.push(`${source.id} missing acquisition`); continue; }
-      try { fresh(source.capture.receipt, run, at); } catch { gaps.push(`${source.id} stale source`); }
+      try { fresh({ ...source.capture.receipt, observedAt: sourceClock(source.capture) }, run, at); } catch { gaps.push(`${source.id} stale source`); }
       if (!source.capture.paginationComplete || source.capture.cached || !source.capture.receipt.coverage.complete || source.capture.receipt.coverage.gaps.length) gaps.push(`${source.id} incomplete pagination, cache, or source coverage`);
       if (['gmail', 'outlook'].includes(source.role)) for (const id of source.capture.messageIds) if (!run.items.some(item => item.adapter === source.role && item.before.nativeId === id)) gaps.push(`${source.id} unreviewed ID ${id}`);
     }
@@ -355,7 +368,7 @@ export function morningTransition(state, command, root, at) {
   }
   if (command.step === 'send-intent') {
     if (run.policyVersion === 3) insist(!uncertainRun(run) && run.sealed?.outcomeDigest === outcomeDigest(run), 'Version three final report requires resolved current outcomes and resealing after pre-send moves');
-    if (run.sealed) { for (const source of run.sources) if (source.capture) { try { fresh(source.capture.receipt, run, at); } catch (error) { insist(run.cleanupMode === 'batched-v1' && run.sealed.gaps.includes(`${source.id} stale source`), error.message); } } for (const assessment of [run.sealed.briefing, run.sealed.calendar]) fresh(assessment.receipt, run, at); }
+    if (run.sealed) { for (const source of run.sources) if (source.capture) { try { fresh({ ...source.capture.receipt, observedAt: sourceClock(source.capture) }, run, at); } catch (error) { insist(run.cleanupMode === 'batched-v1' && run.sealed.gaps.includes(`${source.id} stale source`), error.message); } } for (const assessment of [run.sealed.briefing, run.sealed.calendar]) fresh(assessment.receipt, run, at); }
     insist(run.sealed && !run.delivery && run.sealed.bodyDigest === command.bodyDigest, 'Send requires exact sealed body and no prior uncertain delivery');
     run.delivery = { ...(run.deliveryTarget ? { scope: run.deliveryTarget.scope, ownerRef: run.deliveryTarget.ownerRef } : {}), status: 'uncertain', sendRef: command.sendRef, bodyDigest: command.bodyDigest, at, readbackRef: null, nativeId: null };
   }

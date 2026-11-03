@@ -3,19 +3,12 @@ import { parseCloudRecord } from './cloud-schema.mjs';
 import { parseFleetRecord } from './fleet-schema.mjs';
 import { fleetHistory, fleetInitial, fleetTransition } from './fleet-state.mjs';
 import { effectKey } from './work.mjs';
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, readdir, rename, rm, writeFile, lstat } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 
-export function canonical(value) {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  if (value && typeof value === 'object') return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`;
-  return JSON.stringify(value);
-}
-
-export function digest(value) {
-  return createHash('sha256').update(typeof value === 'string' || Buffer.isBuffer(value) ? value : canonical(value)).digest('hex');
-}
+import { canonical, digest } from './content.mjs';
+export { canonical, digest } from './content.mjs';
 
 export const readJson = async path => JSON.parse(await readFile(path, 'utf8'));
 export const dispatchEfforts = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra'];

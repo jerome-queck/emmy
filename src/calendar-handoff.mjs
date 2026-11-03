@@ -1,4 +1,4 @@
-import { canonical, digest } from './records.mjs';
+import { canonical, digest } from './content.mjs';
 import { assessCalendarRegister, calendarSnapshotDigest } from './calendar-register.mjs';
 import { prepareCalendarTiming, validatePreparedCalendarTiming, assessCalendarTimingReadback } from './calendar-timing.mjs';
 

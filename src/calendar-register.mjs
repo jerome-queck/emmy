@@ -1,4 +1,4 @@
-import { canonical, digest } from './records.mjs';
+import { canonical, digest } from './content.mjs';
 import { assessCalendarPolicy, sourceLabel } from './calendar-policy.mjs';
 
 const fail = (condition, message) => { if (!condition) throw new Error(message); };
