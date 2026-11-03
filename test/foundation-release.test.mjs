@@ -30,6 +30,13 @@ test('direct source release rebuilds without old capsules and runs exact shared 
     await assert.rejects(materializeFoundation(portable, join(directory, 'incomplete-runtime'), 'runtime'), /requires complete runtime/);
     const capsule = join(directory, 'capsule.json'); const bytes = `${canonical(first)}\n`; await writeFile(capsule, bytes);
     const release = await readFoundation(capsule, digest(bytes));
+    const invalidRevision = { ...first, revision: [revision] }; const invalidBytes = `${canonical(invalidRevision)}\n`;
+    const invalidCapsule = join(directory, 'invalid-revision.json'); await writeFile(invalidCapsule, invalidBytes);
+    await assert.rejects(readFoundation(invalidCapsule, digest(invalidBytes)), /Unsupported source release/);
+    await assert.rejects(materializeFoundation(invalidRevision, join(directory, 'invalid-revision'), 'pure'), /Unsupported source release/);
+    const invalidCLI = spawnSync(process.execPath, [join(root, 'scripts/foundation-release.mjs'), 'verify', invalidCapsule, digest(invalidBytes)], { encoding: 'utf8' });
+    assert.equal(invalidCLI.status, 2, invalidCLI.stdout); assert.match(invalidCLI.stderr, /Unsupported source release/);
+
     await assert.rejects(readFoundation(capsule, digest('tampered')), /hash differs/);
     const pure = join(directory, 'pure'); await materializeFoundation(release, pure, 'pure');
     for (const file of release.files.filter(file => release.portable.pure.includes(file.path))) assert.equal(digest(await readFile(join(pure, file.path))), file.sha256);
