@@ -23,8 +23,8 @@ function calendarInstant(value) {
 }
 function calendarCursor(payload) {
   const cursor = payload.next_page_token;
-  need(cursor === undefined || cursor === null || text(cursor), 'Calendar next_page_token must be absent, null or nonempty text');
-  return cursor ?? null;
+  need(cursor === null || text(cursor), 'Calendar next_page_token must be null or nonempty text');
+  return cursor;
 }
 function flatCalendarPage(payload, projection, metadata) {
   const observation = observationSidecar(projection);
@@ -34,7 +34,9 @@ function flatCalendarPage(payload, projection, metadata) {
   need(provenance?.environment === request.environment && provenance.surface === request.surface && text(provenance.tool) && text(provenance.sourceRef), 'Calendar source provenance required');
   need(source && same(source.resourceIds, request.resourceIds) && same(source.window, request.window) && same(source.acquiredResourceIds, [requestedCalendarId]), 'Calendar sidecar inventory/window differs from request');
   need(Array.isArray(payload.events) && Array.isArray(source.gaps) && (nextCursor === null || text(nextCursor)), 'Calendar events and explicit observation coverage required');
-  need(nextCursor === calendarCursor(payload), 'Calendar sidecar cursor differs from raw next_page_token');
+  const paginationUnknown = !Object.hasOwn(payload, 'next_page_token');
+  if (paginationUnknown) need(nextCursor === null && source.complete === false && source.paginationComplete === false, 'Absent Calendar next_page_token requires explicit partial unknown pagination');
+  else need(nextCursor === calendarCursor(payload), 'Calendar sidecar cursor differs from raw next_page_token');
   const items = payload.events.map(event => {
     need(event && text(event.id) && text(event.summary) && ['confirmed', 'cancelled'].includes(event.status) && typeof event.start === 'string' && typeof event.end === 'string', 'Flat Calendar occurrence fields required');
     need(['allDay', 'calendarId', 'taskId', 'timezone', 'timeZone', 'iCalUID'].every(key => !Object.hasOwn(event, key)), 'Flat Calendar contract cannot discard extra identity or timing evidence');
@@ -42,7 +44,7 @@ function flatCalendarPage(payload, projection, metadata) {
     need((recurringEventId === null && originalStartTime === null) || text(recurringEventId) && typeof originalStartTime === 'string', 'Paired Calendar recurrence identity required');
     return { nativeId: event.id, calendarId: requestedCalendarId, iCalUID: null, start: calendarInstant(event.start), end: calendarInstant(event.end), allDay: null, title: event.summary, status: event.status, taskId: null, timeZone: null, recurringEventId, originalStartTime: originalStartTime === null ? null : calendarInstant(originalStartTime) };
   });
-  return { ...source, items, gaps: [...new Set([...source.gaps, ...(items.length ? ['Calendar all-day type unknown', 'Calendar native Task linkage unknown', 'Calendar source timezone unknown'] : [])])], nextCursor };
+  return { ...source, items, gaps: [...new Set([...source.gaps, ...(paginationUnknown ? ['Calendar pagination unknown: raw next_page_token absent'] : []), ...(items.length ? ['Calendar all-day type unknown', 'Calendar native Task linkage unknown', 'Calendar source timezone unknown'] : [])])], nextCursor };
 }
 export function projectBriefingPage(payload, projection, metadata) {
   if (projection?.contract === 'calendar-search-flat-v1') return flatCalendarPage(payload, projection, metadata);
