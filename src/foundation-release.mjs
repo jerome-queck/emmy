@@ -26,7 +26,7 @@ function closure(files, entry) {
   visit(entry); return [...found].sort();
 }
 function validate(release) {
-  need(release?.format === 'emmy-foundation-v1' && /^[a-f0-9]{40}$/.test(release.revision) && release.minimumNode === 24 && release.effectsAuthorized === false, 'Unsupported source release');
+  need(release?.format === 'emmy-foundation-v1' && /^[a-f0-9]{40}$/.test(release.revision) && release.minimumNode === 24 && release.effectsAuthorized === false && ['runtime', 'portable'].includes(release.distribution), 'Unsupported source release');
   need(Array.isArray(release.files) && release.files.length > 0 && release.files.length <= 1000, 'Bounded source inventory required');
   let previous = '';
   for (const file of release.files) {
@@ -40,7 +40,7 @@ function validate(release) {
   need(release.files.some(file => file.path === 'src/operating-contract.mjs'), 'Operating contract required');
   return release;
 }
-export function buildFoundation(root, revision) {
+export function buildFoundation(root, revision, { portableOnly = false } = {}) {
   need(/^[a-f0-9]{40}$/.test(revision), 'Explicit full source commit required');
   const git = args => execFileSync('git', ['-C', root, ...args], { maxBuffer: 16777216 });
   need(git(['rev-parse', `${revision}^{commit}`]).toString().trim() === revision, 'Exact commit required');
@@ -50,7 +50,8 @@ export function buildFoundation(root, revision) {
     return { path: match[3], mode: match[1], bytes: bytes.length, sha256: digest(bytes), base64: bytes.toString('base64') };
   }).sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
   const portable = Object.fromEntries(Object.entries(entries).map(([kind, entry]) => [kind, closure(files, entry)]));
-  return validate({ format: 'emmy-foundation-v1', revision, minimumNode: 24, effectsAuthorized: false, entries, portable, files });
+  const selected = portableOnly ? files.filter(file => Object.values(portable).some(paths => paths.includes(file.path))) : files;
+  return validate({ format: 'emmy-foundation-v1', distribution: portableOnly ? 'portable' : 'runtime', revision, minimumNode: 24, effectsAuthorized: false, entries, portable, files: selected });
 }
 export async function readFoundation(path, expectedHash) {
   need(/^[a-f0-9]{64}$/.test(expectedHash), 'Trusted capsule SHA-256 required before parsing');
@@ -59,6 +60,7 @@ export async function readFoundation(path, expectedHash) {
 }
 export async function materializeFoundation(release, destination, kind) {
   validate(release); need(['runtime', ...Object.keys(entries)].includes(kind), 'Use runtime, pure or acquisition');
+  need(kind !== 'runtime' || release.distribution === 'runtime' && release.files.some(file => file.path === 'scripts/agent.mjs'), 'Runtime materialization requires complete runtime distribution');
   await mkdir(destination, { mode: 0o700 });
   const selected = kind === 'runtime' ? release.files : release.files.filter(file => release.portable[kind].includes(file.path));
   for (const file of selected) {

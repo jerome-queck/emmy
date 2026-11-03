@@ -24,6 +24,10 @@ test('direct source release rebuilds without old capsules and runs exact shared 
     assert.ok(first.portable.pure.includes('src/content.mjs'));
     assert.ok(first.portable.acquisition.includes('src/briefing-acquisition.mjs'));
     for (const files of Object.values(first.portable)) for (const name of ['src/records.mjs', 'src/morning.mjs', 'src/fleet.mjs', 'src/bounded-json.mjs', 'src/briefing-cloud-caller.mjs']) assert.ok(!files.includes(name));
+    const portable = buildFoundation(source, revision, { portableOnly: true });
+    assert.deepEqual(portable.files.map(file => file.path), [...new Set(Object.values(portable.portable).flat())].sort());
+    assert.ok(Buffer.byteLength(canonical(portable)) < Buffer.byteLength(canonical(first)));
+    await assert.rejects(materializeFoundation(portable, join(directory, 'incomplete-runtime'), 'runtime'), /requires complete runtime/);
     const capsule = join(directory, 'capsule.json'); const bytes = `${canonical(first)}\n`; await writeFile(capsule, bytes);
     const release = await readFoundation(capsule, digest(bytes));
     await assert.rejects(readFoundation(capsule, digest('tampered')), /hash differs/);
