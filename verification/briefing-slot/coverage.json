@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "kind": "bounded-immutable-slot-safety",
-  "reviewBasis": "Read extracted publisher ordinary/directory/publishSlot in full. First link uses a closed complete unique temporary. EEXIST reads immutable original; equal bytes converge; differing bytes retain first marker and content-addressed candidate. Domain callback validates preexisting markers. Final cleanup names only this writer temporary. No canonical journal publication change or native lifecycle proof. Lead removed only a redundant final blank line after independent source review; all operations and witnesses unchanged.",
+  "reviewBasis": "Read extracted publisher ordinary/directory/publishSlot in full. First link uses a closed complete unique temporary. EEXIST reads immutable original; equal bytes converge; differing bytes retain first marker and content-addressed candidate. Domain callback validates preexisting markers. Final cleanup names only this writer temporary. No canonical journal publication change or native lifecycle proof. Lead removed only a redundant final blank line after independent source review; all operations and witnesses unchanged. Source identity pinned to independently reviewed foundation commit c4d2e389cbf0e6d17f721b02492fd456e8cdfad9.",
   "sourceFiles": {
     "src/immutable-slot.mjs": "59e8ccd7c37783268e22703f63897c8c6d2b97c497ab37ff300e636a33744035"
   },
@@ -106,5 +106,6 @@
       "invariant": "ConflictRetained",
       "actual": "Copied publishSlot omits conflict marker link and returns conflict. Actual marker absent."
     }
-  ]
+  ],
+  "sourceCommit": "c4d2e389cbf0e6d17f721b02492fd456e8cdfad9"
 }
