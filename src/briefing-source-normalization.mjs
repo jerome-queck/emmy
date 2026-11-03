@@ -11,14 +11,37 @@ const extract = (object, path) => {
   for (const key of path === '' ? [] : path.slice(1).split('/').map(part => part.replace(/~1/g, '/').replace(/~0/g, '~'))) { need(!['__proto__', 'constructor', 'prototype'].includes(key) && value && Object.hasOwn(value, key), 'Missing provider extraction field'); value = value[key]; }
   return value;
 };
+function observationSidecar(projection) {
+  need(typeof projection.observationBytes === 'string' && /^[a-f0-9]{64}$/.test(projection.observationSha256 ?? ''), 'Exact observation sidecar bytes and external hash required');
+  const bytes = Buffer.from(projection.observationBytes, 'base64');
+  need(bytes.toString('base64') === projection.observationBytes && bytes.length <= 4194304 && digest(bytes) === projection.observationSha256, 'Observation sidecar identity differs');
+  return strictJson(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+}
+function calendarInstant(value) {
+  need(typeof value === 'string' && /^\d{4}-\d\d-\d\dT(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,3})?(?:Z|[+-]\d\d:\d\d)$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(`${value.slice(0, 10)}T00:00:00.000Z`).toISOString().slice(0, 10) === value.slice(0, 10), 'Calendar instant requires explicit offset and valid source date');
+  return new Date(value).toISOString();
+}
+function flatCalendarPage(payload, projection, metadata) {
+  const observation = observationSidecar(projection);
+  const request = metadata.sourceRequest;
+  const { source, requestedCalendarId, provenance, nextCursor } = observation;
+  need(request?.role === 'calendar' && request.environment === 'dot-cloud' && request.surface === 'connector' && text(requestedCalendarId) && request.requestedCalendarId === requestedCalendarId && request.resourceIds?.includes(requestedCalendarId), 'Calendar sidecar must bind exact requested calendar');
+  need(provenance?.environment === request.environment && provenance.surface === request.surface && text(provenance.tool) && text(provenance.sourceRef), 'Calendar source provenance required');
+  need(source && same(source.resourceIds, request.resourceIds) && same(source.window, request.window) && same(source.acquiredResourceIds, [requestedCalendarId]), 'Calendar sidecar inventory/window differs from request');
+  need(Array.isArray(payload.events) && Array.isArray(source.gaps) && (nextCursor === null || text(nextCursor)), 'Calendar events and explicit observation coverage required');
+  const items = payload.events.map(event => {
+    need(event && text(event.id) && text(event.summary) && ['confirmed', 'cancelled'].includes(event.status) && typeof event.start === 'string' && typeof event.end === 'string', 'Flat Calendar occurrence fields required');
+    need(['allDay', 'calendarId', 'taskId', 'timezone', 'timeZone', 'iCalUID'].every(key => !Object.hasOwn(event, key)), 'Flat Calendar contract cannot discard extra identity or timing evidence');
+    const recurringEventId = event.recurring_event_id ?? null, originalStartTime = event.original_start_time ?? null;
+    need((recurringEventId === null && originalStartTime === null) || text(recurringEventId) && typeof originalStartTime === 'string', 'Paired Calendar recurrence identity required');
+    return { nativeId: event.id, calendarId: requestedCalendarId, iCalUID: null, start: calendarInstant(event.start), end: calendarInstant(event.end), allDay: null, title: event.summary, status: event.status, taskId: null, timeZone: null, recurringEventId, originalStartTime: originalStartTime === null ? null : calendarInstant(originalStartTime) };
+  });
+  return { ...source, items, gaps: [...new Set([...source.gaps, ...(items.length ? ['Calendar all-day type unknown', 'Calendar native Task linkage unknown', 'Calendar source timezone unknown'] : [])])], nextCursor };
+}
 export function projectBriefingPage(payload, projection, metadata) {
+  if (projection?.contract === 'calendar-search-flat-v1') return flatCalendarPage(payload, projection, metadata);
   if (projection?.contract === 'compiler-fields-v1') {
-    if (projection.observationBytes !== undefined) {
-      need(typeof projection.observationBytes === 'string' && /^[a-f0-9]{64}$/.test(projection.observationSha256 ?? ''), 'Exact observation sidecar bytes and external hash required');
-      const bytes = Buffer.from(projection.observationBytes, 'base64');
-      need(bytes.toString('base64') === projection.observationBytes && bytes.length <= 4194304 && digest(bytes) === projection.observationSha256, 'Observation sidecar identity differs');
-      payload = { provider: payload, observation: strictJson(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) };
-    }
+    if (projection.observationBytes !== undefined) payload = { provider: payload, observation: observationSidecar(projection) };
     const fields = (object, mapping) => {
       need(mapping && typeof mapping === 'object' && !Array.isArray(mapping), 'Explicit field pointer map required');
       return Object.fromEntries(Object.entries(mapping).map(([key, pointer]) => {
@@ -69,7 +92,7 @@ export function normalizeBriefingSource(acquisition, rawPages) {
     const projected = projection == null ? payload : projectBriefingPage(payload, projection, retained.raw);
     need(same(projected, retained.response), 'Normalized projection differs from retained raw source');
     let page = projected;
-    if (projection != null && projection.contract !== 'compiler-fields-v1') {
+    if (projection != null && !['compiler-fields-v1', 'calendar-search-flat-v1'].includes(projection.contract)) {
       need(Object.hasOwn(projected, 'compilerSource'), 'Projected page requires retained exact compiler source witness');
       const source = projected.compilerSource;
       need(source && same(source.items, projected.items) && source.observedAt === projected.observedAt && source.complete === projected.complete, 'Compiler source witness differs from projected items, clock or coverage');

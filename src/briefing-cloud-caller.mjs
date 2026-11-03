@@ -56,7 +56,7 @@ export async function acquireBriefingSource(request, adapters) {
       need(response && (typeof response.raw === 'string' || Buffer.isBuffer(response.raw)), 'Missing actual raw response bytes');
       bytes += Buffer.byteLength(response.raw); awaitingRaw = false;
       const capturedAt = adapters.now(); need(stamp(capturedAt) && startedAt <= capturedAt, 'Actual raw acquisition clock required');
-      const retained = await retain(response, { role: request.role, startedAt, capturedAt, requestId: request.admission?.requestId ?? null, ticket: request.admission?.ticket ?? null, cursor }, adapters);
+      const retained = await retain(response, { role: request.role, sourceRequest: request, startedAt, capturedAt, requestId: request.admission?.requestId ?? null, ticket: request.admission?.ticket ?? null, cursor }, adapters);
       responses.push({ ...retained, startedAt, capturedAt });
       if (bytes > request.maxBytes) { failure = 'measured-byte-budget-overrun'; break; }
       const page = retained.response;

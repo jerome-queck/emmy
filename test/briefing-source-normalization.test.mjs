@@ -184,3 +184,67 @@ test('generic projections require exact clocks, complete coverage and byte-corre
   const manifest = structuredClone(x.manifest); manifest.captures[0].sha256 = '0'.repeat(64);
   await assert.rejects(x.run(manifest), /Failed acquisition/);
 });
+
+async function flatCalendarExchange(t, events, change = value => value) {
+  const { directory, compile } = await setup(t);
+  const { briefingCloudReadRequest, acquireCapturedBriefingSource } = await import('../src/briefing-cloud-exchange.mjs');
+  const input = plan(), source = { ...input.calendar }; delete source.items;
+  const request = { schemaVersion: 1, role: 'calendar', account: 'primary@example.test', environment: 'dot-cloud', surface: 'connector', requestedCalendarId: 'calendar-1', resourceIds: source.resourceIds, window: source.window, maxReads: 1, maxBytes: 1048576 };
+  const observation = change({ source, requestedCalendarId: 'calendar-1', provenance: { environment: 'dot-cloud', surface: 'connector', tool: 'calendar.search', sourceRef: 'synthetic-calendar-read-1' }, nextCursor: null });
+  const sidecar = Buffer.from(JSON.stringify(observation));
+  const raw = Buffer.from(JSON.stringify({ content: [{ type: 'text', text: 'Original provider block retained verbatim.' }], structuredContent: { events } }));
+  const path = join(directory, 'flat.raw'); await writeFile(path, raw);
+  const projection = { contract: 'calendar-search-flat-v1', observationBytes: sidecar.toString('base64'), observationSha256: digest(sidecar) };
+  const manifest = { schemaVersion: 1, request, captures: [{ readRequest: briefingCloudReadRequest(request), path, sha256: digest(raw), byteCount: raw.length, projection }] };
+  const run = (value = manifest) => acquireCapturedBriefingSource(value, { directory: join(directory, 'retained-flat'), policy: input.policy, now: () => at });
+  return { run, manifest, input, compile, raw, sidecar, observation };
+}
+const flatEvent = (extra = {}) => ({ id: 'flat-1', summary: 'Midnight unknown', status: 'confirmed', start: '2026-11-03T00:00:00+08:00', end: '2026-11-04T00:00:00+08:00', recurring_event_id: null, original_start_time: null, ...extra });
+
+test('reported flat Calendar shape keeps midnight and missing native metadata unknown with independent raw/sidecar pins', async t => {
+  const x = await flatCalendarExchange(t, [flatEvent()]); const result = await x.run();
+  const event = result.source.items[0];
+  assert.equal(event.allDay, null); assert.equal(event.taskId, null); assert.equal(event.timeZone, null); assert.equal(event.calendarId, 'calendar-1');
+  assert.equal(event.start, '2026-11-02T16:00:00.000Z');
+  const retained = result.acquisition.responses[0].raw;
+  assert.equal((await readFile(retained.sourceRef)).equals(x.raw), true);
+  assert.equal(retained.projection.observationSha256, digest(x.sidecar));
+  assert.equal(Buffer.from(retained.projection.observationBytes, 'base64').equals(x.sidecar), true);
+  x.input.calendar = result.source;
+  const called = await x.compile(x.input); assert.equal(called.status, 3, called.stdout);
+  assert.match(called.result.body, /Timing type unknown Midnight unknown/); assert.doesNotMatch(called.result.body, /All day Midnight unknown|00:00 Midnight unknown/);
+  for (const gap of ['Calendar all-day type unknown', 'Calendar native Task linkage unknown', 'Calendar source timezone unknown']) assert.ok(called.result.gaps.some(value => value.includes(gap)));
+  const repeated = await x.run(); assert.deepEqual(repeated.source, result.source);
+  const replay = structuredClone(result.acquisition); replay.responses[0].response.items[0].allDay = true;
+  assert.throws(() => normalizeBriefingSource(replay, [x.raw]), /projection differs/);
+  const changed = structuredClone(x.manifest); changed.captures[0].projection.observationBytes = Buffer.from(JSON.stringify({ ...x.observation, requestedCalendarId: 'other' })).toString('base64');
+  await assert.rejects(x.run(changed), /Failed acquisition/);
+});
+
+test('flat Calendar preserves moved recurrence identities and cancelled occurrences without confusing native Tasks', async t => {
+  const events = [flatEvent({ id: 'moved', summary: 'Moved recurrence', recurring_event_id: 'series', original_start_time: '2026-11-03T09:00:00+08:00', start: '2026-11-03T10:00:00+08:00', end: '2026-11-03T11:00:00+08:00' }), flatEvent({ id: 'cancelled', summary: 'Cancelled recurrence', status: 'cancelled', recurring_event_id: 'series', original_start_time: '2026-11-03T12:00:00+08:00' })];
+  const x = await flatCalendarExchange(t, events); const result = await x.run();
+  assert.equal(result.source.items[0].recurringEventId, 'series'); assert.equal(result.source.items[0].originalStartTime, '2026-11-03T01:00:00.000Z');
+  assert.equal(result.source.items[1].status, 'cancelled'); assert.equal(result.source.items[0].taskId, null);
+  x.input.tasks.items.push({ nativeId: 'moved', listId: 'tasks-1', title: 'Completed native Task', status: 'completed', ownerDismissed: false, manuallyMoved: false, doDate: x.input.day, deadline: null });
+  x.input.calendar = result.source; const called = await x.compile(x.input);
+  assert.equal(called.status, 3, called.stdout); assert.match(called.result.body, /Moved recurrence/); assert.doesNotMatch(called.result.body, /Cancelled recurrence|Completed native Task/);
+  x.input.calendar.items.push({ ...result.source.items[0], nativeId: 'duplicate', start: '2026-11-03T03:00:00.000Z' });
+  assert.equal((await x.compile(x.input)).status, 2);
+});
+
+test('flat Calendar rejects missing provenance, scope, clocks and invented metadata', async t => {
+  for (const change of [o => ({ ...o, requestedCalendarId: 'other' }), o => ({ ...o, provenance: null }), o => ({ ...o, source: { ...o.source, observedAt: null } }), o => ({ ...o, source: { ...o.source, acquiredResourceIds: ['other'] } }), o => ({ ...o, source: { ...o.source, window: { ...o.source.window, start: at } } }), o => ({ ...o, nextCursor: undefined })]) {
+    const x = await flatCalendarExchange(t, [flatEvent()], change); await assert.rejects(x.run(), /Failed acquisition/);
+  }
+  for (const extra of [{ taskId: 'invented' }, { allDay: true }, { timeZone: 'Asia/Singapore' }, { start: '2026-11-03' }, { start: '2026-11-03T00:00:00' }, { start: '2026-02-30T00:00:00Z' }, { original_start_time: at }, { recurring_event_id: 'series' }]) {
+    const x = await flatCalendarExchange(t, [flatEvent(extra)]); await assert.rejects(x.run(), /Failed acquisition/);
+  }
+});
+
+test('flat Calendar retains partial coverage and original source clock without replay refresh', async t => {
+  const x = await flatCalendarExchange(t, [flatEvent()], o => ({ ...o, source: { ...o.source, complete: false, paginationComplete: false, observedAt: '2026-11-02T23:50:00.000Z', gaps: ['Provider selected inventory only'] } }));
+  const result = await x.run(); assert.equal(result.source.complete, false); assert.equal(result.source.paginationComplete, false); assert.equal(result.source.observedAt, '2026-11-02T23:50:00.000Z'); assert.equal(result.acquisition.complete, false);
+  x.input.calendar = result.source; const called = await x.compile(x.input);
+  assert.ok(called.result.gaps.includes('calendar acquisition incomplete')); assert.ok(called.result.gaps.includes('calendar original source stale')); assert.ok(called.result.gaps.includes('calendar: Provider selected inventory only'));
+});
