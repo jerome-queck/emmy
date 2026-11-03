@@ -112,14 +112,14 @@ test('generic CLI refuses coerced revisions and malformed canonical report evide
     const cli = async value => { const file = await save('request.json', value); return spawnSync(process.execPath, [cliPath, 'automation', '--file', file.path], { encoding: 'utf8' }); };
     for (const revision of [[configuration.source.revision], null, 123]) {
       const result = await cli({ ...request, configuration: await save('invalid-configuration.json', { ...configuration, source: { ...configuration.source, revision } }) });
-      assert.equal(result.status, 2, result.stdout); assert.match(result.stderr, /Exact source release/);
+      assert.equal(result.status, 2, result.stdout); assert.match(result.stdout, /Exact source release/);
     }
     const input = automationOutcomeFixture(plan.reportEvidenceRefs, at);
     for (const [name, change, error] of [...invalidMetadata, ['running report', { execution: 'running' }, /terminal/]]) {
       const record = runRecord(input); Object.assign(record.data, change); if (name === 'running report') record.data.report.status = 'running';
       const artifact = runArtifact(record);
       const result = await cli({ ...request, action: 'read', artifact: await save('artifact.json', artifact.bytes), recordId: artifact.id, maxAgeSeconds: 315360000 });
-      assert.equal(result.status, 2, `${name}: ${result.stdout}`); assert.match(result.stderr, error);
+      assert.equal(result.status, 2, `${name}: ${result.stdout}`); assert.match(result.stdout, error);
     }
   } finally { await rm(directory, { recursive: true, force: true }); }
 });

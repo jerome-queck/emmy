@@ -45,6 +45,15 @@ function sourceWindow(value, generatedAt) {
   shape(value, ['start', 'end']);
   need(stamp(value.start) && stamp(value.end) && Date.parse(value.start) < Date.parse(value.end) && Date.parse(value.end) <= Date.parse(generatedAt), 'Invalid original source window');
 }
+function timingEvidence(value, at) {
+  shape(value, ['startedAt', 'lastHeartbeatAt', 'endedAt', 'observedAt', 'sourceRef']);
+  need(stamp(value.observedAt) && Date.parse(value.observedAt) <= Date.parse(at) && text(value.sourceRef) && ['startedAt', 'lastHeartbeatAt', 'endedAt'].every(key => value[key] === null || stamp(value[key]) && Date.parse(value[key]) <= Date.parse(value.observedAt)), 'Actual timing evidence invalid');
+  const times = ['startedAt', 'lastHeartbeatAt', 'endedAt'].map(key => value[key]).filter(Boolean); need(times.every((time, index) => index === 0 || Date.parse(time) >= Date.parse(times[index - 1])), 'Actual timing order invalid');
+}
+function measuredTelemetry(value) {
+  shape(value, ['runtimeMs', 'inputTokens', 'outputTokens', 'sourceRef']);
+  need(text(value.sourceRef) && ['runtimeMs', 'inputTokens', 'outputTokens'].every(key => value[key] === null || Number.isSafeInteger(value[key]) && value[key] >= 0), 'Measured telemetry or explicit null required');
+}
 function validateRecord(record, namespace, automationId, runId, at) {
   shape(record, ['schemaVersion', 'namespace', 'automationId', 'kind', 'key', 'revision', 'previous', 'recordedAt', 'data']);
   need(record.schemaVersion === 1 && record.namespace === namespace && record.automationId === automationId && record.kind === 'run' && record.key === runId, 'Own exact run predecessor required');
@@ -52,7 +61,10 @@ function validateRecord(record, namespace, automationId, runId, at) {
   const data = record.data;
   const fields = ['occurrenceKey', 'execution', 'coverage', 'report', 'evidenceRefs'];
   need(object(data) && fields.every(key => Object.hasOwn(data, key)) && Object.keys(data).every(key => [...fields, 'timing', 'telemetry'].includes(key)) && (data.occurrenceKey === null || text(data.occurrenceKey, 120)) && executions.includes(data.execution) && coverages.includes(data.coverage) && Array.isArray(data.evidenceRefs) && data.evidenceRefs.length <= 20 && data.evidenceRefs.every(ref => text(ref)), 'Invalid predecessor run data');
+  if (Object.hasOwn(data, 'timing')) timingEvidence(data.timing, record.recordedAt);
+  if (Object.hasOwn(data, 'telemetry')) measuredTelemetry(data.telemetry);
   if (data.report !== null) {
+    need(terminal.includes(data.execution), 'Non-null report requires terminal execution');
     const report = data.report; const unbound = report.schemaVersion === 2;
     shape(report, ['schemaVersion', 'type', 'runId', 'provenance', 'scheduledFor', 'status', 'coverage', 'availability', 'summary', 'artifactLinks', 'sourceWindow', 'generatedAt', ...(unbound ? ['sourceEvidence', 'generation'] : [])]);
     need([1, 2].includes(report.schemaVersion) && report.type === 'automation-outcome' && report.runId === runId && report.status === data.execution && report.coverage === data.coverage && availabilities.includes(report.availability), 'Predecessor report identity or state differs');
@@ -102,15 +114,8 @@ function assessProducer(input) {
   const envelope = (kind, key, data) => ({ schemaVersion: 1, namespace: input.namespace, automationId: input.automationId, kind, key, revision: 0, previous: null, recordedAt: input.at, data });
   const records = binding && !previous ? [envelope('occurrence', occurrenceKey, { scheduledFor: binding.scheduledFor, expiresAt: binding.observationDueAt })] : [];
   const data = { occurrenceKey, execution: input.execution, coverage: input.coverage, report, evidenceRefs: input.evidenceRefs };
-  if (input.timing !== null) {
-    shape(input.timing, ['startedAt', 'lastHeartbeatAt', 'endedAt', 'observedAt', 'sourceRef']);
-    need(stamp(input.timing.observedAt) && Date.parse(input.timing.observedAt) <= Date.parse(input.at) && text(input.timing.sourceRef) && ['startedAt', 'lastHeartbeatAt', 'endedAt'].every(key => input.timing[key] === null || stamp(input.timing[key]) && Date.parse(input.timing[key]) <= Date.parse(input.timing.observedAt)), 'Actual timing evidence invalid');
-    const times = ['startedAt', 'lastHeartbeatAt', 'endedAt'].map(key => input.timing[key]).filter(Boolean); need(times.every((time, index) => index === 0 || Date.parse(time) >= Date.parse(times[index - 1])), 'Actual timing order invalid'); data.timing = input.timing;
-  }
-  if (input.telemetry !== null) {
-    shape(input.telemetry, ['runtimeMs', 'inputTokens', 'outputTokens', 'sourceRef']);
-    need(text(input.telemetry.sourceRef) && ['runtimeMs', 'inputTokens', 'outputTokens'].every(key => input.telemetry[key] === null || Number.isSafeInteger(input.telemetry[key]) && input.telemetry[key] >= 0), 'Measured telemetry or explicit null required'); data.telemetry = input.telemetry;
-  }
+  if (input.timing !== null) { timingEvidence(input.timing, input.at); data.timing = input.timing; }
+  if (input.telemetry !== null) { measuredTelemetry(input.telemetry); data.telemetry = input.telemetry; }
   records.push({ ...envelope('run', input.invocation.id, data), revision: previous ? previous.revision + 1 : 0, previous: previous ? recordDigest(previous) : null });
   const artifacts = records.map(record => {
     safeExport(record); const canonical = reportingCanonical(record); need(Buffer.byteLength(canonical) <= 32768, 'Reporting record exceeds byte bound');
