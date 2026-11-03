@@ -13,7 +13,7 @@ node scripts/foundation-release.mjs verify <capsule.json> <trusted-sha256>
 node scripts/foundation-release.mjs materialize <capsule.json> <trusted-sha256> <new-directory> pure
 ```
 
-Verify the builder and consumer scripts through an independently trusted source before execution. The capsule hash comes from the accepted handoff, not from an untrusted adjacent manifest. Verification precedes source import. `build-portable` retains only the union of the pure and acquisition source closures. It cannot materialize a full runtime. `pure` materializes the exact shared compiler dependency closure. `acquisition` materializes the read adapter closure. Both exclude filesystem and effect owners. `runtime` materializes the complete public source snapshot for a staged local candidate. It does not install an alias, create native tasks, or grant provider access. Preserve historical capsules for exact replay.
+Verify the builder and consumer scripts through an independently trusted source before execution. The capsule hash comes from the accepted handoff, not from an untrusted adjacent manifest. Verification precedes source import. `build-portable` retains only the union of the automation planner, briefing compiler, and acquisition source closures. It cannot materialize a full runtime. `pure` materializes the exact shared compiler dependency closure. `acquisition` materializes the read adapter closure. Both exclude filesystem and effect owners. `runtime` materializes the complete public source snapshot for a staged local candidate. It does not install an alias, create native tasks, or grant provider access. Preserve historical capsules for exact replay.
 
 ## Bind the consumer
 
