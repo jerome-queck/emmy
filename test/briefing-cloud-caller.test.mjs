@@ -86,3 +86,45 @@ test('a successful raw reporting read stays incomplete when canonical acquisitio
  const result=await acquireBriefingSource(scoped,{...storage,now:()=>at,claimAdmission:async()=>({outcome:'admitted',ticket:{ticket:'reported-ticket',status:'attempted',deadline:'2026-11-03T00:01:00.000Z',remainingReads:1,remainingBytes:8192,attemptReads:0,attemptBytes:0,input:{id:'bounded-report-read',entityIds:['canonical-automation-report-records']}}}),read:async()=>({raw:JSON.stringify({observedAt:at,complete:true,nextCursor:null})}),completeAcquisition:async()=>({outcome:'blocked',state:{jobs:[{ticket:'reported-ticket',status:'blocked'}]}})});
  assert.equal(result.complete,false);assert.equal(result.failure,'canonical-acquisition-not-completed');assert.equal(storage.retained.length,1);
 });
+
+test('actual prepare CLI refuses malformed evidence and preserves date/unknown Task semantics', async t => {
+  const storage = await sink(t); const path = join(storage.directory, 'strict-request.json');
+  const invoke = async input => {
+    await writeFile(path, JSON.stringify({ action: 'prepare', input }));
+    return spawnSync(process.execPath, [resolve('scripts/agent.mjs'), 'daily-briefing', '--file', path], { encoding: 'utf8' });
+  };
+  for (const [key, value] of [['complete', 'false'], ['safeUnreadInspection', 'false'], ['personal', null]]) {
+    const input = plan(); input.mail[0].items[0].context[key] = value;
+    const called = await invoke(input); assert.equal(called.status, 1, called.stdout);
+    assert.equal(JSON.parse(called.stdout).ok, false);
+  }
+  const input = plan();
+  const task = { nativeId: 'future-task', listId: 'tasks-1', title: 'Future study', status: 'needsAction', ownerDismissed: false, manuallyMoved: false, doDate: '2026-11-05', deadline: null };
+  input.tasks.items = [task, { ...task, nativeId: 'unknown', title: 'Unknown study', ownerDismissed: null }];
+  input.tasks.complete = false; input.tasks.paginationComplete = false;
+  const called = await invoke(input); assert.equal(called.status, 3, called.stdout);
+  const result = JSON.parse(called.stdout).data;
+  assert.doesNotMatch(result.body, /Future study|Unknown study/);
+  assert.ok(result.gaps.includes('tasks acquisition incomplete'));
+  assert.ok(result.gaps.includes('Task dismissal or move status unknown'));
+});
+test('caller cannot upgrade an earlier partial page with a complete terminal page', async t => {
+  const storage = await sink(t); let reads = 0;
+  const result = await acquireBriefingSource(request, { ...storage, policy: policy(), now: () => at,
+    async read() { reads++; return { raw: JSON.stringify({ observedAt: at, complete: reads === 2, unreadPreserved: true, nextCursor: reads === 1 ? 'next' : null }) }; }, async completeAcquisition() {} });
+  assert.equal(reads, 2); assert.equal(result.complete, false); assert.equal(result.failure, 'partial-provider-coverage');
+  assert.equal(storage.retained.length, 2);
+});
+test('provider projection needs explicit coverage and boolean Outlook unread evidence', async t => {
+  const storage = await sink(t);
+  const scoped = { ...request, role: 'outlook', account: policy().accounts.outlook.account, surface: 'browser' };
+  const projection = { contract: 'outlook-ui-page-v1', itemsPointer: '/items', cursorPointer: '/cursor', observedAtPointer: null, unreadBeforePointer: '/before', unreadAfterPointer: '/after' };
+  for (const value of [null, 'false', 0, {}, []]) {
+    const result = await acquireBriefingSource(scoped, { ...storage, policy: policy(), now: () => at, async read() { return { raw: JSON.stringify({ items: [], cursor: null, complete: true, before: value, after: value }), projection }; }, async completeAcquisition() {} });
+    assert.equal(result.complete, false, JSON.stringify(value));
+  }
+  const adapters = { ...storage, policy: policy(), now: () => at, async read() { return { raw: JSON.stringify({ items: [], cursor: null, before: true, after: true }), projection }; }, async completeAcquisition() {} };
+  assert.equal((await acquireBriefingSource(scoped, adapters)).complete, false);
+  adapters.read = async () => ({ raw: JSON.stringify({ items: [], cursor: null, complete: true, before: false, after: false }), projection });
+  assert.equal((await acquireBriefingSource(scoped, adapters)).complete, true);
+});

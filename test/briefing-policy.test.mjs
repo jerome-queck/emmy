@@ -96,3 +96,53 @@ test('common code subjects refuse; Blackboard personal instructor mail stays; ob
 test('a newly terminal older admitted failure remains in same briefing after nominal rollover',()=>{
  const input=plan(); input.checks=[{kind:'maintenance',scheduledFor:'2026-11-01T19:15:00.000Z',attemptId:'old-attempt',requestId:'same-admitted-request',state:'terminal',execution:'failed',coverage:'partial',availability:'available',sourceEnd:'2026-11-01T16:00:00.000Z',observedAt:'2026-11-02T23:59:00.000Z',recordedAt:'2026-11-02T23:59:00.000Z',snapshotDigest:'c'.repeat(64),summary:'Concrete older admitted request terminal failure.'}]; const result=preparePolicyBriefing(input); assert.ok(result.body.includes('Concrete older admitted request terminal failure.')); assert.equal(result.checks.retainedAttempts[0].scheduledFor,input.checks[0].scheduledFor);
 });
+
+test('Task do-dates respect briefing day while deadlines remain separate context', () => {
+  const input = plan();
+  const task = { nativeId: 'task', listId: 'tasks-1', title: 'Future study', status: 'needsAction', ownerDismissed: false, manuallyMoved: false, doDate: '2026-11-05', deadline: null };
+  input.tasks.items = [task];
+  assert.doesNotMatch(preparePolicyBriefing(input).body, /Future study/);
+  for (const doDate of ['2026-11-02', '2026-11-03', null]) {
+    task.doDate = doDate; assert.match(preparePolicyBriefing(input).body, /Future study/);
+  }
+  task.doDate = '2026-11-05'; task.deadline = '2026-11-06T01:00:00.000Z';
+  const result = preparePolicyBriefing(input);
+  assert.match(result.body, /Future study.*Study do-date 2026-11-05.*Deadline 2026-11-06/);
+});
+test('every mail safety flag needs a boolean and exact thread/snapshot attribution', () => {
+  const original = review();
+  for (const key of Object.keys(original.context).filter(key => typeof original.context[key] === 'boolean')) {
+    for (const value of ['false', 'true', 0, 1, null, undefined, [], {}]) {
+      const r = review(); r.context[key] = value;
+      assert.throws(() => classifyBriefingMail(r, policy()), /mail context/, `${key} ${JSON.stringify(value)}`);
+    }
+    const r = review(); delete r.context[key];
+    assert.throws(() => classifyBriefingMail(r, policy()), /mail context/, key);
+  }
+  for (const key of ['complete', 'safeUnreadInspection']) {
+    const input = plan(); input.mail[0].items[0].context[key] = false;
+    const result = preparePolicyBriefing(input);
+    assert.equal(result.judgments[0].classification.action, 'keep');
+    assert.ok(result.gaps.some(gap => gap.includes('context/read-state')));
+  }
+  const r = review(); r.before.unread = 'false'; assert.throws(() => classifyBriefingMail(r, policy()), /mail snapshot/);
+  r.before.unread = true; r.context.threadDigest = null; assert.throws(() => classifyBriefingMail(r, policy()), /mail context/);
+});
+test('unknown Task overlays remain unknown with explicit partial coverage', () => {
+  const input = plan();
+  input.tasks.items = [{ nativeId: 'unknown-task', listId: 'tasks-1', title: 'Uncertain study', status: 'needsAction', ownerDismissed: null, manuallyMoved: null, doDate: input.day, deadline: null }];
+  input.calendar.items = [{ nativeId: 'projection', calendarId: 'calendar-1', iCalUID: null, start: '2026-11-03T01:00:00.000Z', end: '2026-11-03T02:00:00.000Z', allDay: false, title: 'Uncertain study', status: 'confirmed', taskId: 'unknown-task' }];
+  const result = preparePolicyBriefing(input);
+  assert.equal(result.coverage, 'partial'); assert.ok(result.gaps.includes('Task dismissal or move status unknown'));
+  assert.doesNotMatch(result.body, /Uncertain study/);
+  assert.equal(input.tasks.items[0].ownerDismissed, null); assert.equal(input.tasks.items[0].manuallyMoved, null);
+  for (const key of ['ownerDismissed', 'manuallyMoved']) {
+    const bad = structuredClone(input); bad.tasks.items[0][key] = 'false';
+    assert.throws(() => preparePolicyBriefing(bad), /Task status/);
+  }
+});
+test('unavailable source clocks cannot carry purported acquired items', () => {
+  const input = plan(); input.mail[0].observedAt = null; input.mail[0].capturedAt = null;
+  input.mail[0].complete = false; input.mail[0].paginationComplete = false;
+  assert.throws(() => preparePolicyBriefing(input), /Unavailable source/);
+});
