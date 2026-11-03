@@ -140,6 +140,17 @@
       "feature": "evidence"
     },
     {
+      "name": "daily-briefing",
+      "description": "Compile a held briefing pilot from exact byte references or read its dedicated immutable occurrence slot without native effects.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "upkeep"
+    },
+    {
       "name": "briefing",
       "description": "Load an explicitly pinned local release or canonical public guidance, check a declared draft, and retain exact advisory Markdown.",
       "options": [
@@ -333,7 +344,8 @@
       "commands": [
         "maintain",
         "backup",
-        "restore"
+        "restore",
+        "daily-briefing"
       ],
       "scenarios": [
         "archive-recovery",
@@ -341,7 +353,8 @@
         "restored-current-context",
         "publication-interruption",
         "derived-boundaries",
-        "improvement-report"
+        "improvement-report",
+        "daily-briefing-pilot"
       ],
       "properties": [
         "restore-suspension",

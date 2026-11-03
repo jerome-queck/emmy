@@ -17,6 +17,7 @@ import { driveCalendar, verifyCalendarRetention } from '../verification/calendar
 import { driveCalendarRegister } from '../verification/calendar-register-drive.mjs';
 import { driveMorning } from '../verification/morning-drive.mjs';
 import { driveTokenReview, driveImprovementReport } from '../verification/improvement-drive.mjs';
+import { driveDailyBriefing } from '../verification/daily-briefing-drive.mjs';
 import { driveFleet } from '../verification/fleet-drive.mjs';
 
 const sourceRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -63,6 +64,7 @@ try {
   scenario('orientation', 'Metadata-defined commands, doctor in isolated repository, catalog and rejected legacy/unknown options.');
   if (!['self-check-repair', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review'].includes(report.focus)) await driveBriefing({ sourceRoot, root, home, run, scenario, report, children });
   if (!['self-check-repair', 'briefing', 'calendar', 'cloud', 'fleet', 'token-review'].includes(report.focus)) await driveDispatch({ root, home, run, scenario, report, bindings, target });
+  if (!report.focus || report.focus === 'token-review') await driveDailyBriefing({ home, run, scenario, report, evidenceDir });
   if (!report.focus || report.focus === 'token-review') {
     await driveTokenReview({ home, run, scenario, report, evidenceDir });
     await driveImprovementReport({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir });

@@ -1,5 +1,7 @@
 # Emmy
 
+The [deterministic briefing pilot](docs/deterministic-briefing.md) compiles exact source files to one immutable local report. It remains held for complete saved-policy comparison, effect migration and parent-observed ChatGPT delivery. It changes no installed release or automation.
+
 Emmy is Jerome's ChatGPT Dot. This repository gives one chief of staff durable responsibility context, current evidence checks, retained failures and repairs, and bounded next proposals.
 
 Use Node 24 or later. The agent CLI needs no dependency install. Verification uses locked development dependencies. No database, server, or API key is required.

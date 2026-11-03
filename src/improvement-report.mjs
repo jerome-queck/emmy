@@ -1,7 +1,7 @@
+import { ordinary, directory, publishSlot } from './immutable-slot.mjs';
 import { strictJson } from './bounded-json.mjs';
-import { constants } from 'node:fs';
-import { lstat, open, mkdir, link, unlink, realpath, rmdir } from 'node:fs/promises';
-import { isAbsolute, resolve, join, dirname, parse } from 'node:path';
+import { lstat, open, mkdir, unlink, rmdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
@@ -11,28 +11,7 @@ const stamp = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d
 function shape(value, fields) { need(value && typeof value === 'object' && !Array.isArray(value) && fields.every(key => Object.hasOwn(value, key)) && Object.keys(value).every(key => fields.includes(key)), `Expected members ${fields.join(', ')}`); }
 function canonical(value) { return JSON.stringify(value, (_, item) => item && typeof item === 'object' && !Array.isArray(item) ? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item); }
 const hash = value => createHash('sha256').update(value).digest('hex');
-async function ordinary(path, maximum) {
-  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
-  try {
-    const stat = await handle.stat(); need(stat.isFile() && stat.size <= maximum, 'Expected bounded ordinary file');
-    const bytes = Buffer.alloc(maximum + 1); let count = 0;
-    while (count < bytes.length) { const read = await handle.read(bytes, count, bytes.length - count, null); if (!read.bytesRead) break; count += read.bytesRead; }
-    need(count <= maximum, 'File exceeds size bound');
-    return new TextDecoder('utf-8', { fatal: true }).decode(bytes.subarray(0, count));
-  } finally { await handle.close(); }
-}
-async function directory(path) {
-  need(isAbsolute(path) && !path.split(/[\\/]/).includes('..'), 'Select an absolute private directory without traversal');
-  const selected = resolve(path);
-  need((await lstat(selected)).isDirectory(), 'Private directory must already exist and cannot be a symlink');
-  const actual = await realpath(selected);
-  let current = selected;
-  while (current !== parse(current).root) {
-    need(!(await lstat(current)).isSymbolicLink(), 'Symlinked private directory paths are unsupported'); current = dirname(current);
-  }
-  need(actual === selected, 'Private directory must be canonical');
-  return actual;
-}
+
 function report(value) {
   shape(value, ['schemaVersion', 'kind', 'scheduledFor', 'runId', 'provenance', 'status', 'coverage', 'summary', 'findings', 'evidenceRefs', 'sourceWindow', 'generatedAt']);
   need(value.schemaVersion === 1 && kinds.includes(value.kind) && stamp(value.scheduledFor) && stamp(value.generatedAt), 'Invalid report identity or time');
@@ -51,26 +30,6 @@ async function conflictReport(path, slot, original) {
   need(hash(canonical([value.kind, new Date(value.scheduledFor).toISOString(), value.provenance])) === slot, 'Conflict marker slot identity mismatch');
   need(canonical(value) !== canonical(original), 'Conflict marker must retain a different report');
   return value;
-}
-async function publish(directory, name, bytes) {
-  const temporary = join(directory, `.pending-${randomUUID()}`); const handle = await open(temporary, 'wx', 0o600);
-  try { await handle.writeFile(bytes); } finally { await handle.close(); }
-  try {
-    try { await link(temporary, join(directory, name)); return 'published'; }
-    catch (error) {
-      if (error.code !== 'EEXIST') throw error;
-      const original = await ordinary(join(directory, name), 16384);
-      if (original === bytes) return 'identical';
-      const marker = join(directory, `conflict-${name}`);
-      try { await link(temporary, marker); } catch (other) {
-        if (other.code !== 'EEXIST') throw other;
-        await conflictReport(marker, name.slice(0, -5), report(strictJson(original)));
-      }
-      const conflict = `conflict-${name.slice(0, -5)}-${hash(bytes)}.json`;
-      try { await link(temporary, join(directory, conflict)); } catch (other) { if (other.code !== 'EEXIST') throw other; need(await ordinary(join(directory, conflict), 16384) === bytes, 'Conflict evidence collision'); }
-      return 'conflict';
-    }
-  } finally { await unlink(temporary); }
 }
 
 function readResult(request, result) {
@@ -117,7 +76,7 @@ export async function improvementReport(request, { evaluatedAt = new Date().toIS
     const value = report(request.report);
     need(Date.parse(value.generatedAt) <= Date.parse(evaluatedAt), 'Future report cannot be published');
     const slot = hash(canonical([value.kind, new Date(value.scheduledFor).toISOString(), value.provenance]));
-    return { status: await publish(selected, `${slot}.json`, `${canonical(value)}\n`), slot, assurance: 'declared-terminal-report' };
+    return { status: await publishSlot(selected, `${slot}.json`, `${canonical(value)}\n`, { maximum: 16384, validateConflict: (path, identity, original) => conflictReport(path, identity, report(strictJson(original))) }), slot, assurance: 'declared-terminal-report' };
   }
   need(kinds.includes(request.kind) && stamp(request.scheduledFor) && ['scheduled', 'manual'].includes(request.provenance) && Number.isSafeInteger(request.maxAgeSeconds) && request.maxAgeSeconds >= 0 && request.maxAgeSeconds <= 31536000, 'Expected exact occurrence, provenance and bounded maximum age');
   need(stamp(request.minimumSourceEnd), 'Expected minimum original source end required');

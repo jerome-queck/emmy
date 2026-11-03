@@ -15,6 +15,7 @@ import { calendarRegister } from '../src/calendar-register-io.mjs';
 import { fleet } from '../src/fleet.mjs';
 import { tokenReview } from '../src/token-review.mjs';
 import { signin } from '../src/signin.mjs';
+import { dailyBriefing, readDailyBriefingRequest } from '../src/daily-briefing.mjs';
 
 const args = process.argv.slice(2);
 const commandName = args.shift() ?? 'help';
@@ -51,6 +52,9 @@ try {
     case 'reconcile':
       data = await reconcile(home, { id: options.id, imports: options.import ? await readJson(resolve(options.import)) : null, asOf: timestamp(options['as-of'], 'as-of'), catalog });
       exitCode = data.status === 'current' ? 0 : 3; break;
+    case 'daily-briefing':
+      data = await dailyBriefing(await readDailyBriefingRequest(resolve(options.file)));
+      exitCode = ['published', 'identical', 'available'].includes(data.status) ? 0 : 3; break;
     case 'briefing':
       data = await briefing(home, { file: options.file ? resolve(options.file) : null });
       exitCode = data.mode === 'guidance' ? (['current', 'pinned'].includes(data.guidance.state) ? 0 : 3) : (data.status === 'checked' ? 0 : 3); break;
