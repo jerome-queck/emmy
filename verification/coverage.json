@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "a4b8d9d36cdd79771aacfde74dfa3302f0d28c57",
-  "reviewBasis": "Reviewed complete covered diff from 2278e19ade107df44f6fd85cfe295f8000d32e31 through a4b8d9d36cdd79771aacfde74dfa3302f0d28c57. Canonical hashing and strict JSON implementation moved verbatim to pure leaf owners; compatibility exports remain. Read-only acquisition now has one complete source owner; shared compiler entry and versioned staged procedure remove private source-slice packaging. Calendar original provider observation is retained separately from acquisition receipts only for v3 Calendar sources. Source role/version/freshness, exact collector seal binding, same-receipt metadata immutability across retained history, and packet equality have seven added finite cases and six paired actual-source mutations. Existing domains and mutation promises remain. Reviewed original surviving freshness mutant and ambiguous role anchor; corrected isolation and replayed intended counterexamples. Publication awaits, dependency edges, filesystem operations and TLC domains are unchanged. New release builder and consumer integrity are behavioral checks, outside the finite and TLC claims. Strict old-pin refusals retained; independent source review found and verified same-receipt stripping repair. Development 8676 predicates and272 intended mutants pass. No provider truth, permission, installation, schedule, delivery or adoption claim.",
+  "sourceCommit": "c05bac922b2c25a50a3e371a68dbbac9188e8321",
+  "reviewBasis": "Reviewed complete covered diff from 2278e19ade107df44f6fd85cfe295f8000d32e31 through a4b8d9d36cdd79771aacfde74dfa3302f0d28c57. Canonical hashing and strict JSON implementation moved verbatim to pure leaf owners; compatibility exports remain. Read-only acquisition now has one complete source owner; shared compiler entry and versioned staged procedure remove private source-slice packaging. Calendar original provider observation is retained separately from acquisition receipts only for v3 Calendar sources. Source role/version/freshness, exact collector seal binding, same-receipt metadata immutability across retained history, and packet equality have seven added finite cases and six paired actual-source mutations. Existing domains and mutation promises remain. Reviewed original surviving freshness mutant and ambiguous role anchor; corrected isolation and replayed intended counterexamples. Publication awaits, dependency edges, filesystem operations and TLC domains are unchanged. New release builder and consumer integrity are behavioral checks, outside the finite and TLC claims. Strict old-pin refusals retained; independent source review found and verified same-receipt stripping repair. Development 8676 predicates and272 intended mutants pass. No provider truth, permission, installation, schedule, delivery or adoption claim. Reviewed compact portable distribution selector at c05bac922b2c25a50a3e371a68dbbac9188e8321. Same direct-source builder and capsule verifier; portable output retains only declared compiler/acquisition modules and refuses runtime materialization. It adds no publication or finite semantics. Actual isolated-source release tests pass.",
   "files": {
     ".agents/skills/coordination-contract/SKILL.md": "0ef0de603dee7a19923405444882f5a3f5041085e5282bdd5727de0fb8bc5c0c",
     ".agents/skills/morning-collect/SKILL.md": "cb26be9998b456c6f538af9d257d1a78330d4cd23a804b86e86c38ce2bc8c499",
@@ -30,7 +30,7 @@
     "docs/improvement-report.md": "6d2787556e7a60b2f83b2bddfed7a8a98e1189f6789816660e992a8d458f45ad",
     "docs/morning-workflow.md": "5b04cc968189db2b770ef6514fdc4c29fc77d6e763cc29acc9db2a882afd179e",
     "docs/operating-brief.md": "023678ef0fb954c7837c987836bfa2908d4955faff5ceb4e60c71796f44f1de4",
-    "docs/operating-procedure.md": "857cfa2761220857a246afb3318268add5070b2d96c1cab73cebdbe9be09a0ec",
+    "docs/operating-procedure.md": "ea36a045b926a76d406a6eabe22ff636e1419407bce416f0ea78b4d50f2c4751",
     "docs/research/calendar-tasks-integration.md": "5dd8a9eb8070db7f69130351fd07aa0a1216fbb8f9267f66751f0281229ecb87",
     "docs/token-review.md": "f345647d50fb9a8e2500d001d3b657b10ee0ea28a157da0198ff6c618c4fa36e",
     "docs/verification-index.json": "c9bef5aae3c74ce225c8a95052d48037759dc789a2fb02ad4767d0fbfbea668b",
@@ -39,7 +39,7 @@
     "scripts/check.mjs": "39643718f5dc968b3fb8331902c3dda9f8558388e6ddec64013f1848272148bb",
     "scripts/cloud-acceptance.mjs": "9940ac43b1c277bfe1f9f9cebbf60568e62aee293af2817c4cb5689548e07583",
     "scripts/collect-morning.mjs": "861b14011777a382c9a35a4bc3f6c21de1ec9b0f3e395168eb740819226b2f86",
-    "scripts/foundation-release.mjs": "3623b9d61e81d995543c9d35681b637f35c731fc0d2146db55943c4baf20631d",
+    "scripts/foundation-release.mjs": "95b7c98d8979ba952c94e3aeccffff8ef33f6010ffee9a0efd27667cfc4d0bc2",
     "scripts/improvement-report.mjs": "7a84179a8b5d955fa7cdb1d4408b0fe29ac8421984ca073ae57b39ee17952f12",
     "scripts/verify-behavior.mjs": "b00d23c6434a451eae5bf16a2a3fb8b5a181be7f3ee857035855ad82b0c7dc0a",
     "scripts/verify-formal.mjs": "1f7ff82ca80e3e2884c30b88c7df8b67a2e69550a3db8d58ef43dbe5abe2a574",
@@ -72,7 +72,7 @@
     "src/fleet-schema.mjs": "d9d87c7834b006fb5dd7dac1bb41b0f2075b2e20057f40c656c0974b4576ea27",
     "src/fleet-state.mjs": "4e3f1d689b3cb7df2301e4df46298c7bea221584b3e67b76d844685046439d53",
     "src/fleet.mjs": "058bf69e0e69c49d0aed09a57ae743cd1a48b796a598ecc443ff1c02b0b87f12",
-    "src/foundation-release.mjs": "0e3b9137a3173321b3c2f6a179536bc3e8428332c480cef1d1ea681db98248c0",
+    "src/foundation-release.mjs": "b452d94c2a4d780820cba9026950d32cf7ee24e603d1129ff0dcb124bf4d33d3",
     "src/guidance-pin.mjs": "f037a3f461db221e884f9f72da45515d51e536f6f271bf70ff11a36b6cf238b7",
     "src/immutable-slot.mjs": "59e8ccd7c37783268e22703f63897c8c6d2b97c497ab37ff300e636a33744035",
     "src/improvement-report.mjs": "fbab0e0b543ad481ed95a31bd5b6f427103c90d2e60b69008800f91ffdfd27b9",
@@ -107,7 +107,7 @@
     "test/fleet-overrun.test.mjs": "61deb53a4947da8da2ffab1ff47eb14af91120a66bcfea3cad8582122f884bc8",
     "test/fleet-semantics.test.mjs": "4d31d8ed7e3e9ae5fbbe6e51b437b8762922b4ee6a38b363e2ff8dd0e0513c00",
     "test/fleet.test.mjs": "2a3bd0ca424abe26f9b57c9ce8f3a640ff72b38fd62955b4a0ddf5cebd557858",
-    "test/foundation-release.test.mjs": "ee29964fed1d822c7fe6e40cdfcf9251d0f3b6fb6274d62b004f400702a7f8a7",
+    "test/foundation-release.test.mjs": "760b42f517879afb469e047cfae38dc108386cb27ec0d494f11341d22f32f133",
     "test/guidance-pin.test.mjs": "d4ce04c46c250a62a410b15f33428d41e08ada29a6025acff343caa7e4bab21c",
     "test/improvement-report.test.mjs": "350ad1eb8b9657172e329ca2fb23c7d458dae92763cbcb7686e358f0cfb7e7f6",
     "test/morning-collection.test.mjs": "6c4911d954e8f176191cc9e9bf33c80fa9d8ddbd20ff31be16ccad5db257d851",
@@ -600,6 +600,13 @@
     {
       "function": "combineCalendarObservations",
       "source": "src/briefing-observation.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "validateCollection",
+      "source": "src/morning-collection.mjs",
       "properties": [
         "morning-contract"
       ]
