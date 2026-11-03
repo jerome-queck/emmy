@@ -1,13 +1,16 @@
 export const operatingContract = Object.freeze({
   id: 'emmy-operating-foundation',
-  version: 1,
+  version: 2,
   state: 'staged',
   procedure: 'docs/operating-procedure.md',
   runtime: 'scripts/agent.mjs',
   pureEntry: 'src/briefing-core.mjs',
   acquisitionEntry: 'src/briefing-acquisition.mjs',
   effectOwner: 'src/morning.mjs',
-  reportRead: 'improvement-report exact occurrence slot; never whole-root discovery',
+  procedureEntry: 'src/automation-procedure.mjs',
+  plannerEntry: 'src/automation-plan.mjs',
+  reportOwner: 'src/automation-reporting.mjs',
+  reportRead: 'automation read exact canonical artifact; no whole-root discovery',
   pilot: 'daily-briefing-only-parent-observed-then-hold',
   effectsAuthorized: false
 });

@@ -1,3 +1,4 @@
+import { automationProcedureFixture, automationConfigurationFixture, automationOutcomeFixture } from './automation-fixtures.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -7,6 +8,22 @@ export async function driveDailyBriefing({ home, run, scenario, report, evidence
   const { input, save } = await dailyFixture(directory);
   const foundation = await run(['daily-briefing', '--file', (await save('foundation-request.json', { action: 'foundation', input: {} })).path]);
   assert.equal(foundation.id, 'emmy-operating-foundation'); assert.equal(foundation.state, 'staged'); assert.equal(foundation.effectsAuthorized, false);
+  const genericProcedure = await save('generic-procedure.json', automationProcedureFixture);
+  const genericConfiguration = await save('generic-configuration.json', automationConfigurationFixture());
+  const genericRequest = { action: 'plan', procedure: genericProcedure, configuration: genericConfiguration };
+  const genericPlan = await run(['automation', '--file', (await save('generic-plan-request.json', genericRequest)).path]);
+  assert.equal(genericPlan.effectsAuthorized, false); assert.equal(genericPlan.nativeCreation, 'not-performed');
+  const genericInput = automationOutcomeFixture(genericPlan.reportEvidenceRefs, new Date().toISOString());
+  const genericOutcome = await run(['automation', '--file', (await save('generic-report-request.json', { ...genericRequest, action: 'report', input: genericInput })).path]);
+  const genericArtifact = genericOutcome.artifacts.find(artifact => artifact.record.kind === 'run');
+  const genericReference = await save('generic-exact-artifact.json', genericArtifact.bytes);
+  await save('generic-unrelated-corrupt-history.json', 'not JSON');
+  const genericReadRequest = { ...genericRequest, action: 'read', artifact: genericReference, recordId: genericArtifact.id, maxAgeSeconds: 300 };
+  const genericRead = await run(['automation', '--file', (await save('generic-read-request.json', genericReadRequest)).path]);
+  assert.equal(genericRead.status, 'available'); assert.equal(genericRead.delivery, 'unverified');
+  await run(['automation', '--file', (await save('generic-tamper-request.json', { ...genericReadRequest, recordId: genericReference.sha256 })).path], 2);
+  report.retainedAutomationFoundation = { directory, planDigest: genericPlan.planDigest, artifact: genericReference, recordId: genericArtifact.id, sourceTruth: 'synthetic', nativeCreation: 'not-performed' };
+  scenario('automation-foundation', 'Generic non-briefing procedure/configuration compiles a deterministic staged plan, prepares the existing canonical outcome and reads only its exact artifact. No native execution, creation or history discovery.');
   const request = await save('compile-request.json', { action: 'compile', directory, input });
   const first = await run(['daily-briefing', '--file', request.path]); assert.equal(first.status, 'published');
   assert.equal((await run(['daily-briefing', '--file', request.path])).status, 'identical');

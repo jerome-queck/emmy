@@ -7,7 +7,8 @@ import { boundedFile } from './bounded-json.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const pathOK = path => typeof path === 'string' && /^(?:[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+$/.test(path) && path.split('/').every(part => part !== '.' && part !== '..');
-const entries = { pure: 'src/briefing-core.mjs', acquisition: 'src/briefing-acquisition.mjs' };
+const legacyEntries = { pure: 'src/briefing-core.mjs', acquisition: 'src/briefing-acquisition.mjs' };
+const entries = { automation: 'src/automation-plan.mjs', pure: 'src/briefing-core.mjs', acquisition: 'src/briefing-acquisition.mjs' };
 function closure(files, entry) {
   const found = new Set();
   const visit = path => {
@@ -26,7 +27,7 @@ function closure(files, entry) {
   visit(entry); return [...found].sort();
 }
 function validate(release) {
-  need(release?.format === 'emmy-foundation-v1' && /^[a-f0-9]{40}$/.test(release.revision) && release.minimumNode === 24 && release.effectsAuthorized === false && ['runtime', 'portable'].includes(release.distribution), 'Unsupported source release');
+  need(['emmy-foundation-v1', 'emmy-foundation-v2'].includes(release?.format) && /^[a-f0-9]{40}$/.test(release.revision) && release.minimumNode === 24 && release.effectsAuthorized === false && (release.format === 'emmy-foundation-v1' && release.distribution === undefined || ['runtime', 'portable'].includes(release.distribution)), 'Unsupported source release');
   need(Array.isArray(release.files) && release.files.length > 0 && release.files.length <= 1000, 'Bounded source inventory required');
   let previous = '';
   for (const file of release.files) {
@@ -35,8 +36,8 @@ function validate(release) {
     const bytes = Buffer.from(file.base64, 'base64');
     need(bytes.toString('base64') === file.base64 && bytes.length === file.bytes && digest(bytes) === file.sha256, `Source bytes differ ${file.path}`);
   }
-  need(canonical(release.entries) === canonical(entries), 'Release entry points differ');
-  for (const [kind, entry] of Object.entries(entries)) need(canonical(closure(release.files, entry)) === canonical(release.portable[kind]), `Portable closure differs ${kind}`);
+  need(canonical(release.entries) === canonical(release.format === 'emmy-foundation-v1' ? legacyEntries : entries), 'Release entry points differ');
+  for (const [kind, entry] of Object.entries(release.entries)) need(canonical(closure(release.files, entry)) === canonical(release.portable[kind]), `Portable closure differs ${kind}`);
   need(release.files.some(file => file.path === 'src/operating-contract.mjs'), 'Operating contract required');
   return release;
 }
@@ -51,7 +52,7 @@ export function buildFoundation(root, revision, { portableOnly = false } = {}) {
   }).sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
   const portable = Object.fromEntries(Object.entries(entries).map(([kind, entry]) => [kind, closure(files, entry)]));
   const selected = portableOnly ? files.filter(file => Object.values(portable).some(paths => paths.includes(file.path))) : files;
-  return validate({ format: 'emmy-foundation-v1', distribution: portableOnly ? 'portable' : 'runtime', revision, minimumNode: 24, effectsAuthorized: false, entries, portable, files: selected });
+  return validate({ format: 'emmy-foundation-v2', distribution: portableOnly ? 'portable' : 'runtime', revision, minimumNode: 24, effectsAuthorized: false, entries, portable, files: selected });
 }
 export async function readFoundation(path, expectedHash) {
   need(/^[a-f0-9]{64}$/.test(expectedHash), 'Trusted capsule SHA-256 required before parsing');
@@ -59,8 +60,8 @@ export async function readFoundation(path, expectedHash) {
   return validate(strictJson(new TextDecoder('utf-8', { fatal: true }).decode(bytes)));
 }
 export async function materializeFoundation(release, destination, kind) {
-  validate(release); need(['runtime', ...Object.keys(entries)].includes(kind), 'Use runtime, pure or acquisition');
-  need(kind !== 'runtime' || release.distribution === 'runtime' && release.files.some(file => file.path === 'scripts/agent.mjs'), 'Runtime materialization requires complete runtime distribution');
+  validate(release); need(['runtime', ...Object.keys(release.entries)].includes(kind), 'Use runtime, automation, pure or acquisition');
+  need(kind !== 'runtime' || release.distribution !== 'portable' && release.files.some(file => file.path === 'scripts/agent.mjs'), 'Runtime materialization requires complete runtime distribution');
   await mkdir(destination, { mode: 0o700 });
   const selected = kind === 'runtime' ? release.files : release.files.filter(file => release.portable[kind].includes(file.path));
   for (const file of selected) {
@@ -68,5 +69,5 @@ export async function materializeFoundation(release, destination, kind) {
     await writeFile(path, Buffer.from(file.base64, 'base64'), { flag: 'wx', mode: file.mode === '100755' ? 0o700 : 0o600 });
     need(digest(await readFile(path)) === file.sha256, `Materialized bytes differ ${file.path}`);
   }
-  return { revision: release.revision, kind, files: selected.length, entry: kind === 'runtime' ? 'scripts/agent.mjs' : entries[kind], effectsAuthorized: false, deployment: 'staged' };
+  return { revision: release.revision, kind, files: selected.length, entry: kind === 'runtime' ? 'scripts/agent.mjs' : release.entries[kind], effectsAuthorized: false, deployment: 'staged' };
 }

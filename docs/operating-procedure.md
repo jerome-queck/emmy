@@ -1,6 +1,6 @@
 # Run an accepted Emmy procedure
 
-The staged foundation uses one source release for the local runner, guidance, report helpers, and portable briefing core. `src/operating-contract.mjs` identifies version 1. Its check occurrence rules describe expected reports; they do not schedule or activate work. Existing private policy and native products retain their authority. Daily briefing is the first pilot, followed by a parent observation hold.
+The staged foundation uses one source release for the local runner, guidance, report helpers, and portable briefing core. `src/operating-contract.mjs` identifies version 2. Its check occurrence rules describe expected reports; they do not schedule or activate work. Existing private policy and native products retain their authority. Daily briefing is the first pilot, followed by a parent observation hold.
 
 ## Select the exact source
 
@@ -20,6 +20,10 @@ Verify the builder and consumer scripts through an independently trusted source 
 Retain a private acceptance record naming the procedure ID and version, source commit, capsule SHA-256, intended environment, exact runner, and prior runner. Bind private policy byte SHA-256 and semantic policy digest separately. Name the existing controller, report input paths or exact native IDs, report namespace, and final native destination. Missing readbacks remain unverified. This record is staged configuration until the parent accepts the exact consumers.
 
 Query `daily-briefing` with `{ "action": "foundation", "input": {} }` to read the versioned contract and expected report rules. This read grants no action. Use `scripts/agent.mjs` for local operations. `help --json` describes commands and exit codes. Exit 0 completes a local operation. Exit 2 refuses malformed or corrupt input. Exit 3 retains actionable, partial, or held results. Doctor attention may describe historical unresolved evidence; it is not a new provider incident.
+
+## Build any automation plan
+
+Use the generic [automation foundation](automation-foundation.md). Select the reusable versioned procedure, pin the private per-automation configuration, then compile `automation` action `plan`. The repository emits the short prompt, deterministic plan digest, source pins, ordered acceptance steps, budgets, known report destination and explicit native-adoption holds. Prepare outcomes through the same canonical producer contract and read exact artifact references. Native products continue to own saving and operation.
 
 ## Prepare the daily briefing
 

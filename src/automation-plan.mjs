@@ -1,0 +1,27 @@
+import { digest } from './content.mjs';
+
+const need = (ok, message) => { if (!ok) throw new Error(message); };
+const object = value => value && typeof value === 'object' && !Array.isArray(value);
+const shape = (value, keys) => need(object(value) && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key)), `Expected members ${keys.join(', ')}`);
+const text = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 1000 && !/[\x00-\x1f\x7f]/.test(value);
+const hash = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+const id = value => typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9_-]{0,119}$/.test(value);
+export function planAutomation(procedure, configuration, pins) {
+  shape(procedure, ['schemaVersion', 'id', 'version', 'steps']);
+  need(procedure.schemaVersion === 1 && id(procedure.id) && Number.isSafeInteger(procedure.version) && procedure.version > 0, 'Versioned procedure and existing effect owner required');
+  need(Array.isArray(procedure.steps) && procedure.steps.length > 0 && procedure.steps.length <= 32 && new Set(procedure.steps.map(step => step.id)).size === procedure.steps.length, 'Bounded unique procedure steps required');
+  for (const step of procedure.steps) { shape(step, ['id', 'kind', 'operation', 'acceptance']); need(id(step.id) && ['cli', 'judgment', 'native'].includes(step.kind) && text(step.operation) && text(step.acceptance), 'Explicit operation and acceptance required'); }
+  shape(configuration, ['schemaVersion', 'id', 'version', 'procedureDigest', 'objective', 'environment', 'runner', 'source', 'effectOwner', 'sources', 'report', 'budgets', 'parameters']);
+  need(configuration.schemaVersion === 1 && id(configuration.id) && Number.isSafeInteger(configuration.version) && configuration.version > 0 && configuration.procedureDigest === digest(procedure) && object(configuration.parameters), 'Versioned configuration must bind exact procedure');
+  need(text(configuration.objective) && text(configuration.environment) && text(configuration.runner) && text(configuration.effectOwner), 'Objective, actual environment, exact runner and existing effect owner required');
+  shape(configuration.source, ['revision', 'capsuleSha256']); need(/^[a-f0-9]{40}$/.test(configuration.source.revision) && hash(configuration.source.capsuleSha256), 'Exact source release required');
+  shape(configuration.report, ['namespace', 'automationId', 'destination']); need(id(configuration.report.namespace) && id(configuration.report.automationId) && text(configuration.report.destination), 'Known report owner and destination required');
+  shape(configuration.budgets, ['reads', 'bytes']); need(Object.values(configuration.budgets).every(value => Number.isSafeInteger(value) && value >= 0), 'Finite nonnegative source budgets required');
+  need(Array.isArray(configuration.sources) && configuration.sources.length <= 64 && new Set(configuration.sources.map(source => source.id)).size === configuration.sources.length, 'Bounded unique source references required');
+  for (const source of configuration.sources) { shape(source, ['id', 'reference']); need(id(source.id) && text(source.reference), 'Explicit source identity/reference required'); }
+  shape(pins, ['procedureRef', 'configurationRef', 'procedureSha256', 'configurationSha256']); need(text(pins.procedureRef) && text(pins.configurationRef) && hash(pins.procedureSha256) && hash(pins.configurationSha256), 'Exact original configuration byte hashes required');
+  const procedureDigest = digest(procedure); const configurationDigest = digest(configuration);
+  const planDigest = digest({ contract: 'automation-procedure-v1', procedure, configuration });
+  const prompt = `Follow ${procedure.id} v${procedure.version} from procedure ${pins.procedureRef} SHA256 ${pins.procedureSha256} and configuration ${pins.configurationRef} SHA256 ${pins.configurationSha256}. Verify plan ${planDigest}. Use runner ${configuration.runner} in ${configuration.environment}. Use only declared sources, budgets and existing effect owner. Retain original clocks, gaps and uncertain identities. Return canonical automation-outcome artifacts to the declared destination. Stop before unaccepted native effects.`;
+  return { schemaVersion: 1, contract: 'automation-procedure-v1', procedure: { id: procedure.id, version: procedure.version, digest: procedureDigest, reference: pins.procedureRef, sha256: pins.procedureSha256 }, configurationSha256: pins.configurationSha256, configuration: { id: configuration.id, version: configuration.version, reference: pins.configurationRef, digest: configurationDigest }, planDigest, promptDigest: digest(prompt), source: configuration.source, objective: configuration.objective, environment: configuration.environment, runner: configuration.runner, sources: configuration.sources, effectOwner: configuration.effectOwner, report: configuration.report, budgets: configuration.budgets, steps: procedure.steps, reportEvidenceRefs: [`procedure:${procedureDigest}`, `configuration:${pins.configurationSha256}`], prompt, context: 'fresh-objective-required', state: 'staged', effectsAuthorized: false, nativeCreation: 'not-performed', deployment: 'held', limits: ['Acceptance text and budgets are declared contracts. The actual executor must enforce them; this planner performs no invocation.', 'Exact artifact reads prove the selected revision only, not absence of later revisions or conflicts.'] };
+}

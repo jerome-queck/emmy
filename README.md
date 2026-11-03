@@ -1,5 +1,7 @@
 # Emmy
 
+The [generic automation foundation](docs/automation-foundation.md) builds staged creation plans from versioned procedures and exact configuration files, prepares the existing canonical outcome format, and reads fixed artifacts without history scans. Native products own saving and operation.
+
 Use the [common operating procedure](docs/operating-procedure.md) for the staged source release, exact consumer bindings, fixed report reads, and briefing-only pilot hold. The shared compiler and acquisition modules build directly from one Git commit. Existing installations remain separately accepted consumers.
 
 The [deterministic briefing pilot](docs/deterministic-briefing.md) retains exact immutable local reports. The [v3 migration](docs/briefing-migration.md) adds private policy, a cloud caller contract, and ChatGPT delivery through the existing morning journal. Deployment and the parent-observed pilot remain held. No installed release or automation changes.

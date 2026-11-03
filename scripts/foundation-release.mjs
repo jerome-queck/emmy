@@ -17,5 +17,5 @@ try {
   } else if (action === 'materialize' && args.length === 4) {
     const [path, hash, destination, kind] = args;
     console.log(JSON.stringify(await materializeFoundation(await readFoundation(path, hash), destination, kind)));
-  } else throw new Error('Use build|build-portable <root> <full-commit> <new-file>, verify <file> <trusted-sha256>, or materialize <file> <trusted-sha256> <new-directory> <runtime|pure|acquisition>');
+  } else throw new Error('Use build|build-portable <root> <full-commit> <new-file>, verify <file> <trusted-sha256>, or materialize <file> <trusted-sha256> <new-directory> <runtime|automation|pure|acquisition>');
 } catch (error) { console.error(JSON.stringify({ ok: false, error: error.message })); process.exitCode = 2; }

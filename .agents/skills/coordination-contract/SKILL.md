@@ -9,7 +9,7 @@ description: Check Emmy's bounded responsibility, dispatch, calendar acceptance,
 
 Run `node scripts/verify-formal.mjs` with Node 24 or later for the responsibility checker. It requires no package install, solver, service, or account. `npm run verify:formal` also runs the merge-policy enumeration and the [publication model](../publication-contract/SKILL.md), which requires Java 21 and a hash-pinned TLC jar.
 
-The checker calls the actual mapped production functions. It checks 8,676 predicates across twenty-five named properties, kills 272 paired mutations of those actual source files, then reruns unchanged production. Earlier responsibility, dispatch, calendar, cloud and incarnation domains retain their promises. These are finite checks, not a universal proof.
+The checker calls the actual mapped production functions. It checks 8,700 predicates across twenty-six named properties, kills 277 paired mutations of those actual source files, then reruns unchanged production. Earlier responsibility, dispatch, calendar, cloud and incarnation domains retain their promises. These are finite checks, not a universal proof.
 
 Read each failed counterexample under `.local/verification/formal-*/`. A mutant counts only if it imports successfully and its designated property rejects the intended behavioral disagreement. Syntax/import errors, ambiguous edit anchors, unrelated exceptions, and surviving mutants fail verification. Failed attempts remain retained.
 
@@ -162,3 +162,7 @@ Canonical publication steps and graph edges remain unchanged. New policy, report
 ### Calendar observation retention
 
 Seven additional `morning-contract` cases and six paired mutations bind original Calendar observations through v3 source capture and seal. Nullable provider clocks remain separate from actual acquisition receipts. Exact receipt reuse cannot strip or alter observations, even after replacement. The bounded cases cover sealing, collector equality, role/version, freshness, same-receipt immutability, and packet equality. Actual collection and CLI parsing need the behavioral driver. Provider truth and heterogeneous observation modes remain outside this claim.
+
+### Generic automation plans
+
+`automation-contract` invokes actual `planAutomation` over24 finite cases with negative/zero/one/maximum-safe/unsafe budgets, missing source/scope/destination, wrong procedure binding, unsupported schema, duplicate stage identities, deterministic key-order replay and changed configuration. Five copied-source mutations must fail their intended cases. The first duplicate-stage fixture was also rejected by its stale procedure digest; the retained survivor led to isolating that guard with a matching digest. Assumptions are parsed supplied JSON and symbolic source pins. These checks authenticate no source release, native creation, scheduled operation, permission, executor budget enforcement, provider truth, publication or delivery. File reads and CLI provenance are behavioral boundaries.

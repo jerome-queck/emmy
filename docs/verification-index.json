@@ -140,6 +140,17 @@
       "feature": "evidence"
     },
     {
+      "name": "automation",
+      "description": "Plan a staged automation from exact procedure/configuration bytes, prepare existing canonical outcome artifacts, or read one exact artifact without native execution.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "upkeep"
+    },
+    {
       "name": "daily-briefing",
       "description": "Read the staged operating contract, validate private briefing policy, prepare fixed reports and reporting contracts, or compile/read exact held artifact slots without native effects.",
       "options": [
@@ -345,6 +356,7 @@
         "maintain",
         "backup",
         "restore",
+        "automation",
         "daily-briefing"
       ],
       "scenarios": [
@@ -354,11 +366,13 @@
         "publication-interruption",
         "derived-boundaries",
         "improvement-report",
+        "automation-foundation",
         "daily-briefing-pilot"
       ],
       "properties": [
         "restore-suspension",
-        "import-prefix"
+        "import-prefix",
+        "automation-contract"
       ]
     }
   ],
@@ -407,6 +421,14 @@
         "assessLegacyAttestation"
       ],
       "statement": "Exact legacy checkpoint/report bindings, distinct attributable calls and declared review establish reported historical evidence only; fresh observed baseline and later restart remain separate live gates."
+    },
+    {
+      "id": "automation-contract",
+      "source": "src/automation-plan.mjs",
+      "functions": [
+        "planAutomation"
+      ],
+      "statement": "Versioned staged procedure plans bind supplied configuration, explicit scope, source pins, budgets and destinations without granting effects or native creation."
     },
     {
       "id": "cloud-admission",

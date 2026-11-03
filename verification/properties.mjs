@@ -1,3 +1,4 @@
+import { automationBounds, verifyAutomationContract } from './automation-properties.mjs';
 import { morningBounds, verifyMorningPolicy } from './morning-properties.mjs';
 import { incarnationBounds, legacyBounds, verifyIncarnationPolicy, verifyLegacyPolicy } from './incarnation-properties.mjs';
 import { canonical, digest, parseDefinition, parseObservation, recordPayload } from '../src/records.mjs';
@@ -58,7 +59,7 @@ export const bounds = {
   dispatchRecovery: { phases: ['absent', 'attempted', 'pending', 'uncertain', 'ready'], coverage: ['complete', 'partial'], availability: ['available', 'unavailable', 'denied', 'unknown'], agesMs: [-1, 0, 86400000, 86400001], stateCombinations: 160, targetedCases: 219, permutations: ['original', 'reversed'], assumptions: 'Parsed byte-verified journal inputs and symbolic hash identities; native state remains reported.' },
   calendarAcceptance: calendarBounds,
   calendarRegister: registerBounds,
-  fleetContract: fleetBounds, morningContract: morningBounds,
+  fleetContract: fleetBounds, morningContract: morningBounds, automationContract: automationBounds,
   assumptions: [
     'These are finite products and targeted temporal traces, not one full Cartesian product of every field.',
     'Active zero-criterion definitions are rejected by the actual boundary parser. Zero criteria cover retired/merged states.',
@@ -68,7 +69,7 @@ export const bounds = {
   ]
 };
 
-export function verifyProperties({ work, responsibilities, records, dispatch, calendar, register, cloud, incarnation, migration, fleet, morning, collection, policy, plan, reporting }, selected = null) {
+export function verifyProperties({ work, responsibilities, records, dispatch, calendar, register, cloud, incarnation, migration, fleet, morning, collection, policy, plan, reporting, automation }, selected = null) {
   const counts = {};
   const check = (property, input, condition, expectation) => {
     if (selected && selected !== property) return;
@@ -424,6 +425,7 @@ export function verifyProperties({ work, responsibilities, records, dispatch, ca
   }
   if (enabled('process-incarnation')) { const result = verifyIncarnationPolicy({ incarnation }, check); if (result.cases !== bounds.processIncarnation.cases || counts['process-incarnation'] !== result.cases) throw new Error(`Incarnation bounds differ ${result.cases}`); }
   if (enabled('legacy-baseline')) { const result = verifyLegacyPolicy({ migration }, check); if (result.cases !== bounds.legacyBaseline.cases || counts['legacy-baseline'] !== result.cases) throw new Error(`Legacy bounds differ ${result.cases}`); }
+  if (enabled('automation-contract')) { const result = verifyAutomationContract(automation, check); if (result.cases !== bounds.automationContract.cases || counts['automation-contract'] !== result.cases) throw new Error('Automation bounds differ'); }
   if (enabled('morning-contract')) { const result = verifyMorningPolicy({ morning, fleet, collection, policy, plan, reporting }, check); if (result.cases !== bounds.morningContract.cases || counts['morning-contract'] !== result.cases) throw new Error(`Morning bounds differ ${result.cases}`); }
   if (enabled('fleet-contract')) { const result = verifyFleetPolicy({ fleet }, check); if (result.cases !== bounds.fleetContract.cases || counts['fleet-contract'] !== result.cases) throw new Error(`Fleet bounds differ ${result.cases}`); }
   return { counts, checks: Object.values(counts).reduce((sum, count) => sum + count, 0) };

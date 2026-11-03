@@ -1,3 +1,4 @@
+import { automationMutations } from './automation-properties.mjs';
 import { morningMutations } from './morning-properties.mjs';
 import { incarnationMutations } from './incarnation-mutations.mjs';
 import { cloudMutations } from './cloud-mutations.mjs';
@@ -6,6 +7,7 @@ import { registerMutations } from './calendar-register-properties.mjs';
 import { fleetMutations } from './fleet-mutations.mjs';
 
 export const mutations = [
+  ...automationMutations,
   ...registerMutations,
   ...morningMutations,
   { id: 'dispatch-speed-without-approval', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["approval?.status === 'approved'", "true"]] },

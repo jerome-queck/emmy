@@ -51,3 +51,25 @@ test('direct source release rebuilds without old capsules and runs exact shared 
     assert.deepEqual(loaded.executeBriefing(request, { now: at }), executeBriefing(request, { now: at }));
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
+
+test('current reader retains exact v1 capsule entry and distribution compatibility', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'emmy-foundation-v1-'));
+  try {
+    const legacyBuilder = await readFile(join(root, 'test/fixtures/foundation-release-v1.txt'));
+    const repository = join(directory, 'repository'); await mkdir(repository); await cp(join(root, 'src'), join(repository, 'src'), { recursive: true });
+    const git = args => execFileSync('git', ['-C', repository, ...args], { stdio: 'pipe' }).toString().trim();
+    git(['init']); git(['add', 'src']); git(['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test', '-c', 'commit.gpgsign=false', 'commit', '-m', 'Synthetic source fixture']);
+    const revision = git(['rev-parse', 'HEAD']);
+    const source = join(directory, 'src'); await mkdir(source);
+    for (const name of ['content.mjs', 'strict-json.mjs', 'bounded-json.mjs']) await cp(join(root, 'src', name), join(source, name));
+    await writeFile(join(source, 'foundation-release.mjs'), legacyBuilder);
+    const old = await import(pathToFileURL(join(source, 'foundation-release.mjs')));
+    for (const portableOnly of [true, false]) {
+      const release = old.buildFoundation(repository, revision, { portableOnly });
+      const bytes = `${canonical(release)}\n`; const path = join(directory, portableOnly ? 'portable-v1.json' : 'runtime-v1.json'); await writeFile(path, bytes);
+      assert.deepEqual(await readFoundation(path, digest(bytes)), release);
+      const destination = join(directory, portableOnly ? 'legacy-pure' : 'legacy-acquisition');
+      await materializeFoundation(release, destination, portableOnly ? 'pure' : 'acquisition');
+    }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});

@@ -1,0 +1,55 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, writeFile, readFile, rm, symlink, readdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+import { digest } from '../src/content.mjs';
+import { planAutomation, automationProcedure } from '../src/automation-procedure.mjs';
+import { assessAutomationReporting } from '../src/automation-reporting.mjs';
+import { assessBriefingReporting } from '../src/briefing-reporting.mjs';
+import { automationProcedureFixture as procedure, automationConfigurationFixture, automationOutcomeFixture } from '../verification/automation-fixtures.mjs';
+const at = '2026-11-03T01:00:00.000Z';
+const pins = { procedureRef: 'synthetic-procedure-reference', configurationRef: 'synthetic-configuration-reference', procedureSha256: digest('procedure-original-bytes'), configurationSha256: digest('configuration-original-bytes') };
+test('generic plans bind versioned procedures, source, scope, destination and private config without invocation', () => {
+  const config = automationConfigurationFixture(); const first = planAutomation(procedure, config, pins);
+  assert.deepEqual(planAutomation(procedure, config, pins), first);
+  assert.equal(first.effectsAuthorized, false); assert.equal(first.nativeCreation, 'not-performed'); assert.equal(first.context, 'fresh-objective-required');
+  assert.equal(planAutomation(procedure, { ...config, sources: [], budgets: { reads: 0, bytes: 0 } }, pins).budgets.reads, 0);
+  assert.equal(first.promptDigest, digest(first.prompt)); assert.ok(!first.prompt.includes('threshold'));
+  for (const changed of [{ ...config, budgets: { reads: 3, bytes: 8192 } }, { ...config, report: { ...config.report, destination: 'different-parent' } }, { ...config, parameters: { threshold: 4 } }]) assert.notEqual(planAutomation(procedure, changed, pins).planDigest, first.planDigest);
+  for (const changed of [{ ...config, procedureDigest: digest('different') }, { ...config, budgets: { reads: Infinity, bytes: 1 } }, { ...config, report: { ...config.report, destination: '' } }, { ...config, sources: [...config.sources, ...config.sources] }, { ...config, schemaVersion: 2 }]) assert.throws(() => planAutomation(procedure, changed, pins));
+  const duplicate = { ...procedure, steps: [...procedure.steps, procedure.steps[0]] };
+  assert.throws(() => planAutomation(duplicate, { ...config, procedureDigest: digest(duplicate) }, pins));
+});
+test('generic CLI reads exact pinned files, prepares the existing report format and never scans unrelated history', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'emmy-automation-'));
+  try {
+    const save = async (name, value) => { const path = join(directory, name); const bytes = typeof value === 'string' ? value : JSON.stringify(value); await writeFile(path, bytes); return { path, sha256: digest(bytes) }; };
+    const p = await save('procedure.json', procedure); const c = await save('configuration.json', automationConfigurationFixture());
+    const planRequest = { action: 'plan', procedure: p, configuration: c };
+    const plan = await automationProcedure(planRequest); const input = automationOutcomeFixture(plan.reportEvidenceRefs, at);
+    const produced = await automationProcedure({ ...planRequest, action: 'report', input }, { now: at });
+    assert.deepEqual(produced.artifacts, assessAutomationReporting(input).artifacts);
+    assert.deepEqual(assessAutomationReporting(input), assessBriefingReporting(input));
+    assert.equal(produced.publication, 'unverified'); assert.equal(produced.delivery, 'unverified');
+    const artifact = produced.artifacts.find(value => value.record.kind === 'run'); const a = await save('exact-outcome.json', artifact.bytes);
+    assert.notEqual(a.sha256, artifact.id);
+    const request = { ...planRequest, action: 'read', artifact: a, recordId: artifact.id, maxAgeSeconds: 604800 };
+    await save('unrelated-malformed-history.json', 'not-json'); const before = await readdir(directory);
+    const selected = await automationProcedure(request, { now: at }); assert.equal(selected.status, 'available'); assert.deepEqual(selected.record, artifact.record);
+    const cliPath = fileURLToPath(new URL('../scripts/agent.mjs', import.meta.url));
+    const run = async (value, name) => { const saved = await save(name, value); const before = await readdir(directory); const result = spawnSync(process.execPath, [cliPath, 'automation', '--file', saved.path], { encoding: 'utf8' }); assert.deepEqual(await readdir(directory), before); return result; };
+    const planned = await run(planRequest, 'plan-request.json'); assert.equal(planned.status, 0, planned.stderr); assert.equal(JSON.parse(planned.stdout).data.planDigest, plan.planDigest); assert.ok(JSON.parse(planned.stdout).data.prompt.includes(p.path)); assert.ok(JSON.parse(planned.stdout).data.prompt.includes(c.path));
+    const read = await run(request, 'read-request.json'); assert.equal(read.status, 0, read.stderr);
+    assert.equal(JSON.parse(read.stdout).data.record.kind, 'run');
+    assert.equal((await run({ ...planRequest, configuration: { ...c, sha256: digest('changed') } }, 'invalid-request.json')).status, 2);
+    const wrong = automationOutcomeFixture([], at); await assert.rejects(automationProcedure({ ...planRequest, action: 'report', input: wrong }, { now: at }), /bind exact/);
+    await assert.rejects(automationProcedure({ ...request, recordId: a.sha256 }, { now: at }), /digest differ/);
+    await assert.rejects(automationProcedure({ ...request, artifact: { ...a, sha256: digest('wrong') } }, { now: at }), /bytes changed/);
+    const link = join(directory, 'link.json'); await symlink(a.path, link); await assert.rejects(automationProcedure({ ...request, artifact: { ...a, path: link } }, { now: at }), /ordinary file/);
+    const stale = await automationProcedure({ ...request, maxAgeSeconds: 0 }, { now: '2026-11-03T01:00:00.001Z' }); assert.equal(stale.status, 'stale');
+    assert.deepEqual(await readFile(a.path), Buffer.from(artifact.bytes)); assert.ok(before.includes('unrelated-malformed-history.json'));
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
