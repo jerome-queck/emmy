@@ -59,13 +59,22 @@ export function preparePolicyBriefing(input) {
     need(!tasks.has(task.nativeId), 'Conflicting duplicate Task identity'); tasks.set(task.nativeId, task);
     if (task.status === 'needsAction' && (task.ownerDismissed === null || task.manuallyMoved === null)) gaps.push('Task dismissal or move status unknown');
   }
-  const seen = new Map(); const events = [];
+  const seen = new Map(); const native = new Map(); const events = [];
   for (const event of input.calendar.items) {
     const dated = event.allDay === true && dateOnly(event.start) && dateOnly(event.end);
     const flat = Object.hasOwn(event, 'recurringEventId') || Object.hasOwn(event, 'originalStartTime');
     shape(event, ['nativeId', 'calendarId', 'iCalUID', 'start', 'end', 'allDay', 'title', 'status', 'taskId', ...(dated || flat ? ['timeZone'] : []), ...(flat ? ['recurringEventId', 'originalStartTime'] : [])]);
     need(text(event.nativeId) && input.calendar.acquiredResourceIds.includes(event.calendarId) && (event.iCalUID === null || text(event.iCalUID)) && (dated ? iana(event.timeZone) && event.timeZone === 'Asia/Singapore' : stamp(event.start) && stamp(event.end)) && event.end > event.start && (typeof event.allDay === 'boolean' || flat && event.allDay === null) && text(event.title) && ['confirmed', 'cancelled'].includes(event.status) && (event.taskId === null || text(event.taskId)), 'Invalid occurrence fields');
     if (flat) need(event.timeZone === null && event.taskId === null && event.allDay === null && ((event.recurringEventId === null && event.originalStartTime === null) || text(event.recurringEventId) && stamp(event.originalStartTime)), 'Invalid flat Calendar metadata');
+    const nativeKey = JSON.stringify([event.calendarId, event.nativeId]);
+    const recurrence = flat ? event.recurringEventId : null;
+    const identity = native.get(nativeKey);
+    need(!identity || identity.recurrence === recurrence, 'Conflicting native Calendar recurrence identity');
+    const originals = identity?.originals ?? new Map();
+    const original = recurrence === null ? null : event.originalStartTime;
+    const copy = originals.get(original);
+    need(!copy || digest(copy) === digest(event), 'Conflicting native Calendar occurrence copies');
+    originals.set(original, event); native.set(nativeKey, { recurrence, originals });
     const key = event.iCalUID === null ? JSON.stringify([event.calendarId, flat && event.recurringEventId || event.nativeId, flat && event.originalStartTime || event.start]) : JSON.stringify([event.iCalUID, event.start]);
     const prior = seen.get(key);
     if (prior) { need(prior.start === event.start && prior.title === event.title && prior.end === event.end && prior.status === event.status && prior.taskId === event.taskId && prior.allDay === event.allDay && prior.timeZone === event.timeZone, 'Conflicting same-occurrence copies'); continue; }
