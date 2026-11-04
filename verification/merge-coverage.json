@@ -1,8 +1,8 @@
 {
-  "sourceCommit": "fc7664044b3ab870ee4b8e502914922d5a7a1a09",
+  "sourceCommit": "b76b7ce66041d34d8ec2821cf2496f36838dbe1e",
   "files": {
-    "scripts/github-auto-merge.mjs": "ac133794197dbae3983c1aabbac5419a8395edcdee290df7825b2a93d01203db",
-    "verification/merge-policy.mjs": "e909f86c4d44b482c255e61f841e6361347edf409e8f8d38e440096cf6615bac"
+    "scripts/github-auto-merge.mjs": "8c2e507534100ce916d31b822da9db98b7a05d0e92b7f4554cff283cff028dff",
+    "verification/merge-policy.mjs": "db0d44cc061c7ebd229f1f66d4f242b25f5b7cfcbcee5c2f6845a22936f4c9e1"
   },
   "mapping": [
     {
@@ -10,6 +10,7 @@
       "symbol": "evaluateEligibility",
       "property": "Eligibility requires every configured identity, revision, protection, CI and review gate.",
       "mutations": [
+        "strict",
         "head",
         "base",
         "ci",
@@ -34,12 +35,18 @@
       "pending",
       "absent"
     ],
-    "cases": 30720
+    "cases": 30723,
+    "strictStates": [
+      true,
+      false,
+      "absent"
+    ],
+    "targetedStrictCases": 3
   },
   "assumptions": [
     "GitHub metadata has its documented types and repository commits use SHA-1 IDs.",
     "Publisher, protection presence, required contexts and metadata normalization have focused tests beyond the finite enumeration.",
     "The verifier does not execute a GitHub merge or prove actual reviewer independence or provider race freedom."
   ],
-  "reviewBasis": "Coordinator read 493ec6e..fc76640 covered source, adapter test and workflow diffs. Repository identity is human-confirmed; merge commits preserve formal source ancestry. Eligibility fields and finite domains are unchanged. Old checker rejected intended hash drift; intended source mutants must pass before release."
+  "reviewBasis": "Coordinator read 493ec6e..fc76640 covered source, adapter test and workflow diffs. Repository identity is human-confirmed; merge commits preserve formal source ancestry. Eligibility fields and finite domains are unchanged. Old checker rejected intended hash drift; intended source mutants must pass before release. Reviewed complete covered source/verifier delta, adapter tests and unchanged trusted-main workflow through b76b7ce66041d34d8ec2821cf2496f36838dbe1e. Exact base-ref GraphQL rule supplies strict metadata; only explicit true passes protection. False/absent/final-snapshot change and denied acquisition refuse. Existing head/base/check/review/receipt guards remain. Original30720 cases plus3 targeted strict cases and5 source mutants; no live remote protection or token visibility claim."
 }
