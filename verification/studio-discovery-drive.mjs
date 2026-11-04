@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { lstat, mkdir, readFile, readdir, readlink, rm, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, mkdtemp, readFile, readdir, readlink, rm, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { discoveryCases, discoveryFixture } from './studio-discovery-properties.mjs';
@@ -11,7 +12,7 @@ async function homeSnapshot(root, relative = '') {
     if (info.isDirectory()) { entries.push({ path, kind: 'directory' }); entries.push(...await homeSnapshot(root, path)); }
     else if (info.isFile()) entries.push({ path, kind: 'file', sha256: createHash('sha256').update(await readFile(fullPath)).digest('hex') });
     else if (info.isSymbolicLink()) entries.push({ path, kind: 'symlink', target: await readlink(fullPath) });
-    else throw new Error(`Unsupported private-home entry ${path}`);
+    else entries.push({ path, kind: 'special', mode: info.mode, rdev: info.rdev });
   }
   return entries;
 }
@@ -19,6 +20,15 @@ async function homeSnapshot(root, relative = '') {
 export async function driveStudioDiscovery({ home, run, scenario, report, evidenceDir }) {
   const directory = join(evidenceDir, 'discovery'); await mkdir(directory, { recursive: true });
   report.retainedDiscovery = directory;
+  const fifoRoot = await mkdtemp(join(directory, 'snapshot-fifo-'));
+  try {
+    const fifo = join(fifoRoot, 'fifo'); execFileSync('mkfifo', [fifo]);
+    const info = await lstat(fifo); assert.equal(info.isFIFO(), true);
+    const snapshot = await homeSnapshot(fifoRoot);
+    assert.deepEqual(snapshot, [{ path: 'fifo', kind: 'special', mode: info.mode, rdev: info.rdev }]);
+    await writeFile(join(directory, 'fifo-snapshot.json'), JSON.stringify(snapshot, null, 2));
+  } finally { await rm(fifoRoot, { recursive: true, force: true }); }
+
   const inputFile = join(directory, 'capture.json'); const indexFile = join(directory, 'index.json');
   const beforeHome = await homeSnapshot(home);
   await writeFile(join(directory, 'home-before.json'), JSON.stringify(beforeHome, null, 2));
@@ -49,7 +59,7 @@ export async function driveStudioDiscovery({ home, run, scenario, report, eviden
   await writeFile(inputFile, '{"schemaVersion":1,"schemaVersion":1}'); await run(['discovery', '--file', inputFile], 2);
   const afterHome = await homeSnapshot(home);
   await writeFile(join(directory, 'home-after.json'), JSON.stringify(afterHome, null, 2));
-  assert.deepEqual(afterHome, beforeHome, 'Discovery must preserve every selected private-home directory, file byte and symlink; added journals also fail');
+  assert.deepEqual(afterHome, beforeHome, 'Discovery must preserve every selected private-home directory, file byte, symlink and special-file metadata; added journals also fail');
   await assert.rejects(readFile(join(home, 'executor-invoked')), { code: 'ENOENT' });
   scenario('studio-discovery', 'Real CLI retains independently started project members across exact native pages, preserves partial/freshness/identity uncertainty, rebuilds without a prior index and leaves supplied input and the complete selected private-home tree unchanged. No executor is invoked.');
 }
