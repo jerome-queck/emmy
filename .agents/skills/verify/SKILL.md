@@ -31,6 +31,23 @@ Use `node scripts/verify-behavior.mjs --focus cloud` for cooperative admission. 
 
 The fleet focus also drives the morning extension in fresh processes. Exact context and assessor-output bytes, full-day inventories, unread-preserved reversible outcomes, duplicate-safe send intent and same-native-message summary edit receipts remain synthetic. Preserve `retainedMorning` after teardown. Parent acceptance and the real existing schedule remain separate.
 
+## Agent-task workflow acceptance
+
+After changes to the [agent-task skill](../agent-task/SKILL.md), template, or [workflow](../../../docs/agent-task-workflow.md), run `npm run check`, local Markdown link checks, and skill frontmatter/reference checks. Independently review the source against standing routing policy. This documentation recipe adds no automated scenario or finite property. Production transitions and formal pins remain unchanged.
+
+Before the exercise, define criteria for correct objective routing, skill resolution, native identity, membership, settings, parent monitoring, and evidence review. Retain exact revision, dirty state, prompts, requests, original native receipts, acquisitions, outcomes, and criterion mapping under ignored `.local/`. Another maintainer must be able to rerun these cases from those retained inputs.
+
+Use one authorized native child for a bounded read-only objective. Inspect an existing artifact through supported tools, retain its original output, and supervise with parent-owned native reads or waits. Verify the actual host, saved project membership, and available recorded settings separately. Review the returned artifact and receipts against the criteria. Do not perform external writes to test this workflow. Reuse an existing child only if the objective matches and its context is needed.
+
+Run these adversarial cases as read-only decisions over retained or clearly labeled synthetic inputs:
+
+- Missing skill or verifier: resolve actual paths, disclose the gap and available fallback, and prepare task-relevant verification where needed. Propose a wider audit separately. Ask before adding a missing project CLI or feature map.
+- Incomplete evidence: supply a completion claim or passing test without an original required receipt. Leave that criterion as a gap, while allowing unrelated bounded work.
+- Uncertain creation: supply an ambiguous result or pending client ID. Require exact-objective and native-identity rediscovery before retry, and resolve a pending ID before ready reads. Do not create a duplicate as a test.
+- Distinct objective: supply an available chat for a different goal in the same repository. Choose a fresh project-bound native task. Independently started tasks remain observation-only without authority.
+
+Record each actual decision and its evidence. A case passes only when observed behavior matches its upfront criterion. Missing native controls or receipts remain gaps. Child completion is not acceptance, and this exercise proves no operational deployment or ordinary-turn adoption.
+
 ## Evidence and teardown
 
 Full and failed runs retain `.local/verification/behavior-*/report.json` plus immutable synthetic records/evidence. The report survives temporary-repository cleanup. Check that named path exists. Failed command and assertion output remains available even when the driver exits nonzero.

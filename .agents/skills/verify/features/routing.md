@@ -2,6 +2,8 @@
 
 ## User route
 
+For human task preparation and native handoff review, use the [agent-task workflow](../../../../docs/agent-task-workflow.md). Its six-section contract reuses these routing and discovery rules. The [manual acceptance recipe](../SKILL.md#agent-task-workflow-acceptance) covers that procedure separately from automated CLI and finite-property coverage below.
+
 Fill private bindings and a definition from [onboarding](../../../../docs/onboarding.md). Run `responsibility --file <definition>`, then `reconcile --id <id> --as-of <UTC>`. Adoption returns criterion `specHash` values for ready-to-use imports. The retained goal/context survives fresh processes.
 
 Active definitions require finish criteria. Exact subject includes project, intended canonical repository, executor, designated host/native project, path, full revision, and dirty digest. Omitted executor defaults to local Codex. Supplied work class and cloud rationale are validated. Nonlocal coding requires a reason and explicit scoped cloud authority. Codex Cloud also requires a prepared environment.
