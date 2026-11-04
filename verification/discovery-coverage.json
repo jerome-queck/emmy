@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "sourceCommit": "c0c728e93b4e5a92b2ea5f650287d4a028ad0f69",
-  "reviewedAt": "2026-11-04T02:03:50.739Z",
-  "review": "Implementation owner reviewed the harness-only aggregate regression fix at this source commit. The recursive actual private-home snapshot retains special-file mode/rdev metadata without opening special files. An owned actual FIFO boundary control passes and cleans only its own evidence fixture. Previous independent production review remains applicable because production, finite properties and mutants are unchanged. Independent harness followup review remains pending.",
+  "reviewedAt": "2026-11-04T02:04:54.359106+00:00",
+  "review": "Implementation owner and independent read-only reviewer reviewed the harness-only aggregate regression fix at source c0c728e93b4e5a92b2ea5f650287d4a028ad0f69. Recursive actual private-home snapshots retain special-file mode/rdev metadata without opening special files. An owned actual FIFO control passes and cleans only its own evidence fixture. Prior independent production review remains applicable because production, finite predicates and source mutants are unchanged. Full aggregate retry remains separately required; no native truth, global completeness, atomicity, absence or authority claim.",
   "files": {
     "src/studio-discovery.mjs": "419b6df49a7ce6fc5b71bf8d4a2f917dae6b1a83863628aae6e14b798917948a",
     "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
