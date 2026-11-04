@@ -16,6 +16,7 @@ import { fleet } from '../src/fleet.mjs';
 import { tokenReview } from '../src/token-review.mjs';
 import { signin } from '../src/signin.mjs';
 import { automationProcedure } from '../src/automation-procedure.mjs';
+import { taskWorkflow } from '../src/task-workflow.mjs';
 import { studioDiscovery } from '../src/studio-discovery.mjs';
 import { boundedJson } from '../src/bounded-json.mjs';
 import { dailyBriefing, readDailyBriefingRequest } from '../src/daily-briefing.mjs';
@@ -55,6 +56,9 @@ try {
     case 'reconcile':
       data = await reconcile(home, { id: options.id, imports: options.import ? await readJson(resolve(options.import)) : null, asOf: timestamp(options['as-of'], 'as-of'), catalog });
       exitCode = data.status === 'current' ? 0 : 3; break;
+    case 'task-workflow':
+      data = taskWorkflow(await boundedJson(resolve(options.file), 1048576));
+      exitCode = ['prepared', 'reported-native-known', 'reported-review-complete', 'projected'].includes(data.status) ? 0 : 3; break;
     case 'discovery':
       data = studioDiscovery(await boundedJson(resolve(options.file), 1048576));
       exitCode = data.status === 'captured' ? 0 : 3; break;

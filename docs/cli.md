@@ -11,6 +11,7 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 | catalog | none | Read public projects, source claims, capabilities, tools, and probes. | orientation |
 | responsibility | `--file <value>` required | Retain an immutable goal, context, exact target, criteria, authority, feature, and lifecycle definition. | routing |
 | reconcile | `--id <value>`, `--import <value>`, `--as-of <value>` required | Import evidence, inspect current local state, retain findings/repairs, and propose bounded next work. | evidence |
+| task-workflow | `--file <value>` required | Validate a supplied structured task record and render a deterministic prompt or project-filtered projection without native execution or writes. | routing |
 | discovery | `--file <value>` required | Derive a disposable project-filtered task index from supplied native Studio read captures without execution or writes. | routing |
 | dispatch | `--id <value>`, `--project <value>`, `--resolve <value>`, `--discovery <value>`, `--as-of <value>` required, `--context-needed` | Resolve an explicit saved destination from fresh discovery, recover private bindings, and return read-only native dispatch advice. | routing |
 | cloud | `--file <value>` required | Run bounded cooperative cloud jobs with durable checkpoints, priority admission and pending health escalation. | cloud |

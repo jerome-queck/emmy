@@ -30,7 +30,7 @@ By default, `briefing` returns readable guidance from one pinned public-main bun
 
 [Change delivery](docs/change-delivery.md) proposes Emmy's native coding route and repository quality gates. Published source, installed runner, loaded guidance and ordinary-turn adoption require separate readbacks. Briefing recovery and output evidence stay private; the human body contains scoped updates, safe source links and material limits.
 
-Use the [agent-task skill](.agents/skills/agent-task/SKILL.md) to prepare a six-section task contract, execute through supported native tools, supervise progress, and review original outcome evidence. The [workflow](docs/agent-task-workflow.md) reuses existing dispatch and discovery contracts.
+`task-workflow --file <private-envelope.json>` validates a structured six-section task record and renders its deterministic prompt. Use the thin [agent-task skill](.agents/skills/agent-task/SKILL.md) for parent-owned supported native calls and original evidence review. The [workflow](docs/agent-task-workflow.md) reuses existing dispatch and discovery contracts.
 
 The standing [thread and model policy](AGENTS.md#standing-thread-and-model-policy) applies to all Emmy work. Project `.codex/config.toml` supplies Sol Medium session and Sol Medium helper defaults. The [delivered calendar procedure](docs/operating-brief.md#plan-and-maintain-calendar-tasks) finds existing Tasks and maintains their saved slots through native connectors or Emmy's cloud Calendar UI. Existing native items and private notes or responsibilities own persistence. Follow [native acceptance](docs/dot-verification.md#verify-persistent-calendar-planning-and-standing-policy) to verify actual saved behavior separately from this guidance.
 

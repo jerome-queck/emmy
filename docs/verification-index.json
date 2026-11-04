@@ -47,6 +47,17 @@
       "feature": "evidence"
     },
     {
+      "name": "task-workflow",
+      "description": "Validate a supplied structured task record and render a deterministic prompt or project-filtered projection without native execution or writes.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "routing"
+    },
+    {
       "name": "discovery",
       "description": "Derive a disposable project-filtered task index from supplied native Studio read captures without execution or writes.",
       "options": [
@@ -302,6 +313,7 @@
         "responsibility",
         "dispatch",
         "discovery",
+        "task-workflow",
         "probe"
       ],
       "scenarios": [
@@ -310,6 +322,7 @@
         "native-effect-correlation",
         "native-dispatch",
         "studio-discovery",
+        "structured-task-workflow",
         "probe-packet",
         "definition-concurrency"
       ],

@@ -2,7 +2,7 @@
 
 ## User route
 
-For human task preparation and native handoff review, use the [agent-task workflow](../../../../docs/agent-task-workflow.md). Its six-section contract reuses these routing and discovery rules. The [manual acceptance recipe](../SKILL.md#agent-task-workflow-acceptance) covers that procedure separately from automated CLI and finite-property coverage below.
+For human task preparation and native handoff review, use the [agent-task workflow](../../../../docs/agent-task-workflow.md). Its structured six-section contract reuses these routing and discovery rules. `task-workflow --file` validates supplied records and renders prompts without native execution, acceptance or persistence. Run `node scripts/verify-behavior.mjs --focus task-workflow` for the mapped `structured-task-workflow` scenario. The [acceptance recipe](../SKILL.md#agent-task-workflow-acceptance) separates its CLI controls from actual parent-native integration. No new finite property is claimed.
 
 Fill private bindings and a definition from [onboarding](../../../../docs/onboarding.md). Run `responsibility --file <definition>`, then `reconcile --id <id> --as-of <UTC>`. Adoption returns criterion `specHash` values for ready-to-use imports. The retained goal/context survives fresh processes.
 
