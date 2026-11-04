@@ -19,7 +19,7 @@ export async function fixtureTarget(root, name, home, { sourceRoot, source, revi
     for (const path of ['src', 'scripts', 'registry', 'docs', '.agents', 'procedures', 'package.json']) await cp(join(sourceRoot, path), join(directory, path), { recursive: true });
   } else {
     await mkdir(join(directory, 'scripts'));
-    await writeFile(join(directory, 'scripts/agent.mjs'), source ?? 'process.stdout.write(JSON.stringify({synthetic:true,accepted:false,args:process.argv.slice(2)}));\n');
+    await writeFile(join(directory, 'scripts/agent.mjs'), source ?? `process.stdout.write(JSON.stringify({synthetic:true,source:${JSON.stringify(name)},accepted:false,args:process.argv.slice(2)}));\n`);
     for (const path of ['package.json', 'registry/catalog.json', 'docs/cli.md', 'docs/catalog.md', 'docs/verification-index.json', 'docs/briefing-guidance.json', 'docs/operating-brief.md', 'docs/briefing.md', '.agents/skills/verify/features/README.md', '.agents/skills/sign-in/SKILL.md']) {
       await mkdir(dirname(join(directory, path)), { recursive: true }); await writeFile(join(directory, path), path === 'package.json' ? '{"type":"module"}' : 'synthetic fixture');
     }

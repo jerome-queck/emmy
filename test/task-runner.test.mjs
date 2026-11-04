@@ -22,11 +22,20 @@ async function fixture(t, options) {
 test('same ordinary launcher consumes selected source and fixed home; absence returns verified baseline', async t => {
   const f = await fixture(t); const first = f.run(['doctor']); assert.equal(first.status, 0);
   assert.equal(JSON.parse(first.stderr).selection, 'baseline');
+  assert.equal(JSON.parse(first.stdout).source, 'baseline');
   await f.activate(); const second = f.run(['doctor']); assert.equal(second.status, 0);
   assert.equal(JSON.parse(second.stderr).revision, f.selected.revision);
   assert.equal(JSON.parse(second.stderr).selection, 'selected');
+  assert.equal(JSON.parse(second.stdout).source, 'selected');
   assert.deepEqual(JSON.parse(second.stdout).args, ['doctor', '--home', f.home, '--root', f.selected.sourceRoot]);
   await rm(f.selection); assert.equal(JSON.parse(f.run(['doctor']).stderr).selection, 'baseline');
+});
+
+test('an older baseline unknown-command refusal remains until selected executable is consumed', async t => {
+  const f = await fixture(t, { source: 'process.stdout.write("Unknown command task-workflow\\n");process.exitCode=2;\n' });
+  const before = f.run(['task-workflow', '--file', '/synthetic-envelope.json']); assert.equal(before.status, 2); assert.equal(before.stdout, 'Unknown command task-workflow\n');
+  assert.equal(JSON.parse(before.stderr).selection, 'baseline');
+  await f.activate(); const after = f.run(['task-workflow', '--file', '/synthetic-envelope.json']); assert.equal(after.status, 0); assert.equal(JSON.parse(after.stdout).source, 'selected');
 });
 
 test('invalid active selection never falls back, including selected missing dependencies', async t => {
