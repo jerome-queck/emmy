@@ -17,6 +17,7 @@ for (const args of [
   ['scripts/verify-behavior.mjs'],
   ['--test', 'test/github-auto-merge.test.mjs'],
   ['scripts/verify-formal.mjs'],
+  ['scripts/verify-discovery.mjs'],
   ['verification/merge-policy.mjs'],
   ['scripts/verify-publication.mjs'],
   ['scripts/verify-briefing-slot.mjs'],

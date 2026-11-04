@@ -47,6 +47,17 @@
       "feature": "evidence"
     },
     {
+      "name": "discovery",
+      "description": "Derive a disposable project-filtered task index from supplied native Studio read captures without execution or writes.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "routing"
+    },
+    {
       "name": "dispatch",
       "description": "Resolve an explicit saved destination from fresh discovery, recover private bindings, and return read-only native dispatch advice.",
       "options": [
@@ -290,6 +301,7 @@
       "commands": [
         "responsibility",
         "dispatch",
+        "discovery",
         "probe"
       ],
       "scenarios": [
@@ -297,6 +309,7 @@
         "binding-boundaries",
         "native-effect-correlation",
         "native-dispatch",
+        "studio-discovery",
         "probe-packet",
         "definition-concurrency"
       ],
