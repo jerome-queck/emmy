@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "sourceCommit": "526637274e35ed373565f592e91bd4358f71b534",
-  "reviewedAt": "2026-11-04T01:58:59.635Z",
-  "review": "Implementation owner reviewed the independent-review followup diff at this committed source. Calendar date/time components reject normalized invalid instants. The CLI driver snapshots every actual selected private-home directory, file SHA-256 and symlink before/after. Parent independent followup review remains separate and pending.",
+  "reviewedAt": "2026-11-04T02:00:30.607580+00:00",
+  "review": "Implementation owner and independent read-only reviewer reviewed the pure assessor, parser dependency, finite cases, paired intended source mutations and actual private-home CLI driver at source 526637274e35ed373565f592e91bd4358f71b534. Independent followup accepted invalid-date refusal and complete selected-home snapshot controls. Lead actual-native-capture CLI replay passed separately. Same-family review only; no native truth, global completeness, atomicity, absence or authority claim.",
   "files": {
     "src/studio-discovery.mjs": "419b6df49a7ce6fc5b71bf8d4a2f917dae6b1a83863628aae6e14b798917948a",
     "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
