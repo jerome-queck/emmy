@@ -24,6 +24,7 @@ const mutations = [
   { id: 'ignore-cursor-binding', case: 'cursor-chain', find: "(cursor === null ? Object.hasOwn(args, 'cursor') : args.cursor !== cursor)", replacement: 'false' },
   { id: 'forget-conflicts', case: 'conflicting-duplicate', find: 'const conflict = observations.length > 1;', replacement: 'const conflict = false;' },
   { id: 'forget-overlap', case: 'active-archive-overlap', find: 'const overlap = new Set(observations.flatMap(value => value.captures.map(capture => capture.source))).size > 1;', replacement: 'const overlap = false;' },
+  { id: 'normalize-invalid-date', case: 'invalid-calendar-acquisition', find: 'calendar.getUTCFullYear() !== year || calendar.getUTCMonth() !== month - 1 || calendar.getUTCDate() !== day', replacement: 'false' },
   { id: 'accept-error-wrapper', case: 'error-wrapper', find: 'response.isError', replacement: 'false', all: true }
 ];
 try {

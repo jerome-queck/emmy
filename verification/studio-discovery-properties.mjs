@@ -43,17 +43,25 @@ export function discoveryCases() {
     ['conflicting-membership', input => { input.active.pages[0].response.threads.push({ ...input.active.pages[0].response.threads[0], projectId: null }); }, result => { assert.equal(result.tasks[0].conflict, true); assert.equal(result.tasks[0].observations.length, 2); }],
     ['zoneless-acquisition', input => { input.active.pages[0].acquiredAt = '2026-11-04T00:00:00'; }, result => assert.equal(result.sources.active.acquisitions[0].state, 'unknown')],
     ['missing-status', input => { delete input.active.pages[0].response.threads[0].status; }, result => { assert.equal(result.status, 'partial'); assert.equal(result.tasks.length, 1); assert.ok(result.gaps.some(value => value.reason === 'unknown-native-status')); }],
+    ['invalid-calendar-acquisition', input => { input.active.pages[0].acquiredAt = '2026-02-30T00:00:00Z'; }, result => assert.equal(result.sources.active.acquisitions[0].state, 'unknown')],
+    ['invalid-clock-acquisition', input => { input.active.pages[0].acquiredAt = '2026-11-03T24:00:00Z'; }, result => assert.equal(result.sources.active.acquisitions[0].state, 'unknown')],
+    ['valid-offset-leap-day', input => { input.evaluatedAt = '2024-02-29T00:01:00Z'; input.projects.acquiredAt = input.active.pages[0].acquiredAt = input.archived.pages[0].acquiredAt = '2024-02-29T08:00:00+08:00'; }, result => assert.equal(result.status, 'captured')],
+    ['invalid-calendar-evaluation', input => { input.evaluatedAt = '2026-02-30T00:00:00Z'; }, null, true],
     ['opaque-status', input => { input.active.pages[0].response.threads[0].status = 'future-native-status'; }, result => assert.equal(result.tasks[0].observations[0].task.status, 'future-native-status')]
   ];
 }
 
 export function verifyDiscovery(studioDiscovery, selected = null) {
   let checks = 0;
-  for (const [name, mutate, check] of discoveryCases()) {
+  for (const [name, mutate, check, reject = false] of discoveryCases()) {
     if (selected && selected !== name) continue;
     const input = discoveryFixture(); mutate(input);
     const before = JSON.stringify(input);
-    try { const result = studioDiscovery(input); check(result); assert.deepEqual(studioDiscovery(input), result); assert.equal(JSON.stringify(input), before); }
+    try {
+      if (reject) assert.throws(() => studioDiscovery(input), /Expected discovery schema/);
+      else { const result = studioDiscovery(input); check(result); assert.deepEqual(studioDiscovery(input), result); }
+      assert.equal(JSON.stringify(input), before);
+    }
     catch (error) { error.discoveryCase = name; throw error; }
     checks++;
   }

@@ -1,21 +1,34 @@
 import assert from 'node:assert/strict';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readFile, readdir, readlink, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { discoveryCases, discoveryFixture } from './studio-discovery-properties.mjs';
+
+async function homeSnapshot(root, relative = '') {
+  const entries = [];
+  for (const name of (await readdir(join(root, relative))).sort()) {
+    const path = join(relative, name); const fullPath = join(root, path); const info = await lstat(fullPath);
+    if (info.isDirectory()) { entries.push({ path, kind: 'directory' }); entries.push(...await homeSnapshot(root, path)); }
+    else if (info.isFile()) entries.push({ path, kind: 'file', sha256: createHash('sha256').update(await readFile(fullPath)).digest('hex') });
+    else if (info.isSymbolicLink()) entries.push({ path, kind: 'symlink', target: await readlink(fullPath) });
+    else throw new Error(`Unsupported private-home entry ${path}`);
+  }
+  return entries;
+}
 
 export async function driveStudioDiscovery({ home, run, scenario, report, evidenceDir }) {
   const directory = join(evidenceDir, 'discovery'); await mkdir(directory, { recursive: true });
   report.retainedDiscovery = directory;
   const inputFile = join(directory, 'capture.json'); const indexFile = join(directory, 'index.json');
-  const sentinels = [join(directory, 'journal.jsonl'), join(directory, 'schedule.toml')];
-  for (const file of sentinels) await writeFile(file, `Retained sentinel ${file}\n`);
-  const retained = await Promise.all(sentinels.map(file => readFile(file)));
-  for (const [name, mutate, check] of discoveryCases()) {
+  const beforeHome = await homeSnapshot(home);
+  await writeFile(join(directory, 'home-before.json'), JSON.stringify(beforeHome, null, 2));
+  for (const [name, mutate, check, reject = false] of discoveryCases()) {
     const input = discoveryFixture(); mutate(input); const bytes = JSON.stringify(input);
     const caseFile = join(directory, `${name}.input.json`); await writeFile(caseFile, bytes);
-    const partial = !['saved-membership', 'inclusive-age', 'identical-duplicate', 'mcp-wrapper', 'opaque-native-id', 'opaque-status'].includes(name);
-    const result = await run(['discovery', '--file', caseFile], partial ? 3 : 0); check(result);
-    assert.deepEqual(await run(['discovery', '--file', caseFile], partial ? 3 : 0), result);
+    const partial = !['saved-membership', 'inclusive-age', 'identical-duplicate', 'mcp-wrapper', 'opaque-native-id', 'valid-offset-leap-day', 'opaque-status'].includes(name);
+    const expectedExit = reject ? 2 : partial ? 3 : 0;
+    const result = await run(['discovery', '--file', caseFile], expectedExit); if (reject) assert.equal(result.ok, false); else check(result);
+    assert.deepEqual(await run(['discovery', '--file', caseFile], expectedExit), result);
     assert.equal(await readFile(caseFile, 'utf8'), bytes);
   }
   const input = discoveryFixture();
@@ -34,7 +47,9 @@ export async function driveStudioDiscovery({ home, run, scenario, report, eviden
   }
   await writeFile(inputFile, ' '.repeat(1048577)); await run(['discovery', '--file', inputFile], 2);
   await writeFile(inputFile, '{"schemaVersion":1,"schemaVersion":1}'); await run(['discovery', '--file', inputFile], 2);
-  assert.deepEqual(await Promise.all(sentinels.map(file => readFile(file))), retained);
+  const afterHome = await homeSnapshot(home);
+  await writeFile(join(directory, 'home-after.json'), JSON.stringify(afterHome, null, 2));
+  assert.deepEqual(afterHome, beforeHome, 'Discovery must preserve every selected private-home directory, file byte and symlink; added journals also fail');
   await assert.rejects(readFile(join(home, 'executor-invoked')), { code: 'ENOENT' });
-  scenario('studio-discovery', 'Real CLI retains independently started project members across exact native pages, preserves partial/freshness/identity uncertainty, rebuilds without a prior index and leaves supplied input, journal and schedule sentinels unchanged. No executor is invoked.');
+  scenario('studio-discovery', 'Real CLI retains independently started project members across exact native pages, preserves partial/freshness/identity uncertainty, rebuilds without a prior index and leaves supplied input and the complete selected private-home tree unchanged. No executor is invoked.');
 }
