@@ -1,7 +1,7 @@
 import { cloudConfig } from '../src/cloud-schema.mjs';
 
-export const cloudBounds = { evaluatedAt: '2026-10-25T12:00:00.000Z', capacityStates: ['available', 'pressure', 'unknown', 'suspended', 'dead'], agesMs: [-1, 0, 30000, 30001], priorities: ['interactive', 'morning', 'heavy'], pendingCounts: [0, 1, 2, 3, 4], duplicateStatuses: ['queued', 'running', 'retry-wait', 'finished', 'dead'], retryFailures: [0, 1, 2, 3], cases: 106, assumptions: ['Independent finite partitions of actual production functions, not a full product or liveness theorem.', 'Domain-valid immutable journal snapshots, supplied clock and measured or explicitly synthetic capacity are assumed.', 'Filesystem publication, turn ownership, process death, parser/bytes/clock acquisition, archive/restore and notification delivery require separate real CLI controls.', 'Built-in pure workload has one committed logical terminal effect; uncommitted computation may repeat. No external exactly-once or global provider enforcement.'] };
-export function verifyCloudPolicy({ cloud }, check) {
+export const cloudBounds = { evaluatedAt: '2026-10-25T12:00:00.000Z', capacityStates: ['available', 'pressure', 'unknown', 'suspended', 'dead'], agesMs: [-1, 0, 30000, 30001], priorities: ['interactive', 'morning', 'heavy'], pendingCounts: [0, 1, 2, 3, 4], duplicateStatuses: ['queued', 'running', 'retry-wait', 'finished', 'dead'], retryFailures: [0, 1, 2, 3], cases: 112, assumptions: ['Independent finite partitions of actual production functions, not a full product or liveness theorem.', 'Domain-valid immutable journal snapshots, supplied clock and measured or explicitly synthetic capacity are assumed.', 'Filesystem publication, turn ownership, process death, parser/bytes/clock acquisition, archive/restore and notification delivery require separate real CLI controls.', 'Built-in pure workload has one committed logical terminal effect; uncommitted computation may repeat. No external exactly-once or global provider enforcement.'] };
+export function verifyCloudPolicy({ cloud, responsibilities }, check) {
   const at = cloudBounds.evaluatedAt; const time = offset => new Date(Date.parse(at) + offset).toISOString(); const config = cloudConfig({ backoffMs: 100, maxBackoffMs: 1000, maxAttempts: 3 }); const key = 'a'.repeat(64);
   let executed = 0;
   const verify = (name, condition, input = {}) => { executed++; check('cloud-admission', { case: name, ...input }, condition, name); };
@@ -62,5 +62,9 @@ export function verifyCloudPolicy({ cloud }, check) {
   verify('lineage/permutation', JSON.stringify(cloud.cloudState([root, child], 'one')) === JSON.stringify(cloud.cloudState([child, root], 'one')));
   const small = cloudConfig({ maxPendingBytes: 9 }); const one = cloud.cloudTransition(fresh(), { operation: 'submit', job: job() }, small, at, key); const overflow = cloud.cloudTransition(one.state, { operation: 'submit', job: job('two') }, small, at, key); verify('queue/bytes', overflow.outcome === 'backpressure' && overflow.state.jobs.length === 1);
   const otherEffect = cloud.cloudTransition(fresh(), { operation: 'submit', job: job() }, config, at, 'b'.repeat(64)); verify('identity/effect-binding', otherEffect.key !== submit(fresh(), job()).key);
+  for (const status of ['ready', 'needs-attention', 'suspended', 'unknown', 'conflict', 'unconfigured']) {
+    const review = { findings: [], incomingTransfers: [], fleet: [], cloud: [{ status }] };
+    verify(`aggregate/${status}`, responsibilities.reconciliationStatus([review]) === (status === 'ready' ? 'current' : 'actionable'));
+  }
   return { cases: executed };
 }

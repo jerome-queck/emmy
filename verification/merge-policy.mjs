@@ -22,7 +22,7 @@ function specimen(bits = 0, ci = 'success', review = 'success') {
     },
     expectedHead: head, expectedBase: base,
     branch: {
-      name: 'main', sha: valid(8) ? base : other, protected: true,
+      name: 'main', sha: valid(8) ? base : other, protected: true, strict: true,
       enforcement: valid(9) ? 'everyone' : 'non_admins',
       contexts: [MERGE_POLICY.ci, MERGE_POLICY.review],
     },
@@ -61,8 +61,15 @@ export async function verifyMergePolicy() {
     }
   }
 
+  for (const strict of [true, false, undefined]) {
+    const snapshot = specimen(); snapshot.branch.strict = strict;
+    assert.deepEqual(evaluateEligibility(snapshot), strict === true ? { eligible: true, waiting: [] } : { eligible: false, waiting: ['protection'] });
+    checked += 1;
+  }
+
   const source = await readFile(new URL('../scripts/github-auto-merge.mjs', import.meta.url), 'utf8');
   const controls = [
+    { gate: 'strict', make: () => ({ ...specimen(), branch: { ...specimen().branch, strict: false } }) },
     { gate: 'head', make: () => specimen(1 << 5) },
     { gate: 'base', make: () => specimen(1 << 6) },
     { gate: 'ci', make: () => specimen(0, 'failure') },
@@ -71,7 +78,8 @@ export async function verifyMergePolicy() {
   const mutations = [];
   for (const { gate, make } of controls) {
     const pattern = new RegExp(`    ${gate}: [\\s\\S]*?(?=\\n    [a-zA-Z]+:|\\n  };)`);
-    const mutatedSource = source.replace(pattern, `    ${gate}: true,`);
+    if (gate === 'strict') assert.equal(source.split(' && branch.strict === true').length, 2, 'strict mutation must target exactly one guard');
+    const mutatedSource = gate === 'strict' ? source.replace(" && branch.strict === true", '') : source.replace(pattern, `    ${gate}: true,`);
     assert.notEqual(mutatedSource, source, `mutation must change ${gate}`);
     const mutant = await import(`data:text/javascript;base64,${Buffer.from(mutatedSource).toString('base64')}#${gate}`);
     assert.equal(mutant.evaluateEligibility(specimen()).eligible, true, `${gate} mutant must execute the eligible case`);
@@ -79,7 +87,7 @@ export async function verifyMergePolicy() {
     const original = evaluateEligibility(counterexample);
     const mutated = mutant.evaluateEligibility(counterexample);
     assert.equal(original.eligible, false, `${gate} counterexample must fail original`);
-    assert.deepEqual(original.waiting, [gate], `${gate} must be the intended original disagreement`);
+    assert.deepEqual(original.waiting, [gate === 'strict' ? 'protection' : gate], `${gate} must be the intended original disagreement`);
     assert.equal(mutated.eligible, true, `${gate} removal must permit the forbidden merge`);
     mutations.push({ gate, counterexample, original: original.waiting, mutantEligible: mutated.eligible, killed: true });
   }
@@ -88,7 +96,7 @@ export async function verifyMergePolicy() {
   const result = {
     kind: 'bounded-exhaustive-merge-policy', checked,
     sourceCommit: coverage.sourceCommit,
-    domain: { binaryDimensions: 10, ciStates, reviewStates },
+    domain: { binaryDimensions: 10, ciStates, reviewStates, strictStates: [true, false, 'absent'], targetedStrictCases: 3 },
     mutations,
     limits: ['Finite metadata domain only.', 'No GitHub execution, token permissions, branch-rule enforcement, or actual reviewer independence proof.'],
   };

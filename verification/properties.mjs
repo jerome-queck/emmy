@@ -420,7 +420,7 @@ export function verifyProperties({ work, responsibilities, records, dispatch, ca
     if (result.cases !== bounds.calendarRegister.cases || counts['calendar-register'] !== result.cases) throw new Error('Declared register bounds differ from executed predicates');
   }
   if (enabled('cloud-admission')) {
-    const result = verifyCloudPolicy({ cloud }, check);
+    const result = verifyCloudPolicy({ cloud, responsibilities }, check);
     if (result.cases !== bounds.cloudAdmission.cases || counts['cloud-admission'] !== result.cases) throw new Error(`Declared cloud bounds differ from executed predicates ${result.cases}`);
   }
   if (enabled('process-incarnation')) { const result = verifyIncarnationPolicy({ incarnation }, check); if (result.cases !== bounds.processIncarnation.cases || counts['process-incarnation'] !== result.cases) throw new Error(`Incarnation bounds differ ${result.cases}`); }

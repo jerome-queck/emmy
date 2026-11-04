@@ -288,7 +288,11 @@ export async function reconcile(home, { id, imports, asOf, catalog }) {
     const published = await publishRecord(home, { ...state, inputHashes, inputContext: { bindings, catalog, machine }, ruleDigest });
     results.push(published);
   }
-  return { asOf, responsibilities: results, pending, status: results.some(result => result.record.findings.some(finding => finding.status === 'open') || result.record.incomingTransfers.some(item => item.status === 'open') || result.record.fleet.some(item => item.status !== 'ready')) ? 'actionable' : 'current' };
+  return { asOf, responsibilities: results, pending, status: reconciliationStatus(results.map(result => result.record)) };
+}
+
+export function reconciliationStatus(reviews) {
+  return reviews.some(review => review.findings.some(finding => finding.status === 'open') || review.incomingTransfers.some(item => item.status === 'open') || review.fleet.some(item => item.status !== 'ready') || review.cloud.some(item => item.status !== 'ready')) ? 'actionable' : 'current';
 }
 
 export async function inspectHome(home) {

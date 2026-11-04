@@ -1,4 +1,5 @@
 export const cloudMutations = [
+  { id: 'cloud-omit-aggregate-health', property: 'cloud-admission', source: 'src/responsibilities.mjs', edits: [[" || review.cloud.some(item => item.status !== 'ready')", '']] },
   { id: 'cloud-multiple-home-controllers', property: 'cloud-admission', source: 'src/cloud.mjs', edits: [["if (allRoots.length > 1)", 'if (false)'], ["const roots = allRoots;", "const roots = allRoots.filter(record => record.responsibilityId === responsibilityId);"]] },
   { id: 'cloud-ignore-pending-bytes', property: 'cloud-admission', source: 'src/cloud.mjs', edits: [["bytes > config.maxPendingBytes", 'false']] },
   { id: 'cloud-ignore-capacity-age', property: 'cloud-admission', source: 'src/cloud.mjs', edits: [["age < 0 || age > config.maxSampleAgeMs", 'false']] },

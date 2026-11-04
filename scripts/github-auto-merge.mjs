@@ -41,7 +41,7 @@ export function evaluateEligibility(snapshot) {
     head: shaPattern.test(expectedHead) && pr.headSha === expectedHead,
     base: pr.baseRef === MERGE_POLICY.base && branch.name === MERGE_POLICY.base
       && shaPattern.test(expectedBase) && pr.baseSha === expectedBase && branch.sha === expectedBase,
-    protection: branch.protected === true && branch.enforcement === 'everyone'
+    protection: branch.protected === true && branch.enforcement === 'everyone' && branch.strict === true
       && [MERGE_POLICY.ci, MERGE_POLICY.review].every(name => branch.contexts.includes(name)),
     ci: successfulCheck(ciCheck, expectedHead) && ciCheck.app === 'github-actions'
       && (!ciStatus || successfulStatus(ciStatus, expectedHead)),
@@ -79,7 +79,7 @@ export function selectCandidates(eventName, event, pulls) {
     .map(pr => ({ number: pr.number, expectedHead: sha ?? pr.head.sha }));
 }
 
-export function normalizeSnapshot({ repository, pr, branch, checks, statuses }, expectedHead, expectedBase) {
+export function normalizeSnapshot({ repository, pr, branch, checks, statuses, strictProtection }, expectedHead, expectedBase) {
   return {
     repository: { name: repository.full_name },
     pr: {
@@ -99,6 +99,7 @@ export function normalizeSnapshot({ repository, pr, branch, checks, statuses }, 
       name: branch.name,
       sha: branch.commit?.sha,
       protected: branch.protected,
+      strict: strictProtection?.requiresStrictStatusChecks,
       enforcement: branch.protection?.required_status_checks?.enforcement_level,
       contexts: branch.protection?.required_status_checks?.contexts ?? [],
     },
@@ -188,12 +189,20 @@ export function createGitHub(token, fetcher = fetch) {
       if (!Number.isSafeInteger(number) || number < 1 || !shaPattern.test(expectedHead)) {
         throw new Error('Invalid pull request identity');
       }
-      const [repository, pr, branch, checks, statuses] = await Promise.all([
+      const [repository, pr, branch, checks, statuses, protection] = await Promise.all([
         request(prefix), request(`${prefix}/pulls/${number}`), request(`${prefix}/branches/${MERGE_POLICY.base}`),
         pages(`/commits/${expectedHead}/check-runs?filter=all`, 'check_runs'),
         pages(`/commits/${expectedHead}/statuses`),
+        request('/graphql', {
+          query: `query StrictProtection($owner: String!, $name: String!, $ref: String!) {
+            repository(owner: $owner, name: $name) {
+              ref(qualifiedName: $ref) { branchProtectionRule { requiresStrictStatusChecks } }
+            }
+          }`,
+          variables: { owner: MERGE_POLICY.repository.split('/')[0], name: MERGE_POLICY.repository.split('/')[1], ref: `refs/heads/${MERGE_POLICY.base}` },
+        }),
       ]);
-      return normalizeSnapshot({ repository, pr, branch, checks, statuses }, expectedHead, expectedBase);
+      return normalizeSnapshot({ repository, pr, branch, checks, statuses, strictProtection: protection.data?.repository?.ref?.branchProtectionRule }, expectedHead, expectedBase);
     },
     requestMerge({ number, expectedHead }) {
       return request(`${prefix}/pulls/${number}/merge`, { sha: expectedHead, merge_method: 'merge' }, 'PUT');
