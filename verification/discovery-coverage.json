@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "526637274e35ed373565f592e91bd4358f71b534",
-  "reviewedAt": "2026-11-04T02:00:30.607580+00:00",
-  "review": "Implementation owner and independent read-only reviewer reviewed the pure assessor, parser dependency, finite cases, paired intended source mutations and actual private-home CLI driver at source 526637274e35ed373565f592e91bd4358f71b534. Independent followup accepted invalid-date refusal and complete selected-home snapshot controls. Lead actual-native-capture CLI replay passed separately. Same-family review only; no native truth, global completeness, atomicity, absence or authority claim.",
+  "sourceCommit": "c0c728e93b4e5a92b2ea5f650287d4a028ad0f69",
+  "reviewedAt": "2026-11-04T02:03:50.739Z",
+  "review": "Implementation owner reviewed the harness-only aggregate regression fix at this source commit. The recursive actual private-home snapshot retains special-file mode/rdev metadata without opening special files. An owned actual FIFO boundary control passes and cleans only its own evidence fixture. Previous independent production review remains applicable because production, finite properties and mutants are unchanged. Independent harness followup review remains pending.",
   "files": {
     "src/studio-discovery.mjs": "419b6df49a7ce6fc5b71bf8d4a2f917dae6b1a83863628aae6e14b798917948a",
     "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
     "verification/studio-discovery-properties.mjs": "188f462e531ad8b2e0ed49b37a8a214114e18da5d73910c7528f8b78a7ee9a92",
-    "verification/studio-discovery-drive.mjs": "d227eecafca93eac243265bdfab214c3e1fd32c4dab0c7126b71dac23c9b503f",
+    "verification/studio-discovery-drive.mjs": "07ce79aa447ecaeee3cbb64757a07972746df554c1e9cf532750bcc286c269ee",
     "scripts/verify-discovery.mjs": "6a9560e248ad5098c539d23bf1cb13d9842fcfcce6fd8704db76e2e2a4f8c9a7"
   },
   "mapping": {
@@ -57,7 +57,7 @@
       "Opaque native identity/status, pending client identity and unavailable catalog/source distinctions remain explicit.",
       "Identical supplied captures and evaluation clock produce repeatable output without mutating the input."
     ],
-    "cliBoundary": "The real discovery CLI is driven by the mapped studio-discovery scenario. Bounded strict file input, exit statuses, retained fixture bytes, disposable-index rebuild and equality of recursive actual selected private-home directory/file-hash/symlink snapshots are behavioral controls, not additional finite claims. New journals change the snapshot and fail."
+    "cliBoundary": "The real discovery CLI is driven by the mapped studio-discovery scenario. Bounded strict file input, exit statuses, retained fixture bytes, disposable-index rebuild and equality of recursive actual selected private-home directory/file-hash/symlink/special-mode-rdev snapshots are behavioral controls, not additional finite claims. Special files are never opened; an actual FIFO snapshot control exercises this boundary. New journals change the snapshot and fail."
   },
   "mutations": [
     {
