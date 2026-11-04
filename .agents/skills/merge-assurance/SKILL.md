@@ -26,15 +26,15 @@ Before relying on these checks after a change, read every diff from the reviewed
 
 ## Bounds and assumptions
 
-The runner checks 30,720 inputs. Ten binary dimensions cover repository identity, merged state, open state, draft state, head repository, head SHA, target branch, base SHA, current branch SHA, and administrator enforcement. It combines six CI states with five review states.
+The runner checks 30,723 inputs. Ten binary dimensions cover repository identity, merged state, open state, draft state, head repository, head SHA, target branch, base SHA, current branch SHA, and administrator enforcement. It combines six CI states with five review states.
 
-Other fields are fixed in that enumeration. Focused tests cover missing protection, required contexts, wrong publishers, check identity, status ordering, metadata reloads, API requests, and receipt states. This is a finite code check. It does not prove arbitrary metadata, GitHub enforcement, network ordering, live token permissions, atomic base comparison, or actual reviewer independence.
+Three additional strict-protection cases cover true, false and absent. Only true permits eligibility. Other fields are fixed in the binary enumeration. Focused tests cover missing protection, required contexts, wrong publishers, check identity, status ordering, metadata reloads, API requests, and receipt states. This is a finite code check. It does not prove arbitrary metadata, GitHub enforcement, network ordering, live token permissions, atomic base comparison, or actual reviewer independence.
 
 The source assumes GitHub's typed metadata, SHA-1 repository identities, and trusted writers of the protected default branch. The adapter reloads observations before an immediate head-guarded merge. It leaves no deferred authorization for future heads.
 
 ## Required failing variants
 
-The verifier compiles copies of the actual source with the head, base, CI, and independent-review guards removed separately. Each copy must execute a valid case, and then admit the intended forbidden case that the original refuses. Its witness names exactly one original failing gate and reports `mutantEligible: true`.
+The verifier compiles copies of the actual source with the strict-protection, head, base, CI, and independent-review guards removed separately. Each copy must execute a valid case, and then admit the intended forbidden case that the original refuses. Its witness names exactly one original failing gate and reports `mutantEligible: true`.
 
 A syntax error, import error, unmatched mutation anchor, or unrelated disagreement is a verification failure. It is not a killed mutant. Restore the original code after any manual scratch change, rerun both commands, and confirm the evidence still exists.
 
@@ -43,3 +43,5 @@ A syntax error, import error, unmatched mutation anchor, or unrelated disagreeme
 Use the installed pstack maintain-formal-verification-skill after covered changes. Run the old check before editing its description. Read the covered diff, classify verification drift separately from a product bug, and update bounds only for a supported change in the promise. Replay the failing variants before moving the reviewed revision or source hashes. Keep verification updates separate from product fixes.
 
 For live acceptance, use `docs/automation.md` to verify the repository, branch rules, exact-head CI and review status, and actual merge commit. Local tests do not install those provider settings.
+
+The adapter reads the exact base ref's `branchProtectionRule.requiresStrictStatusChecks` through GitHub GraphQL on both metadata snapshots. False, absent or failed acquisition cannot authorize a merge. This supplements the existing REST branch identity, enforcement and required-context checks without changing workflow permissions. Provider tests cover acquisition and normalization; finite eligibility checks consume normalized metadata. Live remote protection remains separately unverified.

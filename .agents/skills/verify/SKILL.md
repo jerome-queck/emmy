@@ -126,3 +126,9 @@ Run `node --test test/foundation-release.test.mjs test/morning-observation.test.
 The generic foundation adds `automation --file` and `test/automation-procedure.test.mjs`. The `automation-foundation` scenario drives plan/report/read over exact synthetic non-briefing inputs with no native actions. `automation-plan.mjs` is a separate pure portable entry; canonical outcome semantics remain in one generic reporting owner. Read [the contract](../../../docs/automation-foundation.md).
 
 Generic artifact regression controls rehash malformed records before exact CLI reads, publication assessment and predecessor ingestion. Invalid timing, telemetry, nonterminal reports and coerced source revisions refuse; valid optional null measurements and historical terminal report:null remain accepted.
+
+## Bounded input and audit regressions
+
+Run `node --test test/bounded-json.test.mjs` for descriptor-bound acquisition. Isolated pathname replacement and growth controls verify ordinary opened files, no symlink/FIFO following, limit-plus-one byte acquisition, short reads, closure and fatal UTF-8 decoding. These are acquisition tests, outside the publication and slot TLC assumptions of immutable ordinary files.
+
+The v3 morning suite additionally covers escaped useful facts through exact delivered body acknowledgment, same-message edits and unchanged-context next-run reuse. The cloud behavioral drive checks aggregate reconcile exit 3 for cloud-only dead jobs, pending escalation and suspension, with healthy exit 0. These checks retain all existing delivery, context, identity and uncertainty gates.
