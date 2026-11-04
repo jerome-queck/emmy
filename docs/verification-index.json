@@ -323,6 +323,7 @@
         "native-dispatch",
         "studio-discovery",
         "structured-task-workflow",
+        "task-runner-selection",
         "probe-packet",
         "definition-concurrency"
       ],

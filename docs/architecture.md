@@ -1,5 +1,7 @@
 # Persistent Emmy contract
 
+`task-runner.mjs` owns the separate [task-only selection](task-runner.md). `scripts/task-agent.mjs` verifies its fixed caller binding, exact source/runtime inventory and task home before invoking only doctor, dispatch or task-workflow. Its stable launcher is independent of shared briefing/reporting consumers. It writes no journal or selection and grants no native authority. Installation and filesystem immutability remain separate owner prerequisites.
+
 `task-workflow.mjs` owns pure task-record validation, deterministic six-section prompt rendering and supplied project projection through `studioDiscovery`. The existing CLI reads one bounded file and writes stdout only. User-owned private records link original native identities and receipt references; native Studio remains authoritative. No lifecycle ledger, persistence, native writer, permission grant or retry controller is added. See [the task contract](agent-task-workflow.md).
 
 `automation-plan.mjs` owns pure generic procedure/configuration validation and deterministic staged plans. `automation-procedure.mjs` owns exact file acquisition and the generic CLI boundary. `automation-reporting.mjs` owns the existing canonical producer/publication contract; the briefing adapter retains only briefing check assessment. The reusable procedure lives in `procedures/`, with private per-automation configuration outside Git. This shared path builds plans for any automation kind without adding a scheduler, controller or native writer.

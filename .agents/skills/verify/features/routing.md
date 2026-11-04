@@ -1,5 +1,11 @@
 # Responsibilities and proposals
 
+## Task-only runner selection
+
+The [task-only caller contract](../../../../docs/task-runner.md) defines a fixed caller binding, an explicit baseline and per-home selection. `scripts/task-agent.mjs` consumes the same stable launcher without consumer-supplied candidate paths. It permits doctor, dispatch and task-workflow only. Missing selection uses the verified explicit baseline. Invalid active selection or a child failure never falls back. Fixed home/root, exact source/runtime hashes, ordinary ancestors and complete source and runtime-data inventory checks precede spawn. Stderr source receipts remain separate from unchanged child stdout and exit. Source manifest authenticity, immutable owners and bootstrap integrity remain installer prerequisites.
+
+Run `node --test test/task-runner.test.mjs` and `node scripts/verify-behavior.mjs --focus task-runner`. The mapped `task-runner-selection` scenario drives real task-workflow through a stable shell caller and retains original inputs, selection receipts, child outputs/exits and unchanged shared configuration. Synthetic revision declarations do not prove Git authenticity or live adoption. No canonical publication edge or existing finite/property mapping changes.
+
 ## User route
 
 For human task preparation and native handoff review, use the [agent-task workflow](../../../../docs/agent-task-workflow.md). Its structured six-section contract reuses these routing and discovery rules. `task-workflow --file` validates supplied records and renders prompts without native execution, acceptance or persistence. Run `node scripts/verify-behavior.mjs --focus task-workflow` for the mapped `structured-task-workflow` scenario. The [acceptance recipe](../SKILL.md#agent-task-workflow-acceptance) separates its CLI controls from actual parent-native integration. The [candidate prelaunch procedure](../../../../docs/agent-task-workflow.md#select-an-uninstalled-candidate-before-dispatch) uses an explicitly pinned checkout when the installed runner predates the command. Exact request bytes and before-call retention require independent native evidence; the CLI does not enforce them. No new finite property is claimed.

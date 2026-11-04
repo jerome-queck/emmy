@@ -47,6 +47,8 @@ Returns `prepared`, `reported-native-known`, `reported-review-complete`, `eviden
 
 ## Select an uninstalled candidate before dispatch
 
+The supported [task-only caller](task-runner.md) adds a separately installable stable entry that reads a task-only source/runtime selection. It keeps shared briefing/reporting consumers separate. Its source implementation and explicit candidate tests do not establish installed adoption. The direct candidate procedure below remains explicitly selected execution.
+
 An installed runner can predate `task-workflow` and return `Unknown command task-workflow`. Preserve that refusal. For an explicitly authorized candidate exercise, the selected dispatcher can invoke the exact candidate checkout directly. Do not change the installed symlink or infer ordinary production adoption.
 
 1. Retain the candidate's full Git revision and clean tracked status. Read its `agent-task` skill and verification recipe. Check its own `help --json` includes `task-workflow`.

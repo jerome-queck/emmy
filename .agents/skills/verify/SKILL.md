@@ -13,6 +13,8 @@ Each driver command starts a fresh Node process. Run `npm run verify:behavior` f
 
 ## Drive and interpret
 
+After task-only caller changes, run `node --test test/task-runner.test.mjs` and `node scripts/verify-behavior.mjs --focus task-runner`. Read the [routing map](features/routing.md#task-only-runner-selection) and [caller contract](../../../docs/task-runner.md). The actual stable shell entry consumes verified baseline/selected task-workflow in fresh processes. It retains original request, binding, launcher, manifests, stderr receipts, unchanged stdout, exits and shared-selection readbacks outside the temporary root. Synthetic revision declarations remain separate from source authenticity, installation and ordinary adopted invocation. Existing finite mappings and canonical publication remain unchanged.
+
 Read [the feature map](features/README.md). Every mapped scenario must execute in the full driver. The driver captures arguments, stdout, stderr, exit status, actual record/evidence bytes, result assertions, and cleanup. It checks command sentinels to establish that its own drive did not invoke native executors or network CLIs.
 
 Use `node scripts/verify-behavior.mjs --focus self-check-repair` for the first durable loop. It adopts a responsibility, repeats imports, recovers context in fresh processes, detects actual artifact corruption, retains failed repairs, proposes diagnosis, verifies an exact later repair, reopens a subsequent regression, and rejects unreadable current bytes. Earlier native completion suppresses duplicate green work while later failure still gets attention requiring fresh native rediscovery. Pending/uncertain state keeps rediscovery-only priority. This focused run does not cover the complete feature map.
