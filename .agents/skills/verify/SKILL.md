@@ -33,7 +33,7 @@ The fleet focus also drives the morning extension in fresh processes. Exact cont
 
 ## Agent-task workflow acceptance
 
-After changes to the [agent-task skill](../agent-task/SKILL.md), template, or [workflow](../../../docs/agent-task-workflow.md), run `npm run check`, local Markdown link checks, and skill frontmatter/reference checks. Independently review the source against standing routing policy. This documentation recipe adds no automated scenario or finite property. Production transitions and formal pins remain unchanged.
+After changes to the [agent-task skill](../agent-task/SKILL.md), template, or [workflow](../../../docs/agent-task-workflow.md), run `npm run check`, local Markdown link checks, and skill frontmatter/reference checks. Independently review the source against standing routing policy. This documentation recipe adds no automated scenario or finite property. Production transitions and formal properties remain unchanged.
 
 Before the exercise, define criteria for correct objective routing, skill resolution, native identity, membership, settings, parent monitoring, and evidence review. Retain exact revision, dirty state, prompts, requests, original native receipts, acquisitions, outcomes, and criterion mapping under ignored `.local/`. Another maintainer must be able to rerun these cases from those retained inputs.
 
