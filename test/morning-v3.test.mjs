@@ -116,7 +116,7 @@ test('v3 absent day inventory produces honest unknown-clock partial report witho
 
 test('v3 prior exact delivered facts permit next-day pre-send archive and require factual reseal', () => {
   const fixture = morningFixture({ open: morningV3Open });
-  const invoice = morningItem(); invoice.facts = ['Synthetic invoice amount and paid status.']; invoice.context.orderReceipt = true; invoice.policyEvidence = { recordPurpose: 'invoice', duplicate: null, priorFactsDelivery: null };
+  const invoice = morningItem(); invoice.facts = ['Invoice INV_2026 [paid] *confirmed* at C:\\receipts.']; invoice.context.orderReceipt = true; invoice.policyEvidence = { recordPurpose: 'invoice', duplicate: null, priorFactsDelivery: null };
   const kept = morningItem('outlook'); kept.context.personal = true;
   fixture.command('review', { items: [invoice, kept] });
   const firstPlan = morningV3Plan(fixture.run);
@@ -143,6 +143,21 @@ test('v3 prior exact delivered facts permit next-day pre-send archive and requir
   assert.ok(verifiedPriorBriefingFacts(fixture.state, run(), run().items[0]));
   const wrong = structuredClone(run().items[0]); wrong.policyEvidence.priorFactsDelivery.bodyDigest = digest('invented delivery');
   assert.equal(verifiedPriorBriefingFacts(fixture.state, run(), wrong), null);
+  for (const field of ['fact', 'empty', 'nativeId', 'adapter', 'context', 'message', 'digest', 'verified', 'scope', 'delivery', 'body']) {
+    const state = structuredClone(fixture.state); const currentRun = state.morningRuns[1]; const candidate = structuredClone(currentRun.items[0]);
+    if (field === 'fact') candidate.facts = ['Invoice INV_2026 [unpaid] *confirmed* at C:\\receipts.'];
+    if (field === 'empty') candidate.facts = [];
+    if (field === 'nativeId') candidate.before.nativeId = 'another-mail';
+    if (field === 'adapter') candidate.adapter = 'outlook';
+    if (field === 'context') { candidate.context.threadDigest = digest('changed thread'); candidate.policyEvidence.priorFactsDelivery.contextDigest = candidate.context.threadDigest; }
+    if (field === 'message') candidate.policyEvidence.priorFactsDelivery.messageId = 'another-message';
+    if (field === 'digest') candidate.policyEvidence.priorFactsDelivery.bodyDigest = digest('another-body');
+    if (field === 'verified') candidate.policyEvidence.priorFactsDelivery.verified = false;
+    if (field === 'scope') currentRun.deliveryTarget.scope.resource = 'another-room';
+    if (field === 'delivery') state.morningRuns[0].delivery.status = 'uncertain';
+    if (field === 'body') state.morningRuns[0].sealed.body += ' changed';
+    assert.equal(verifiedPriorBriefingFacts(state, currentRun, candidate), null, field);
+  }
   const seal = () => {
     const deterministic = morningV3Plan(run(), nextAt);
     deterministic.input.checks = [delayedCheck]; deterministic.input.checkHistory = [{ kind: delayedCheck.kind, scheduledFor: delayedCheck.scheduledFor, snapshotDigest: delayedCheck.snapshotDigest, bodyDigest: original.bodyDigest, nativeId: 'prior-facts-message', room: morningV3Policy.delivery.scope.resource, receiptRef: 'prior-facts-exact-readback' }];
@@ -163,4 +178,49 @@ test('v3 prior exact delivered facts permit next-day pre-send archive and requir
   assert.equal(run().delivery.nativeId, 'current-final-message');
   assert.equal(run().items[0].attempts.length, 1);
   assert.equal(morningView(fixture.state.morningRuns)[1].status, 'complete');
+});
+
+test('v3 archives canonically rendered punctuation only after exact delivery', () => {
+  for (const fact of ['Invoice INV_2026 paid', 'Invoice [paid] *confirmed*', 'Receipt C:\\receipts\\paid', 'Paid `invoice` {verified} <record> #1 | yes!']) {
+    const fixture = morningFixture({ open: morningV3Open });
+    const invoice = morningItem(); invoice.context.orderReceipt = true; invoice.facts = [fact];
+    invoice.policyEvidence = { recordPurpose: 'invoice', duplicate: null, priorFactsDelivery: null };
+    fixture.command('review', { items: [invoice, morningItem('outlook')] });
+    fixture.command('seal', { ...morningAssessments(), deterministic: morningV3Plan(fixture.run) });
+    const action = { adapter: 'gmail', nativeId: invoice.before.nativeId, action: 'archive', before: invoice.before, receipt: invoice.receipt, destination: null };
+    const send = { sendRef: 'punctuation-send', bodyDigest: fixture.run.sealed.bodyDigest };
+    fixture.command('send-intent', send);
+    assert.throws(() => fixture.command('action-intent', action), /delivered/);
+    assert.throws(() => fixture.command('send-ack', { ...send, nativeId: 'punctuation-message', deliveredBodyDigest: digest('changed'), readbackRef: 'punctuation-readback' }), /exact/);
+    fixture.command('send-ack', { ...send, nativeId: 'punctuation-message', deliveredBodyDigest: send.bodyDigest, readbackRef: 'punctuation-readback' });
+    fixture.command('action-intent', action);
+    assert.equal(fixture.run.items[0].attempts[0].action, 'archive');
+  }
+});
+
+test('v3 refreshed punctuation facts wait for verified same-message edit', () => {
+  const fixture = morningFixture({ open: morningV3Open });
+  fixture.command('review', { items: [morningItem(), morningItem('outlook')] });
+  fixture.command('seal', { ...morningAssessments(), deterministic: morningV3Plan(fixture.run) });
+  const send = { sendRef: 'refresh-facts-send', bodyDigest: fixture.run.sealed.bodyDigest };
+  fixture.command('send-intent', send);
+  fixture.command('send-ack', { ...send, nativeId: 'refresh-facts-message', deliveredBodyDigest: send.bodyDigest, readbackRef: 'refresh-facts-readback' });
+  const invoice = morningItem(); invoice.context.orderReceipt = true; invoice.facts = ['Invoice INV_2026 [paid] *confirmed* C:\\receipts'];
+  invoice.policyEvidence = { recordPurpose: 'invoice', duplicate: null, priorFactsDelivery: null };
+  const batch = refreshMorning(fixture, { items: [invoice] });
+  const action = { generation: batch.generation, adapter: 'gmail', nativeId: invoice.before.nativeId, action: 'archive', before: batch.item.before, receipt: batch.item.receipt, destination: null };
+  assert.throws(() => fixture.command('action-intent', action, batch.at), /same-message edit/);
+  fixture.command('summary', {}, batch.at);
+  const edit = { editRef: 'refresh-facts-edit', bodyDigest: fixture.run.summary.bodyDigest, nativeId: 'refresh-facts-message' };
+  assert.throws(() => fixture.command('edit-intent', { ...edit, nativeId: 'another-message' }, batch.at), /same delivered/);
+  fixture.command('edit-intent', edit, batch.at);
+  assert.throws(() => fixture.command('action-intent', action, batch.at), /resolved selected-ID/);
+  assert.throws(() => fixture.command('edit-ack', { ...edit, deliveredBodyDigest: digest('changed'), readbackRef: 'refresh-edit-readback' }, batch.at), /exact same message/);
+  fixture.command('edit-ack', { ...edit, deliveredBodyDigest: edit.bodyDigest, readbackRef: 'refresh-edit-readback' }, batch.at);
+  fixture.command('action-intent', action, batch.at);
+  assert.equal(fixture.run.items[0].attempts[0].action, 'archive');
+  const current = { ...fixture.run, id: 'next-run' };
+  const reviewed = fixture.run.items[0];
+  const prior = { ...reviewed, policyEvidence: { ...reviewed.policyEvidence, priorFactsDelivery: { verified: true, contextDigest: reviewed.context.threadDigest, messageId: edit.nativeId, bodyDigest: edit.bodyDigest } } };
+  assert.equal(verifiedPriorBriefingFacts(fixture.state, current, prior).bodyDigest, edit.bodyDigest);
 });
