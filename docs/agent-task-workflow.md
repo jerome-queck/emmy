@@ -45,6 +45,19 @@ Returns `prepared`, `reported-native-known`, `reported-review-complete`, `eviden
 5. Parent obtains supported same-ID host/membership readbacks, retains original acquisitions/references, and amends that record. A requested project or cwd does not prove saved membership. Use the supported operation on the same task within authority if membership needs repair; then reread. Retain contrary evidence. Recorded model, effort, tier and effective execution remain separate readbacks.
 6. Parent monitors the actual ready ID through supported `read_thread` or bounded `wait_threads`, carrying cursors forward. No child callback is required. Review original changed artifacts and map every criterion to receipts. Failed/partial evidence stays visible. Acceptance, deployment and ordinary adoption remain separate decisions.
 
+## Select an uninstalled candidate before dispatch
+
+An installed runner can predate `task-workflow` and return `Unknown command task-workflow`. Preserve that refusal. For an explicitly authorized candidate exercise, the selected dispatcher can invoke the exact candidate checkout directly. Do not change the installed symlink or infer ordinary production adoption.
+
+1. Retain the candidate's full Git revision and clean tracked status. Read its `agent-task` skill and verification recipe. Check its own `help --json` includes `task-workflow`.
+2. Save the original prepare envelope in a new private exercise directory. Keep the objective, owner and exact host/project scope. Check existing native attempts for this objective before proceeding. An unresolved attempt requires rediscovery, even if a newly written planned record validates.
+3. Invoke `node <candidate>/scripts/agent.mjs task-workflow --file <original-envelope>`. Retain the original stdout, stderr, exit and acquisition times before any native creation. Require exit 0, `status: "prepared"`, `phase: "prepare"` and `native.state: "planned"`. A refusal, evidence gap or unknown invocation outcome stops creation.
+4. Build the supported native request from the returned `prompt` string without editing or retyping it. Compare its UTF-8 bytes with the rendered prompt. Check its exact destination and separately resolved model/effort. Retain the full request and its SHA-256 before the native call. Keep service-tier and execution readback gaps explicit.
+5. Retain an attempted marker before calling native creation once. Pass that exact saved request through the existing selected dispatcher. Preserve the original native response and actual call chronology. If the response is missing, pending or uncertain, keep this objective and attempt identity. Rediscover before considering another create. A missing receipt never establishes no effect.
+6. Amend the same record with the returned identity and original supported readbacks. Preserve the immutable prelaunch envelope, rendered result and request. Independently compare their exact bytes and chronological order with the original native call and final source revision. Parent reviews actual membership, progress and criterion evidence separately.
+
+These steps are dispatcher procedure. The assessor enforces supplied schema and consistency only. It does not authenticate timestamps, retain files, compare a native call, reserve a launch or block an external caller. Candidate acceptance proves only the explicitly selected invocation. Installing a consumer or establishing ordinary automatic invocation needs separate authorization and evidence.
+
 ## Project projection
 
 `action: "project"` replaces `record` with `scope`, `records: []`, and `discovery` containing the existing [Studio capture envelope](../.agents/skills/verify/features/routing.md#disposable-studio-task-discovery). Discovery must use the exact same scope, evaluation clock and age limit. All supplied records validate; only exact host/project members are assessed. Duplicate selected objective IDs refuse.
