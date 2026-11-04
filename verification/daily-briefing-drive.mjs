@@ -1,3 +1,4 @@
+import { plan as mailPlan } from '../test/fixtures/briefing-policy.mjs';
 import { automationProcedureFixture, automationConfigurationFixture, automationOutcomeFixture } from './automation-fixtures.mjs';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -35,6 +36,19 @@ export async function driveDailyBriefing({ home, run, scenario, report, evidence
   const partial = await save('conflict-request.json', { action: 'compile', directory, input });
   assert.equal((await run(['daily-briefing', '--file', partial.path], 3)).status, 'conflict'); assert.deepEqual(await readFile(first.path), original); assert.equal((await run(['daily-briefing', '--file', read.path], 3)).status, 'conflict');
   const invalid = await save('invalid-request.json', { action: 'compile', directory, input: { ...input, asOf: 'invalid' } }); await run(['daily-briefing', '--file', invalid.path], 2);
+  const observed = mailPlan(); observed.schemaVersion = 1;
+  Object.assign(observed.mail[0], { observedAt: null, capturedAt: null, collectorObservation: { schemaVersion: 1, basis: 'original-read-start', startedAt: observed.asOf, endedAt: observed.asOf } });
+  observed.mail[0].items[0].context.personal = null; observed.mail[0].inboxIds.push('unreviewed');
+  const previewRequest = await save('mail-observation-request.json', { action: 'preview', input: observed });
+  const preview = await run(['daily-briefing', '--file', previewRequest.path], 3);
+  assert.equal(preview.contract, 'daily-briefing-mail-observation-v1'); assert.equal(preview.effectsAuthorized, false); assert.equal(preview.sendAuthorized, false);
+  assert.deepEqual(preview.mailSources, observed.mail); assert.ok(preview.judgments.every(row => row.classification.action === 'defer'));
+  assert.match(preview.body, /1 Inbox messages unreviewed/); await save('mail-observation-result.json', preview);
+  observed.mail[0].paginationComplete = false;
+  const partialObservation = await run(['daily-briefing', '--file', (await save('mail-observation-partial-request.json', { action: 'preview', input: observed })).path], 3);
+  assert.deepEqual(partialObservation.mailSources, observed.mail); assert.ok(partialObservation.gaps.includes('gmail acquisition incomplete'));
+  observed.mail[0].collectorObservation.startedAt = '2026-11-03T00:00:00.001Z';
+  await run(['daily-briefing', '--file', (await save('mail-observation-invalid-request.json', { action: 'preview', input: observed })).path], 2);
   report.retainedDailyBriefing = { directory, artifact: first.path, bodyDigest: selected.result.bodyDigest, originalBytes: original.length, synthetic: true };
-  scenario('daily-briefing-pilot', 'Fresh real CLI compiles exact supplied source files, repeats idempotently, reads only exact occurrence/marker, preserves contradictory candidates and refuses invalid clocks. Every artifact remains held without effect or delivery authority.');
+  scenario('daily-briefing-pilot', 'Fresh real CLI compiles exact supplied source files, repeats idempotently, reads only exact occurrence/marker, preserves contradictory candidates and refuses invalid clocks. Original Gmail collector bounds with null provider clocks retain items, inventory and independent pagination in a versioned read-only preview; unknown context defers every disposition. Invalid bounds refuse. Every artifact remains held without effect or delivery authority.');
 }

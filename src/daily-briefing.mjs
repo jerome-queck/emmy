@@ -112,7 +112,7 @@ function artifact(raw, expectedIdentity) {
   return value;
 }
 export async function dailyBriefing(request, { now = new Date().toISOString() } = {}) {
-  if (['foundation', 'prepare', 'reporting', 'policy', 'learning'].includes(request?.action)) {
+  if (['foundation', 'prepare', 'preview', 'reporting', 'policy', 'learning'].includes(request?.action)) {
     return executeBriefing(request, { now });
   }
   need(['compile', 'read'].includes(request?.action), 'Use compile or read');

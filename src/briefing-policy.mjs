@@ -63,15 +63,25 @@ function matches(rule, review) {
   if (selector.adapter !== 'either' && selector.adapter !== review.adapter) return false;
   return ['nativeId', 'threadId', 'sender', 'subject'].every(key => selector[key] === null || selector[key] === review.before[key]) && (selector.category === null || selector.category === review.context.category);
 }
-export function classifyBriefingMail(review, policy) {
+function validateMailReview(review, policy, observationOnly = false) {
   validateBriefingPolicy(policy);
   const evidence = validatePolicyEvidence(review.policyEvidence);
   const { before, context, adapter } = review;
   need(['gmail', 'outlook'].includes(adapter) && before && context && array(review.facts, 20) && review.facts.every(text), 'Mail review required');
   shape(before, adapter === 'gmail' ? ['nativeId', 'threadId', 'subject', 'sender', 'unread', 'labels'] : ['nativeId', 'threadId', 'subject', 'sender', 'unread', 'folder', 'folderId']);
-  need(['nativeId', 'threadId', 'subject', 'sender'].every(key => text(before[key])) && typeof before.unread === 'boolean', 'Invalid mail snapshot');
+  need(['nativeId', 'threadId', 'subject', 'sender'].every(key => text(before[key])) && (typeof before.unread === 'boolean' || observationOnly && before.unread === null), 'Invalid mail snapshot');
   need(adapter === 'gmail' ? array(before.labels, 64) && before.labels.every(text) && new Set(before.labels).size === before.labels.length : text(before.folder) && text(before.folderId), 'Invalid mail snapshot location');
-  need(Object.keys(context).length === contextFlags.length + 2 && contextFlags.every(key => Object.hasOwn(context, key) && typeof context[key] === 'boolean') && text(context.category) && sha(context.threadDigest), 'Explicit boolean mail context and exact thread attribution required');
+  need(Object.keys(context).length === contextFlags.length + 2 && contextFlags.every(key => Object.hasOwn(context, key) && (typeof context[key] === 'boolean' || observationOnly && context[key] === null)) && (text(context.category) || observationOnly && context.category === null) && sha(context.threadDigest), 'Explicit boolean mail context and exact thread attribution required');
+  return evidence;
+}
+export function observeBriefingMail(review, policy) {
+  validateMailReview(review, policy, true);
+  const unknown = contextFlags.some(key => review.context[key] === null) || review.context.category === null || review.before.unread === null;
+  return { action: 'defer', reason: unknown ? 'unknown-mail-classification' : !review.context.complete || !review.context.safeUnreadInspection ? 'incomplete-or-unsafe-thread-inspection' : 'observation-only-preview', rule: null, policyVersion: 3, policyDigest: digest(policy) };
+}
+export function classifyBriefingMail(review, policy) {
+  const evidence = validateMailReview(review, policy);
+  const { before, context, adapter } = review;
   const result = (action, reason, rule = null) => ({ action, reason, rule, policyVersion: 3, policyDigest: digest(policy) });
   const keep = reason => result('keep', reason);
   if (adapter === 'gmail' ? !before.labels.includes('INBOX') : before.folder !== 'Inbox') return keep('already-outside-inbox');

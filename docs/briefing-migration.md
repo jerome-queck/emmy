@@ -10,6 +10,7 @@ The v3 path compiles owner policy and source captures into a fixed report, then 
 | --- | --- | --- |
 | `policy` | Private policy v3 | Validated digest, unbound exception IDs, deployment hold |
 | `prepare` | Policy, exact mail reviews, full-day Calendar and native Tasks, obligations, check attempts | `daily-briefing-v3` report, judgments, counts, original gaps, terminal-check gate |
+| `preview` | Observation input v1, policy v3, Gmail original collector bounds and nullable classifications | `daily-briefing-mail-observation-v1`, retained mail sources, all dispositions deferred, effects/send unauthorized |
 | `reporting` | `checks`, `producer`, or `publication` request | Exact expected occurrences, compatible canonical records, or publication readback assessment |
 | `learning` | Policy, dated entry, prior history | Append decision, identical repeat, or held observation |
 
@@ -19,7 +20,11 @@ Exit 2 means invalid input. Exit 3 retains a partial report, pending checks, unv
 
 `src/briefing-plan.mjs` owns the fixed human report. It counts messages, conversations, expanded context, and actual declared outcomes separately. Original source clocks remain unchanged. Native Task completion, cancellation, dismissal, and manual movement suppress only associated projections. Calendar deduplication uses occurrence identity, never title. Codes and personalized account links refuse rendering.
 
-Mail context flags require actual booleans, including completeness, safe unread inspection, and every protected-context flag. Missing, null, string, and numeric flags refuse compilation. Explicit false completeness or safe inspection retains the message and discloses a gap. The pure classifier validates exact native snapshot fields and the thread digest before policy decisions.
+The strict `prepare` and mutation paths require actual booleans for mail context flags, including completeness, safe unread inspection, and every protected-context flag. Missing, null, string, and numeric flags refuse compilation. Explicit false completeness or safe inspection retains the message and discloses a gap. The pure classifier validates exact native snapshot fields and the thread digest before policy decisions.
+
+`preview` accepts the same top-level fields as `prepare`, with `schemaVersion: 1`. Gmail additionally requires `collectorObservation: {schemaVersion: 1, basis: "original-read-start", startedAt, endedAt}`. Both bounds are original canonical UTC collector timestamps, ordered and no later than `asOf`. Provider `observedAt` and `capturedAt` remain explicitly null. Age uses the original start, including on replay. An old collector observation adds a stale gap while preserving acquired items, facts, IDs, coverage and actual pagination independently. Terminal pagination never implies complete message-context acquisition.
+
+Only this preview permits explicit null context flags, category or unread state. Missing flags, malformed values and missing thread attribution still refuse. `mailSources` retains every supplied mail item and unknown value. Unreviewed inventory IDs remain visible as a counted gap. Every preview judgment is `defer`, including known classifications and exact owner exceptions. The report declares effects and send unauthorized, refuses nonempty `mailOutcomes` and learning proposals, and always exits 3 through the CLI. It performs no provider read or write. Its input version cannot enter the existing journal's strict deterministic seal. `prepare` retains schema 3 and rejects Gmail collector observations; strict mutation validation and fresh context/before/read-state checks remain required.
 
 Tasks accept `boolean | null` dismissal and movement declarations. Null means unknown and adds a coverage gap. Only explicit false values permit an active Task row or linked Calendar projection. Today and overdue study do-dates appear with undated active Tasks. Future study do-dates stay out of today's list and projections. A declared deadline retains separate deadline context, including for future study. Partial captures retain their original coverage; unavailable clocks cannot carry purported acquired items.
 
@@ -49,7 +54,7 @@ The installed canonical reporting reader remains external. Its filtered output d
 
 ## Verification boundaries
 
-Run `node --test test/briefing-policy.test.mjs test/briefing-cloud-caller.test.mjs test/briefing-reporting.test.mjs test/morning-v3.test.mjs`, then `npm run check`. The fleet behavioral drive executes the production caller against actual fresh CLI processes with synthetic tools. It retains migration, input, output, lost-send, exact readback, move, and same-message-edit evidence. The optional installed-client compatibility test runs the retained frozen reporting client locally and explicitly skips when absent.
+Run `node --test test/briefing-policy.test.mjs test/briefing-mail-observation.test.mjs test/briefing-cloud-caller.test.mjs test/briefing-reporting.test.mjs test/morning-v3.test.mjs`, then `npm run check`. The fleet behavioral drive executes the production caller against actual fresh CLI processes with synthetic tools. It retains migration, input, output, lost-send, exact readback, move, and same-message-edit evidence. The optional installed-client compatibility test runs the retained frozen reporting client locally and explicitly skips when absent.
 
 The finite morning property includes scoped v3 cases and paired source mutations. Canonical publication TLC retains its existing writer/import steps and dependency assumptions. The derived-slot model remains separate. Neither proves source truth, arbitrary external exactly-once effects, effective access, schedules, cloud adoption, or live delivery.
 

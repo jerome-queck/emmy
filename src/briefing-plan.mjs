@@ -1,7 +1,7 @@
 import { digest } from './content.mjs';
-import { validateBriefingPolicy, classifyBriefingMail, briefingHumanText, assessBriefingLearning } from './briefing-policy.mjs';
+import { validateBriefingPolicy, classifyBriefingMail, observeBriefingMail, briefingHumanText, assessBriefingLearning } from './briefing-policy.mjs';
 import { assessBriefingReporting } from './briefing-reporting.mjs';
-import { calendarObservationClock } from './briefing-observation.mjs';
+import { calendarObservationClock, mailObservationClock } from './briefing-observation.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const stamp = value => typeof value === 'string' && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
@@ -13,7 +13,16 @@ const unique = values => new Set(values).size === values.length;
 const clean = briefingHumanText;
 function shape(value, fields) { need(value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === fields.length && fields.every(key => Object.hasOwn(value, key)), `Plan members must be ${fields.join(', ')}`); }
 function strings(value) { need(list(value) && value.every(text) && unique(value), 'Bounded unique text required'); }
-function source(value, asOf, gaps, role) {
+function source(value, asOf, gaps, role, preview = false) {
+  if (preview && role === 'gmail') {
+    const clock = mailObservationClock(value, asOf);
+    need(typeof value.complete === 'boolean' && typeof value.paginationComplete === 'boolean', 'Explicit mail coverage required'); strings(value.gaps);
+    gaps.push('gmail provider snapshot clocks unknown; original collector read observation only');
+    if (!value.complete || !value.paginationComplete) gaps.push('gmail acquisition incomplete');
+    if (Date.parse(asOf) - Date.parse(clock) > 300000) gaps.push('gmail collector observation stale');
+    gaps.push(...value.gaps.map(gap => `gmail: ${gap}`));
+    return;
+  }
   if (Object.hasOwn(value, 'collectorObservation')) {
     need(role === 'calendar', 'Collector observation is Calendar-only');
     const clock = calendarObservationClock(value, asOf);
@@ -31,26 +40,29 @@ function source(value, asOf, gaps, role) {
   if (Date.parse(asOf) - Date.parse(value.observedAt) > 300000) gaps.push(`${role} original source stale`);
   gaps.push(...value.gaps.map(gap => `${role}: ${gap}`));
 }
-export function preparePolicyBriefing(input) {
+export function preparePolicyBriefing(input) { return prepareBriefing(input, false); }
+export function previewPolicyBriefing(input) { return prepareBriefing(input, true); }
+function prepareBriefing(input, preview) {
   shape(input, ['schemaVersion', 'day', 'asOf', 'policy', 'mail', 'calendar', 'tasks', 'obligations', 'checks', ...(Object.hasOwn(input, 'checkHistory') ? ['checkHistory'] : []), ...(Object.hasOwn(input, 'mailOutcomes') ? ['mailOutcomes'] : []), ...(Object.hasOwn(input, 'journalGaps') ? ['journalGaps'] : []), ...(Object.hasOwn(input, 'learning') ? ['learning'] : [])]);
-  need(input.schemaVersion === 3 && /^\d{4}-\d\d-\d\d$/.test(input.day) && stamp(input.asOf), 'Invalid briefing version or clock');
+  need(input.schemaVersion === (preview ? 1 : 3) && /^\d{4}-\d\d-\d\d$/.test(input.day) && stamp(input.asOf), 'Invalid briefing version or clock');
   const start = new Date(`${input.day}T00:00:00+08:00`).toISOString(); const end = new Date(Date.parse(start) + 86400000).toISOString();
   need(input.asOf >= start && input.asOf < end, 'Assessment must use current Singapore day');
   validateBriefingPolicy(input.policy);
+  if (preview) need((input.mailOutcomes ?? []).length === 0 && input.learning === undefined, 'Observation preview cannot carry mail outcomes or learning proposals');
   strings(input.journalGaps ?? []);
   const gaps = [...(input.journalGaps ?? [])]; const judgments = []; let messages = 0; let contexts = 0; const conversations = new Set();
   need(list(input.mail, 2) && input.mail.length === 2 && unique(input.mail.map(row => row.adapter)), 'Both authorized mailbox captures required');
   for (const mail of input.mail) {
-    shape(mail, ['adapter', 'account', 'surface', 'environment', 'observedAt', 'capturedAt', 'complete', 'paginationComplete', 'gaps', 'inboxIds', 'items', 'expandedContextCount']);
+    shape(mail, ['adapter', 'account', 'surface', 'environment', 'observedAt', 'capturedAt', 'complete', 'paginationComplete', 'gaps', 'inboxIds', 'items', 'expandedContextCount', ...(preview && mail.adapter === 'gmail' ? ['collectorObservation'] : [])]);
     need(['gmail', 'outlook'].includes(mail.adapter) && mail.account === input.policy.accounts[mail.adapter].account && mail.environment === 'dot-cloud' && mail.surface === (mail.adapter === 'gmail' ? 'connector' : 'browser'), 'Primary Gmail connector and school Outlook cloud UI only');
-    source(mail, input.asOf, gaps, mail.adapter); strings(mail.inboxIds);
+    source(mail, input.asOf, gaps, mail.adapter, preview); strings(mail.inboxIds);
     need(list(mail.items) && unique(mail.items.map(row => row.before.nativeId)) && Number.isSafeInteger(mail.expandedContextCount) && mail.expandedContextCount >= 0 && mail.expandedContextCount <= 5000, 'Invalid message/context accounting');
     for (const review of mail.items) {
       need(review.adapter === mail.adapter && mail.inboxIds.includes(review.before.nativeId), 'Review must bind exact original Inbox identity');
-      const classification = classifyBriefingMail(review, input.policy);
+      const classification = preview ? observeBriefingMail(review, input.policy) : classifyBriefingMail(review, input.policy);
       judgments.push({ adapter: mail.adapter, nativeId: review.before.nativeId, threadId: review.before.threadId, reviewDigest: digest(review), classification });
       conversations.add(`${mail.adapter}/${review.before.threadId}`); messages++;
-      if (classification.reason === 'incomplete-or-unsafe-thread-inspection') gaps.push(`${mail.adapter} context/read-state review held`);
+      if (['incomplete-or-unsafe-thread-inspection', 'unknown-mail-classification'].includes(classification.reason)) gaps.push(`${mail.adapter} context/read-state review held`);
     }
     contexts += mail.expandedContextCount;
     const missing = mail.inboxIds.filter(id => !mail.items.some(row => row.before.nativeId === id));
@@ -127,13 +139,13 @@ export function preparePolicyBriefing(input) {
   const mailOutcomes = input.mailOutcomes ?? [];
   need(list(mailOutcomes) && unique(mailOutcomes.map(row => `${row.adapter}/${row.nativeId}`)), 'Bounded unique exact mail outcomes required');
   for (const outcome of mailOutcomes) { shape(outcome, ['adapter', 'nativeId', 'action', 'status']); need(judgments.some(row => row.adapter === outcome.adapter && row.nativeId === outcome.nativeId && row.classification.action === outcome.action) && ['verified', 'uncertain', 'known-unexecuted'].includes(outcome.status), 'Mail outcome must bind one reviewed exact action'); }
-  const mailLine = judgment => { const review = input.mail.find(row => row.adapter === judgment.adapter).items.find(row => row.before.nativeId === judgment.nativeId); return `- ${clean(review.before.sender)}; ${clean(review.before.subject)}. ${mailOutcomes.find(row => row.adapter === judgment.adapter && row.nativeId === judgment.nativeId)?.status === 'verified' ? `${judgment.classification.action} verified` : `${judgment.classification.action} proposed` }. ${clean(judgment.classification.reason)}.${review.facts.length ? ` ${review.facts.map(clean).join('; ')}.` : ''}`; };
+  const mailLine = judgment => { const review = input.mail.find(row => row.adapter === judgment.adapter).items.find(row => row.before.nativeId === judgment.nativeId); return `- ${clean(review.before.sender)}; ${clean(review.before.subject)}. ${judgment.classification.action === 'defer' ? 'Disposition deferred' : mailOutcomes.find(row => row.adapter === judgment.adapter && row.nativeId === judgment.nativeId)?.status === 'verified' ? `${judgment.classification.action} verified` : `${judgment.classification.action} proposed` }. ${clean(judgment.classification.reason)}.${review.facts.length ? ` ${review.facts.map(clean).join('; ')}.` : ''}`; };
   const section = (title, rows) => `## ${title}\n\n${rows.length ? rows.join('\n') : 'None declared.'}`;
   const timed = events.filter(row => row.allDay === false).sort((a, b) => a.start.localeCompare(b.start) || a.nativeId.localeCompare(b.nativeId)).map(row => `- ${row.start < start ? '00:00' : new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(row.start))} ${clean(row.title)}`);
   const allDay = events.filter(row => row.allDay === true).sort((a, b) => a.title.localeCompare(b.title)).map(row => `- All day ${clean(row.title)}`);
   const unknownTiming = events.filter(row => row.allDay === null).sort((a, b) => a.start.localeCompare(b.start) || a.nativeId.localeCompare(b.nativeId)).map(row => `- Timing type unknown ${clean(row.title)}. Source interval ${row.start} to ${row.end}.`);
   const taskRows = [...tasks.values()].filter(row => row.status === 'needsAction' && row.ownerDismissed === false && row.manuallyMoved === false && (row.deadline !== null || row.doDate === null || row.doDate <= input.day)).map(row => `- ${clean(row.title)}${row.doDate ? `. Study do-date ${row.doDate}` : ''}${row.deadline ? `. Deadline ${row.deadline}` : ''}`);
-  const body = `# Daily briefing ${input.day}\n\n${section('Needs action/review', judgments.filter(row => row.classification.action === 'keep').map(mailLine))}\n\n${section('Owed replies and open deadlines', obligations.map(row => `- ${clean(row.label)}${row.deadline ? `. Deadline ${row.deadline}` : ''}.`))}\n\n${section('Trashed (recoverable)', judgments.filter(row => row.classification.action === 'trash').map(mailLine))}\n\n${section('Archived', judgments.filter(row => row.classification.action === 'archive').map(mailLine))}\n\n${section('Today', ['SGT', ...allDay, ...timed, ...unknownTiming])}\n\n${section('Tasks', taskRows)}\n\n${section('Emmy checks', reportChecks.map(item => `- ${clean(item.kind)} (${new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Singapore',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(item.scheduledFor))} SGT). ${clean(item.state)}.${item.attempts.length ? ' ' + item.attempts.map(attempt => clean(attempt.summary)).filter(Boolean).join(' ') : ''}`))}\n\n${section('Counts', [`- Reviewed ${messages} Inbox messages; ${conversations.size} conversations; ${contexts} expanded-context messages.`, `- Verified moves ${mailOutcomes.filter(row => row.status === 'verified').length}; uncertain ${mailOutcomes.filter(row => row.status === 'uncertain').length}. Remaining dispositions proposed. Delivery remains separate.`])}\n\n${section('Learning changes', learningChanges.map(entry => `- Proposed ${clean(entry.action)} for ${clean(entry.scope)}. Source ${clean(entry.authority.date)}; ${clean(entry.kind)}. Policy adoption remains separate.`))}\n\n${section('Evidence coverage', gaps.map(gap => `- ${clean(gap)}`))}\n`;
+  const body = `# Daily briefing ${input.day}\n\n${preview ? 'Read-only observation preview. All archive, trash and send proposals deferred.\n\n' : ''}${section('Needs action/review', judgments.filter(row => ['keep', 'defer'].includes(row.classification.action)).map(mailLine))}\n\n${section('Owed replies and open deadlines', obligations.map(row => `- ${clean(row.label)}${row.deadline ? `. Deadline ${row.deadline}` : ''}.`))}\n\n${section('Trashed (recoverable)', judgments.filter(row => row.classification.action === 'trash').map(mailLine))}\n\n${section('Archived', judgments.filter(row => row.classification.action === 'archive').map(mailLine))}\n\n${section('Today', ['SGT', ...allDay, ...timed, ...unknownTiming])}\n\n${section('Tasks', taskRows)}\n\n${section('Emmy checks', reportChecks.map(item => `- ${clean(item.kind)} (${new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Singapore',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(item.scheduledFor))} SGT). ${clean(item.state)}.${item.attempts.length ? ' ' + item.attempts.map(attempt => clean(attempt.summary)).filter(Boolean).join(' ') : ''}`))}\n\n${section('Counts', [`- ${preview ? 'Acquired' : 'Reviewed'} ${messages} Inbox ${preview ? 'display items' : 'messages'}; ${conversations.size} conversations; ${contexts} expanded-context messages.`, `- Verified moves ${mailOutcomes.filter(row => row.status === 'verified').length}; uncertain ${mailOutcomes.filter(row => row.status === 'uncertain').length}. ${preview ? 'All dispositions and send deferred.' : 'Remaining dispositions proposed. Delivery remains separate.'}`])}\n\n${section('Learning changes', learningChanges.map(entry => `- Proposed ${clean(entry.action)} for ${clean(entry.scope)}. Source ${clean(entry.authority.date)}; ${clean(entry.kind)}. Policy adoption remains separate.`))}\n\n${section('Evidence coverage', gaps.map(gap => `- ${clean(gap)}`))}\n`;
   need(Buffer.byteLength(body) <= 262144, 'Briefing body exceeds bound');
-  return { contract: 'daily-briefing-v3', day: input.day, policyDigest: digest(input.policy), body, bodyDigest: digest(body), coverage: gaps.length ? 'partial' : 'complete-declared', gaps, checksTerminal, inputDigest: digest(input), judgments, counts: { messages, conversations: conversations.size, expandedContextMessages: contexts }, checks };
+  return { contract: preview ? 'daily-briefing-mail-observation-v1' : 'daily-briefing-v3', ...(preview ? { effectsAuthorized: false, sendAuthorized: false, mailSources: input.mail } : {}), day: input.day, policyDigest: digest(input.policy), body, bodyDigest: digest(body), coverage: gaps.length ? 'partial' : 'complete-declared', gaps, checksTerminal, inputDigest: digest(input), judgments, counts: { messages, conversations: conversations.size, expandedContextMessages: contexts }, checks };
 }

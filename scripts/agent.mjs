@@ -62,7 +62,7 @@ try {
     case 'daily-briefing': {
       const request = await readDailyBriefingRequest(resolve(options.file));
       data = await dailyBriefing(request);
-      exitCode = request.action === 'prepare' ? data.checksTerminal && data.coverage === 'complete-declared' ? 0 : 3
+      exitCode = request.action === 'preview' ? 3 : request.action === 'prepare' ? data.checksTerminal && data.coverage === 'complete-declared' ? 0 : 3
         : ['policy', 'foundation'].includes(request.action) ? 0
         : request.action === 'reporting' ? data.readyForBriefing === false || data.publication === 'unverified' ? 3 : 0
         : request.action === 'learning' ? data.status === 'held' ? 3 : 0
