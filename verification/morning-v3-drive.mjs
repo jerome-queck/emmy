@@ -7,6 +7,7 @@ import { canonical, digest, readStore } from '../src/records.mjs';
 import { executeBriefingEffect, acquireBriefingSource, acquireBriefingPlanSource } from '../src/briefing-cloud-caller.mjs';
 import { assessBriefingReporting } from '../src/briefing-reporting.mjs';
 import { morningEntities, morningItem, morningAssessments } from './morning-fixtures.mjs';
+import { verifiedPriorBriefingFacts } from '../src/morning.mjs';
 import { morningV3Policy } from './morning-v3-fixtures.mjs';
 
 export async function driveMorningV3({ home, bindings, target, run, report, collectorMode = false }) {
@@ -34,7 +35,7 @@ export async function driveMorningV3({ home, bindings, target, run, report, coll
   const captures = new Map(); const reviews = []; const reviewRefs = [];
   for (const adapter of ['gmail', 'outlook']) {
     const item = morningItem(adapter); item.before.sender = 'notices@vendor.example'; item.ruleId = null;
-    if (adapter === 'gmail') { item.facts = ['Synthetic invoice paid; amount and date retained.']; item.context.orderReceipt = true; item.context.billing = true; item.policyEvidence = { recordPurpose: 'invoice', duplicate: null, priorFactsDelivery: null }; }
+    if (adapter === 'gmail') { item.facts = ['Invoice INV_2026 [paid] *confirmed* at C:\\receipts.']; item.context.orderReceipt = true; item.context.billing = true; item.policyEvidence = { recordPurpose: 'invoice', duplicate: null, priorFactsDelivery: null }; }
     reviews.push(item);
   }
   for (const entity of entities) {
@@ -140,6 +141,7 @@ export async function driveMorningV3({ home, bindings, target, run, report, coll
   await command('seal', { ...assessments, deterministic }, allRefs);
   assert.equal(view.state.morningRuns[0].sealed.body, prepared.body);
   assert.match(prepared.body, /Proposed trash for synthetic-routine-promotions/);
+  assert.ok(prepared.body.includes('Invoice INV\\_2026 \\[paid\\] \\*confirmed\\* at C:\\\\receipts.'));
   if (collectorMode) {
     assert.equal(view.state.morningRuns[0].sealed.deterministic.input.calendar.observedAt, null);
     assert.match(prepared.body, /provider snapshot clocks unknown/);
@@ -176,6 +178,13 @@ export async function driveMorningV3({ home, bindings, target, run, report, coll
   const editAck = { ...editFields, readbackRef: 'synthetic-v3-edit-readback', deliveredBodyDigest: summary.bodyDigest, scope: policy.delivery.scope, acquiredAt: now() }; delete editAck.step;
   const edited = await evidence(editAck.readbackRef, { nativeId: ack.nativeId, sendRef: editFields.editRef, body: summary.body, scope: policy.delivery.scope, acquiredAt: editAck.acquiredAt }); await command('edit-ack', editAck, [edited]);
   assert.equal(view.morning[0].status, 'complete'); assert.equal(view.state.morningRuns[0].delivery.nativeId, ack.nativeId);
+  const deliveredRun = view.state.morningRuns[0]; const nextRun = { ...deliveredRun, id: 'synthetic-next-run' };
+  const invoice = structuredClone(deliveredRun.items.find(item => item.adapter === 'gmail'));
+  invoice.policyEvidence.priorFactsDelivery = { verified: true, contextDigest: invoice.context.threadDigest, messageId: ack.nativeId, bodyDigest: summary.bodyDigest };
+  assert.equal(verifiedPriorBriefingFacts(view.state, nextRun, invoice)?.bodyDigest, summary.bodyDigest);
+  const changed = structuredClone(invoice); changed.facts = ['Invoice INV_2026 [unpaid]'];
+  assert.equal(verifiedPriorBriefingFacts(view.state, nextRun, changed), null);
+
   const reportEntity = { id: 'canonical-automation-report-records', kind: 'cloud-job', scope: { service: 'emmy', environment: 'studio', surface: 'installed', resource: 'synthetic-canonical-reports' } };
   await call({ operation: 'inventory', entities: [...entities, reportEntity], sourceRef: owner.sourceRef, reason: 'Exercise the production canonical admission schema with a synthetic exact source.' }, [owner]);
   const readId = 'synthetic-canonical-briefing-read';
@@ -194,5 +203,5 @@ export async function driveMorningV3({ home, bindings, target, run, report, coll
   await assert.rejects(acquireBriefingSource(reportRequest, reportAdapters), /Null, replayed/);
   assert.equal(reportReads, 1, 'Actual completed fleet claim cannot admit a second report read');
   const replayed = await readStore(selected); assert.equal(replayed.records.length > 30, true);
-  report.morningV3 = { synthetic: true, records: replayed.records.length, bodyDigest: prepared.bodyDigest, rawReceipts, sends, moves, edits, reportReads, actualFleetAdmission: true, nativeToolsInvoked: false, actualDelivery: 'not-tested' };
+  report.morningV3 = { synthetic: true, records: replayed.records.length, bodyDigest: prepared.bodyDigest, rawReceipts, sends, moves, edits, reportReads, actualFleetAdmission: true, renderedFactsReuse: true, nativeToolsInvoked: false, actualDelivery: 'not-tested' };
 }
