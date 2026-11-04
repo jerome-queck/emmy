@@ -1,29 +1,29 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "037e3ad4354ffe8b2954c74fe0eb248ca2f71637",
-  "reviewBasis": "Reviewed complete covered diff from 2278e19ade107df44f6fd85cfe295f8000d32e31 through a4b8d9d36cdd79771aacfde74dfa3302f0d28c57. Canonical hashing and strict JSON implementation moved verbatim to pure leaf owners; compatibility exports remain. Read-only acquisition now has one complete source owner; shared compiler entry and versioned staged procedure remove private source-slice packaging. Calendar original provider observation is retained separately from acquisition receipts only for v3 Calendar sources. Source role/version/freshness, exact collector seal binding, same-receipt metadata immutability across retained history, and packet equality have seven added finite cases and six paired actual-source mutations. Existing domains and mutation promises remain. Reviewed original surviving freshness mutant and ambiguous role anchor; corrected isolation and replayed intended counterexamples. Publication awaits, dependency edges, filesystem operations and TLC domains are unchanged. New release builder and consumer integrity are behavioral checks, outside the finite and TLC claims. Strict old-pin refusals retained; independent source review found and verified same-receipt stripping repair. Development 8676 predicates and272 intended mutants pass. No provider truth, permission, installation, schedule, delivery or adoption claim. Reviewed compact portable distribution selector at c05bac922b2c25a50a3e371a68dbbac9188e8321. Same direct-source builder and capsule verifier; portable output retains only declared compiler/acquisition modules and refuses runtime materialization. It adds no publication or finite semantics. Actual isolated-source release tests pass. Reviewed entire generic foundation delta from c05bac922b2c25a50a3e371a68dbbac9188e8321 through 730f9c6426f0e310555b0ed74a12899a31f59a74. Shared versioned procedures and exact private configuration now compile generic deterministic staged plans, self-contained short prompts and known report destinations. One generic canonical reporting owner preserves existing producer/publication bytes; briefing check assessment remains an adapter. Twenty-four new automation-contract cases and five paired actual-source mutants cover supplied bindings, scope, nonnegative budgets, deterministic plan identity, configuration changes and no effect authority. Retained duplicate-stage survivor was isolated from procedure-digest refusal; a too-broad lost-config mutant was narrowed to the intended lost-parameters disagreement. Development8700predicates/277mutants pass with restored baseline. Independent review compared six producer modes and two publication modes byte-for-byte. Capsule v2 and v1 compatibility correction independently reviewed and retested. No canonical publisher await, journal edge, TLC graph/bound or existing property is weakened. Actual source authenticity, future execution, native permissions, budget enforcement, adoption and delivery remain separate. Documentation-only portable entry inventory correction reviewed at ef6ae4323a18cfd2e8a80078263f3a18806deef4; production and verifier bytes remain unchanged. Independent verification reviewed the full covered delta through ac16c58440017409002541d7faed8d491639019a. Reproduced rehashed malformed run evidence and coerced revision through the actual CLI. Source revision now requires a string. Existing producer timing/telemetry predicates are shared with artifact/predecessor ingestion; non-null reports require terminal execution. Historical terminal report:null remains accepted and valid producer bytes are unchanged. Generic automation domain adds ten predicates and four intended source mutations, total8710/281. No publication await, reference edge, model state, bound or invariant changes. Bounded validation cannot authenticate provider claims or grant execution/adoption. Reviewed subsequent delta through 037e3ad4354ffe8b2954c74fe0eb248ca2f71637. A correctly rehashed capsule could carry an array revision. The release reader/materializer now require a string full commit, with actual reader/materializer/CLI regression and v1 compatibility controls. Valid build/output bytes are unchanged apart from the explicit source revision. Release validation remains behavioral, not a new finite or TLC theorem. No covered production state transition, canonical writer or model promise changed.",
+  "sourceCommit": "a99f422032a14b9ed11cf4ef16bcf8f0da3396c3",
+  "reviewBasis": "Reviewed complete covered diff from 2278e19ade107df44f6fd85cfe295f8000d32e31 through a4b8d9d36cdd79771aacfde74dfa3302f0d28c57. Canonical hashing and strict JSON implementation moved verbatim to pure leaf owners; compatibility exports remain. Read-only acquisition now has one complete source owner; shared compiler entry and versioned staged procedure remove private source-slice packaging. Calendar original provider observation is retained separately from acquisition receipts only for v3 Calendar sources. Source role/version/freshness, exact collector seal binding, same-receipt metadata immutability across retained history, and packet equality have seven added finite cases and six paired actual-source mutations. Existing domains and mutation promises remain. Reviewed original surviving freshness mutant and ambiguous role anchor; corrected isolation and replayed intended counterexamples. Publication awaits, dependency edges, filesystem operations and TLC domains are unchanged. New release builder and consumer integrity are behavioral checks, outside the finite and TLC claims. Strict old-pin refusals retained; independent source review found and verified same-receipt stripping repair. Development 8676 predicates and272 intended mutants pass. No provider truth, permission, installation, schedule, delivery or adoption claim. Reviewed compact portable distribution selector at c05bac922b2c25a50a3e371a68dbbac9188e8321. Same direct-source builder and capsule verifier; portable output retains only declared compiler/acquisition modules and refuses runtime materialization. It adds no publication or finite semantics. Actual isolated-source release tests pass. Reviewed entire generic foundation delta from c05bac922b2c25a50a3e371a68dbbac9188e8321 through 730f9c6426f0e310555b0ed74a12899a31f59a74. Shared versioned procedures and exact private configuration now compile generic deterministic staged plans, self-contained short prompts and known report destinations. One generic canonical reporting owner preserves existing producer/publication bytes; briefing check assessment remains an adapter. Twenty-four new automation-contract cases and five paired actual-source mutants cover supplied bindings, scope, nonnegative budgets, deterministic plan identity, configuration changes and no effect authority. Retained duplicate-stage survivor was isolated from procedure-digest refusal; a too-broad lost-config mutant was narrowed to the intended lost-parameters disagreement. Development8700predicates/277mutants pass with restored baseline. Independent review compared six producer modes and two publication modes byte-for-byte. Capsule v2 and v1 compatibility correction independently reviewed and retested. No canonical publisher await, journal edge, TLC graph/bound or existing property is weakened. Actual source authenticity, future execution, native permissions, budget enforcement, adoption and delivery remain separate. Documentation-only portable entry inventory correction reviewed at ef6ae4323a18cfd2e8a80078263f3a18806deef4; production and verifier bytes remain unchanged. Independent verification reviewed the full covered delta through ac16c58440017409002541d7faed8d491639019a. Reproduced rehashed malformed run evidence and coerced revision through the actual CLI. Source revision now requires a string. Existing producer timing/telemetry predicates are shared with artifact/predecessor ingestion; non-null reports require terminal execution. Historical terminal report:null remains accepted and valid producer bytes are unchanged. Generic automation domain adds ten predicates and four intended source mutations, total8710/281. No publication await, reference edge, model state, bound or invariant changes. Bounded validation cannot authenticate provider claims or grant execution/adoption. Reviewed subsequent delta through 037e3ad4354ffe8b2954c74fe0eb248ca2f71637. A correctly rehashed capsule could carry an array revision. The release reader/materializer now require a string full commit, with actual reader/materializer/CLI regression and v1 compatibility controls. Valid build/output bytes are unchanged apart from the explicit source revision. Release validation remains behavioral, not a new finite or TLC theorem. No covered production state transition, canonical writer or model promise changed. Reviewed Gmail observation preview delta through a99f422032a14b9ed11cf4ef16bcf8f0da3396c3. Independent exact-diff review found no actionable findings. Shared mail validation preserves strict boolean mutation entry and policy ordering. Separate action preview and input schema 1 admit original collector bounds with null provider clocks; schema-3 prepare and deterministic journal seal remain closed to preview inputs. The new observation classifier always defers, including known context; read-only result refuses outcomes/learning and declares effects/send unauthorized. Existing source tests and portable fresh-process equality pass. Preview semantics are behavioral controls, not new finite or TLC promises. Existing finite predicates/mutants, canonical publication awaits, record reference edges, model bounds and assumptions remain unchanged. Reviewed private helper extraction and renderer delegation; no formal sync record advanced before source/mapping review. No provider collection, native truth, permission, installation, deployment, schedule or delivery claim.",
   "files": {
     ".agents/skills/coordination-contract/SKILL.md": "a47e031f3f050ef683c8ebd5722ca4a92fd5b61733a98fd29ce88a5a3723b559",
     ".agents/skills/morning-collect/SKILL.md": "cb26be9998b456c6f538af9d257d1a78330d4cd23a804b86e86c38ce2bc8c499",
     ".agents/skills/publication-contract/SKILL.md": "2f5e3736f2ef702fa75a19f9ab462a9967fb4e68e6b30aca82e4111efff26f0f",
     ".agents/skills/sign-in/SKILL.md": "558542d0c5a9eecf5c9a5b605fd6e57200c8ff25fd725515ccbc2ee8aac2b252",
-    ".agents/skills/verify/SKILL.md": "2dea2c9e6f5bc8ab1e90f36a62e2a1c6ecc2e22726ad910cb142fa60bb56b9a7",
+    ".agents/skills/verify/SKILL.md": "5c822504a7e4554a2785685ef3b7c526951fe2318efc46220c664bfbbca6d206",
     ".agents/skills/verify/features/cloud.md": "1d8482545d28f81a6adfce62958536ad0a24b0cdbdc521c16cb5bc55a626f32a",
     ".agents/skills/verify/features/evidence.md": "dff8cd2d29754f6e95e7fe849de8ed0f7cddb1c0be0ce1f7808df0d074d3698f",
     ".agents/skills/verify/features/fleet.md": "f6728fb39f6bc605c7425833d8ecddb1226c54723aeeec2390e74447da5e3bf8",
-    ".agents/skills/verify/features/upkeep.md": "7074e1b605e3dc8bbd3b17b6b491f71bd932ab05293596bc1f472a5ef8759605",
+    ".agents/skills/verify/features/upkeep.md": "7f503d5389aa7d8afe7ad5407732ab44698b2d905384776104dbb2fc02bc1b62",
     "README.md": "cfe9fe1b05784b9f3130065f662b4400bcd5ec993929db16de32f59216ab58e7",
     "docs/academic-os-alignment.md": "168cbf7c92f46a8374417ecaac38a3be517c1ca9fb031df834c55db96b79b268",
     "docs/academic-os-task-plan.md": "43d55680542996c8c78f77682a0df2529d348212217fd9d9090035b927546f75",
     "docs/architecture.md": "ac3798e65c3f95b396d7be9a0caa6fc54120406ac597208ee0fee3971022848b",
     "docs/automation-foundation.md": "2e86d866b7e25c3a11e7f3b20296689a07613ae5ef6173aa76e43c2fd9f54ad2",
     "docs/briefing-cloud-exchange.md": "676921c90a9e5e2e5bd9907a0bb66b160f42bd4c07e8227650109f59b35170ed",
-    "docs/briefing-migration.md": "9ece61de0bb41fc4dc2dc830ff5f52fc8c1eb5b2c6ede611f1fa25d02252a9b4",
+    "docs/briefing-migration.md": "d88b476e146c8b383f11fc53ede7cbdfdf1a55cbe4522e68a61e9e9a4a03dad3",
     "docs/calendar-handoff.md": "6457b14e71cb82950fbdf29ca93a2f9698ead1447dcf8d5a489a6bd39a04cc6f",
     "docs/calendar-register.md": "81a09f870e08345bb9c024be5fd35d1fee0c5c7fe5390c544284a392407ae272",
     "docs/calendar-timing.md": "5c990e6f647f1c2d70a36ee5197110417c5d09bb250a5b4cc306f39aee9cb7a9",
     "docs/calendar.md": "02f9502edc5b0581c8931d27f74ccc9c4c41b56550adb3a78af8c0d8dd932b79",
-    "docs/cli.md": "a7e5a9dbd89f394de4de952dedae89ab99d51f8746686515a611dedbb94510e0",
+    "docs/cli.md": "64075a2c7595df49ac218f7616f2f28be7f45ba26557b4a9db46ab2251761661",
     "docs/cloud-admission.md": "e12785d1f2656b4257556a97332832df2f9c58f413f4548e5d7c6304b94bdb0f",
     "docs/deterministic-briefing.md": "da2fa4b44f7ebb984c9af7f848552bc5419cbb72674253925ad53cefa718f05c",
     "docs/fleet-health.md": "4b8760b3e9c2d98a6839bcddda1ca6747471481f0ffe778a8d54bf668ac84f9e",
@@ -34,11 +34,11 @@
     "docs/operating-procedure.md": "0ba57f96cc1ce2702ea43b24fa6251f079d1454f592f905a6da2a4449d195594",
     "docs/research/calendar-tasks-integration.md": "5dd8a9eb8070db7f69130351fd07aa0a1216fbb8f9267f66751f0281229ecb87",
     "docs/token-review.md": "f345647d50fb9a8e2500d001d3b657b10ee0ea28a157da0198ff6c618c4fa36e",
-    "docs/verification-index.json": "0db6b9fcc10d464d1a07f2cfd104110dd7832ffc1fc41e93f50220bf44cb5f44",
+    "docs/verification-index.json": "4616fd4039f1b85478e082cf28cf398ed105977ddb3f75855b736d7dc6b3d455",
     "procedures/bounded-automation-v1.json": "926ec4a3ca46d8605c7da48f8898cfa628ed805340a2abeb5cb4861c06d18e34",
-    "scripts/agent.mjs": "dd5f4643746778628ea58820368686b7602f189b51d91a08f67404b208aa0862",
+    "scripts/agent.mjs": "342942a2509e400c12f01ebd79610367f6b07f8569126e0984e5c692b0d8bb96",
     "scripts/briefing-cloud-exchange.mjs": "ece4c710643cb2c1f4d32610324f1a346669ef67cfeaee7c8a833af878458703",
-    "scripts/check.mjs": "b436ed3c66ab17bcf039a553b0ee227ba94b080dbdc3cc41da03c9e196f16683",
+    "scripts/check.mjs": "c060256c2f1b041c6a10bda76c66899208bfd5b092eeb836289108156c1e8edb",
     "scripts/cloud-acceptance.mjs": "9940ac43b1c277bfe1f9f9cebbf60568e62aee293af2817c4cb5689548e07583",
     "scripts/collect-morning.mjs": "861b14011777a382c9a35a4bc3f6c21de1ec9b0f3e395168eb740819226b2f86",
     "scripts/foundation-release.mjs": "8d4740442cd3fbbf6e0d5454568bef52ea1596e9207ae528a65f5c8e2fec692c",
@@ -53,10 +53,10 @@
     "src/briefing-acquisition.mjs": "0fa631189ec2b7a2a656b5f0e172adf6cf3342c85bd3b47fa5a046b9e54cbe47",
     "src/briefing-cloud-caller.mjs": "635a524c41c8784de042768a9c51d66fb6ce671e2a090c318d1145cdbd996867",
     "src/briefing-cloud-exchange.mjs": "cc8a0d121889e037ddf504088080b24381c9e56378bb8b026b3d857218ea1779",
-    "src/briefing-core.mjs": "ddb4583942b2b1328e56d6ebc63b4f2dc98c04470713fbf31d47f6233be795c9",
-    "src/briefing-observation.mjs": "1482eddda3ed1f8aa1778e18d49b9ead4000b3d868d9dbba6084205a0a5f5d01",
-    "src/briefing-plan.mjs": "4c89d562a714b5cd314e952c8a7cf5c263fbbb4085a855cae386bee11bf77225",
-    "src/briefing-policy.mjs": "4f810fe256874753c5ad5e7957fd1f69536c8573b2f02a044431d2de2701b02c",
+    "src/briefing-core.mjs": "8a2d9dd27172221cef587811ee23ea9daa898338aa76d0ff337a19c24342ccc8",
+    "src/briefing-observation.mjs": "f8201fd3be07a1ed917738794aa15ba2bd18aa8ddeaf9703b4c0bcbd8162d844",
+    "src/briefing-plan.mjs": "b39e5821357ba2c7e09e823150c22aaa7b3e544e5e4913ea6c76d80023aa76b8",
+    "src/briefing-policy.mjs": "0cab8b3f58188ca157b3037d1c1a5aeda931a6b668d79bc439aff15bbf4dd073",
     "src/briefing-reporting.mjs": "3bee7e7e912efa31ecda166099ee37f1d21ec00508157981c353584a8dc43e15",
     "src/briefing-source-normalization.mjs": "c364b1552acf88b4b4d8792a8547e17bade6bb3f693c1ea9e610902e4e613c9a",
     "src/briefing.mjs": "355717f83aa3c582d8c3a37352f8366cf94a8a4b3b2e5c0ec878fe1dd2676d62",
@@ -72,7 +72,7 @@
     "src/cloud-schema.mjs": "2179301f012a5832b597f493f9744df8d86f60427d2bbac0664f4f6fd95853bd",
     "src/cloud.mjs": "9e48c4f64f95ac23a8e7fb0a33e51b21fb9a2022a48e355dee06de3d76ef1a7f",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
-    "src/daily-briefing.mjs": "5395f4a0e6f8731d8244adc7febbfc6b01f7fc256a1f34af92a3636af0fe7045",
+    "src/daily-briefing.mjs": "58b2c3f7e1e84b84e0418147d4325abd1c06bee2d7e7ffdd38b93ec5092b0233",
     "src/dispatch.mjs": "628d42d6ebea291ae12fbbc711cf354018ac3263e05267746976e1bce1215916",
     "src/fleet-schema.mjs": "d9d87c7834b006fb5dd7dac1bb41b0f2075b2e20057f40c656c0974b4576ea27",
     "src/fleet-state.mjs": "4e3f1d689b3cb7df2301e4df46298c7bea221584b3e67b76d844685046439d53",
@@ -82,7 +82,7 @@
     "src/immutable-slot.mjs": "59e8ccd7c37783268e22703f63897c8c6d2b97c497ab37ff300e636a33744035",
     "src/improvement-report.mjs": "fbab0e0b543ad481ed95a31bd5b6f427103c90d2e60b69008800f91ffdfd27b9",
     "src/maintenance.mjs": "05e54b1b3876d094abbea1b3626c0447e79ec337801e99abf8ac7f6f5efd2c19",
-    "src/metadata.mjs": "340c34e3a1415e7e7be60e633a13c57f4abb13f484ffd826b4e221787b8ac31b",
+    "src/metadata.mjs": "05eb2572119d568b9be99ea100eff95a5c23c6efbca6b1d86263253094345318",
     "src/morning-collection.mjs": "37dae6e547e0e20494e714ecc1b20f28364989600ed751ee7fa2c817ae985287",
     "src/morning-presentation.mjs": "36d171d854c34b3062da02e9c9ac5b095e509164e2c674bf0dd4ccae1268a343",
     "src/morning.mjs": "c01412274bccfb57e15a423b88c830a9cdb8d6486b2b264c074e7ce30b34d026",
@@ -97,6 +97,7 @@
     "test/academic-os-task-plan.test.mjs": "2111ebf0045b452b0220ca17209cf66eeec6b5179238f0f3c7aecdd092cb4269",
     "test/automation-procedure.test.mjs": "fb6afb22ee5c95d31be3d170983ec97527f975624337782879c0ca9c76a97b6e",
     "test/briefing-cloud-caller.test.mjs": "25919b20bc39defae84f7b4cd9dd134cf5fcb8a63ac334979c4c6441f920a0f9",
+    "test/briefing-mail-observation.test.mjs": "109a56982a7ca5d546ee2968f28844d451bfd28d5eeee0ffb081757e06ef09ce",
     "test/briefing-policy.test.mjs": "450e59ed67c9ce8fc9ca6d3456fed486e12898eaac0f30d92ab73d37b1058a4e",
     "test/briefing-reporting.test.mjs": "1314aca8159ce5e99b3bee7402a845d5eb5455136539467d44e4d28c6d660a38",
     "test/briefing-source-normalization.test.mjs": "4150c805a48415a807d4713428767ca33cc971f32557218cdd37b814a186c023",
@@ -143,7 +144,7 @@
     "verification/cloud-migration-fixtures.mjs": "5cdb30a0a1eb48889034039388c742aefd8ee5501d757073da8eb2cfee3d4a20",
     "verification/cloud-mutations.mjs": "c948e32cff4b8dd0226c149f81013cc751b62311896c040deba6c22c4112895f",
     "verification/cloud-properties.mjs": "c2639d858364b8b9e293757c98d67afb5efe929aced3264bf5b69446d0f95541",
-    "verification/daily-briefing-drive.mjs": "345a3f0d431bb368a646f9311a718c6db9d3c17705e22d8d1f0e8e7df2fdea49",
+    "verification/daily-briefing-drive.mjs": "00f7dd68a2651c95f7aa59cac2b68329268032bd445075800f65c99e69e5ac0b",
     "verification/daily-briefing-fixtures.mjs": "cd93bb95e17b0d14934891262998b62bd3287c7ccf00b11df90a86af61e403e1",
     "verification/dispatch-drive.mjs": "dd115268fd9f50b8f743f1ef25d368318164d1e1052d3ed5a77f2441befad396",
     "verification/dispatch-properties.mjs": "373a2c4b6bf50f7f40733d63c38c93b1cf24a1199329e8fe815ad8d66faa5932",
@@ -661,6 +662,20 @@
       "properties": [
         "automation-contract"
       ]
+    },
+    {
+      "function": "validateMailReview",
+      "source": "src/briefing-policy.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "prepareBriefing",
+      "source": "src/briefing-plan.mjs",
+      "properties": [
+        "morning-contract"
+      ]
     }
   ],
   "boundsSource": "verification/properties.mjs#bounds",
@@ -991,7 +1006,8 @@
     "V3 caller invokes actual fresh fleet CLI with synthetic supported tools, actual claim/result schema, same-ID readback and post-cleanup raw evidence. Cross-day prior delivered facts/check history, positive learning attribution and unavailable edit behavior remain behavioral; provider truth and live pilot remain external.",
     "Direct whole-source release rebuild/materialization, pure dependency closure, fresh-process equivalence, trusted capsule hash before parse/import, and actual collection-to-v3-journal intake/seal. Reported source clocks do not authenticate provider truth.",
     "Generic automation CLI reads exact pinned procedure/configuration files and one named canonical outcome; validates original byte and semantic identities without history enumeration. Reporting producer/publication implementation moves unchanged to a generic owner; old briefing entry forwards compatible actions. Capsule v2 adds a pure generic planner; v1 read/materialization remains supported.",
-    "Actual generic CLI refuses correctly rehashed invalid report timing/telemetry/nonterminal objects and non-string revisions. Publication and predecessor paths share producer evidence validation; valid optional null measurements and historical terminal report:null retain wire compatibility."
+    "Actual generic CLI refuses correctly rehashed invalid report timing/telemetry/nonterminal objects and non-string revisions. Publication and predecessor paths share producer evidence validation; valid optional null measurements and historical terminal report:null retain wire compatibility.",
+    "Gmail observation preview schema 1 retains original collector bounds, null provider clocks, explicit nullable flags/read state, items, facts, inventory and independent pagination. All classifications defer; result effects/send are unauthorized. Fresh CLI, strict journal-seal refusal and materialized portable equality cover this separate path. No new finite or TLC claim."
   ],
   "excluded": [
     "Arbitrary-size inputs or a full Cartesian product of every field",
