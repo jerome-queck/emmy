@@ -16,7 +16,7 @@ Read the destination project's standing context. Keep shared policy there and pu
 - **Subgoals**: Give each subgoal an observable result, acceptance criterion, and dependencies.
 - **Boundaries**: Name authorized effects, exclusions, source revision, and worktree ownership.
 - **Output**: Specify deliverables and the evidence handoff.
-- **Delegation**: Name permitted helpers, their scopes, and monitoring owner. Say when none are needed.
+- **Delegation**: Name each useful helper role, count, scope, model family, and effort. Resolve the supported model ID at dispatch. Keep one accountable integrating owner and name the monitoring parent. Say when no helpers are needed.
 
 Roughly 500 words is a provisional prompt target, never a validator or rejection threshold. Add length when authority, acceptance, or recovery needs it and explain the exception. Prefer pointers to standing context over repetition.
 

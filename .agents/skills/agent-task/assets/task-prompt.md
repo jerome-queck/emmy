@@ -22,4 +22,4 @@
 
 ## Delegation
 
-[One accountable owner. Helpers allowed or none. Give each helper a bounded scope, resolved skills, verification and authority requirements, and isolated writes when needed. Name the parent responsible for supported native read/wait monitoring and handoff review.]
+[One accountable integrating owner. Helpers allowed or none. For each useful helper role, give the count, bounded scope, model family, and effort; resolve the supported model ID at dispatch. Pass resolved skills, verification, authority, and isolated writes when needed. Name the parent responsible for supported native read/wait monitoring and handoff review.]
