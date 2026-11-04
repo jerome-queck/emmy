@@ -100,7 +100,7 @@ export function verifiedPriorBriefingFacts(state, run, item) {
   for (const prior of state.morningRuns ?? []) {
     const previous = prior.items.find(previous => previous.adapter === item.adapter && previous.before.nativeId === item.before.nativeId && previous.context.threadDigest === item.context.threadDigest);
     if (!previous) continue;
-    const delivered = deliveredBriefingBodies(prior, run).find(value => value.nativeId === supplied.messageId && value.bodyDigest === supplied.bodyDigest && item.facts.every(fact => value.body.includes(fact)));
+    const delivered = deliveredBriefingBodies(prior, run).find(value => value.nativeId === supplied.messageId && value.bodyDigest === supplied.bodyDigest && item.facts.every(fact => value.body.includes(briefingHumanText(fact))));
     if (delivered) return delivered;
   }
   return null;
@@ -398,7 +398,10 @@ export function morningTransition(state, command, root, at) {
     insist(item.attempts.every(attempt => attempt.status === 'known-unexecuted'), 'Mail action already verified or uncertain; inspect same ID before retry');
     insist(run.delivery?.status === 'delivered' && run.sealed && !run.sealed.gaps.length || run.policyVersion === 3 && !run.delivery && priorFacts && command.action === 'archive' && run.sealed && !run.sealed.gaps.length, 'Cleanup requires delivered/read-back brief or verified prior unchanged facts with complete fresh coverage');
     }
-    for (const fact of item.facts) insist((priorFacts ? priorFacts.body.includes(fact) : run.cleanup ? [run.sealed.body, ...run.summaryHistory?.filter(summary => summary.delivery?.status === 'delivered').map(summary => summary.body) ?? [], ...(run.summary?.delivery?.status === 'delivered' ? [run.summary.body] : [])].some(body => body.includes(fact)) : run.sealed.body.includes(fact)), 'Useful receipt facts must be in the delivered exact body before archive');
+    for (const rawFact of item.facts) {
+      const fact = run.policyVersion === 3 ? briefingHumanText(rawFact) : rawFact;
+      insist((priorFacts ? priorFacts.body.includes(fact) : run.cleanup ? [run.sealed.body, ...run.summaryHistory?.filter(summary => summary.delivery?.status === 'delivered').map(summary => summary.body) ?? [], ...(run.summary?.delivery?.status === 'delivered' ? [run.summary.body] : [])].some(body => body.includes(fact)) : run.sealed.body.includes(fact)), 'Useful receipt facts must be in the delivered exact body before archive');
+    }
     insist(command.action !== 'trash' || item.classification.rule?.ownerRef, 'Recoverable Trash needs versioned applicable owner authority');
     const attempt = { status: 'uncertain', action: command.action, before: command.before, destination: command.destination, receipt: command.receipt, rule: item.classification.rule, policyVersion: item.classification.policyVersion, policyDigest: item.classification.policyDigest, reason: item.classification.reason, at };
     attempt.intentDigest = digest({ runId: run.id, itemKey: item.key, attempt: item.attempts.length + 1, ...attempt }); item.attempts.push(attempt);

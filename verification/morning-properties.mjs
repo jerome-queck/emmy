@@ -3,7 +3,7 @@ import { canonical, digest } from '../src/records.mjs';
 import { morningAssessments, morningCommand, morningDelivery, morningAt, morningEntities, morningItem, morningOpen, morningReceipt, morningRoot, morningWindow } from './morning-fixtures.mjs';
 import { morningV3Open, morningV3Policy, morningV3Plan } from './morning-v3-fixtures.mjs';
 import { verifyBriefingWorkflow, briefingWorkflowCases, briefingWorkflowMutations } from './briefing-workflow-properties.mjs';
-export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 90 + briefingWorkflowCases, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations, explicit predecessor-inactive migration acceptance and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
+export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 106 + briefingWorkflowCases, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations, explicit predecessor-inactive migration acceptance and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
 export function verifyMorningPolicy({ morning, fleet, collection, policy, plan, reporting }, check) {
   let cases = 0;
   const expect = (name, value, message) => { cases++; check('morning-contract', { case: name }, value, message); };
@@ -18,7 +18,7 @@ export function verifyMorningPolicy({ morning, fleet, collection, policy, plan, 
   expect('rule/both-markers', morning.classifyMail(self, morningOpen.accounts.gmail.account, [{ id: 'seerr-available', version: 1, ownerRef: 'owner' }]).action !== 'trash', 'Self-sent notifications need both exact subject markers.');
   expect('facts/required', morning.classifyMail({ ...item, context: { ...item.context, orderReceipt: true } }, morningOpen.accounts.gmail.account, grants).action === 'keep', 'Useful order facts are required before an archive can be proposed.');
   expect('policy/version', morning.classifyMail(item, morningOpen.accounts.gmail.account, grants).policyVersion === 2, 'Every classification retains its policy version and digest.');
-  const prepare = (open = morningOpen) => {
+  const prepare = (open = morningOpen, items = [morningItem(), morningItem('outlook')]) => {
     const state = fleet.fleetInitial(morningRoot); morning.morningTransition(state, open, morningRoot, morningAt);
     const run = state.morningRuns[0];
     for (const source of run.sources) {
@@ -27,7 +27,7 @@ export function verifyMorningPolicy({ morning, fleet, collection, policy, plan, 
       morning.morningTransition(state, { step: 'source', runId: run.id, sourceId: source.id, jobKey: key, receipt, paginationComplete: true, cached: false, messageIds: ['gmail', 'outlook'].includes(source.role) ? [`${source.role}-one`] : [], resourceIds: source.role === 'calendar-inventory' ? ['calendar'] : source.role === 'task-inventory' ? ['tasks'] : [], window: ['calendar', 'tasks'].includes(source.role) ? morningWindow : null }, morningRoot, morningAt);
     }
     const step = (step, fields = {}, at = morningAt) => morning.morningTransition(state, morningCommand(step, { ...(['send-ack', 'send-resolve', 'edit-ack', 'edit-resolve'].includes(step) ? { scope: open.delivery.scope } : {}), ...fields }), morningRoot, at);
-    step('review', { items: [morningItem(), morningItem('outlook')] });
+    step('review', { items });
     const seal = () => step('seal', { ...morningAssessments(), ...(open.policyVersion === 3 ? { deterministic: morningV3Plan(run) } : {}) });
     const send = () => { seal(); step('send-intent', { sendRef: 'send', bodyDigest: run.sealed.bodyDigest }); };
     const deliver = () => { send(); step('send-ack', { sendRef: 'send', bodyDigest: run.sealed.bodyDigest, deliveredBodyDigest: run.sealed.bodyDigest, nativeId: 'message', readbackRef: 'readback' }); };
@@ -133,6 +133,26 @@ export function verifyMorningPolicy({ morning, fleet, collection, policy, plan, 
   const v3Plan = morningV3Plan(fixture.run);
   expect('v3/compiler-body', rejects(() => fixture.step('seal', { ...morningAssessments(), deterministic: { ...v3Plan, result: { ...v3Plan.result, body: 'forged body', bodyDigest: digest('forged body') } } })), 'A caller cannot replace the actual deterministic body with matching self-supplied digest.');
   fixture.seal(); expect('v3/compiler-exact', fixture.run.sealed.body === v3Plan.result.body && fixture.run.sealed.deterministic.result.policyDigest === digest(morningV3Policy), 'Exact configured compiler output enters the existing journal owner.');
+  for (const [index, fact] of ['Invoice INV_2026 paid', 'Invoice [paid] *confirmed*', 'Receipt C:\\receipts\\paid', 'Paid `invoice` {verified} <record> #1 | yes!'].entries()) {
+    fixture = prepare(morningV3Open, [{ ...receiptReview, facts: [fact] }, morningItem('outlook')]);
+    fixture.deliver();
+    const reviewed = fixture.run.items[0]; const current = { ...fixture.run, id: 'next-run' };
+    const prior = { ...reviewed, policyEvidence: { ...reviewed.policyEvidence, priorFactsDelivery: { verified: true, contextDigest: reviewed.context.threadDigest, messageId: fixture.run.delivery.nativeId, bodyDigest: fixture.run.sealed.bodyDigest } } };
+    expect(`v3/rendered-prior-${index}`, morning.verifiedPriorBriefingFacts(fixture.state, current, prior)?.bodyDigest === fixture.run.sealed.bodyDigest, 'Exact delivered canonical punctuation facts remain reusable for unchanged context and native identity.');
+    expect(`v3/rendered-archive-${index}`, !rejects(() => fixture.step('action-intent', { adapter: 'gmail', nativeId: reviewed.before.nativeId, action: 'archive', before: reviewed.before, receipt: reviewed.receipt, destination: null })), 'Delivered canonical punctuation facts authorize the classified archive.');
+    if (index === 0) for (const field of ['fact', 'nativeId', 'context', 'message', 'digest', 'scope', 'delivery', 'body']) {
+      const state = structuredClone(fixture.state); const candidate = structuredClone(prior); const next = structuredClone(current);
+      if (field === 'fact') candidate.facts = ['Invoice INV_2026 unpaid'];
+      if (field === 'nativeId') candidate.before.nativeId = 'another-mail';
+      if (field === 'context') { candidate.context.threadDigest = digest('changed context'); candidate.policyEvidence.priorFactsDelivery.contextDigest = candidate.context.threadDigest; }
+      if (field === 'message') candidate.policyEvidence.priorFactsDelivery.messageId = 'another-message';
+      if (field === 'digest') candidate.policyEvidence.priorFactsDelivery.bodyDigest = digest('another-body');
+      if (field === 'scope') next.deliveryTarget.scope.resource = 'another-room';
+      if (field === 'delivery') state.morningRuns[0].delivery.status = 'uncertain';
+      if (field === 'body') state.morningRuns[0].sealed.body += ' changed';
+      expect(`v3/rendered-prior-reject-${field}`, morning.verifiedPriorBriefingFacts(state, next, candidate) === null, 'Prior fact reuse preserves exact fact, context, native identity, body and delivery guards.');
+    }
+  }
   const observation = { observedAt: null, capturedAt: null, collectorObservation: { basis: 'current-read-start', startedAt: morningAt, endedAt: morningAt } };
   const observe = f => { for (const source of f.run.sources.filter(source => ['calendar', 'calendar-inventory'].includes(source.role))) f.step('source', { ...source.capture, jobKey: null, receipt: { ...source.capture.receipt, sourceRef: `${source.id}-original-observation` }, acquisition: { provenance: 'ordinary-authorized', ownerRef: f.run.ownerRef, collectionRef: `${source.id}-original-observation` }, providerObservation: structuredClone(observation) }); };
   fixture = prepare(morningV3Open); observe(fixture);
@@ -161,6 +181,8 @@ export function verifyMorningPolicy({ morning, fleet, collection, policy, plan, 
 }
 const mutant = (id, before, after, counterexample) => ({ id: `morning-${id}`, source: 'src/morning.mjs', property: 'morning-contract', edits: [[before, after]], counterexample });
 export const morningMutations = [
+  mutant('rendered-prior-raw', 'value.body.includes(briefingHumanText(fact))', 'value.body.includes(fact)', 'v3/rendered-prior-0'),
+  mutant('rendered-archive-raw', 'run.policyVersion === 3 ? briefingHumanText(rawFact) : rawFact', 'rawFact', 'v3/rendered-archive-0'),
   mutant('collector-immutable', '!same(prior.receipt, command.receipt) || same(prior.providerObservation, command.providerObservation)', 'true', 'collector/immutable'),
   mutant('collector-role', "command.providerObservation === undefined || run.policyVersion === 3 && ['calendar', 'calendar-inventory'].includes(source.role)", 'command.providerObservation === undefined || run.policyVersion === 3', 'collector/role'),
   mutant('collector-version', "command.providerObservation === undefined || run.policyVersion === 3 && ['calendar', 'calendar-inventory'].includes(source.role)", "command.providerObservation === undefined || ['calendar', 'calendar-inventory'].includes(source.role)", 'collector/version'),
