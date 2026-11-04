@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "a30d8af4e83362483d43b684366b9c6e5c131255",
-  "reviewedAt": "2026-11-04T01:55:26.941Z",
-  "review": "Implementation owner reviewed the pure assessor, parser dependency, finite cases, intended source mutations and CLI driver at this source commit. Parent independent review remains separate and pending.",
+  "sourceCommit": "526637274e35ed373565f592e91bd4358f71b534",
+  "reviewedAt": "2026-11-04T01:58:59.635Z",
+  "review": "Implementation owner reviewed the independent-review followup diff at this committed source. Calendar date/time components reject normalized invalid instants. The CLI driver snapshots every actual selected private-home directory, file SHA-256 and symlink before/after. Parent independent followup review remains separate and pending.",
   "files": {
-    "src/studio-discovery.mjs": "b84a463b4ae5eb8d2cff5add4d9bd1c73206e1bf6fc1975a6fd232a6a7200cf8",
+    "src/studio-discovery.mjs": "419b6df49a7ce6fc5b71bf8d4a2f917dae6b1a83863628aae6e14b798917948a",
     "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
-    "verification/studio-discovery-properties.mjs": "b2aa318da65856241170eb7bfb0d2a8bccd8b32d73083c5765c4f53cdf4dd485",
-    "verification/studio-discovery-drive.mjs": "652e7e15db7ac2d5c14391ea14153b7cf64b7b9b0e243165c1c023225e3af75d",
-    "scripts/verify-discovery.mjs": "a1ba3eb760e645ea1ed14884093ecfec575f928ef86e1f01e15c88bcc45f1ce2"
+    "verification/studio-discovery-properties.mjs": "188f462e531ad8b2e0ed49b37a8a214114e18da5d73910c7528f8b78a7ee9a92",
+    "verification/studio-discovery-drive.mjs": "d227eecafca93eac243265bdfab214c3e1fd32c4dab0c7126b71dac23c9b503f",
+    "scripts/verify-discovery.mjs": "6a9560e248ad5098c539d23bf1cb13d9842fcfcce6fd8704db76e2e2a4f8c9a7"
   },
   "mapping": {
     "source": "src/studio-discovery.mjs",
@@ -44,16 +44,20 @@
       "conflicting-membership",
       "zoneless-acquisition",
       "missing-status",
+      "invalid-calendar-acquisition",
+      "invalid-clock-acquisition",
+      "valid-offset-leap-day",
+      "invalid-calendar-evaluation",
       "opaque-status"
     ],
     "claims": [
       "Exact supplied native request scope and cursor chaining preserve incomplete pagination and exact next reads.",
       "Saved host/project membership and host/native-ID grouping retain independent tasks, conflicting observations and unknown membership.",
-      "Original acquiredAt clocks use an inclusive supplied age bound; unknown, future and stale evidence remains visible.",
+      "Original acquiredAt clocks require valid calendar date/time components and explicit zones, use an inclusive supplied age bound, and retain unknown, future or stale evidence. Malformed evaluation instants refuse.",
       "Opaque native identity/status, pending client identity and unavailable catalog/source distinctions remain explicit.",
       "Identical supplied captures and evaluation clock produce repeatable output without mutating the input."
     ],
-    "cliBoundary": "The real discovery CLI is driven by the mapped studio-discovery scenario. Bounded strict file input, exit statuses, retained fixture bytes, disposable-index rebuild and journal/schedule sentinels are behavioral controls, not additional finite claims."
+    "cliBoundary": "The real discovery CLI is driven by the mapped studio-discovery scenario. Bounded strict file input, exit statuses, retained fixture bytes, disposable-index rebuild and equality of recursive actual selected private-home directory/file-hash/symlink snapshots are behavioral controls, not additional finite claims. New journals change the snapshot and fail."
   },
   "mutations": [
     {
@@ -83,6 +87,10 @@
     {
       "id": "forget-overlap",
       "case": "active-archive-overlap"
+    },
+    {
+      "id": "normalize-invalid-date",
+      "case": "invalid-calendar-acquisition"
     },
     {
       "id": "accept-error-wrapper",
