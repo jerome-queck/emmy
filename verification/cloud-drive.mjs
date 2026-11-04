@@ -67,6 +67,23 @@ export async function driveCloud({ sourceRoot, root, home, run, scenario, report
     await run(['responsibility', '--file', await fixture({ ...adopted, hash: undefined, id, resource: id, authorityRef: { ...adopted.authorityRef, resource: id } })], 0, homeFor(id));
     return invoke(id, 'configure', { config });
   };
+  for (const mode of ['healthy', 'failed', 'escalated', 'suspended']) {
+    const id = `aggregate-${mode}`;
+    await create(id, { maxAttempts: 1 });
+    const definition = (await readStore(homeFor(id))).records.find(record => record.type === 'definition');
+    const observedAt = now();
+    const observations = ['criteria', 'tasks', 'target'].map(category => ({ schemaVersion: 1, type: 'observation', responsibilityId: id, subject: definition.target, category, observer: 'Synthetic complete cloud aggregate control', observedAt, availability: 'available', coverage: { complete: true, gaps: [] }, evidenceRefs: [], claims: [], ...(category === 'tasks' ? { tasks: [] } : category === 'target' ? {} : { claims: [{ criterionId: definition.criteria[0].id, kind: 'reported-check', revision: definition.target.revision, specHash: digest(definition.criteria[0]), outcome: 'pass', evidenceRef: 'Synthetic aggregate-only criterion control.' }] }) }));
+    if (mode === 'failed') { await invoke(id, 'submit', { job: job('dead', { transientFailures: 8 }) }); await invoke(id, 'tick', { capacity: capacity('available') }); }
+    if (mode === 'escalated') await invoke(id, 'health', { issue: { code: 'signin-blocked', scope: 'aggregate-fixture', sourceRef: 'Synthetic aggregate-only escalation.' } });
+    if (mode === 'suspended') await invoke(id, 'suspend', { reason: 'Synthetic aggregate-only suspension.' });
+    const aggregate = await run(['reconcile', '--id', id, '--as-of', now(), '--import', await fixture({ schemaVersion: 1, records: observations })], mode === 'healthy' ? 0 : 3, homeFor(id));
+    const review = aggregate.responsibilities[0].record;
+    assert.deepEqual(review.findings.filter(finding => finding.status === 'open'), [], `${mode} has no noncloud finding`);
+    assert.deepEqual(review.fleet, []);
+    assert.equal(review.cloud[0].status, mode === 'healthy' ? 'ready' : mode === 'suspended' ? 'suspended' : 'needs-attention');
+    assert.equal(aggregate.status, mode === 'healthy' ? 'current' : 'actionable');
+    retain(`aggregate-cloud-${mode}`, { status: 'passed', aggregate: aggregate.status, cloud: review.cloud[0].status });
+  }
   const competing = { ...adopted, hash: undefined, id: 'second-controller', resource: 'second-controller', authorityRef: { ...adopted.authorityRef, resource: 'second-controller' } };
   await run(['responsibility', '--file', await fixture(competing)], 0, privateHome);
   await run(['cloud', '--file', await fixture({ schemaVersion: 1, responsibilityId: competing.id, operation: 'configure' })], 2, privateHome);

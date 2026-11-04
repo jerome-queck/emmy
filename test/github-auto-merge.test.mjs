@@ -20,7 +20,7 @@ function snapshot() {
     },
     expectedHead: head, expectedBase: base,
     branch: {
-      name: 'main', sha: base, protected: true, enforcement: 'everyone',
+      name: 'main', sha: base, protected: true, enforcement: 'everyone', strict: true,
       contexts: [MERGE_POLICY.ci, MERGE_POLICY.review],
     },
     checks: [{ id: 10, name: MERGE_POLICY.ci, sha: head, status: 'completed', conclusion: 'success', app: 'github-actions' }],
@@ -46,6 +46,8 @@ test('eligible requires every identity, revision, CI and independent-review gate
     ['base', s => { s.pr.baseSha = other; }],
     ['base', s => { s.branch.sha = other; }],
     ['protection', s => { s.branch.protected = false; }],
+    ['protection', s => { s.branch.strict = false; }],
+    ['protection', s => { delete s.branch.strict; }],
     ['protection', s => { s.branch.enforcement = 'non_admins'; }],
     ['protection', s => { s.branch.contexts = [MERGE_POLICY.ci]; }],
     ['ci', s => { s.checks = []; }],
@@ -224,7 +226,8 @@ test('GitHub adapter paginates status history and checks every run at the exact 
   const github = createGitHub('test-token', async url => {
     urls.push(url);
     let body = [];
-    if (url.includes('/statuses')) body = url.endsWith('page=1') ? first : [{ id: 101, context: MERGE_POLICY.review, state: 'success' }];
+    if (url.endsWith('/graphql')) body = { data: { repository: { ref: { branchProtectionRule: { requiresStrictStatusChecks: true } } } } };
+    else if (url.includes('/statuses')) body = url.endsWith('page=1') ? first : [{ id: 101, context: MERGE_POLICY.review, state: 'success' }];
     else if (url.includes('/check-runs')) body = { check_runs: [] };
     else if (url.includes('/pulls/')) body = { number: 7, head: { sha: head }, base: { sha: base } };
     else if (url.includes('/branches/')) body = { name: 'main', commit: { sha: base } };
@@ -273,4 +276,54 @@ test('privileged workflow checks out only main and does not interpolate event da
   assert.match(workflow, /run: node scripts\/github-auto-merge\.mjs/);
   assert.doesNotMatch(workflow, /statuses: write|checks: write|--admin/);
   assert.match(workflow, /github\.event\.repository\.fork == false/);
+});
+
+
+test('GitHub adapter reads strict protection at the named ref and refuses false or missing', async () => {
+  for (const strict of [true, false, undefined]) {
+    const requests = [];
+    const github = createGitHub('test-token', async (url, options) => {
+      requests.push({ url, options });
+      let body;
+      if (url.endsWith('/graphql')) {
+        const request = JSON.parse(options.body);
+        assert.match(request.query, /ref\(qualifiedName: \$ref\)/);
+        assert.match(request.query, /branchProtectionRule \{ requiresStrictStatusChecks \}/);
+        assert.deepEqual(request.variables, { owner: 'jerome-queck', name: 'emmy', ref: 'refs/heads/main' });
+        body = { data: { repository: { ref: { branchProtectionRule: { requiresStrictStatusChecks: strict } } } } };
+      } else if (url.includes('/check-runs')) body = { check_runs: [{ id: 10, name: MERGE_POLICY.ci, head_sha: head, status: 'completed', conclusion: 'success', app: { slug: 'github-actions' } }] };
+      else if (url.includes('/statuses')) body = [{ id: 20, context: MERGE_POLICY.review, state: 'success', creator: { login: MERGE_POLICY.reviewer, type: 'User' } }];
+      else if (url.includes('/pulls/')) body = { number: 7, state: 'open', draft: false, merged: false, head: { repo: { full_name: MERGE_POLICY.repository }, sha: head }, base: { repo: { full_name: MERGE_POLICY.repository }, ref: 'main', sha: base } };
+      else if (url.includes('/branches/')) body = { name: 'main', commit: { sha: base }, protected: true, protection: { required_status_checks: { enforcement_level: 'everyone', contexts: [MERGE_POLICY.ci, MERGE_POLICY.review] } } };
+      else body = { full_name: MERGE_POLICY.repository };
+      return { ok: true, json: async () => body };
+    });
+    const normalized = await github.snapshot({ number: 7, expectedHead: head });
+    assert.equal(normalized.branch.strict, strict);
+    assert.deepEqual(evaluateEligibility(normalized), strict === true ? { eligible: true, waiting: [] } : { eligible: false, waiting: ['protection'] });
+    assert.equal(requests.filter(request => request.url.endsWith('/graphql')).length, 1);
+  }
+});
+
+
+test('strict protection must survive the final snapshot before the merge request', async () => {
+  for (const strict of [false, undefined]) {
+    const github = fakeGitHub({ change: snapshot => { snapshot.branch.strict = strict; } });
+    const result = await considerPullRequest({ number: 7, expectedHead: head }, github);
+    assert.equal(result.outcome, 'skipped');
+    assert.deepEqual(result.waiting, ['protection']);
+    assert.equal(github.calls.some(call => call.method === 'requestMerge'), false);
+  }
+});
+
+test('unavailable strict metadata fails the snapshot without requesting a merge', async () => {
+  const urls = [];
+  const github = createGitHub('test-token', async url => {
+    urls.push(url);
+    if (url.endsWith('/graphql')) return { ok: false, status: 403 };
+    if (url.includes('/check-runs')) return { ok: true, json: async () => ({ check_runs: [] }) };
+    return { ok: true, json: async () => url.includes('/statuses') ? [] : {} };
+  });
+  await assert.rejects(considerPullRequest({ number: 7, expectedHead: head }, github), /HTTP 403/);
+  assert.equal(urls.some(url => url.endsWith('/merge')), false);
 });
