@@ -69,6 +69,8 @@ After a legitimate source advance, adopt a descendant definition pinning the new
 
 ## Recover a private home
 
+For Studio-primary recovery, follow [the scoped recovery procedure](studio-recovery.md). It separates journal recovery, compatible code, native state and a separately authorised Drive round trip. Studio offline means stale or unavailable and wait; no automatic failover.
+
 ```sh
 node scripts/agent.mjs backup --to /replace/with/private-archive
 node scripts/agent.mjs restore --from /replace/with/private-archive --into /replace/with/new-home
