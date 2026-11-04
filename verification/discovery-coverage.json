@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "a30d8af4e83362483d43b684366b9c6e5c131255",
+  "reviewedAt": "2026-11-04T01:55:26.941Z",
+  "review": "Implementation owner reviewed the pure assessor, parser dependency, finite cases, intended source mutations and CLI driver at this source commit. Parent independent review remains separate and pending.",
+  "files": {
+    "src/studio-discovery.mjs": "b84a463b4ae5eb8d2cff5add4d9bd1c73206e1bf6fc1975a6fd232a6a7200cf8",
+    "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
+    "verification/studio-discovery-properties.mjs": "b2aa318da65856241170eb7bfb0d2a8bccd8b32d73083c5765c4f53cdf4dd485",
+    "verification/studio-discovery-drive.mjs": "652e7e15db7ac2d5c14391ea14153b7cf64b7b9b0e243165c1c023225e3af75d",
+    "scripts/verify-discovery.mjs": "a1ba3eb760e645ea1ed14884093ecfec575f928ef86e1f01e15c88bcc45f1ce2"
+  },
+  "mapping": {
+    "source": "src/studio-discovery.mjs",
+    "function": "studioDiscovery",
+    "cases": [
+      "saved-membership",
+      "inclusive-age",
+      "stale-original",
+      "future-original",
+      "missing-source",
+      "unavailable-source",
+      "catalog-unavailable",
+      "catalog-missing",
+      "pagination",
+      "cursor-chain",
+      "cursor-loop",
+      "foreign-host",
+      "unknown-membership",
+      "pending-identity",
+      "identical-duplicate",
+      "conflicting-duplicate",
+      "active-archive-overlap",
+      "exact-request",
+      "mcp-wrapper",
+      "ambiguous-wrapper",
+      "error-wrapper",
+      "unknown-host-catalog",
+      "unknown-acquisition",
+      "initial-cursor",
+      "missing-native-id",
+      "pending-client-id",
+      "opaque-native-id",
+      "conflicting-membership",
+      "zoneless-acquisition",
+      "missing-status",
+      "opaque-status"
+    ],
+    "claims": [
+      "Exact supplied native request scope and cursor chaining preserve incomplete pagination and exact next reads.",
+      "Saved host/project membership and host/native-ID grouping retain independent tasks, conflicting observations and unknown membership.",
+      "Original acquiredAt clocks use an inclusive supplied age bound; unknown, future and stale evidence remains visible.",
+      "Opaque native identity/status, pending client identity and unavailable catalog/source distinctions remain explicit.",
+      "Identical supplied captures and evaluation clock produce repeatable output without mutating the input."
+    ],
+    "cliBoundary": "The real discovery CLI is driven by the mapped studio-discovery scenario. Bounded strict file input, exit statuses, retained fixture bytes, disposable-index rebuild and journal/schedule sentinels are behavioral controls, not additional finite claims."
+  },
+  "mutations": [
+    {
+      "id": "ignore-project",
+      "case": "saved-membership"
+    },
+    {
+      "id": "ignore-host",
+      "case": "foreign-host"
+    },
+    {
+      "id": "refresh-original-age",
+      "case": "stale-original"
+    },
+    {
+      "id": "exclusive-age-boundary",
+      "case": "inclusive-age"
+    },
+    {
+      "id": "ignore-cursor-binding",
+      "case": "cursor-chain"
+    },
+    {
+      "id": "forget-conflicts",
+      "case": "conflicting-duplicate"
+    },
+    {
+      "id": "forget-overlap",
+      "case": "active-archive-overlap"
+    },
+    {
+      "id": "accept-error-wrapper",
+      "case": "error-wrapper"
+    }
+  ],
+  "assumptions": [
+    "Parsed nonhostile supplied captures; source responses, acquisitions and evaluation clock are caller declarations.",
+    "Finite synthetic host/project/page domains exercise the actual production function. Native response authenticity is not established."
+  ],
+  "limits": [
+    "No native collector or executor, scheduler/journal writer, cache/index reader or filesystem index writer is added.",
+    "No global completeness, atomic snapshot, native absence, action authority, task completion, adoption, delivery or external effect claim.",
+    "Existing dispatch, publication and other bounded verification mappings are not extended by this separate receipt."
+  ]
+}
