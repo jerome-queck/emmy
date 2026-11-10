@@ -48,7 +48,7 @@
     },
     {
       "name": "dispatch",
-      "description": "Resolve a saved destination, recover private bindings, and advise creation, monitoring or fresh-task handover. --context-needed never permits conversation reuse.",
+      "description": "Resolve saved destinations, recover explicit direct-root or historical bindings, and return read-only native dispatch advice.",
       "options": [
         {
           "name": "id"
@@ -107,6 +107,17 @@
       "feature": "fleet"
     },
     {
+      "name": "token-review",
+      "description": "Assess bounded supplied usage captures and complete cost per verified success without telemetry or execution.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "evidence"
+    },
+    {
       "name": "calendar",
       "description": "Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution.",
       "options": [
@@ -118,8 +129,41 @@
       "feature": "evidence"
     },
     {
+      "name": "calendar-register",
+      "description": "Collect read-only Calendar/Tasks snapshots, assess exact-ID proposals, validate shared versioned planning rules and handoffs, or prepare Academic OS API plans and inspect reports without applying them.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "evidence"
+    },
+    {
+      "name": "automation",
+      "description": "Plan a staged automation from exact procedure/configuration bytes, prepare existing canonical outcome artifacts, or read one exact artifact without native execution.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "upkeep"
+    },
+    {
+      "name": "daily-briefing",
+      "description": "Read the staged operating contract, validate private briefing policy, prepare fixed reports and reporting contracts, or compile/read exact held artifact slots without native effects.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "upkeep"
+    },
+    {
       "name": "briefing",
-      "description": "Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown.",
+      "description": "Load an explicitly pinned local release or canonical public guidance, check a declared draft, and retain exact advisory Markdown.",
       "options": [
         {
           "name": "file"
@@ -128,8 +172,19 @@
       "feature": "evidence"
     },
     {
+      "name": "guidance-pin",
+      "description": "Activate, inspect or deactivate an exact approved installed local guidance release without changing canonical caches.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "evidence"
+    },
+    {
       "name": "probe",
-      "description": "Publish a proposed Dot onboarding packet with eight probes.",
+      "description": "Publish current-environment onboarding proposals; cloud delegation requires an explicit probe ID.",
       "options": [
         {
           "name": "id"
@@ -271,7 +326,10 @@
       "commands": [
         "reconcile",
         "briefing",
-        "calendar"
+        "guidance-pin",
+        "calendar",
+        "calendar-register",
+        "token-review"
       ],
       "scenarios": [
         "self-check-repair",
@@ -283,7 +341,9 @@
         "briefing-guidance",
         "briefing-draft",
         "briefing-boundaries",
-        "calendar-acceptance"
+        "calendar-acceptance",
+        "calendar-register",
+        "token-review"
       ],
       "properties": [
         "observation-gates",
@@ -296,7 +356,8 @@
         "process-group-cleanup",
         "trigger-coverage",
         "retirement-closure",
-        "calendar-acceptance"
+        "calendar-acceptance",
+        "calendar-register"
       ]
     },
     {
@@ -306,6 +367,8 @@
         "maintain",
         "backup",
         "restore",
+        "automation",
+        "daily-briefing",
         "assurance"
       ],
       "scenarios": [
@@ -314,11 +377,15 @@
         "restored-current-context",
         "publication-interruption",
         "derived-boundaries",
+        "improvement-report",
+        "automation-foundation",
+        "daily-briefing-pilot",
         "local-assurance"
       ],
       "properties": [
         "restore-suspension",
-        "import-prefix"
+        "import-prefix",
+        "automation-contract"
       ]
     }
   ],
@@ -345,7 +412,7 @@
         "fleetState",
         "fleetView"
       ],
-      "statement": "Scoped attributable health stays age and coverage bounded; stable parent read identities, checkpoints, uncertainty and alert episodes prevent duplicate admission and unchanged notifications; explicit resolved-row archival preserves immutable ancestry and historical identity guards."
+      "statement": "Current scheduled health requires exact occurrence provenance; structured actions coalesce paraphrases, fresh source acquisitions close pending recovery, and explicit upgrades preserve historical states and review views. Parent read, uncertainty, archive ancestry and delivery guards remain bounded."
     },
     {
       "id": "process-incarnation",
@@ -367,6 +434,14 @@
         "assessLegacyAttestation"
       ],
       "statement": "Exact legacy checkpoint/report bindings, distinct attributable calls and declared review establish reported historical evidence only; fresh observed baseline and later restart remain separate live gates."
+    },
+    {
+      "id": "automation-contract",
+      "source": "src/automation-plan.mjs",
+      "functions": [
+        "planAutomation"
+      ],
+      "statement": "Versioned staged plans bind supplied configuration, scope, source pins, budgets and destinations. Canonical run ingestion rejects invalid timing, telemetry and nonterminal reports without granting effects or native creation."
     },
     {
       "id": "cloud-admission",
@@ -490,6 +565,14 @@
         "dispatchDecision"
       ],
       "statement": "Independent coordinator and destination identities, fresh project/source evidence, exact destination/remote-host scope, recorded settings and creator lineage gate bounded dispatch advice without erasing launch uncertainty or reused child bindings."
+    },
+    {
+      "id": "calendar-register",
+      "source": "src/calendar-register.mjs",
+      "functions": [
+        "assessCalendarRegister"
+      ],
+      "statement": "Fresh exhaustive query coverage and exact native Task timing gate free intervals; snapshot-bound assignment and occurrence identity, ordered questions, scoped owner supersession, protected meals, capabilities, done evidence and uncertain effects gate current proposals without execution."
     },
     {
       "id": "calendar-acceptance",

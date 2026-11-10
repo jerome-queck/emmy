@@ -6,6 +6,15 @@ import { morningFixture, morningItem, morningAt, refreshMorning } from '../verif
 import { compactAssessments } from '../verification/morning-compact-fixtures.mjs';
 const setup = () => { const f = morningFixture({ cleanupMode: 'batched-v1' }); const item = morningItem(); item.context.orderReceipt = true; item.facts = ['Order ABC-123 is ready for collection on the saved date.']; f.command('review', { items: [item, morningItem('outlook')] }); return f; };
 const send = f => { const value = { sendRef: 'compact-send', bodyDigest: f.run.sealed.bodyDigest }; f.command('send-intent', value); f.command('send-ack', { ...value, nativeId: 'compact-original-message', readbackRef: 'compact-native-readback', deliveredBodyDigest: value.bodyDigest }); };
+test('compact presentation uses explicit verified local guidance without manufacturing a public source check', () => {
+  const f = setup(); const input = compactAssessments();
+  input.briefing.result.guidance = { state: 'pinned', source: 'approved-local-release', digest: input.briefing.result.guidance.digest, revision: 'b'.repeat(40), pinDigest: 'c'.repeat(64), verifiedAt: morningAt };
+  f.command('seal', input);
+  assert.equal(f.run.sealed.diagnostic.assessment.guidance.state, 'pinned');
+  assert.equal(f.run.sealed.diagnostic.assessment.guidance.source, 'approved-local-release');
+  assert.equal(f.run.sealed.diagnostic.assessment.guidance.sourceCheckedAt, null);
+  assert.doesNotMatch(f.run.sealed.body, /Guidance is unavailable or cached/);
+});
 test('compact seal on the same open run removes diagnostic machinery while retaining exact facts and private audit', () => {
   const f = setup(); const specification = f.run.specification; f.command('seal', compactAssessments()); const { body, diagnostic } = f.run.sealed;
   assert.equal(f.run.specification, specification); assert.equal(f.state.morningRuns.length, 1); assert.equal(f.run.sealed.presentation, 'compact-v1');

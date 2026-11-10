@@ -1,8 +1,9 @@
+import { readFileSync } from 'node:fs';
 import { digest } from '../src/records.mjs';
 import { fleetCapture, fleetEntities, fleetJob, fleetReceipt, fleetRoot, fleetTime } from './fleet-fixtures.mjs';
 import { morningOpen, morningRoot, morningAt } from './morning-fixtures.mjs';
 
-export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 110, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
+export const fleetBounds = { conditions: 10, agesMs: [-1, 0, 300000, 300001], coverage: ['complete', 'partial'], pendingSlots: [0, 1, 2, 3, 4], priorities: ['interactive', 'morning', 'heavy'], cases: 155, assumptions: 'Parsed journal, attributable but unauthenticated parent captures, cooperative caller follows each ticket once, no native tools or sender.' };
 export function verifyFleetPolicy({ fleet }, check) {
   let cases = 0;
   const expect = (name, ok, message) => { cases++; check('fleet-contract', { case: name }, ok, message); };
@@ -169,5 +170,71 @@ export function verifyFleetPolicy({ fleet }, check) {
   expect('unknown-bytes/accounting', unknownResult.usedBytes === null && unknownResult.usedReads === 13 && unknownResult.byteAccounting.knownBytesLowerBound === 78082 && unknownResult.byteAccounting.budgetReservedBytes === 262144 && unknownResult.byteAccounting.budgetCompliance === 'unverified', 'Unknown measured total remains distinct from known subtotal and conservative reservation.');
   expect('unknown-bytes/no-success', rejects(() => transition(unknownState, { ...unknownAction, outcome: 'completed', checkpoint: 1 }, unknownAt)), 'Unknown-byte failure cannot be promoted into completed acquisition.');
   expect('unknown-bytes/no-numeric-substitute', rejects(() => transition(unknownState, { ...unknownAction, usage: { reads: 13, bytes: 78082 } }, unknownAt)), 'Known lower bound cannot substitute for measured total under failure discriminator.');
+  let measuredState = transition(green(), { operation: 'submit', job: fleetJob('measured-overrun', 'morning', { maxReads: 3, maxBytes: 131072 }) }).state;
+  measuredState = transition(measuredState, { operation: 'claim', ownerRef: 'synthetic-parent' }).state; const measuredJob = measuredState.jobs[0];
+  const measuredAction = { operation: 'resolve', jobKey: measuredJob.key, ticket: measuredJob.ticket, checkpoint: 0, outcome: 'blocked', usage: { reads: 2, bytes: 161853 }, receipt: fleetReceipt(), reason: 'Both observer calls ended.', failure: { kind: 'read-only-known-overrun', sourceRef: 'measured-ended-proof', sha256: 'a'.repeat(64), reason: 'Exact original cap exceeded.' } };
+  const measured = transition(measuredState, measuredAction, unknownAt);
+  expect('overrun/accounting', measured.state.jobs[0].status === 'blocked' && measured.state.jobs[0].usedReads === 2 && measured.state.jobs[0].usedBytes === 161853 && measured.state.jobs[0].input.maxBytes === 131072 && measured.state.jobs[0].byteAccounting.budgetCompliance === 'exceeded', 'Measured overrun stays blocked with actual bytes and immutable original cap.');
+  expect('overrun/no-success', rejects(() => transition(measuredState, { ...measuredAction, outcome: 'completed', checkpoint: 1 }, unknownAt)), 'Overrun cannot become successful.');
+  expect('overrun/strict-success-budget', rejects(() => transition(measuredState, { ...measuredAction, failure: undefined, outcome: 'completed', checkpoint: 1 }, unknownAt)), 'Normal success retains original strict budget.');
+  expect('overrun/actual-breach', rejects(() => transition(measuredState, { ...measuredAction, usage: { reads: 2, bytes: 131072 } }, unknownAt)), 'Overrun classification requires a real admitted-cap breach.');
+  const rewound = structuredClone(measuredState); rewound.jobs[0].usedReads = 3; rewound.jobs[0].attemptReads = 3;
+  expect('overrun/monotone', rejects(() => transition(rewound, measuredAction, unknownAt)), 'Known counters cannot be lowered.');
+  const mutating = structuredClone(measuredState); mutating.jobs[0].input.kind = 'native-mutation';
+  expect('overrun/read-only', rejects(() => transition(mutating, measuredAction, unknownAt)), 'Mutating work cannot use read-only settlement.');
+  expect('overrun/expired-result', rejects(() => transition(measuredState, { ...measuredAction, operation: 'result' }, unknownAt)), 'Expiry still requires explicit reconciliation.');
+  expect('overrun/duplicate', transition(measured.state, measuredAction, unknownAt).outcome === 'coalesced' && measured.state.jobs[0].usedBytes === 161853, 'Duplicate settlement does not count usage twice.');
+  expect('overrun/terminal', rejects(() => transition(measured.state, { ...measuredAction, reason: 'Changed settlement' }, unknownAt)), 'Terminal attempt cannot be reused.');
+  let ceilingState = transition(green(), { operation: 'submit', job: fleetJob('ceiling-overrun', 'morning', { maxReads: 32, maxBytes: 262144 }) }).state;
+  ceilingState = transition(ceilingState, { operation: 'claim', ownerRef: 'synthetic-parent' }).state; const ceilingJob = ceilingState.jobs[0];
+  const ceilingAction = { ...measuredAction, jobKey: ceilingJob.key, ticket: ceilingJob.ticket };
+  for (const [name, usage] of [['bytes', { reads: 1, bytes: 262145 }], ['reads', { reads: 33, bytes: 33 }], ['safe-maximum', { reads: Number.MAX_SAFE_INTEGER, bytes: Number.MAX_SAFE_INTEGER }]]) {
+    const actual = transition(ceilingState, { ...ceilingAction, usage }, unknownAt).state.jobs[0];
+    expect(`overrun/ceiling/${name}`, actual.usedReads === usage.reads && actual.usedBytes === usage.bytes && actual.input.maxReads === 32 && actual.input.maxBytes === 262144, 'Measured failure can truthfully retain safe counts beyond maximum admission.');
+  }
+  for (const field of ['reads', 'bytes']) for (const [name, value] of [['fraction', 1.5], ['string', '33'], ['unsafe', Number.MAX_SAFE_INTEGER + 1], ['negative', -1]]) expect(`overrun/numeric/${field}/${name}`, rejects(() => transition(ceilingState, { ...ceilingAction, usage: { reads: 33, bytes: 262145, [field]: value } }, unknownAt)), 'Lossy, negative or unsafe measured counters refuse.');
+  for (const field of ['Reads', 'Bytes']) {
+    const previous = structuredClone(ceilingState); previous.jobs[0][`used${field}`] = 1;
+    expect(`overrun/aggregate/${field}`, rejects(() => transition(previous, { ...ceilingAction, usage: { reads: Number.MAX_SAFE_INTEGER, bytes: Number.MAX_SAFE_INTEGER } }, unknownAt)), 'Safe attempt counters cannot overflow cumulative sums.');
+  }
+  for (const field of ['reads', 'bytes']) expect(`overrun/ceiling-success/${field}`, rejects(() => transition(ceilingState, { ...ceilingAction, failure: undefined, outcome: 'completed', checkpoint: 1, usage: { reads: 1, bytes: 33, [field]: field === 'reads' ? 33 : 262145 } }, unknownAt)), 'Success retains protocol and admission caps.');
+  const measurementOnly = transition(ceilingState, { ...ceilingAction, usage: { reads: 1, bytes: 262145 }, failure: { ...ceilingAction.failure, retention: 'measurement-only' } }, unknownAt).state.jobs[0];
+  expect('overrun/retention-label', measurementOnly.usedBytes === 262145 && measurementOnly.byteAccounting.rawResponseBytesVerified === false && measurementOnly.byteAccounting.responseRetention === 'measurement-only' && measurementOnly.byteAccounting.budgetCompliance === 'exceeded', 'Measurement-only overflow labels missing raw-byte verification without losing exact counters.');
+  const provenance = green();
+  for (const [name, invocation, expected] of [['missing', undefined, 'invocation-origin-unverified'], ['unknown', { origin: 'unknown' }, 'invocation-origin-unverified'], ['manual', { origin: 'manual' }, 'manual-run-only'], ['wrong-occurrence', { origin: 'scheduled', occurrenceId: 'other-occurrence' }, 'occurrence-mismatch']]) {
+    expect(`schedule/origin/${name}`, fleet.captureCondition(provenance.entities[2], fleetCapture('routine', 'healthy', fleetTime, { invocation }), provenance, { maxAgeMs: 300000 }, fleetTime).issueKey === expected, 'Only an exact scheduled occurrence can establish scheduled health.');
+  }
+  expect('schedule/origin-required', rejects(() => transition(green(), { operation: 'assess', captures: [fleetCapture('routine', 'healthy', '2026-10-25T12:00:01.000Z', { invocation: undefined })] }, '2026-10-25T12:00:01.000Z')), 'Current scheduled captures explicitly declare their invocation origin.');
+  const missingOccurrence = { ...fleetEntities[2] }; delete missingOccurrence.occurrenceId;
+  expect('semantics/inventory-occurrence', rejects(() => transition(green(), { operation: 'inventory', entities: [missingOccurrence], sourceRef: 'owner', reason: 'Missing occurrence identity.' })), 'Current expected run revisions require explicit occurrence identity.');
+  expect('semantics/configure-occurrence', rejects(() => transition(green(), { operation: 'configure', semanticsVersion: 2, entities: [missingOccurrence] })), 'Current roots require explicit occurrence identity.');
+  const paraphrase = transition(failed, { operation: 'assess', captures: [fleetCapture('protected', 'denied-action', '2026-10-25T12:00:02.000Z', { nextAction: 'Inspect this same denied read.' })] }, '2026-10-25T12:00:02.000Z').state;
+  expect('alert/paraphrase', paraphrase.alerts.length === failed.alerts.length && paraphrase.entities[1].alertId === failed.entities[1].alertId, 'Alert identity ignores next-action prose.');
+  const changedAction = transition(failed, { operation: 'assess', captures: [fleetCapture('protected', 'denied-action', '2026-10-25T12:00:02.000Z', { actionIdentity: { kind: 'request-authority', target: 'protected' } })] }, '2026-10-25T12:00:02.000Z').state;
+  expect('alert/action-change', changedAction.alerts.length === failed.alerts.length + 1, 'A materially changed structured action creates a new episode.');
+  expect('alert/action-required', rejects(() => transition(green(), { operation: 'assess', captures: [fleetCapture('protected', 'healthy', fleetTime, { actionIdentity: undefined })] })), 'Current captures require structured action identity.');
+  const stalePolicy = transition(green(), { operation: 'assess', captures: [] }, agedAt).state;
+  const eligible = transition(stalePolicy, policy, agedAt).state;
+  expect('policy/no-recovery', eligible.alerts.length === stalePolicy.alerts.length && eligible.entities[1].recoveryPending !== null, 'Policy-only eligibility retains unverified recovery and creates no recovery alert.');
+  const acknowledgedPolicy = structuredClone(eligible); for (const row of acknowledgedPolicy.alerts) row.disposition = { sourceRef: 'owner', reason: 'Acknowledged old episode.', at: agedAt };
+  const policyView = fleet.fleetView([fleetRoot, { type: 'fleet-step', hash: digest('policy-pending-head'), rootHash: fleetRoot.hash, parentHash: fleetRoot.hash, state: acknowledgedPolicy }], fleetRoot.responsibilityId, agedAt);
+  expect('policy/pending-attention', policyView.needsAssessment === false && policyView.status === 'needs-attention', 'Acknowledging old alerts does not clear unverified recovery.');
+  expect('policy/unchanged-evidence', digest(eligible.entities.map(row => row.capture)) === digest(stalePolicy.entities.map(row => row.capture)), 'Revised policy does not refresh source evidence.');
+  const stillEligible = transition(eligible, { operation: 'assess', captures: [] }, agedAt).state;
+  expect('policy/empty-assess', stillEligible.alerts.length === eligible.alerts.length, 'An empty assessment cannot convert eligibility into fresh recovery.');
+  const freshAt = new Date(Date.parse(agedAt) + 1).toISOString();
+  const wrappedOld = fleetCapture('protected', 'healthy', '2026-10-25T12:00:01.000Z'); wrappedOld.receipt.capturedAt = freshAt;
+  const wrappedState = transition(stillEligible, { operation: 'assess', captures: [wrappedOld] }, freshAt).state;
+  expect('policy/old-source-wrapper', wrappedState.alerts.length === eligible.alerts.length && wrappedState.entities[1].recoveryPending !== null, 'A fresh wrapper around source evidence preceding the failure is not fresh recovery.');
+  const freshRecovery = transition(stillEligible, { operation: 'assess', captures: [fleetCapture('protected', 'healthy', freshAt)] }, freshAt).state;
+  expect('policy/fresh-recovery', freshRecovery.alerts.at(-1).condition === 'recovered' && freshRecovery.entities[1].recoveryPending === null, 'A subsequent genuinely fresh success still records recovery.');
+  const oldJournal = JSON.parse(readFileSync(new URL('../test/fixtures/fleet-v1-journal.json', import.meta.url))); let oldState = fleet.fleetInitial(oldJournal.root); let exact = digest(oldState) === digest(oldJournal.initial);
+  for (const { action, at, ...expected } of oldJournal.steps) { const actual = fleet.fleetTransition(oldState, action, oldJournal.root, at); exact &&= digest(actual) === digest(expected); oldState = actual.state; }
+  expect('semantics/legacy-journal', exact, 'Every frozen historical transition retains exact legacy output.');
+  const upgrade = { operation: 'upgrade', semanticsVersion: 2, stateDigest: digest(oldState), sourceRef: 'synthetic-owner', reason: 'Explicit bounded semantics upgrade.' };
+  expect('semantics/upgrade-binding', rejects(() => fleet.fleetTransition(oldState, { ...upgrade, stateDigest: '0'.repeat(64) }, oldJournal.root, agedAt)), 'Upgrade must bind the exact predecessor state digest.');
+  const upgraded = fleet.fleetTransition(oldState, upgrade, oldJournal.root, agedAt).state;
+  expect('semantics/upgrade-preservation', upgraded.semanticsVersion === 2 && digest(upgraded.alerts) === digest(oldState.alerts) && digest(upgraded.entities.map(row => row.capture)) === digest(oldState.entities.map(row => row.capture)), 'Upgrade retains historical alert and receipt bytes without new provenance.');
+  expect('semantics/upgrade-unknown', upgraded.entities[2].condition === 'unknown' && upgraded.entities[2].issueKey === 'invocation-origin-unverified', 'Missing historical invocation provenance stays unknown.');
   return { cases };
 }

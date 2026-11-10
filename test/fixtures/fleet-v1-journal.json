@@ -1,0 +1,2181 @@
+{
+  "sourceCommit": "820144de74b5cf3683b920d84055cffada235143",
+  "root": {
+    "schemaVersion": 1,
+    "type": "fleet-root",
+    "responsibilityId": "fixture-fleet",
+    "definitionHash": "4c4ed1afbfdaa1e4c3bf7bbb82d730cecb7e384da91eea4f3cc093fd545524d6",
+    "effectKey": "dcb576426a17b7df13907007cb02a1f1dfc12fc6c69f603717abca59d03b888e",
+    "hash": "4813494d137e1631bba301d5acab6e7bb7aa74ce1185d456565ef51d737677b2",
+    "requestDigest": "90d08e583c4c9c6f391b2ae90f819f600a6326928ea9512c9e0c6d98e9f29ac2",
+    "at": "2026-10-25T12:00:00.000Z",
+    "epochHash": null,
+    "action": {
+      "operation": "configure",
+      "entities": [
+        {
+          "id": "monitor",
+          "kind": "monitor",
+          "scope": {
+            "service": "fixture-service",
+            "account": "fixture-owner",
+            "environment": "fixture-parent",
+            "surface": "browser",
+            "resource": "monitor"
+          }
+        },
+        {
+          "id": "protected",
+          "kind": "authentication",
+          "scope": {
+            "service": "fixture-service",
+            "account": "fixture-owner",
+            "environment": "fixture-parent",
+            "surface": "browser",
+            "resource": "protected-read"
+          },
+          "monitorId": "monitor"
+        },
+        {
+          "id": "routine",
+          "kind": "schedule",
+          "scope": {
+            "service": "fixture-service",
+            "account": "fixture-owner",
+            "environment": "fixture-parent",
+            "surface": "schedule",
+            "resource": "routine"
+          },
+          "requiresDelivery": true,
+          "dueAt": "2026-10-25T11:59:59.000Z"
+        }
+      ]
+    }
+  },
+  "initial": {
+    "lifecycle": "active",
+    "epochHash": null,
+    "entities": [
+      {
+        "expected": {
+          "id": "monitor",
+          "kind": "monitor",
+          "scope": {
+            "service": "fixture-service",
+            "account": "fixture-owner",
+            "environment": "fixture-parent",
+            "surface": "browser",
+            "resource": "monitor"
+          }
+        },
+        "capture": null,
+        "condition": "unknown",
+        "issueKey": "not-checked",
+        "episode": 0,
+        "fingerprint": null,
+        "alertId": null,
+        "corrections": []
+      },
+      {
+        "expected": {
+          "id": "protected",
+          "kind": "authentication",
+          "scope": {
+            "service": "fixture-service",
+            "account": "fixture-owner",
+            "environment": "fixture-parent",
+            "surface": "browser",
+            "resource": "protected-read"
+          },
+          "monitorId": "monitor"
+        },
+        "capture": null,
+        "condition": "unknown",
+        "issueKey": "not-checked",
+        "episode": 0,
+        "fingerprint": null,
+        "alertId": null,
+        "corrections": []
+      },
+      {
+        "expected": {
+          "id": "routine",
+          "kind": "schedule",
+          "scope": {
+            "service": "fixture-service",
+            "account": "fixture-owner",
+            "environment": "fixture-parent",
+            "surface": "schedule",
+            "resource": "routine"
+          },
+          "requiresDelivery": true,
+          "dueAt": "2026-10-25T11:59:59.000Z"
+        },
+        "capture": null,
+        "condition": "unknown",
+        "issueKey": "not-checked",
+        "episode": 0,
+        "fingerprint": null,
+        "alertId": null,
+        "corrections": []
+      }
+    ],
+    "jobs": [],
+    "alerts": []
+  },
+  "steps": [
+    {
+      "action": {
+        "operation": "assess",
+        "captures": [
+          {
+            "entityId": "monitor",
+            "condition": "healthy",
+            "issueKey": "healthy",
+            "nextAction": "No owner action needed.",
+            "receipt": {
+              "sourceRef": "fixture-monitor",
+              "sha256": "992cf259aa5507494c1c949553df65f59f5ccd99a649db473ed14ab80114c855",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              }
+            }
+          },
+          {
+            "entityId": "protected",
+            "condition": "healthy",
+            "issueKey": "healthy",
+            "nextAction": "No owner action needed.",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "protectedContent": true
+          },
+          {
+            "entityId": "routine",
+            "condition": "healthy",
+            "issueKey": "healthy",
+            "nextAction": "No owner action needed.",
+            "receipt": {
+              "sourceRef": "fixture-routine",
+              "sha256": "90176f8fae264d00ecf02bef603cc52c2cb88304fca2a77bfd1598ef903f5e19",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              }
+            },
+            "enabled": true,
+            "execution": "completed",
+            "runRef": "fixture-run",
+            "runDueAt": "2026-10-25T11:59:59.000Z",
+            "outcomeRef": "fixture-outcome",
+            "deliveryRef": "fixture-delivery"
+          }
+        ]
+      },
+      "at": "2026-10-25T12:00:00.000Z",
+      "state": {
+        "lifecycle": "active",
+        "epochHash": null,
+        "entities": [
+          {
+            "expected": {
+              "id": "monitor",
+              "kind": "monitor",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              }
+            },
+            "capture": {
+              "entityId": "monitor",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-monitor",
+                "sha256": "992cf259aa5507494c1c949553df65f59f5ccd99a649db473ed14ab80114c855",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "browser",
+                  "resource": "monitor"
+                }
+              }
+            },
+            "condition": "healthy",
+            "issueKey": "current",
+            "episode": 0,
+            "fingerprint": "088f323bb5c5bf87e1b80a7a633f7ed5c7229bed2bbad42e41aeff590457957f",
+            "alertId": null,
+            "corrections": [],
+            "nextAction": "No owner action needed.",
+            "ageMs": 0
+          },
+          {
+            "expected": {
+              "id": "protected",
+              "kind": "authentication",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              },
+              "monitorId": "monitor"
+            },
+            "capture": {
+              "entityId": "protected",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-protected",
+                "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "browser",
+                  "resource": "protected-read"
+                }
+              },
+              "protectedContent": true
+            },
+            "condition": "healthy",
+            "issueKey": "current",
+            "episode": 0,
+            "fingerprint": "088f323bb5c5bf87e1b80a7a633f7ed5c7229bed2bbad42e41aeff590457957f",
+            "alertId": null,
+            "corrections": [],
+            "nextAction": "No owner action needed.",
+            "ageMs": 0
+          },
+          {
+            "expected": {
+              "id": "routine",
+              "kind": "schedule",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              },
+              "requiresDelivery": true,
+              "dueAt": "2026-10-25T11:59:59.000Z"
+            },
+            "capture": {
+              "entityId": "routine",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-routine",
+                "sha256": "90176f8fae264d00ecf02bef603cc52c2cb88304fca2a77bfd1598ef903f5e19",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "schedule",
+                  "resource": "routine"
+                }
+              },
+              "enabled": true,
+              "execution": "completed",
+              "runRef": "fixture-run",
+              "runDueAt": "2026-10-25T11:59:59.000Z",
+              "outcomeRef": "fixture-outcome",
+              "deliveryRef": "fixture-delivery"
+            },
+            "condition": "healthy",
+            "issueKey": "current",
+            "episode": 0,
+            "fingerprint": "088f323bb5c5bf87e1b80a7a633f7ed5c7229bed2bbad42e41aeff590457957f",
+            "alertId": null,
+            "corrections": [],
+            "nextAction": "No owner action needed.",
+            "ageMs": 0
+          }
+        ],
+        "jobs": [],
+        "alerts": []
+      },
+      "outcome": "retained",
+      "ticket": null
+    },
+    {
+      "action": {
+        "operation": "assess",
+        "captures": [
+          {
+            "entityId": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect denied read.",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:01.000Z",
+              "capturedAt": "2026-10-25T12:00:01.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "protectedContent": true
+          }
+        ]
+      },
+      "at": "2026-10-25T12:00:01.000Z",
+      "state": {
+        "lifecycle": "active",
+        "epochHash": null,
+        "entities": [
+          {
+            "expected": {
+              "id": "monitor",
+              "kind": "monitor",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              }
+            },
+            "capture": {
+              "entityId": "monitor",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-monitor",
+                "sha256": "992cf259aa5507494c1c949553df65f59f5ccd99a649db473ed14ab80114c855",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "browser",
+                  "resource": "monitor"
+                }
+              }
+            },
+            "condition": "healthy",
+            "issueKey": "current",
+            "episode": 0,
+            "fingerprint": "088f323bb5c5bf87e1b80a7a633f7ed5c7229bed2bbad42e41aeff590457957f",
+            "alertId": null,
+            "corrections": [],
+            "nextAction": "No owner action needed.",
+            "ageMs": 1000
+          },
+          {
+            "expected": {
+              "id": "protected",
+              "kind": "authentication",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              },
+              "monitorId": "monitor"
+            },
+            "capture": {
+              "entityId": "protected",
+              "condition": "denied-action",
+              "issueKey": "denied-action",
+              "nextAction": "Inspect denied read.",
+              "receipt": {
+                "sourceRef": "fixture-protected",
+                "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+                "observedAt": "2026-10-25T12:00:01.000Z",
+                "capturedAt": "2026-10-25T12:00:01.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "browser",
+                  "resource": "protected-read"
+                }
+              },
+              "protectedContent": true
+            },
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "episode": 1,
+            "fingerprint": "0a979c6bf62a191626f517927b4759118ee820dbafa07b157e34fdef4337bb33",
+            "alertId": "79b148af75b13fd2e865f588f9ec752ff15b127f14856e4b481013e5c575d788",
+            "corrections": [],
+            "nextAction": "Inspect denied read.",
+            "ageMs": 0
+          },
+          {
+            "expected": {
+              "id": "routine",
+              "kind": "schedule",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              },
+              "requiresDelivery": true,
+              "dueAt": "2026-10-25T11:59:59.000Z"
+            },
+            "capture": {
+              "entityId": "routine",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-routine",
+                "sha256": "90176f8fae264d00ecf02bef603cc52c2cb88304fca2a77bfd1598ef903f5e19",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "schedule",
+                  "resource": "routine"
+                }
+              },
+              "enabled": true,
+              "execution": "completed",
+              "runRef": "fixture-run",
+              "runDueAt": "2026-10-25T11:59:59.000Z",
+              "outcomeRef": "fixture-outcome",
+              "deliveryRef": "fixture-delivery"
+            },
+            "condition": "healthy",
+            "issueKey": "current",
+            "episode": 0,
+            "fingerprint": "088f323bb5c5bf87e1b80a7a633f7ed5c7229bed2bbad42e41aeff590457957f",
+            "alertId": null,
+            "corrections": [],
+            "nextAction": "No owner action needed.",
+            "ageMs": 1000
+          }
+        ],
+        "jobs": [],
+        "alerts": [
+          {
+            "id": "79b148af75b13fd2e865f588f9ec752ff15b127f14856e4b481013e5c575d788",
+            "scope": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect denied read.",
+            "episode": 1,
+            "firstAt": "2026-10-25T12:00:01.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:01.000Z",
+              "capturedAt": "2026-10-25T12:00:01.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          }
+        ]
+      },
+      "outcome": "retained",
+      "ticket": null
+    },
+    {
+      "action": {
+        "operation": "assess",
+        "captures": [
+          {
+            "entityId": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect this denied read.",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:02.000Z",
+              "capturedAt": "2026-10-25T12:00:02.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "protectedContent": true
+          }
+        ]
+      },
+      "at": "2026-10-25T12:00:02.000Z",
+      "state": {
+        "lifecycle": "active",
+        "epochHash": null,
+        "entities": [
+          {
+            "expected": {
+              "id": "monitor",
+              "kind": "monitor",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              }
+            },
+            "capture": {
+              "entityId": "monitor",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-monitor",
+                "sha256": "992cf259aa5507494c1c949553df65f59f5ccd99a649db473ed14ab80114c855",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "browser",
+                  "resource": "monitor"
+                }
+              }
+            },
+            "condition": "healthy",
+            "issueKey": "current",
+            "episode": 0,
+            "fingerprint": "088f323bb5c5bf87e1b80a7a633f7ed5c7229bed2bbad42e41aeff590457957f",
+            "alertId": null,
+            "corrections": [],
+            "nextAction": "No owner action needed.",
+            "ageMs": 2000
+          },
+          {
+            "expected": {
+              "id": "protected",
+              "kind": "authentication",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              },
+              "monitorId": "monitor"
+            },
+            "capture": {
+              "entityId": "protected",
+              "condition": "denied-action",
+              "issueKey": "denied-action",
+              "nextAction": "Inspect this denied read.",
+              "receipt": {
+                "sourceRef": "fixture-protected",
+                "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+                "observedAt": "2026-10-25T12:00:02.000Z",
+                "capturedAt": "2026-10-25T12:00:02.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "browser",
+                  "resource": "protected-read"
+                }
+              },
+              "protectedContent": true
+            },
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "episode": 2,
+            "fingerprint": "fae591f63ee3380f5fa907a71b9cc1d5ec7afd2ec429b459433b4ad40e12c87c",
+            "alertId": "44f50522531d76f863ce357beef5fda4b1903186385e115a05f5cc05c3850092",
+            "corrections": [],
+            "nextAction": "Inspect this denied read.",
+            "ageMs": 0
+          },
+          {
+            "expected": {
+              "id": "routine",
+              "kind": "schedule",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              },
+              "requiresDelivery": true,
+              "dueAt": "2026-10-25T11:59:59.000Z"
+            },
+            "capture": {
+              "entityId": "routine",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-routine",
+                "sha256": "90176f8fae264d00ecf02bef603cc52c2cb88304fca2a77bfd1598ef903f5e19",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "schedule",
+                  "resource": "routine"
+                }
+              },
+              "enabled": true,
+              "execution": "completed",
+              "runRef": "fixture-run",
+              "runDueAt": "2026-10-25T11:59:59.000Z",
+              "outcomeRef": "fixture-outcome",
+              "deliveryRef": "fixture-delivery"
+            },
+            "condition": "healthy",
+            "issueKey": "current",
+            "episode": 0,
+            "fingerprint": "088f323bb5c5bf87e1b80a7a633f7ed5c7229bed2bbad42e41aeff590457957f",
+            "alertId": null,
+            "corrections": [],
+            "nextAction": "No owner action needed.",
+            "ageMs": 2000
+          }
+        ],
+        "jobs": [],
+        "alerts": [
+          {
+            "id": "79b148af75b13fd2e865f588f9ec752ff15b127f14856e4b481013e5c575d788",
+            "scope": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect denied read.",
+            "episode": 1,
+            "firstAt": "2026-10-25T12:00:01.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:01.000Z",
+              "capturedAt": "2026-10-25T12:00:01.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "44f50522531d76f863ce357beef5fda4b1903186385e115a05f5cc05c3850092",
+            "scope": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect this denied read.",
+            "episode": 2,
+            "firstAt": "2026-10-25T12:00:02.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:02.000Z",
+              "capturedAt": "2026-10-25T12:00:02.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          }
+        ]
+      },
+      "outcome": "retained",
+      "ticket": null
+    },
+    {
+      "action": {
+        "operation": "assess",
+        "captures": []
+      },
+      "at": "2026-10-25T12:06:00.000Z",
+      "state": {
+        "lifecycle": "active",
+        "epochHash": null,
+        "entities": [
+          {
+            "expected": {
+              "id": "monitor",
+              "kind": "monitor",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              }
+            },
+            "capture": {
+              "entityId": "monitor",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-monitor",
+                "sha256": "992cf259aa5507494c1c949553df65f59f5ccd99a649db473ed14ab80114c855",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "browser",
+                  "resource": "monitor"
+                }
+              }
+            },
+            "condition": "stale-source",
+            "issueKey": "source-age",
+            "episode": 1,
+            "fingerprint": "90943d937c07a5ec9dc7c687c5b97d689de28f29330ff556733f738f822078e9",
+            "alertId": "99a26813b617e8be47d80b5b9b860b6ba421ba1bb9deaddc96c81f572b870f4f",
+            "corrections": [],
+            "nextAction": "Parent must refresh this source in its actual environment.",
+            "ageMs": 360000
+          },
+          {
+            "expected": {
+              "id": "protected",
+              "kind": "authentication",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              },
+              "monitorId": "monitor"
+            },
+            "capture": {
+              "entityId": "protected",
+              "condition": "denied-action",
+              "issueKey": "denied-action",
+              "nextAction": "Inspect this denied read.",
+              "receipt": {
+                "sourceRef": "fixture-protected",
+                "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+                "observedAt": "2026-10-25T12:00:02.000Z",
+                "capturedAt": "2026-10-25T12:00:02.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "browser",
+                  "resource": "protected-read"
+                }
+              },
+              "protectedContent": true
+            },
+            "condition": "stale-source",
+            "issueKey": "source-age",
+            "episode": 3,
+            "fingerprint": "90943d937c07a5ec9dc7c687c5b97d689de28f29330ff556733f738f822078e9",
+            "alertId": "696169a72778ac55994cbb816c0ac8683b3e7e2216a69a8528d61466a9a70be0",
+            "corrections": [],
+            "nextAction": "Parent must refresh this source in its actual environment.",
+            "ageMs": 358000
+          },
+          {
+            "expected": {
+              "id": "routine",
+              "kind": "schedule",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              },
+              "requiresDelivery": true,
+              "dueAt": "2026-10-25T11:59:59.000Z"
+            },
+            "capture": {
+              "entityId": "routine",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-routine",
+                "sha256": "90176f8fae264d00ecf02bef603cc52c2cb88304fca2a77bfd1598ef903f5e19",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "schedule",
+                  "resource": "routine"
+                }
+              },
+              "enabled": true,
+              "execution": "completed",
+              "runRef": "fixture-run",
+              "runDueAt": "2026-10-25T11:59:59.000Z",
+              "outcomeRef": "fixture-outcome",
+              "deliveryRef": "fixture-delivery"
+            },
+            "condition": "stale-source",
+            "issueKey": "source-age",
+            "episode": 1,
+            "fingerprint": "90943d937c07a5ec9dc7c687c5b97d689de28f29330ff556733f738f822078e9",
+            "alertId": "5577afa52a625ef37267cda13d8991f0b335c8d72cde39ea2b19e9ccc329180e",
+            "corrections": [],
+            "nextAction": "Parent must refresh this source in its actual environment.",
+            "ageMs": 360000
+          }
+        ],
+        "jobs": [],
+        "alerts": [
+          {
+            "id": "79b148af75b13fd2e865f588f9ec752ff15b127f14856e4b481013e5c575d788",
+            "scope": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect denied read.",
+            "episode": 1,
+            "firstAt": "2026-10-25T12:00:01.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:01.000Z",
+              "capturedAt": "2026-10-25T12:00:01.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "44f50522531d76f863ce357beef5fda4b1903186385e115a05f5cc05c3850092",
+            "scope": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect this denied read.",
+            "episode": 2,
+            "firstAt": "2026-10-25T12:00:02.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:02.000Z",
+              "capturedAt": "2026-10-25T12:00:02.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "99a26813b617e8be47d80b5b9b860b6ba421ba1bb9deaddc96c81f572b870f4f",
+            "scope": "monitor",
+            "condition": "stale-source",
+            "issueKey": "source-age",
+            "nextAction": "Parent must refresh this source in its actual environment.",
+            "episode": 1,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-monitor",
+              "sha256": "992cf259aa5507494c1c949553df65f59f5ccd99a649db473ed14ab80114c855",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "696169a72778ac55994cbb816c0ac8683b3e7e2216a69a8528d61466a9a70be0",
+            "scope": "protected",
+            "condition": "stale-source",
+            "issueKey": "source-age",
+            "nextAction": "Parent must refresh this source in its actual environment.",
+            "episode": 3,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:02.000Z",
+              "capturedAt": "2026-10-25T12:00:02.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "5577afa52a625ef37267cda13d8991f0b335c8d72cde39ea2b19e9ccc329180e",
+            "scope": "routine",
+            "condition": "stale-source",
+            "issueKey": "source-age",
+            "nextAction": "Parent must refresh this source in its actual environment.",
+            "episode": 1,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-routine",
+              "sha256": "90176f8fae264d00ecf02bef603cc52c2cb88304fca2a77bfd1598ef903f5e19",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          }
+        ]
+      },
+      "outcome": "retained",
+      "ticket": null
+    },
+    {
+      "action": {
+        "operation": "policy-revise",
+        "version": 1,
+        "previousDigest": null,
+        "maxAgeMs": 86400000,
+        "entities": [
+          {
+            "entityId": "monitor",
+            "scope": {
+              "service": "fixture-service",
+              "account": "fixture-owner",
+              "environment": "fixture-parent",
+              "surface": "browser",
+              "resource": "monitor"
+            },
+            "maxAgeMs": 86400000
+          },
+          {
+            "entityId": "protected",
+            "scope": {
+              "service": "fixture-service",
+              "account": "fixture-owner",
+              "environment": "fixture-parent",
+              "surface": "browser",
+              "resource": "protected-read"
+            },
+            "maxAgeMs": 86400000
+          },
+          {
+            "entityId": "routine",
+            "scope": {
+              "service": "fixture-service",
+              "account": "fixture-owner",
+              "environment": "fixture-parent",
+              "surface": "schedule",
+              "resource": "routine"
+            },
+            "maxAgeMs": 86400000
+          }
+        ],
+        "sourceRef": "synthetic-policy",
+        "reason": "Synthetic old window revision."
+      },
+      "at": "2026-10-25T12:06:00.000Z",
+      "state": {
+        "lifecycle": "active",
+        "epochHash": null,
+        "entities": [
+          {
+            "expected": {
+              "id": "monitor",
+              "kind": "monitor",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              }
+            },
+            "capture": {
+              "entityId": "monitor",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-monitor",
+                "sha256": "992cf259aa5507494c1c949553df65f59f5ccd99a649db473ed14ab80114c855",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "browser",
+                  "resource": "monitor"
+                }
+              }
+            },
+            "condition": "healthy",
+            "issueKey": "current",
+            "episode": 2,
+            "fingerprint": "088f323bb5c5bf87e1b80a7a633f7ed5c7229bed2bbad42e41aeff590457957f",
+            "alertId": "5d21c4e672aac60c200cab0b5e7d0a21889c5f498651f7fe99c06ff9040ce271",
+            "corrections": [],
+            "nextAction": "No owner action needed.",
+            "ageMs": 360000
+          },
+          {
+            "expected": {
+              "id": "protected",
+              "kind": "authentication",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              },
+              "monitorId": "monitor"
+            },
+            "capture": {
+              "entityId": "protected",
+              "condition": "denied-action",
+              "issueKey": "denied-action",
+              "nextAction": "Inspect this denied read.",
+              "receipt": {
+                "sourceRef": "fixture-protected",
+                "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+                "observedAt": "2026-10-25T12:00:02.000Z",
+                "capturedAt": "2026-10-25T12:00:02.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "browser",
+                  "resource": "protected-read"
+                }
+              },
+              "protectedContent": true
+            },
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "episode": 4,
+            "fingerprint": "fae591f63ee3380f5fa907a71b9cc1d5ec7afd2ec429b459433b4ad40e12c87c",
+            "alertId": "65f2eb67abf26fe53cd4298f6b2a1d8591c2df15b4bbbb587062fd79cf367b81",
+            "corrections": [],
+            "nextAction": "Inspect this denied read.",
+            "ageMs": 358000
+          },
+          {
+            "expected": {
+              "id": "routine",
+              "kind": "schedule",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              },
+              "requiresDelivery": true,
+              "dueAt": "2026-10-25T11:59:59.000Z"
+            },
+            "capture": {
+              "entityId": "routine",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-routine",
+                "sha256": "90176f8fae264d00ecf02bef603cc52c2cb88304fca2a77bfd1598ef903f5e19",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "schedule",
+                  "resource": "routine"
+                }
+              },
+              "enabled": true,
+              "execution": "completed",
+              "runRef": "fixture-run",
+              "runDueAt": "2026-10-25T11:59:59.000Z",
+              "outcomeRef": "fixture-outcome",
+              "deliveryRef": "fixture-delivery"
+            },
+            "condition": "healthy",
+            "issueKey": "current",
+            "episode": 2,
+            "fingerprint": "088f323bb5c5bf87e1b80a7a633f7ed5c7229bed2bbad42e41aeff590457957f",
+            "alertId": "6fa974f9fc99eeef134b120dbe3868c7ccba3ac5ce40b5dfdde2223497b6248a",
+            "corrections": [],
+            "nextAction": "No owner action needed.",
+            "ageMs": 360000
+          }
+        ],
+        "jobs": [],
+        "alerts": [
+          {
+            "id": "79b148af75b13fd2e865f588f9ec752ff15b127f14856e4b481013e5c575d788",
+            "scope": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect denied read.",
+            "episode": 1,
+            "firstAt": "2026-10-25T12:00:01.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:01.000Z",
+              "capturedAt": "2026-10-25T12:00:01.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "44f50522531d76f863ce357beef5fda4b1903186385e115a05f5cc05c3850092",
+            "scope": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect this denied read.",
+            "episode": 2,
+            "firstAt": "2026-10-25T12:00:02.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:02.000Z",
+              "capturedAt": "2026-10-25T12:00:02.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "99a26813b617e8be47d80b5b9b860b6ba421ba1bb9deaddc96c81f572b870f4f",
+            "scope": "monitor",
+            "condition": "stale-source",
+            "issueKey": "source-age",
+            "nextAction": "Parent must refresh this source in its actual environment.",
+            "episode": 1,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-monitor",
+              "sha256": "992cf259aa5507494c1c949553df65f59f5ccd99a649db473ed14ab80114c855",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "696169a72778ac55994cbb816c0ac8683b3e7e2216a69a8528d61466a9a70be0",
+            "scope": "protected",
+            "condition": "stale-source",
+            "issueKey": "source-age",
+            "nextAction": "Parent must refresh this source in its actual environment.",
+            "episode": 3,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:02.000Z",
+              "capturedAt": "2026-10-25T12:00:02.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "5577afa52a625ef37267cda13d8991f0b335c8d72cde39ea2b19e9ccc329180e",
+            "scope": "routine",
+            "condition": "stale-source",
+            "issueKey": "source-age",
+            "nextAction": "Parent must refresh this source in its actual environment.",
+            "episode": 1,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-routine",
+              "sha256": "90176f8fae264d00ecf02bef603cc52c2cb88304fca2a77bfd1598ef903f5e19",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "5d21c4e672aac60c200cab0b5e7d0a21889c5f498651f7fe99c06ff9040ce271",
+            "scope": "monitor",
+            "condition": "recovered",
+            "issueKey": "current",
+            "nextAction": "No owner action needed.",
+            "episode": 2,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-monitor",
+              "sha256": "992cf259aa5507494c1c949553df65f59f5ccd99a649db473ed14ab80114c855",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "65f2eb67abf26fe53cd4298f6b2a1d8591c2df15b4bbbb587062fd79cf367b81",
+            "scope": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect this denied read.",
+            "episode": 4,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:02.000Z",
+              "capturedAt": "2026-10-25T12:00:02.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "6fa974f9fc99eeef134b120dbe3868c7ccba3ac5ce40b5dfdde2223497b6248a",
+            "scope": "routine",
+            "condition": "recovered",
+            "issueKey": "current",
+            "nextAction": "No owner action needed.",
+            "episode": 2,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-routine",
+              "sha256": "90176f8fae264d00ecf02bef603cc52c2cb88304fca2a77bfd1598ef903f5e19",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          }
+        ],
+        "policyHistory": [],
+        "policy": {
+          "operation": "policy-revise",
+          "version": 1,
+          "previousDigest": null,
+          "maxAgeMs": 86400000,
+          "entities": [
+            {
+              "entityId": "monitor",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              },
+              "maxAgeMs": 86400000
+            },
+            {
+              "entityId": "protected",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              },
+              "maxAgeMs": 86400000
+            },
+            {
+              "entityId": "routine",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              },
+              "maxAgeMs": 86400000
+            }
+          ],
+          "sourceRef": "synthetic-policy",
+          "reason": "Synthetic old window revision.",
+          "at": "2026-10-25T12:06:00.000Z",
+          "digest": "e43063b47587fab9f0bc3abd085a1401f3b61dbd05bf60f2e77d346ed07db857"
+        }
+      },
+      "outcome": "retained",
+      "ticket": null
+    },
+    {
+      "action": {
+        "operation": "submit",
+        "job": {
+          "id": "read-one",
+          "kind": "health-read",
+          "occurrence": "fixture-occurrence",
+          "priority": "interactive",
+          "entityIds": [
+            "protected"
+          ],
+          "purpose": "One synthetic bounded protected read.",
+          "maxReads": 1,
+          "maxBytes": 4096,
+          "steps": 1
+        }
+      },
+      "at": "2026-10-25T12:06:00.000Z",
+      "state": {
+        "lifecycle": "active",
+        "epochHash": null,
+        "entities": [
+          {
+            "expected": {
+              "id": "monitor",
+              "kind": "monitor",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              }
+            },
+            "capture": {
+              "entityId": "monitor",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-monitor",
+                "sha256": "992cf259aa5507494c1c949553df65f59f5ccd99a649db473ed14ab80114c855",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "browser",
+                  "resource": "monitor"
+                }
+              }
+            },
+            "condition": "healthy",
+            "issueKey": "current",
+            "episode": 2,
+            "fingerprint": "088f323bb5c5bf87e1b80a7a633f7ed5c7229bed2bbad42e41aeff590457957f",
+            "alertId": "5d21c4e672aac60c200cab0b5e7d0a21889c5f498651f7fe99c06ff9040ce271",
+            "corrections": [],
+            "nextAction": "No owner action needed.",
+            "ageMs": 360000
+          },
+          {
+            "expected": {
+              "id": "protected",
+              "kind": "authentication",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              },
+              "monitorId": "monitor"
+            },
+            "capture": {
+              "entityId": "protected",
+              "condition": "denied-action",
+              "issueKey": "denied-action",
+              "nextAction": "Inspect this denied read.",
+              "receipt": {
+                "sourceRef": "fixture-protected",
+                "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+                "observedAt": "2026-10-25T12:00:02.000Z",
+                "capturedAt": "2026-10-25T12:00:02.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "browser",
+                  "resource": "protected-read"
+                }
+              },
+              "protectedContent": true
+            },
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "episode": 4,
+            "fingerprint": "fae591f63ee3380f5fa907a71b9cc1d5ec7afd2ec429b459433b4ad40e12c87c",
+            "alertId": "65f2eb67abf26fe53cd4298f6b2a1d8591c2df15b4bbbb587062fd79cf367b81",
+            "corrections": [],
+            "nextAction": "Inspect this denied read.",
+            "ageMs": 358000
+          },
+          {
+            "expected": {
+              "id": "routine",
+              "kind": "schedule",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              },
+              "requiresDelivery": true,
+              "dueAt": "2026-10-25T11:59:59.000Z"
+            },
+            "capture": {
+              "entityId": "routine",
+              "condition": "healthy",
+              "issueKey": "healthy",
+              "nextAction": "No owner action needed.",
+              "receipt": {
+                "sourceRef": "fixture-routine",
+                "sha256": "90176f8fae264d00ecf02bef603cc52c2cb88304fca2a77bfd1598ef903f5e19",
+                "observedAt": "2026-10-25T12:00:00.000Z",
+                "capturedAt": "2026-10-25T12:00:00.000Z",
+                "observer": "Synthetic parent receipt",
+                "coverage": {
+                  "complete": true,
+                  "gaps": []
+                },
+                "scope": {
+                  "service": "fixture-service",
+                  "account": "fixture-owner",
+                  "environment": "fixture-parent",
+                  "surface": "schedule",
+                  "resource": "routine"
+                }
+              },
+              "enabled": true,
+              "execution": "completed",
+              "runRef": "fixture-run",
+              "runDueAt": "2026-10-25T11:59:59.000Z",
+              "outcomeRef": "fixture-outcome",
+              "deliveryRef": "fixture-delivery"
+            },
+            "condition": "healthy",
+            "issueKey": "current",
+            "episode": 2,
+            "fingerprint": "088f323bb5c5bf87e1b80a7a633f7ed5c7229bed2bbad42e41aeff590457957f",
+            "alertId": "6fa974f9fc99eeef134b120dbe3868c7ccba3ac5ce40b5dfdde2223497b6248a",
+            "corrections": [],
+            "nextAction": "No owner action needed.",
+            "ageMs": 360000
+          }
+        ],
+        "jobs": [
+          {
+            "key": "4006af6d439059dfe51d0640b3559358a432ada323c1a85a2a9487284323915b",
+            "input": {
+              "id": "read-one",
+              "kind": "health-read",
+              "occurrence": "fixture-occurrence",
+              "priority": "interactive",
+              "entityIds": [
+                "protected"
+              ],
+              "purpose": "One synthetic bounded protected read.",
+              "maxReads": 1,
+              "maxBytes": 4096,
+              "steps": 1
+            },
+            "inputDigest": "9a9f6a14c896d9c3943f1d1ef1c9a0fd5bd89c45ee13d79cc5e818ceeb7f1c77",
+            "status": "queued",
+            "order": 0,
+            "attempts": 0,
+            "failures": 0,
+            "checkpoint": 0,
+            "usedReads": 0,
+            "usedBytes": 0,
+            "attemptReads": 0,
+            "attemptBytes": 0,
+            "nextAt": "2026-10-25T12:06:00.000Z",
+            "ticket": null,
+            "deadline": null,
+            "receipts": [],
+            "resultDigests": [],
+            "ownerRef": null
+          }
+        ],
+        "alerts": [
+          {
+            "id": "79b148af75b13fd2e865f588f9ec752ff15b127f14856e4b481013e5c575d788",
+            "scope": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect denied read.",
+            "episode": 1,
+            "firstAt": "2026-10-25T12:00:01.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:01.000Z",
+              "capturedAt": "2026-10-25T12:00:01.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "44f50522531d76f863ce357beef5fda4b1903186385e115a05f5cc05c3850092",
+            "scope": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect this denied read.",
+            "episode": 2,
+            "firstAt": "2026-10-25T12:00:02.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:02.000Z",
+              "capturedAt": "2026-10-25T12:00:02.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "99a26813b617e8be47d80b5b9b860b6ba421ba1bb9deaddc96c81f572b870f4f",
+            "scope": "monitor",
+            "condition": "stale-source",
+            "issueKey": "source-age",
+            "nextAction": "Parent must refresh this source in its actual environment.",
+            "episode": 1,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-monitor",
+              "sha256": "992cf259aa5507494c1c949553df65f59f5ccd99a649db473ed14ab80114c855",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "696169a72778ac55994cbb816c0ac8683b3e7e2216a69a8528d61466a9a70be0",
+            "scope": "protected",
+            "condition": "stale-source",
+            "issueKey": "source-age",
+            "nextAction": "Parent must refresh this source in its actual environment.",
+            "episode": 3,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:02.000Z",
+              "capturedAt": "2026-10-25T12:00:02.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "5577afa52a625ef37267cda13d8991f0b335c8d72cde39ea2b19e9ccc329180e",
+            "scope": "routine",
+            "condition": "stale-source",
+            "issueKey": "source-age",
+            "nextAction": "Parent must refresh this source in its actual environment.",
+            "episode": 1,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-routine",
+              "sha256": "90176f8fae264d00ecf02bef603cc52c2cb88304fca2a77bfd1598ef903f5e19",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "5d21c4e672aac60c200cab0b5e7d0a21889c5f498651f7fe99c06ff9040ce271",
+            "scope": "monitor",
+            "condition": "recovered",
+            "issueKey": "current",
+            "nextAction": "No owner action needed.",
+            "episode": 2,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-monitor",
+              "sha256": "992cf259aa5507494c1c949553df65f59f5ccd99a649db473ed14ab80114c855",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "65f2eb67abf26fe53cd4298f6b2a1d8591c2df15b4bbbb587062fd79cf367b81",
+            "scope": "protected",
+            "condition": "denied-action",
+            "issueKey": "denied-action",
+            "nextAction": "Inspect this denied read.",
+            "episode": 4,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-protected",
+              "sha256": "f3d3093a8787238529103fb8af27ee94b17c0dbe3574d1a18d4ffbf773eebcd3",
+              "observedAt": "2026-10-25T12:00:02.000Z",
+              "capturedAt": "2026-10-25T12:00:02.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          },
+          {
+            "id": "6fa974f9fc99eeef134b120dbe3868c7ccba3ac5ce40b5dfdde2223497b6248a",
+            "scope": "routine",
+            "condition": "recovered",
+            "issueKey": "current",
+            "nextAction": "No owner action needed.",
+            "episode": 2,
+            "firstAt": "2026-10-25T12:06:00.000Z",
+            "receipt": {
+              "sourceRef": "fixture-routine",
+              "sha256": "90176f8fae264d00ecf02bef603cc52c2cb88304fca2a77bfd1598ef903f5e19",
+              "observedAt": "2026-10-25T12:00:00.000Z",
+              "capturedAt": "2026-10-25T12:00:00.000Z",
+              "observer": "Synthetic parent receipt",
+              "coverage": {
+                "complete": true,
+                "gaps": []
+              },
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              }
+            },
+            "disposition": null,
+            "delivery": "pending",
+            "bodyDigest": null,
+            "sendRef": null,
+            "readbackRef": null
+          }
+        ],
+        "policyHistory": [],
+        "policy": {
+          "operation": "policy-revise",
+          "version": 1,
+          "previousDigest": null,
+          "maxAgeMs": 86400000,
+          "entities": [
+            {
+              "entityId": "monitor",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "monitor"
+              },
+              "maxAgeMs": 86400000
+            },
+            {
+              "entityId": "protected",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "browser",
+                "resource": "protected-read"
+              },
+              "maxAgeMs": 86400000
+            },
+            {
+              "entityId": "routine",
+              "scope": {
+                "service": "fixture-service",
+                "account": "fixture-owner",
+                "environment": "fixture-parent",
+                "surface": "schedule",
+                "resource": "routine"
+              },
+              "maxAgeMs": 86400000
+            }
+          ],
+          "sourceRef": "synthetic-policy",
+          "reason": "Synthetic old window revision.",
+          "at": "2026-10-25T12:06:00.000Z",
+          "digest": "e43063b47587fab9f0bc3abd085a1401f3b61dbd05bf60f2e77d346ed07db857"
+        }
+      },
+      "outcome": "retained",
+      "ticket": null
+    }
+  ]
+}

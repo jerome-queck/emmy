@@ -3,7 +3,9 @@ import { lstat, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/
 import { join } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { briefingGuidance } from './metadata.mjs';
-import { canonical, digest } from './records.mjs';
+import { canonical, digest } from './content.mjs';
+import { boundedJson } from './bounded-json.mjs';
+import { manageGuidancePin, selectedGuidance } from './guidance-pin.mjs';
 
 const origin = 'https://api.github.com/repos/jerome-queck/emmy';
 const maxBytes = 262144;
@@ -290,7 +292,7 @@ function assessDraft(draft, guidance, checkedAt) {
   const asOf = Date.parse(checkedAt);
   const assessedSources = draft.sources.map(source => ({ source, qualifications: support(source, draft, asOf), webReference: webReference(source.reference) }));
   const sources = new Map(assessedSources.map(value => [value.source.id, value]));
-  const assessment = { schemaVersion: 1, checkedAt, guidance: { state: guidance.state, sourceCheckedAt: guidance.sourceCheckedAt ?? null, upgradeRequired: Boolean(guidance.upgradeRequired) }, coverage: draft.coverage, sources: assessedSources, corrections: [], entries: [], limits: [], findings: [] };
+  const assessment = { schemaVersion: 1, checkedAt, guidance: { state: guidance.state, sourceCheckedAt: guidance.sourceCheckedAt ?? null, upgradeRequired: Boolean(guidance.upgradeRequired), ...(guidance.source === 'approved-local-release' ? { source: guidance.source, revision: guidance.revision ?? null, pinDigest: guidance.pinDigest, verifiedAt: guidance.verifiedAt ?? null } : {}) }, coverage: draft.coverage, sources: assessedSources, corrections: [], entries: [], limits: [], findings: [] };
   const { findings, limits } = assessment;
   if (guidance.digest && draft.authoredUnder !== guidance.digest) findings.push('Read the returned guidance and revise authoredUnder before rendering.');
   for (const [key, kinds] of Object.entries(coverageKinds)) for (const id of draft.coverage[key]) {
@@ -314,7 +316,7 @@ function assessDraft(draft, guidance, checkedAt) {
     if (readback.state !== 'reported-readback') limits.push({ kind: 'correction', scope: readback.scope, state: readback.state });
   }
   const corrections = new Map(assessment.corrections.map(value => [canonical(value.readback.scope), value]));
-  if (guidance.state !== 'current') limits.push({ kind: 'guidance', ...assessment.guidance });
+  if (!['current', 'pinned'].includes(guidance.state)) limits.push({ kind: 'guidance', ...assessment.guidance });
   const usedSources = new Set(Object.keys(coverageKinds).flatMap(key => draft.coverage[key]));
   for (const entry of draft.entries) {
     const selected = entry.sourceIds.map(id => sources.get(id)); entry.sourceIds.forEach(id => usedSources.add(id));
@@ -385,7 +387,7 @@ export function assessBriefingPresentation(input, result, checkedAt) {
 export async function briefing(home, { file = null } = {}) {
   const input = file ? await boundedFile(file) : null;
   const draft = input ? parseDraft(input) : null;
-  const { guidance, refresh } = await refreshGuidance(home);
+  const { guidance, refresh } = await selectedGuidance(home, parseBundle) ?? await refreshGuidance(home);
   const checkedAt = new Date().toISOString();
   const assessment = draft ? assessDraft(draft, guidance, checkedAt) : null;
   const result = draft ? { mode: 'draft', status: assessment.status, findings: assessment.findings, ...(assessment.status !== 'revise' ? { body: renderBriefing(assessment) } : {}), guidance } : { mode: 'guidance', guidance };
@@ -396,4 +398,8 @@ export async function briefing(home, { file = null } = {}) {
   const files = { 'receipt.json': `${JSON.stringify({ ...receipt, refreshDigest: digest(refreshBytes), assessmentDigest: assessmentBytes ? digest(assessmentBytes) : null }, null, 2)}\n`, 'guidance.json': `${JSON.stringify(guidance, null, 2)}\n`, 'refresh.json': refreshBytes, ...(input ? { 'draft.json': input, 'assessment.json': assessmentBytes } : {}), ...(result.body !== undefined ? { 'body.md': result.body } : {}) };
   const directory = await publish(join(home, 'briefing/runs'), files);
   return { ...result, evidence: { directory, receipt: join(directory, 'receipt.json'), refresh: join(directory, 'refresh.json'), ...(assessment ? { assessment: join(directory, 'assessment.json') } : {}), ...(result.body !== undefined ? { body: join(directory, 'body.md') } : {}) } };
+}
+
+export async function guidancePin(home, { file }) {
+  return manageGuidancePin(home, await boundedJson(file, 8192), parseBundle);
 }

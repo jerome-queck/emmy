@@ -24,7 +24,7 @@ Generated from `registry/catalog.json`. Project registration and public reposito
 | dot-cloud | Dot cloud computer | unverified | [dot-computers](https://learn.chatgpt.com/docs/dots/computers-and-apps) | runtime |
 | persistence | Cloud file persistence | unverified | [dot-computers](https://learn.chatgpt.com/docs/dots/computers-and-apps) | persistence |
 | chat-discovery | Scoped chat discovery | unverified | [dot-tasks](https://learn.chatgpt.com/docs/dots/tasks-and-memory) | discovery |
-| local-routing | Local tasks and fresh handovers | unverified | [dot-computers](https://learn.chatgpt.com/docs/dots/computers-and-apps), [dot-tasks](https://learn.chatgpt.com/docs/dots/tasks-and-memory) | local-routing |
+| local-routing | Local tasks and continuation | unverified | [dot-computers](https://learn.chatgpt.com/docs/dots/computers-and-apps), [dot-tasks](https://learn.chatgpt.com/docs/dots/tasks-and-memory) | local-routing |
 | cloud-delegation | Cloud Work and Codex Cloud | unverified | [dot-tasks](https://learn.chatgpt.com/docs/dots/tasks-and-memory) | cloud-delegation |
 | skill-access | Connected-computer skill access | unverified | [dot-computers](https://learn.chatgpt.com/docs/dots/computers-and-apps) | skill-access |
 | autonomous-wake | Autonomous follow-up | unverified | [dot-tasks](https://learn.chatgpt.com/docs/dots/tasks-and-memory) | wake |

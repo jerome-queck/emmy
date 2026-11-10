@@ -14,7 +14,10 @@ import { driveBriefing } from '../verification/briefing-drive.mjs';
 import { driveDispatch } from '../verification/dispatch-drive.mjs';
 import { driveCloud } from '../verification/cloud-drive.mjs';
 import { driveCalendar, verifyCalendarRetention } from '../verification/calendar-drive.mjs';
+import { driveCalendarRegister } from '../verification/calendar-register-drive.mjs';
 import { driveMorning } from '../verification/morning-drive.mjs';
+import { driveTokenReview, driveImprovementReport } from '../verification/improvement-drive.mjs';
+import { driveDailyBriefing } from '../verification/daily-briefing-drive.mjs';
 import { driveFleet } from '../verification/fleet-drive.mjs';
 import { driveAssurance } from '../verification/local-assurance/drive.mjs';
 
@@ -44,7 +47,7 @@ const git = args => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8
 const review = data => data.responsibilities[0].record;
 const reconcile = async (id, expected = 0, imports = null, selectedHome = home, asOf = now()) => run(['reconcile', '--id', id, '--as-of', asOf, ...(imports ? ['--import', await fixture(`import-${randomUUID()}.json`, { schemaVersion: 1, records: imports })] : [])], expected, selectedHome);
 try {
-  assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'assurance'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing|dispatch|calendar|cloud|fleet|assurance');
+  assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review', 'assurance'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing|dispatch|calendar|cloud|fleet|token-review|assurance');
   for (const path of ['registry', 'docs', '.agents', 'src', 'scripts']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
   await mkdir(join(home, 'records'), { recursive: true }); await mkdir(join(root, 'bin'));
   for (const name of ['gh', 'codex', 'curl', 'ssh']) await writeFile(join(root, 'bin', name), `#!/bin/sh\necho invoked >> '${join(home, 'executor-invoked')}'\nexit 99\n`, { mode: 0o755 });
@@ -60,13 +63,23 @@ try {
   assert.deepEqual((await run(['help'])).commands.map(item => item.name), commands.map(item => item.name));
   await run(['doctor']); await run(['catalog']); await run(['snapshot'], 2); await run(['help', '--bogus'], 2);
   scenario('orientation', 'Metadata-defined commands, doctor in isolated repository, catalog and rejected legacy/unknown options.');
-  if (!['self-check-repair', 'dispatch', 'calendar', 'cloud', 'fleet', 'assurance'].includes(report.focus)) await driveBriefing({ sourceRoot, root, home, run, scenario, report, children });
-  if (!['self-check-repair', 'briefing', 'calendar', 'cloud', 'fleet', 'assurance'].includes(report.focus)) await driveDispatch({ root, home, run, scenario, report, bindings, target });
+  if (!report.focus || report.focus === 'assurance') {
+    report.localAssurance = await driveAssurance(sourceRoot, join(evidenceDir, 'local-assurance'));
+    scenario('local-assurance', 'Actual package and fresh CLI over a separately labelled synthetic fixed suite; source/base changes, failed/incomplete evidence, output integrity and environment refusal.');
+  }
+  if (!['self-check-repair', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review', 'assurance'].includes(report.focus)) await driveBriefing({ sourceRoot, root, home, run, scenario, report, children });
+  if (!['self-check-repair', 'briefing', 'calendar', 'cloud', 'fleet', 'token-review', 'assurance'].includes(report.focus)) await driveDispatch({ root, home, run, scenario, report, bindings, target });
+  if (!report.focus || report.focus === 'token-review') await driveDailyBriefing({ home, run, scenario, report, evidenceDir });
+  if (!report.focus || report.focus === 'token-review') {
+    await driveTokenReview({ home, run, scenario, report, evidenceDir });
+    await driveImprovementReport({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir });
+  }
   if (!report.focus || report.focus === 'cloud') await driveCloud({ sourceRoot, root, home, run, scenario, report, children, evidenceDir });
   if (!report.focus || report.focus === 'calendar') await driveCalendar({ home, run, scenario, report });
+  if (!report.focus || report.focus === 'calendar') await driveCalendarRegister({ home, run, scenario, report });
   if (!report.focus || report.focus === 'fleet') await driveMorning({ home, bindings, target, run, scenario, report });
   if (!report.focus || report.focus === 'fleet') await driveFleet({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir, children });
-  if (!['briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'assurance'].includes(report.focus)) {
+  if (!['briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review', 'assurance'].includes(report.focus)) {
   const artifact = join(home, 'artifact.txt'); const original = 'Expected fixture bytes\n'; await writeFile(artifact, original);
   const definition = { id: 'self-check', parents: [], goal: 'Retain the expected local artifact and detect damage.', context: 'Synthetic responsibility survives a fresh process without a prior conversation.', action: 'verify', resource: 'fixture', destination: 'local-evidence', target, authorityRef: { reference: 'Synthetic owner request', action: 'verify', resource: 'fixture', destination: 'local-evidence' }, criteria: [{ id: 'artifact', description: 'Actual bytes match the retained expectation.', evidence: 'local-digest', path: artifact, sha256: digest(original) }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'artifact-watch', method: 'Compare expected local bytes.', intendedEffect: 'Maintain expected artifact bytes.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' } };
   const adopted = await run(['responsibility', '--file', await fixture('definition.json', definition)]);
@@ -225,9 +238,14 @@ try {
     const wrongRepository = review(await reconcile(definition.id, 3)); assert.ok(wrongRepository.route.reasons.includes('repository-binding-mismatch')); assert.equal(wrongRepository.proposals.some(item => item.type === 'work'), false);
     await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
     scenario('binding-boundaries', 'Unknown inherited project and host keys stay unbound; explicit constructor IDs work; cloud needs prepared binding, reason and explicit scoped authority.');
-    const probes = await run(['probe', '--nonce', 'synthetic-nonce']); assert.equal(probes.record.probes.length, 8); assert.equal(probes.record.accountStatus, 'unverified');
+    const probes = await run(['probe', '--nonce', 'synthetic-nonce']); assert.equal(probes.record.probes.length, 7); assert.equal(probes.record.accountStatus, 'unverified');
     assert.match(await readFile(join(probes.path, 'packet.md'), 'utf8'), /Not installed\. No probe or schedule ran\./);
-    scenario('probe-packet', 'Retained actual onboarding packet contains eight proposals and remains uninstalled/unverified.');
+    assert.equal(probes.record.probes.some(probe => probe.id === 'cloud-delegation'), false);
+    assert.match(probes.record.probes.find(probe => probe.id === 'runtime').prompt, /current attached execution environment/);
+    const cloudProbe = await run(['probe', '--id', 'cloud-delegation', '--nonce', 'synthetic-explicit-cloud']);
+    assert.deepEqual(cloudProbe.record.probes.map(probe => probe.id), ['cloud-delegation']);
+    assert.equal(cloudProbe.record.execution, 'proposal-only'); assert.equal(cloudProbe.record.accountStatus, 'unverified');
+    scenario('probe-packet', 'Default onboarding omits cloud delegation and inspects the current environment; explicit cloud selection remains proposal-only and unverified.');
     const forkDefinition = { ...definition, id: 'fork-case' }; const forkBase = await adopt(forkDefinition);
     await reconcile(forkDefinition.id, 0, [tasks(forkDefinition.id)]);
     const forkArgs = async goal => ['responsibility', '--file', await fixture(`fork-${randomUUID()}.json`, { ...forkDefinition, parents: [forkBase.hash], goal })];
@@ -595,11 +613,6 @@ try {
   }
   assert.equal((await readdir(home)).includes('executor-invoked'), false);
   await cp(join(home, 'records'), join(evidenceDir, 'records'), { recursive: true });
-  if (!report.focus || report.focus === 'assurance') {
-    const directory = join(evidenceDir, 'assurance'); await mkdir(directory);
-    report.assurance = await driveAssurance(sourceRoot, directory);
-    scenario('local-assurance', 'Exact fixed-plan receipt replay, source/base/environment refusal and original output retention through fresh CLI processes.');
-  }
   if (!report.focus) assert.deepEqual(report.scenarios.map(item => item.name).sort(), verification.features.flatMap(feature => feature.scenarios).sort(), 'Every mapped CLI scenario must execute');
   report.status = 'passed';
 } catch (error) {
@@ -621,6 +634,16 @@ try {
   if (report.fleet && report.retainedFleet) {
     try { assert.equal((await readStore(report.retainedFleet)).records.length, report.fleet.records); report.fleetRetentionVerifiedAfterCleanup = true; }
     catch (error) { report.status = 'failed'; report.fleetRetentionError = error.message; process.exitCode = 1; }
+  }
+  if (report.morningV3 && report.retainedMorning) {
+    try {
+      const selected = join(report.retainedMorning, 'v3'); const retained = await readStore(selected);
+      assert.equal(retained.records.length, report.morningV3.records, 'V3 journal survives temporary-root cleanup');
+      const last = retained.records.filter(record => record.type === 'fleet-step').sort((a, b) => a.seq - b.seq).at(-1);
+      assert.equal(last.state.morningRuns.at(-1).sealed.bodyDigest, report.morningV3.bodyDigest);
+      for (const receipt of report.morningV3.rawReceipts) { const bytes = await readFile(join(selected, receipt.relativePath)); assert.equal(digest(bytes), receipt.sha256); assert.equal(bytes.length, receipt.byteCount); }
+      report.morningV3RetentionVerifiedAfterCleanup = true;
+    } catch (error) { report.status = 'failed'; report.morningV3RetentionError = error.message; process.exitCode = 1; }
   }
   if (report.dispatch && report.retainedDispatch) {
     try {
