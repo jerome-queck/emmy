@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "3ae16d5de8ce633c50d3e58858d43ceb1ae07c74",
-  "reviewBasis": "Read actual current-main and accepted7cd37af owning source before selective port. All ten current-main aggregate groups and existing production properties remain; only Markdown exact-tree acquisition and new assurance command/driver/area proof are added. No Calendar/briefing/planning/direct/model-policy context is ported. Twelve-suite reducer model/mutants and actual focused CLI passed; publication function navigation was compared to actual unchanged canonical source and five stale ranges corrected. New per-head full verification and independent verdict are required; v3 acceptance does not transfer.",
+  "sourceCommit": "67820379f23b8574cffa0320086d569731223d33",
+  "reviewBasis": "Read actual current-main and accepted7cd37af owning source before selective port. All ten current-main aggregate groups and existing production properties remain; only Markdown exact-tree acquisition and new assurance command/driver/area proof are added. No Calendar/briefing/planning/direct/model-policy context is ported. Twelve-suite reducer model/mutants and actual focused CLI passed; publication function navigation was compared to actual unchanged canonical source and five stale ranges corrected. New per-head full verification and independent verdict are required; v3 acceptance does not transfer. Delivery-layer documentation-only refresh: read entire covered diff; only verify skill gains a paragraph linking the local delivery proof. All runtime coordination/property/mutation/fixture bytes,assumptions and domains equal the reviewed core. The old aggregate correctly refused the stale prose hash. No runtime property change or inherited acceptance.",
   "files": {
     "src/catalog.mjs": "d2c333d10851197c893a96eed024d3163473306189c8dce220ba9cfc5c14c27e",
     "src/maintenance.mjs": "218fe10c182a272a994a0d3f620035fafc6cccb92ac1961517ef0f16465f31b0",
@@ -27,7 +27,7 @@
     "verification/calendar-properties.mjs": "aa69413c21f6a5b2809a019cfb83eeb181cca70de6717517826b98ef9cc39726",
     "verification/calendar-mutations.mjs": "b911302cb61295eed5b3f8f16a4ea9cc3556dc61e457b383caf620146821eda3",
     ".agents/skills/coordination-contract/SKILL.md": "b5da18e33928259cdf85460df774020cfc245b11680cc291db32e979e5833666",
-    ".agents/skills/verify/SKILL.md": "4937f428a5328500f3f37f13b8174469818c404e171450679bc152be90867edf",
+    ".agents/skills/verify/SKILL.md": "d81f3c9a765ed4c4cb156b8c45787a6ec5a52c26fe896ab54bdc83dfe7651433",
     ".agents/skills/verify/features/evidence.md": "fca4a3aeda7546b4a4ebcedab3ae5fb8a4b634e9b8f7d98e0ac608f65412ac2f",
     "docs/calendar.md": "02f9502edc5b0581c8931d27f74ccc9c4c41b56550adb3a78af8c0d8dd932b79",
     "src/cloud.mjs": "9e48c4f64f95ac23a8e7fb0a33e51b21fb9a2022a48e355dee06de3d76ef1a7f",
