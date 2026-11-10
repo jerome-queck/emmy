@@ -45,3 +45,5 @@ Run `maintain --check` at session start. After metadata changes, run `maintain -
 Use the installed pstack verification maintenance workflows after covered changes. Generated references do not replace independent source reading, a live pass, or review of formal assumptions. Actual Dot installation and capabilities remain unverified until the [native probes](docs/dot-verification.md) succeed.
 
 `npm run check` first checks local Markdown links and runs the link checker's CLI fixtures. Use `npm run check:links` for the link check alone. It reads current bytes of tracked Markdown, including hidden skills, and checks exact-case tracked targets and heading fragments. The [verification skill](.agents/skills/verify/SKILL.md#scope) defines its heading rules, diagnostic locations, and limits.
+
+The [local delivery route](docs/local-delivery.md) binds selected review, source receipt and scoped authorization before each provider action. Its local CLI and synthetic verification do not install provider settings or authorize publication.

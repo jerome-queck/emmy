@@ -1,0 +1,52 @@
+---
+title: "Local verified delivery"
+---
+stateDiagram-v2
+  s0: Ready to verify source
+  s1: Local checks running
+  s2: Source or base changed
+  s3: Local checks passed
+  s4: Checks failed
+  s5: Independent review accepted
+  s6: Publication scope accepted
+  s7: Awaiting publish readback
+  s8: Exact branch published
+  s9: One scoped retry authorized
+  s10: Awaiting open-pr readback
+  s11: Exact PR open
+  s12: Merge scope accepted
+  s13: Awaiting attest readback
+  s14: Awaiting merge readback
+  s15: Merge and history confirmed
+  [*] --> s0
+  s0 --> s1: run local checks
+  s0 --> s2: observe changed source or base
+  s1 --> s2: observe changed source or base
+  s1 --> s3: all checks pass
+  s1 --> s4: a check fails
+  s3 --> s5: accept independent practical review
+  s3 --> s2: observe changed source or base
+  s4 --> s2: observe changed source or base
+  s5 --> s6: accept exact publication scope
+  s5 --> s2: observe changed source or base
+  s6 --> s2: observe changed source or base
+  s6 --> s7: retain intent and publish branch
+  s7 --> s8: read exact published branch
+  s7 --> s9: accept fresh scoped absence resolution
+  s8 --> s2: observe changed source or base
+  s8 --> s10: retain intent and open PR
+  s9 --> s7: retain intent and publish branch
+  s10 --> s11: read exact open PR
+  s10 --> s9: accept fresh scoped absence resolution
+  s11 --> s12: accept exact merge scope
+  s11 --> s2: observe changed source or base
+  s11 --> s13: retain intent and attest evidence
+  s9 --> s10: retain intent and open PR
+  s12 --> s2: observe changed source or base
+  s12 --> s14: retain intent and request guarded merge
+  s13 --> s11: read both exact statuses
+  s13 --> s9: accept fresh scoped absence resolution
+  s14 --> s15: read merged PR and main history
+  s14 --> s9: accept fresh scoped absence resolution or read merged PR and main history
+  s9 --> s13: retain intent and attest evidence
+  s9 --> s14: retain intent and request guarded merge
