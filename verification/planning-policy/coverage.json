@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "9b4b174b9bd414885fb6429c4c0c144228fd0dce",
+  "sourceCommit": "7053425c37eb05833d9634f452c388f33c1b2163",
   "sourceFiles": {
     "src/planning-policy.mjs": "ec3c8bd2a3d9d03e0cc75a77af2d014381b28c24d81ee9ee108d5ab89aecadcc",
     "src/calendar-policy.mjs": "2b40d5d2cf26efa2307741df89b60d87bcf0589aab612dff08362f7db598d1f9",
@@ -132,5 +132,5 @@
     "No provider truth, global immutable rule store, authorization authenticity, async/concurrent safety, durable writes, gateway/module publication, installation or native adoption",
     "Historicalv1remains explicitly callable without v2assurance"
   ],
-  "reviewBasis": "Read entire original semantic policy and both callers, source ownership/retention flows, new evaluator/domain/graph/checker, unchanged semantic guards and all slice diffs. Reviewed-source pins follow actual copied-source mutations and /statechart paths. Current source changes only formatting/refusal labels after final dev graph; strict full gate reruns actual source. Retention repair: reviewed complete delta from eab50f0. Shared v2 resolution now includes semanticPolicyDigest; native/API original associations remain exact. Added actual native source-reassociation regression/CLI refusal; graph semantics/bounds/mutations unchanged, retained original failing real-code probe. Source pins follow new source commit. Original v1wire unchanged."
+  "reviewBasis": "Read entire original semantic policy and both callers, source ownership/retention flows, new evaluator/domain/graph/checker, unchanged semantic guards and all slice diffs. Reviewed-source pins follow actual copied-source mutations and /statechart paths. Current source changes only formatting/refusal labels after final dev graph; strict full gate reruns actual source. Retention repair: reviewed complete delta from eab50f0. Shared v2 resolution now includes semanticPolicyDigest; native/API original associations remain exact. Added actual native source-reassociation regression/CLI refusal; graph semantics/bounds/mutations unchanged, retained original failing real-code probe. Source pins follow new source commit. Original v1wire unchanged. Retained authorized source port. Every covered byte was compared against the original witness and the new reachable anchor. The only mapped byte change removes an inherited trailing blank line in briefing acquisition. Mappings, bounds and assumptions are unchanged. New head requires fresh review."
 }
