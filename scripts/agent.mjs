@@ -13,6 +13,8 @@ import { cloud } from '../src/cloud.mjs';
 import { calendar } from '../src/calendar.mjs';
 import { fleet } from '../src/fleet.mjs';
 import { signin } from '../src/signin.mjs';
+import { assessAssurance } from '../src/local-assurance.mjs';
+import { boundedJson } from '../src/bounded-json.mjs';
 
 const args = process.argv.slice(2);
 const commandName = args.shift() ?? 'help';
@@ -32,12 +34,15 @@ try {
   for (const option of command.options) if (option.required && !options[option.name]) throw new Error(`Missing --${option.name}`);
   const root = resolve(options.root ?? join(dirname(fileURLToPath(import.meta.url)), '..'));
   const home = resolve(options.home ?? join(root, '.local'));
-  const catalog = await readCatalog(root);
+  const catalog = commandName === 'assurance' ? null : await readCatalog(root);
   let data; let exitCode = 0;
   switch (command.name) {
     case 'help':
       data = { commands, globalOptions: ['--root <public-source>', '--home <private-state>', '--json'], output: 'One JSON object', exitCodes: { 0: 'local operation completed', 2: 'invalid input, corrupt storage, or operational error', 3: 'actionable findings, conflict, suspension, generated drift, or advisory revision/degradation' } };
       break;
+    case 'assurance':
+      data = await assessAssurance(root, await boundedJson(resolve(options.file), 1024 * 1024));
+      exitCode = data.status === 'current-local-reported' ? 0 : 3; break;
     case 'catalog': data = catalog; break;
     case 'doctor': {
       const bindings = await readBindings(home); const store = await inspectHome(home); const historical = await historicalFiles(home);

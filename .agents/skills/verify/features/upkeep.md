@@ -1,5 +1,7 @@
 # Upkeep and recovery
 
+`assurance --file` replays one exact retained local check receipt against current source/base/environment. The `local-assurance` driver and [formal area skill](../../local-assurance/SKILL.md) cover refusal, ordering, output retention and bounded admission. It changes no native or provider state.
+
 ## User route
 
 Run `maintain --check` at session start. After public metadata changes, run `maintain --write`, inspect derived files, and run the aggregate check. Metadata owns commands, feature map, scenario names, and property IDs. Maintenance preserves research dates and formal sync records.

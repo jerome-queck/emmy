@@ -17,6 +17,8 @@ Expect JSON with `status: "passed"`, two baseline state graphs, two intended mod
 
 `npm run verify:formal` adds the existing actual-source finite predicates and merge-policy enumeration. Those checks remain complementary. `npm run check` also drives the real CLI and checks generated references and merge tests.
 
+The local assurance runner may use `--prepare-tools` before binding its context. That mode prepares only the existing pinned Java/TLC boundary and reports `tools-ready` with no model/source acceptance. Normal verification retains its full source/model/filesystem gates and checks declared function ranges against actual source.
+
 ## Promise and harm
 
 Every canonical record directory exposes complete matching record and evidence bytes. Exposing a half-written record can corrupt every later responsibility review.
