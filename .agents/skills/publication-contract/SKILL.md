@@ -13,11 +13,11 @@ npm run verify:model
 
 The command runs pinned TLC 2.19 from the official TLA+ tools 1.7.4 release. It verifies the jar's SHA-256 before executing it. A missing jar downloads into ignored `.local/tools/`. Set `EMMY_JAVA_BIN` or `EMMY_TLC_JAR` to use existing tools. An override still requires Java 21 and the pinned jar digest. No package, account, or API key is required.
 
+The aggregate assurance runner may call `node scripts/verify-publication.mjs --prepare-tools` before its source/environment binding. That mode reuses only the existing Java selection and pinned jar acquisition. It reports `tools-ready` with `sourceReviewGate: false`, runs no model or filesystem witness and cannot satisfy publication verification. Normal `npm run verify:model` retains every reviewed-source, model and real-source mutation gate.
+
 Expect JSON with `status: "passed"`, two baseline state graphs, two intended model counterexamples, and two actual copied-source filesystem mutants. The command reruns both unchanged state graphs and filesystem baselines after the mutants. Logs, traces, copied source, actual record bytes, witness JSON and failures remain under the printed `.local/publication-model/run-*/report.json` path. A nonzero result requires reading that report and its named logs.
 
 `npm run verify:formal` adds the existing actual-source finite predicates and merge-policy enumeration. Those checks remain complementary. `npm run check` also drives the real CLI and checks generated references and merge tests.
-
-The local assurance runner may use `--prepare-tools` before binding its context. That mode prepares only the existing pinned Java/TLC boundary and reports `tools-ready` with no model/source acceptance. Normal verification retains its full source/model/filesystem gates and checks declared function ranges against actual source.
 
 ## Promise and harm
 
@@ -41,12 +41,12 @@ The reviewed source commit is recorded in `verification/publication/coverage.jso
 
 | Model action or property | Production owner |
 | --- | --- |
-| Symbolic requested hashes and matching completed bytes | `recordPayload`, lines 289-300 |
-| `CreatePending`, four `WriteFile` stages, `Rename` | `publishRecord`, lines 302-314 |
-| `ReadRecord`, `ReadEvidence`, `Cleanup`, `Reply` | `publishRecord`, lines 315-320, and `readRecord`, lines 322-339 |
-| `ObserveList`, `ObserveChoose`, `ObserveRecord`, `ObserveEvidence`, `ObserveValidate` | `readStore`, lines 341-351, and `readRecord`, lines 322-339 |
-| `ImportNext`, retry plan, `ImportPrefixSafe` | `retainImport`, lines 428-449, `references`, lines 353-364, and `importOrder`, lines 587-597 |
-| `Crash`, `Retry`, orphan existence | Process interruption between the mapped awaits and a fresh call using the same input. Real markers are in `publicationBoundary`, lines 282-287. |
+| Symbolic requested hashes and matching completed bytes | `recordPayload` |
+| `CreatePending`, four `WriteFile` stages, `Rename` | `publishRecord` |
+| `ReadRecord`, `ReadEvidence`, `Cleanup`, `Reply` | `publishRecord`, and `readRecord` |
+| `ObserveList`, `ObserveChoose`, `ObserveRecord`, `ObserveEvidence`, `ObserveValidate` | `readStore`, and `readRecord` |
+| `ImportNext`, retry plan, `ImportPrefixSafe` | `retainImport`, `references`, and `importOrder` |
+| `Crash`, `Retry`, orphan existence | Process interruption between the mapped awaits and a fresh call using the same input. Real markers are in `publicationBoundary`. |
 
 Dispatch metadata adds pure validation and immutable lineage guards. The cross-project extension adds optional remote authority, creator and destination skill validation plus a separate parsed project-discovery input. All remain pure boundaries with no publication await or graph-reference change. It adds no publication await or reference edge. The import model starts after full bundle preparation and reference validation. It includes one dependency edge, not every record-type validation rule. Writer 2 has no dependencies. The observer's reads are deliberately not one atomic `readStore` action. Symbolic hash order and conservative list subsets overapproximate the configured callers.
 
@@ -62,7 +62,7 @@ Backup checks for unresolved current/configuration claims before selecting archi
 
 Fleet adds definition/root/parent/epoch reference edges and synchronous replay validation through `fleet-schema.mjs`, `fleet-state.mjs` and `work.mjs`. The copied-source filesystem driver includes this dependency closure. Canonical publisher, rename, per-file readback, pending cleanup and importer awaits retain their mapped operations. The same one-edge import and canonical byte-publication model remains unchanged.
 
-The complete per-head hard-linked fleet intent, its exclusive selection, bounded real input reads, external parent tickets, health classification, send/readback semantics and backup preflight remain outside TLC. Actual stopped-writer replay and backup refusal are CLI controls. The 77 finite fleet predicates and eighteen paired mutants cover their declared pure domain. None establishes native source truth, actual tools, account recovery, message delivery or external exactly-once behavior.
+The complete per-head hard-linked fleet intent, its exclusive selection, bounded real input reads, external parent tickets, health classification, send/readback semantics and backup preflight remain outside TLC. Actual stopped-writer replay and backup refusal are CLI controls. The finite fleet predicates and paired actual-source mutants cover only the pure domains declared in the coordination mapping. None establishes native source truth, actual tools, account recovery, message delivery or external exactly-once behavior.
 
 ## Replay a counterexample
 
@@ -81,3 +81,9 @@ Update the verification from that source reading. Never weaken a promise to acce
 Use the installed `pstack:maintain-formal-verification-skill` workflow for this pass. Keep product fixes separate. Independent source review remains the coordinator's gate.
 
 Coordinator settings add synchronous objective/role validation and descendant source checks only. The canonical publication awaits and reference graph remain unchanged. Model-policy semantics are covered by the finite dispatch property and CLI controls, outside TLC.
+
+The evidence-semantics repair adds synchronous fleet version/upgrade and replay checks. Historical transitions and responsibility review projections retain their original rules; new current views require explicit provenance and pending-recovery attention. These branches add no publisher await or record-reference edge. The bounded publication graphs and filesystem mutation witnesses remain unchanged; schema truth, health semantics, epoch lifecycle and native recovery remain separate finite or CLI claims.
+
+The coding-model and speed correction adds synchronous validation of optional recorded service tier, exact model permission and speed approval metadata. Reviewed publisher, per-file readback, import-order, cleanup and reference functions retain every prior await and graph edge. The coverage record maps current function ranges. The runner checks every mapped top-level function start and closing line before TLC, so moved source cannot leave stale navigation ranges behind. This layout guard is not a JavaScript semantic proof. Model/approval semantics remain finite dispatch and CLI checks, outside TLC; no native/provider tier or owner-source authentication follows.
+
+The held briefing v3 migration adds synchronous policy, source-binding, compiler, and migration guards to the existing morning owner. Its copied-source dependency closure includes `briefing-policy.mjs`, `briefing-plan.mjs`, and `briefing-reporting.mjs`. Canonical publisher/read/import awaits and immutable reference edges are unchanged. Review those new parsers and the covered diff before refreshing hashes. Policy and caller behavior have finite or CLI controls; neither the unchanged canonical TLC graph nor the derived-slot model authenticates cloud source truth, parent acceptance, or delivery.

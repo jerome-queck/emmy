@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "kind": "bounded-immutable-slot-safety",
+  "reviewBasis": "Read extracted publisher ordinary/directory/publishSlot in full. First link uses a closed complete unique temporary. EEXIST reads immutable original; equal bytes converge; differing bytes retain first marker and content-addressed candidate. Domain callback validates preexisting markers. Final cleanup names only this writer temporary. No canonical journal publication change or native lifecycle proof. Lead removed only a redundant final blank line after independent source review; all operations and witnesses unchanged. Source identity pinned to independently reviewed foundation commit c4d2e389cbf0e6d17f721b02492fd456e8cdfad9.",
+  "sourceFiles": {
+    "src/immutable-slot.mjs": "59e8ccd7c37783268e22703f63897c8c6d2b97c497ab37ff300e636a33744035"
+  },
+  "verificationFiles": {
+    "verification/briefing-slot/BriefingSlot.tla": "ce970cea18806e44fe923e9bb6771b2543f199071bbcfff1efac81aeb327580a",
+    "verification/briefing-slot/same.cfg": "828ab53b94c24e564ad786e13fdc9899511d0b10fd94d9797127e17968e6c3f2",
+    "verification/briefing-slot/distinct.cfg": "37612ed2b74bc02a37aabc991c168e76b0b5cac1e9950c7e9eac1c8f5ccbddb8",
+    "verification/briefing-slot/early-mutant.cfg": "18bbf8a020951b2b810027107134eadc702f74a2f55a1136e9fe2376a2fc2b11",
+    "verification/briefing-slot/overwrite-mutant.cfg": "addce091ab0cef317137f9324b8df1541b6953cd210895fd1a912ccf1c52ae52",
+    "verification/briefing-slot/omit-marker-mutant.cfg": "d9e0b5342c1352b85d314c834f04c3825a77faca045cf6f10dd6cf1078b974c1",
+    "verification/briefing-slot/drive.mjs": "679ee43a1ec05ac3b201b032a67e51f4b3a42f187b1a8697cb06456693b448b3",
+    "verification/briefing-slot/worker.mjs": "743c2d5693af2520c1b5fe10c8e3afd2418c651155440ca044124029cf0104cd",
+    "scripts/verify-briefing-slot.mjs": "0e61fb002d6b2b0a175920d644411b024a02f1fee5b9b2bbc37c698650781ae3",
+    "verification/briefing-slot/README.md": "f3c69ad1331e41688bb3c48821bc6656e977bc97fe5f4b5f215081002ccc9453"
+  },
+  "bounds": {
+    "writers": 2,
+    "symbolicBytes": [
+      "a",
+      "b"
+    ],
+    "retryPerWriter": 1,
+    "crashPerWriter": 1,
+    "observerReads": 2,
+    "perTlcTimeoutMs": 60000
+  },
+  "mapping": [
+    {
+      "source": "src/immutable-slot.mjs",
+      "function": "publishSlot",
+      "model": [
+        "Create",
+        "Write",
+        "Publish"
+      ],
+      "boundary": "Exclusive fresh temporary, complete write/close, atomic canonical hard-link."
+    },
+    {
+      "source": "src/immutable-slot.mjs",
+      "function": "publishSlot",
+      "model": [
+        "Read",
+        "Mark",
+        "Retain",
+        "Reply"
+      ],
+      "boundary": "EEXIST canonical read, first conflict marker, content-addressed candidate retention, return. Domain validation is honest and silent."
+    },
+    {
+      "source": "src/immutable-slot.mjs",
+      "function": "publishSlot",
+      "model": [
+        "Crash",
+        "Retry"
+      ],
+      "boundary": "One interrupted attempt and one fresh exact retry. Orphan temporaries are ignored. Unique owned unlink is a silent step after return outcome selection; unexpected cleanup errors are excluded."
+    },
+    {
+      "source": "src/immutable-slot.mjs",
+      "function": "ordinary",
+      "model": [
+        "ObserveSlot",
+        "ObserveMarker"
+      ],
+      "boundary": "Two immutable ordinary-file reads by a cooperating caller are not an atomic snapshot. Actual witness reads slot, observes missing marker, performs conflict publication, then reads later marker. This models only slot byte observation, not daily briefing semantics."
+    }
+  ],
+  "properties": [
+    "PublishedComplete",
+    "CanonicalImmutable",
+    "FirstMarkerPersists",
+    "RetryConverges",
+    "ConflictRetained",
+    "ObservedImmutable"
+  ],
+  "assumptions": [
+    "Two cooperative writers with collision-free symbolic content identities and fresh disjoint temporary names.",
+    "Atomic same-filesystem hard-links preserve preexisting names. Complete closed temporary bytes are immutable after linking.",
+    "No external deletion, mutation, symlink substitution, hash collision, arbitrary I/O/cleanup failure, or power loss.",
+    "Domain-specific validateConflict callbacks honestly refuse invalid preexisting markers. Pure parsing/size/path validation is outside this model.",
+    "Crash may occur between mapped operations. One retry per writer may follow success or crash. Cleanup only touches its own temporary; orphan identity has no effect on later actions.",
+    "One observer reads canonical then marker separately. A missing marker can precede a concurrent conflict publication.",
+    "No fairness, liveness, eventual completion, fsync/durability, native truth, effects, delivery, policy correctness or automatic adoption claim.",
+    "TLC trusted subject to logged fingerprint collision estimate. Exhausted bounded reachable graphs are not universal proof."
+  ],
+  "mutations": [
+    {
+      "id": "early",
+      "config": "early-mutant.cfg",
+      "invariant": "PublishedComplete",
+      "actual": "Copied publishSlot links empty open temporary before write; child killed at actual boundary; visible canonical bytes are incomplete."
+    },
+    {
+      "id": "overwrite",
+      "config": "overwrite-mutant.cfg",
+      "invariant": "CanonicalImmutable",
+      "actual": "Copied publishSlot unlinks canonical before hard-link. Two actual calls replace a with b."
+    },
+    {
+      "id": "omit-marker",
+      "config": "omit-marker-mutant.cfg",
+      "invariant": "ConflictRetained",
+      "actual": "Copied publishSlot omits conflict marker link and returns conflict. Actual marker absent."
+    }
+  ],
+  "sourceCommit": "c4d2e389cbf0e6d17f721b02492fd456e8cdfad9"
+}

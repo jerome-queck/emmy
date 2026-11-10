@@ -76,7 +76,7 @@ export function renderCompactMorning(run, assessment, { at, gaps = [], summary =
   const materialGaps = [...gapCounts].map(([gap, count]) => `${gap}${count > 1 ? ` (${count} distinct gaps)` : ''}`);
   if (materialGaps.length) lines.push(`Coverage gaps: ${materialGaps.join('; ')}.`);
   const missingLinks = assessment.limits.find(limit => limit.kind === 'source-link'); if (missingLinks) lines.push(`Source links unavailable for ${missingLinks.sourceIds.length} sources; references retained privately.`);
-  if (assessment.guidance.state !== 'current') lines.push('Guidance is unavailable or cached; current guidance remains unverified.');
+  if (!['current', 'pinned'].includes(assessment.guidance.state)) lines.push('Guidance is unavailable or cached; current guidance remains unverified.');
   if (historical) lines.push(`Day assessment as of ${clock(assessment.checkedAt, historical ? null : run.day)} SGT; current commitments are not reacquired by selected mail reads.`);
   return `${lines.join('\n')}\n`;
 }

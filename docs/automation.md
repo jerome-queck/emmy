@@ -4,6 +4,8 @@ This document describes repository behavior for `jerome-queck/emmy`, the canonic
 
 ## Checks and evidence
 
+The explicit [local delivery route](local-delivery.md) uses `emmy-local-assurance`, retained local checks, separately accepted practical review and expiring action scope. It needs no hosted job. Historical hosted execution remains the default until the protected transition. Repository variable `EMMY_DELIVERY_MODE=local` skips both hosted jobs only after gate continuity is verified. The following hosted workflow and setup sections describe historical mode.
+
 `Emmy checks` publishes one required job named `emmy-check`. It uses Node 24.19.0 and the hosted runner's Java 21. It installs locked verification dependencies with `npm ci --ignore-scripts`, then runs `npm run check`. The publication checker downloads the official TLA+ tools 1.7.4 jar into ignored `.local/tools/` when absent and verifies its pinned SHA-256 before execution. The job checks the PR head for pull requests and the event SHA for other events. It records the actual checkout SHA before running the command.
 
 `npm run check` first runs the tracked Markdown link checker and its CLI fixture tests, then checks generated references and combines three verification layers:
@@ -100,5 +102,3 @@ These checks establish finite policy behavior and adapter contracts. They do not
 ## Primary sources
 
 GitHub documents [workflow events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows), [commit-status ordering](https://docs.github.com/en/rest/commits/statuses#list-commit-statuses-for-a-reference), [check-run metadata](https://docs.github.com/en/rest/checks/runs#list-check-runs-for-a-git-reference), and [branch metadata permissions](https://docs.github.com/en/rest/branches/branches#get-a-branch). Its [immediate merge endpoint](https://docs.github.com/en/rest/pulls/pulls#merge-a-pull-request) documents the head SHA guard and excludes queue landing. Its [deferred auto-merge documentation](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/automatically-merging-a-pull-request) describes when new pushes disable deferred authorization. Sources and the live GraphQL input schema were inspected on 22 October 2026.
-
-The [local delivery route](local-delivery.md) supplies an alternative exact-source receipt and reviewed action journey. Hosted requirements remain active until a separately authorized protection migration and saved-settings readback. The explicit local-mode selector alone does not establish that migration.

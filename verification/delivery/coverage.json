@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "545742eb3e0fb854a7352657a63ae8f668f1b02b",
+  "sourceCommit": "11f1d50c1a0b46453141491ed7210046c80d2e94",
   "sourceFiles": {
     "scripts/github-auto-merge.mjs": "3c89e3044e08fd70841e481da1943a8efa2dea615a3a98c27cbe7d020e7bce9d",
     "scripts/local-delivery.mjs": "b339a2c581ad2751ffe013d93652b6917439c10e4268e636dbe91fb8e14657bf",
     "src/local-assurance.mjs": "6ff678f407e56d2b9b0f338698628dc08b07eda768cb8cb20ad288d0c9cb8764",
-    "src/assurance.mjs": "ae5e96b2b18821d3760523faeca548335279aec0f2d1920c8fc4d3b6661c990c",
+    "src/assurance.mjs": "5861cf2154b957e614745cf863f76ddf07558f363fb281116476df120d4c9f7b",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
     ".github/workflows/check.yml": "cac728413bf79655091a4c3ceaceb5deb1c1d84261336bb85b1c01f3fbc2f06e",
     ".github/workflows/auto-merge.yml": "cdb8968eb1dc1dff2b81b71ef283fd66745fe96678afbc19aced63e0c67efbe7"
@@ -22,7 +22,7 @@
     ".agents/skills/merge-assurance/SKILL.md": "be1eb5ff37343876c11e181be2bb0ce5ca6c33c1ae9b39366342b11c33ec7834",
     "docs/local-delivery.md": "37d5a302e651435a90ddb5ca2d766ea8b6171e6a5b463da5ce907f56a53c73c9"
   },
-  "reviewBasis": "Actual main-rooted port source and verification reviewed in private delivery-covered-review.json. All hosted metadata domains retained; exact accepted delivery owner/CLI and R1/R2/R3 promises preserved with twelve-suite current-main assurance dependency. No abstract model promise changed; actual CLI and adapter source guard controls passed,16384 admission+1024 resolution cases and all10 lifecycle runs passed in development. This pin is not independent acceptance; exact per-head/base aggregate and independent stack verdict required.",
+  "reviewBasis": "Focused remaining R2/R3 correction over frozen combined bd16e0d. Owner read exact original-scope comparison and the immutable intent/evidence representation. Compare all request fields before resolution, excluding only authorization/resolution renewal, while preserving unknown/history and retry credit on mismatch. Old actual CLI reproduced retry-ready on changed review; corrected fresh CLI stays unknown, and removing the actual adapter guard reproduces the forbidden advance. No reducer or temporal property changed. Original full gates do not attest this new head.",
   "mapping": [
     {
       "property": "LocalAdmission",

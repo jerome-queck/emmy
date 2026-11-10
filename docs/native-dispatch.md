@@ -1,5 +1,7 @@
 # Recover and dispatch native coding objectives
 
+Operational coordination continues through the existing selected native router. Direct-root mode is optional explicit source capability, not an active operational replacement or permission grant. This change installs no runner, selection or binding. Preserve the actual original creator for every retained owner/reviewer.
+
 Use the trusted installed runner with the existing private home. This command recovers saved state and returns advice. Supported native tools perform creation and supervision.
 
 ```sh
@@ -9,7 +11,53 @@ agent dispatch --id <objective-id> --discovery <private-discovery.json> --as-of 
 agent dispatch --id <objective-id> --discovery <private-discovery.json> --context-needed --as-of <UTC>
 ```
 
-Project recovery returns the selected dispatcher and known objective bindings. It does not establish current native eligibility. Objective recovery pins the journal inputs and returns one next action. The command writes no records and invokes no native executor. Exit 0 means a resolved destination, usable advice, or recovered inventory, 2 means invalid input, and 3 means observation or resolution is needed.
+Project recovery returns saved direct-root and historical dispatcher selections plus known objective bindings. The objective selects its immutable route; project inventory never switches it. It does not establish current native eligibility. Objective recovery pins the journal inputs and returns one next action. The command writes no records and invokes no native executor. Exit 0 means a resolved destination, usable advice, or recovered inventory, 2 means invalid input, and 3 means observation or resolution is needed.
+
+## Prepare a native task from saved project guidance
+
+For a requested native child, read the local preparation installation at `.local/native-task-preparation/README.md` in this saved Emmy checkout. It names the exact reviewed source, runtime, manifest, and invocation. Verify those installed bytes before use. Missing or mismatched installation stops preparation; retain the gap. This fixed task preparation source is separate from shared runners and briefing consumers.
+
+1. Recover the exact objective and its explicit direct-root or historical route through the existing trusted `dispatch` route. Discover the saved destination and existing attempts with supported native reads. An unresolved or ambiguous attempt requires same-objective rediscovery before another create.
+2. Read the installed source's `docs/agent-task-workflow.md` and `.agents/skills/agent-task/SKILL.md`. This saved project route authorizes that exact fixed-source preparation invocation; it takes precedence over the candidate skill's unconfigured ordinary-caller gap. The optional task-only selector is unnecessary for this fixed source. Build one original private envelope for the actual request. Include its goal, observable verification, subgoals, authority and exclusions, output, monitoring parent, helpers, and resolved requested skills. Apply relevant preparation for the task; read-only work retains read-only boundaries. Preserve the original request and envelope under ignored `.local/`.
+3. Run the documented exact `task-workflow --file` invocation. Retain original stdout, stderr, exit, source identity, and acquisition clocks. Continue only with exit 0, `status: "prepared"`, `phase: "prepare"`, and `native.state: "planned"`. Agent judgment still checks source authority, meaningful criteria, skill existence, destination, model, effort, and service tier.
+4. Save the native request with its `prompt` copied directly from the returned JSON string. Verify identical UTF-8 bytes and retain the request hash and attempted marker before calling the designated host's native `mcp__codex_app__create_thread` once. Use the discovered saved project and local environment through the objective's direct root or historical dispatcher. The CLI prepares data; the agent invokes the supported tool.
+5. Retain the original native response. Resolve pending identities and read back actual same-thread host, saved membership, settings where exposed, and progress using the existing procedure below. Amend the same task record while preserving its prelaunch bytes and contrary evidence. Missing telemetry stays unverified. Parent reviews original criterion evidence before acceptance.
+
+These saved project instructions guide fresh callers without implementation conversation history. They neither intercept native calls nor guarantee an agent follows them. A later parent-owned fresh-context request must separately establish observed consumption, exact prompt use, native creation, and saved membership. Preserve historical dispatcher selections and their scope. A separately authorized and explicitly selected direct objective can use the optional source contract. This does not replace the current operational router.
+
+## Optional direct-root source capability
+
+The optional direct-root source contract supports explicit direct creation of fresh project owners and reviewers. Current operational coordination remains with the existing selected router. Keep historical `.dispatcher` bindings and records unchanged. Select a direct root separately under `bindings.projects.<project-key>.directRoot`, and snapshot that complete object in a fresh definition's `dispatch.root` with `dispatch.mode: "direct-root"`. A legacy definition has no mode and retains its `dispatcher`. Mixed or unknown forms refuse. Neither mode can silently change through a definition revision. Recover unresolved work under its original objective before opening another objective for the same work.
+
+A direct root binding contains this declared shape:
+
+```json
+{
+  "principal": { "kind": "coordination-agent", "id": "<actual-private-control-principal>" },
+  "hostId": "<actual-local-control-host>",
+  "selectionRef": "<owner-direct-route-source>",
+  "authorityRef": {
+    "reference": "<exact-owner-authority-source>",
+    "action": "dispatch-native-child-direct",
+    "resource": "<destination-project-key>",
+    "destination": "<saved-destination-project-ID>"
+  },
+  "childAccessIntent": "supported-policy",
+  "childPolicy": { "sandboxMode": "workspace-write", "approvalPolicy": "on-request" }
+}
+```
+
+Principal kinds are `coordination-agent`, `chatgpt-control`, and `native-thread`. Use the actual observed identity and kind. A ChatGPT or internal coordination identity is not a native creator thread ID. Direct scope is distinct from historical FullAccess-child scope. Both the saved selection and immutable objective snapshot must agree. Destination authority, current host/machine, source, installed skill, saved destination discovery, model, effort, tier, restoration and launch recovery remain checked. A remote destination also needs the existing exact `remoteAuthorityRef` on both root copies.
+
+Direct task observations carry `dispatch.root` with `principal`, `hostId`, `sourceRef`, `observedAt` and current `recordedSettings`. Root settings contain `model`, `effort`, `serviceTier`, `sourceRef` and `observedAt`. There is no invented root pin or native project membership. Child membership and recorded policy still require their own readbacks. The expected child sandbox/approval policy is declared input, not a setting applied by this command.
+
+A ready direct observation additionally carries `dispatch.creation` with `principal`, `attemptKey`, `requestDigest`, `childThreadId`, `observedAt` and `sourceRef`. It must match its retained attempted ancestor's exact request digest, the current attempt and returned child. `nativeCallerThreadId` is separate and optional when unavailable. If the child supplies `creatorThreadId`, it must match that actual native caller. A `native-thread` root must also match the actual caller. Retain original native invocation and response bytes in existing observation evidence. Missing or contradictory provenance holds the same child for inspection.
+
+`create-direct` returns the same supported native request fields as historical advice. Prompts retain the resolved actual skill and six sections: Goal, Verification, Subgoals, Boundaries, Output, Delegation. The fixed installed task-preparation procedure above still owns preparation and exact prompt use. No new native framework, runner installation or automatic interception is introduced.
+
+Native creation grants no filesystem, network, sandbox or approval inheritance. A writable workspace can still protect `.git`, `.agents`, `.codex` and `.aws`, including resolved worktree Git metadata. A private Git index still writes Git objects. Ordinary permitted reads and workspace writes proceed directly; protected writes and TLC's local worker socket may need supported escalation. Record actual failures and successful approvals without claiming who approved them when the tool does not expose that fact. A disk default or a successful approved command cannot attest unrestricted access. Source changes never alter global settings or existing thread permissions.
+
+Use [the direct dispatch formal skill](../.agents/skills/direct-dispatch/SKILL.md) and the existing CLI driver. Finite proofs assume honest supplied native evidence. Installed bindings, native authority, actual policy, ordinary use and effective permissions require separate observed acceptance.
 
 ## Resolve the saved destination
 
@@ -101,9 +149,13 @@ Adopt one ordinary responsibility definition per distinct coding objective throu
 
 The dispatcher placeholder represents the complete object above. Resolve and hash the actual installed skill. The create proposal begins with `[$pstack:poteto-mode](/absolute/resolved/path/SKILL.md)` followed by the objective details. Never copy a placeholder path into a native task.
 
-Omitting `requestedSettings` uses the ordinary Sol High floor. An explicit settings request requires its exact model and effort in child readback. Stronger scoped human settings apply to that objective and its named helpers. A model outside the ordinary default or an effort below its floor needs `scopedOverrideRef`. A later changed request needs that explicit source in a descendant definition. Its dispatcher, correlation key and skill binding stay fixed. Retain the original request and first-turn evidence.
+Omitting `requestedSettings` requests exact Sol Medium. Explicit Sol High is available for heavy reasoning. Child and coordinator readbacks must match their respective requested model and effort exactly. A different model or effort below Medium still needs `scopedOverrideRef`. Changed requests need that explicit source in a descendant definition. Dispatcher, correlation key and skill bindings remain fixed. Preserve original requests and launch evidence.
 
-`dispatch.coordinatorRequestedSettings` selects the coordinator policy independently. It is private repository metadata, not a native create argument. Omission preserves legacy records and the ordinary Sol High minimum, accepting stronger recorded effort. Explicit settings require an exact recorded model and effort. A different model or effort below High also requires `scopedOverrideRef` naming the explicit owner source for this objective's coordinator. Child-only settings never lower the coordinator policy; coordinator-only settings never lower the child policy.
+`dispatch.coordinatorRequestedSettings` selects the coordinator independently and requires `scope` naming this objective and the `coordinator` role. Omission also requests exact Sol Medium. Child settings cannot select coordinator settings, or conversely.
+
+Above High or any other coding model requires `oneTimePermission` inside that role's settings, with exact `objectiveId`, `role` (`child` or `coordinator`), `model`, `effort`, and a nonempty `sourceRef` to explicit one-time owner permission. For example, an explicitly authorized exception can carry `{"objectiveId":"example-objective","role":"child","model":"gpt-6.1-sol","effort":"xhigh","sourceRef":"exact-owner-permission"}`. Generic "or higher", `sourceRef` alone and `scopedOverrideRef` alone do not authorize escalation. Permission cannot cross objective, role, model or effort. The CLI checks declared scope, not source truth. The coordinator must authenticate owner permission and resolve a supported concrete model before dispatch. No default Astra or automatic XHigh escalation exists.
+
+Historical records stay readable and pending launches stay unresolved. Current advice applies the corrected policy; it cannot silently reinterpret earlier recorded settings or change existing native sessions. Project defaults configure new sessions and helpers only. Unrelated automation selections remain unchanged.
 
 ```json
 {
@@ -138,19 +190,21 @@ A readback contains `threadId`, actual `hostId`, explicit saved `nativeProjectId
 
 Evidence imports remain reported. Retained byte hashes cannot authenticate native state, human authority or provider execution. Keep raw readbacks, exact policy/model timestamps, source digests, machine paths, dispatcher identity and job bindings private. Existing backup includes bindings, definitions, observations and retained evidence. Restores remain suspended pending fresh epoch observations.
 
-## Execute through the selected dispatcher
+## Execute the objective route
 
-1. Load current approved guidance and recover the private selection and objective. Resolve the requested destination from current native discovery and repository evidence. Discover the selected dispatcher's own actual host, saved project, pin and current recorded policy/model through supported reads. Stop that action on a mismatch. Preserve missing evidence as unverified.
-2. Classify the work unit. Every nontrivial unit or follow-on phase gets a fresh project-bound task, even within the same objective. Read prior tasks for evidence, normally without messaging them. Hand over concise source references, exact artifacts/revisions, verified outcomes, open findings, authority and remaining checks. Do not resume an old conversation for substantive work. Independent review and separately assigned merge work also get fresh tasks. `--context-needed` is a compatibility flag for follow-on advice, never reuse authority. A running child remains `read-or-wait`; a completed child returns `prepare-fresh-task` with its prior native ID. Inspect the outcome first. A distinct execution unit needs its own definition and correlation marker while retaining prior effect history; this flag never creates one or bypasses rediscovery.
+1. Load current approved guidance and recover the private selection and objective. Resolve the requested destination from current native discovery and repository evidence. For historical mode, discover the selected dispatcher's own actual host, saved project, pin and current recorded policy/model. For direct mode, acquire the actual root principal, host and current recorded model/tier. Stop that action on a mismatch. Preserve missing evidence as unverified.
+2. Classify the human request. A distinct objective gets a new definition and unique marker, then a fresh project child. Continue a known child only for the same objective when its context is needed and existing objective authority covers the follow-up. `--context-needed` supplies no authority itself.
 3. Use fresh targeted native discovery. State its request window, marker, project and coverage. A partial page cannot establish absence. Pending, uncertain, uncorrelated, stale or conflicting launch history requires rediscovery. A later source revision cannot erase it.
-4. For `create-via-dispatcher`, retain attempted state through the existing importer before the native call. The eligible selected dispatcher uses that previously pinned proposal once through `mcp__codex_app__create_thread`. The proposal and intent are not a reservation or native at-most-once guarantee. Do not substitute a durable cloud task.
+4. For `create-direct` or `create-via-dispatcher`, retain attempted state through the existing importer before the native call. The eligible root or historical dispatcher uses that previously pinned proposal once through `mcp__codex_app__create_thread`. The proposal and intent are not a reservation or native at-most-once guarantee. Do not substitute a durable cloud task.
 5. Inspect the result before retry. Keep pending client IDs separate until native discovery resolves the ready ID. Correlate the actual creator, request, attempt, marker and returned child. Reopen the ready child and independently list its saved project membership. Correct association on the same ID when authorized, then read it back. Never create a replacement to repair uncertainty.
 6. Retain the first-turn recorded policy and model with their actual source times. Keep requested settings, resolved defaults, recorded session settings, effective access and provider execution separate. The inspected native create schema has no permission field. Add none.
-7. The parent owns bounded `read_thread` or `wait_threads` progress through the existing connection. Preserve the ready ID, actual host and cursor. Carry `afterCursor` forward, back off unchanged state, and inspect completion and useful outcome independently. Native completed status defaults to `inspect-outcome`; it cannot establish a release. A completed child with `--context-needed` returns `prepare-fresh-task`, not conversation continuation. Its `followOn` advice names the prior thread for a fresh-task handover. Preserve monitoring of an already-running operation without duplicating or restarting its effects. Keep dispatcher transport bounded and separate from implementation. Automation archive-on-success does not extend to ordinary tasks.
+7. The parent owns bounded `read_thread` or `wait_threads` progress through the existing connection. Preserve the ready ID, actual host and cursor. Carry `afterCursor` forward, back off unchanged state, and inspect completion and useful outcome independently. Native completed status defaults to `inspect-outcome`; it cannot establish a release. An authorized same-objective follow-up with needed context may continue that completed native chat.
 
 Multiple objective bindings for one child, multiple unsuperseded native observations, or contradictory source records hold further action. Preserve the records and resolve them explicitly. Repository similarity never establishes objective equality. The command cannot stop a caller acting outside this procedure or recover a native effect whose history was never retained.
 
-Standalone pending, uncertain or completed effect records require targeted rediscovery before a new launch or further work. Partial or stale replacement evidence cannot erase their history. Child reuse checks include existing objectives without the optional dispatch extension. A ready result for one attempt cannot settle a different unresolved attempt. An implementation child cannot be the selected dispatcher. A confirmed no-effect observation settles only its named attempt; retain the entire chain and every original failure.
+One `attemptKey` binds one exact original `requestDigest`. Conflicting retained attempted observations under that key hold both routes, even after a ready result or a declared no-effect resolution. Neither array order, content-hash order, staleness nor a later source revision chooses an authoritative request. Retain the same child for inspection. Repeated identical-request observations are compatible when all other gates hold; direct creation acquisition must follow every matching attempted ancestor. Repeated evidence grants no permission for another native call. A changed original request needs a distinct attempt key and prior uncertainty must still be resolved within the same objective.
+
+Standalone pending, uncertain or completed effect records require targeted rediscovery before creation or continuation. Partial or stale replacement evidence cannot erase their history. Child reuse checks include existing objectives without the optional dispatch extension. A ready result for one attempt cannot settle a different unresolved attempt. An implementation child cannot be the selected dispatcher. A confirmed no-effect observation settles only its named attempt; retain the entire chain and every original failure.
 
 ## Install and verify recovery
 
@@ -159,3 +213,11 @@ Ship executable changes through exact-head review, hosted checks and protected r
 The stable private bootstrap first loads `briefing`, then uses `run-agent dispatch --project <project-key> --as-of <UTC>` before coding routing. Recover the matching objective before any native instruction. Save and read back this short procedure through the existing native note mechanism when available. Preserve all existing corrections, schedules and access boundaries.
 
 Verify the actual installed invocation against the saved private selection and an existing native job. Fixtures, generated guidance, a proposed note and a merge cannot substitute for that readback. Reuse the current authorized implementation job for setup acceptance; create no rehearsal child. Later ordinary-human adoption remains a separate [native acceptance](dot-verification.md#verify-persistent-native-dispatch-recovery).
+
+## Task speed approval
+
+`requestedSettings.serviceTier` and `coordinatorRequestedSettings.serviceTier` are private policy metadata, not added native create arguments. Omission resolves to `default` (Standard/non-fast). An accelerated request resolves to Standard until the corresponding `speedApproval` has `status: "approved"`, exact `objectiveId`, `role` (`child` or `coordinator`), exact `serviceTier`, and nonempty owner `sourceRef`. `requested`, `declined`, missing, unanswered or wrong-scope approval continues ordinary Standard work without waiting. Model permission and speed approval are independent. `priority` is the observed Fast catalog ID; other accelerated IDs require current destination support before use.
+
+Advice returns separate `childSpeed` and `coordinatorSpeed`. Current recorded settings must include `serviceTier` and match the resolved tier. Missing tiers remain unverified; inherited unapproved Fast/Ultrafast settings require correction through a supported control. Historical records remain readable. Approval sources remain declared claims requiring owner-source verification.
+
+Project `.codex/config.toml` explicitly sets `service_tier = "default"`. The [official config reference](https://learn.chatgpt.com/docs/config-file/config-reference) documents the key and [speed guidance](https://learn.chatgpt.com/docs/agent-configuration/speed) documents Fast selection. The inspected native `create_thread` schema exposes model and thinking, but no speed argument. Never add one. Apply and verify the required tier using supported destination configuration or controls before invoking creation. A native app-server config read can establish resolved configuration, not a turn's provider tier. This repository cannot force another host, change an existing thread's tier through prose, or prove native execution. Keep unavailable tier controls/readbacks explicit. Unrelated automation selections remain unchanged.

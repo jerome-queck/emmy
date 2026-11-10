@@ -1,80 +1,175 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "67820379f23b8574cffa0320086d569731223d33",
-  "reviewBasis": "Read actual current-main and accepted7cd37af owning source before selective port. All ten current-main aggregate groups and existing production properties remain; only Markdown exact-tree acquisition and new assurance command/driver/area proof are added. No Calendar/briefing/planning/direct/model-policy context is ported. Twelve-suite reducer model/mutants and actual focused CLI passed; publication function navigation was compared to actual unchanged canonical source and five stale ranges corrected. New per-head full verification and independent verdict are required; v3 acceptance does not transfer. Delivery-layer documentation-only refresh: read entire covered diff; only verify skill gains a paragraph linking the local delivery proof. All runtime coordination/property/mutation/fixture bytes,assumptions and domains equal the reviewed core. The old aggregate correctly refused the stale prose hash. No runtime property change or inherited acceptance.",
+  "sourceCommit": "3c09b4fa98b53139b88c6210a40ac7e20a405c2a",
+  "reviewBasis": "Isolated three-way reconciliation of exact delivery-v2 924681b and independently accepted direct b119422 over c5f8b46. Owner read every affected source delta and five overlapping docs/metadata files. Direct and delivery production bytes are retained exactly. Coordination coverage changes only merged prose hashes; delivery coverage additionally binds the twentieth direct-dispatch suite. Old gates refused intended drift. No canonical publication await or mapped property was weakened. New combined source needs its own full gate and independent exact-head verdict; old receipts/verdicts do not attest it.",
   "files": {
-    "src/catalog.mjs": "d2c333d10851197c893a96eed024d3163473306189c8dce220ba9cfc5c14c27e",
-    "src/maintenance.mjs": "218fe10c182a272a994a0d3f620035fafc6cccb92ac1961517ef0f16465f31b0",
-    "src/metadata.mjs": "8f997a6eba8f0ff56d25559ea79a92c2d980f82e76e089fd4b55cf6fbb0b4092",
-    "src/records.mjs": "613d73853942837e9c8afb46a2d274a29771424e1795d8aad4a048070fb77ef8",
-    "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
-    "src/responsibilities.mjs": "21aa1044c742886c11b46292060b4b8f46a307d916b1a8441a33cf1bdd6be0c8",
-    "scripts/agent.mjs": "12761343edc9dd8b4d51d5d77b573834c8c60dab1be11c72e76d9bc0735493b5",
-    "scripts/verify-behavior.mjs": "371e0156b660771dbbc40382da36ebe14b25dced2c3f7267b7d6249ca25f59fe",
-    "scripts/verify-formal.mjs": "037c22b429746035bc2a596dd0cd6bea2fe7ed5810a311b8099ac6dfd7433783",
-    "verification/fixtures.mjs": "388cf9e2fc5ccec675367a7110ea123902b53f7d22198c5c51035db12517f98c",
-    "verification/properties.mjs": "db004529f3c29962fcccaf15238c64454199cc5e44e24e9dd5cf86b398f1dded",
-    "verification/mutations.mjs": "008b4c3f92bd5bb43f31a82589b8dd58ab822adf366336b3d09be1f56a9fcc57",
-    "src/briefing.mjs": "1dfdd7730d46ce22e62c0c4bbe5539427511785ccfe1e7bbadd00c3ffab741b6",
-    "verification/briefing-drive.mjs": "3f84668f07d47718e5ddc7e5eb3cd3b00ab3a0589f7028383c040da8e1dc36d4",
-    "verification/briefing-fixtures.mjs": "b882ee5e672110184e8ebb1f1159c721d1d3ce9be037339fd367d4e9d7dad792",
-    "src/dispatch.mjs": "48e255dd568c699f2bea6b0b809f3a08d1ec39aaa25ba0fa3f8d4f441e4d6183",
-    "verification/dispatch-drive.mjs": "583920c2cf43619e54f56bb5fa4e3eaa4a9fe225490906197d5dac06b1a31395",
-    "verification/dispatch-properties.mjs": "ed524f70a743d88228d91b96fd686be504b188d4c2cb83e8eba996e5de947110",
-    "src/calendar.mjs": "a0cb4053917ae176feef0d0d7f01a0c7a23809e0426aba4589634c137f0ebd0f",
-    "verification/calendar-fixtures.mjs": "c94524d874a9d209463a6243176bec1e00097db809e605245e0b56abd6a288c5",
-    "verification/calendar-drive.mjs": "5b5e9340c13cfd9de05546b54ef1abc9035417f65c7f6cb4462b013db1ab4410",
-    "verification/calendar-properties.mjs": "aa69413c21f6a5b2809a019cfb83eeb181cca70de6717517826b98ef9cc39726",
-    "verification/calendar-mutations.mjs": "b911302cb61295eed5b3f8f16a4ea9cc3556dc61e457b383caf620146821eda3",
-    ".agents/skills/coordination-contract/SKILL.md": "b5da18e33928259cdf85460df774020cfc245b11680cc291db32e979e5833666",
-    ".agents/skills/verify/SKILL.md": "d81f3c9a765ed4c4cb156b8c45787a6ec5a52c26fe896ab54bdc83dfe7651433",
-    ".agents/skills/verify/features/evidence.md": "fca4a3aeda7546b4a4ebcedab3ae5fb8a4b634e9b8f7d98e0ac608f65412ac2f",
-    "docs/calendar.md": "02f9502edc5b0581c8931d27f74ccc9c4c41b56550adb3a78af8c0d8dd932b79",
-    "src/cloud.mjs": "9e48c4f64f95ac23a8e7fb0a33e51b21fb9a2022a48e355dee06de3d76ef1a7f",
-    "src/cloud-schema.mjs": "2179301f012a5832b597f493f9744df8d86f60427d2bbac0664f4f6fd95853bd",
-    "verification/cloud-properties.mjs": "c2639d858364b8b9e293757c98d67afb5efe929aced3264bf5b69446d0f95541",
-    "verification/cloud-mutations.mjs": "c948e32cff4b8dd0226c149f81013cc751b62311896c040deba6c22c4112895f",
-    "verification/cloud-drive.mjs": "86f35cc6ccd9e5335406fd950df1f184ed0ccf75e702ec380cfd88b8affdcbca",
-    "scripts/cloud-acceptance.mjs": "9940ac43b1c277bfe1f9f9cebbf60568e62aee293af2817c4cb5689548e07583",
-    ".agents/skills/verify/features/cloud.md": "1d8482545d28f81a6adfce62958536ad0a24b0cdbdc521c16cb5bc55a626f32a",
-    "docs/cloud-admission.md": "e12785d1f2656b4257556a97332832df2f9c58f413f4548e5d7c6304b94bdb0f",
-    "src/process-incarnation.mjs": "63810f9602f223315fe8d9ccfcda11b6591cf7bb5626092a8ea308a98acfe2ff",
-    "src/cloud-migration.mjs": "03677e6b0a50afa25ccadf1c65057ec3bc5e65c2e57c8803dd3b48e6e1f4a08b",
-    "test/process-incarnation.test.mjs": "3df49dab78220aa1bcc2acb93ea0b6b9a710626899d163818615d82b654e95e4",
-    "test/cloud-migration.test.mjs": "749d80285d093088f1d15c6ec560ae7a2db31bea2bc71498c10112a7df8a693c",
-    "verification/process-incarnation-fixtures.mjs": "ce6d81cfef3730bac0d57f7b482773ba1a5d691d815a7cb2f87f7608c419ed9c",
-    "verification/cloud-migration-fixtures.mjs": "5cdb30a0a1eb48889034039388c742aefd8ee5501d757073da8eb2cfee3d4a20",
-    "verification/incarnation-properties.mjs": "c27b8cc34199f83a556b5c7d9df09a14285c46621fe1c3aeb1be5796e925eff5",
-    "verification/incarnation-mutations.mjs": "76468d1b92ffd4d7955a4a4f9e343b1509d2672af0b0d6cf949c73bbc327bf5c",
-    "scripts/check.mjs": "f8b710af8abcafa21d3090a9739b820f04b01b98e9dfdfb8b49ca1b4877b204c",
-    "src/bounded-json.mjs": "4bf4230dd0b8775f56482cf429112c1a7456f83b78cad19ae05e1b00987e8a71",
-    "src/fleet-schema.mjs": "530c391079c97fc1d9e2d35abd546689969d82e8e42b2272a5e4096ac38dfb49",
-    "src/fleet-state.mjs": "06b5f3f492fa13772791985d029381c2b80d002b9ec760b98be123450d1fced4",
-    "src/fleet.mjs": "6cfa8171f4db6611baf6f8efe26bdc1d0da4c8b163b87ef0cbabb9014a23c00d",
-    "src/signin.mjs": "5152185349d8fa2a61ec9c65a3ebe2a67ce03ae51a3345347d34ce24e6229444",
-    "test/fleet.test.mjs": "2a3bd0ca424abe26f9b57c9ce8f3a640ff72b38fd62955b4a0ddf5cebd557858",
-    "verification/fleet-fixtures.mjs": "f73b84e719269282f8b651b39379175300502dee66f43904584605e45c468995",
-    "verification/fleet-drive.mjs": "cf5297f6f3f60e7123bdf362ee8a76fcb7cd5c7320070d24a232cc5d750fb339",
-    "verification/fleet-properties.mjs": "a1c441e50627799e21ebccff27df0fe75af322a63223e6314da18b91ccf9ea49",
-    "verification/fleet-mutations.mjs": "4f9f9519b57981e8999ec2ce9dca34cd96aad48f2fe17df37d8e906254a49ff3",
-    ".agents/skills/sign-in/SKILL.md": "558542d0c5a9eecf5c9a5b605fd6e57200c8ff25fd725515ccbc2ee8aac2b252",
-    ".agents/skills/verify/features/fleet.md": "7ceefbbe5a2e5a3666b4565cbc71dca45e8aa634a8d092608d9ed828dde84696",
-    "docs/fleet-health.md": "2266850a5c551649f0e2456be171b487a81e1140b3a18672cc6b2fb6dffeeb93",
-    "src/morning.mjs": "5ab414da033e9eb5aa191d1491ffac9ecc6209dbf09887aefdd9221107a003d6",
-    "test/morning.test.mjs": "8fdd62ed3f68b6df1451d2eee7044b7a3773797f8de39582c04cadbb62b1a9da",
-    "verification/morning-fixtures.mjs": "70bcb578a498799d3fc35a3cb640c636c62eaeffdd906c9abf9046d81193606e",
-    "verification/morning-drive.mjs": "54e8273454743bc6a66085fe49c08da9d840fe1af25eef692701be2852957c37",
-    "verification/morning-properties.mjs": "8f210da5c4d54c87445df1b826842193e52bb42450978331936f547190d9c01a",
-    "docs/morning-workflow.md": "aabcebbb4bb323a7273105f514d6e06a7ae618253803a85361eee1ca4253a711",
-    "test/fleet-history.test.mjs": "378006c2e2511c7bb8971bba56bbfd02a73ab210a4a2d7246d7d3fb7578f31c8",
-    "src/morning-presentation.mjs": "2fddf9924ff0331d3c7489782f7a55a35dd26180e41e40e014a4173b0f9d4f25",
-    "src/morning-collection.mjs": "a42a9e66f28506261cf90da0eccf67214850fd957cdec679526d902e3ea34e4e",
-    "scripts/collect-morning.mjs": "861b14011777a382c9a35a4bc3f6c21de1ec9b0f3e395168eb740819226b2f86",
-    "test/morning-compact.test.mjs": "59cc6208fb0b4184d1af2fdecf1c6ebb2c598814b80d9188cd16f8bb26f3eca5",
-    "test/morning-collection.test.mjs": "6c4911d954e8f176191cc9e9bf33c80fa9d8ddbd20ff31be16ccad5db257d851",
-    "verification/morning-compact-fixtures.mjs": "c6a353f0131896b741e9ed845cd10157465b4dddd8611bcc49003ac0d9b4746e",
+    ".agents/skills/coordination-contract/SKILL.md": "7812065ec2f9cec1e5b8fef68a250c4246ef8534c2ae684060c18287e37a5a6a",
     ".agents/skills/morning-collect/SKILL.md": "cb26be9998b456c6f538af9d257d1a78330d4cd23a804b86e86c38ce2bc8c499",
-    "docs/operating-brief.md": "1bf29997519ebfd4d81f49de9d8b691818260f60e37158b2e522f3d23e435d67"
+    ".agents/skills/publication-contract/SKILL.md": "862ded159098cb4fe6fbfb0a4f02b6dd4330720be669e4e6e11bfcffc4c797b6",
+    ".agents/skills/sign-in/SKILL.md": "558542d0c5a9eecf5c9a5b605fd6e57200c8ff25fd725515ccbc2ee8aac2b252",
+    ".agents/skills/verify/SKILL.md": "cbc0edd926ae5f7ad205a93bb57857d22a1a95ed5a52f2782c1d83d7f01f2593",
+    ".agents/skills/verify/features/cloud.md": "1d8482545d28f81a6adfce62958536ad0a24b0cdbdc521c16cb5bc55a626f32a",
+    ".agents/skills/verify/features/evidence.md": "d1ba608871b00bcce80d9f3ca58fc50c74348b7bb9faeba4f31826a0141f15a8",
+    ".agents/skills/verify/features/fleet.md": "43a2f52e5e676c429bc05bfa0fd9a102b41e868bfbae91be3fb3f9ebafb60377",
+    ".agents/skills/verify/features/upkeep.md": "ddefcd591e284eda905e446ea060f4d23073c86141ad4dcc2456ec364230e3cc",
+    "README.md": "875ad1bd09bec6db013e8bae4654c5c680e3c92cdd623b63145af7a780085303",
+    "docs/academic-os-alignment.md": "168cbf7c92f46a8374417ecaac38a3be517c1ca9fb031df834c55db96b79b268",
+    "docs/academic-os-task-plan.md": "96bf04e00acb1bc9a212c675270d714876d9afb4f42427543e2f4e3a60baab10",
+    "docs/architecture.md": "879b280d147d4a8944595d2d98140f7cc1099e2b117324fc9517d695df7ccc36",
+    "docs/automation-foundation.md": "2e86d866b7e25c3a11e7f3b20296689a07613ae5ef6173aa76e43c2fd9f54ad2",
+    "docs/briefing-cloud-exchange.md": "676921c90a9e5e2e5bd9907a0bb66b160f42bd4c07e8227650109f59b35170ed",
+    "docs/briefing-migration.md": "9ece61de0bb41fc4dc2dc830ff5f52fc8c1eb5b2c6ede611f1fa25d02252a9b4",
+    "docs/calendar-handoff.md": "da6af966ccd2caf1336e7b12e7a2d2577fb18977d8f487b2d6e90e280270b010",
+    "docs/calendar-register.md": "060c1b9d2f57d6c908ceb34bff55200c97ff422321e4f90ca768cdde3838865b",
+    "docs/calendar-timing.md": "5c990e6f647f1c2d70a36ee5197110417c5d09bb250a5b4cc306f39aee9cb7a9",
+    "docs/calendar.md": "02f9502edc5b0581c8931d27f74ccc9c4c41b56550adb3a78af8c0d8dd932b79",
+    "docs/cli.md": "53a0fec0630b6ff569d3dc203b6805d510eb11b75c692345866b2a43eb8f9677",
+    "docs/cloud-admission.md": "e12785d1f2656b4257556a97332832df2f9c58f413f4548e5d7c6304b94bdb0f",
+    "docs/deterministic-briefing.md": "da2fa4b44f7ebb984c9af7f848552bc5419cbb72674253925ad53cefa718f05c",
+    "docs/fleet-health.md": "4b8760b3e9c2d98a6839bcddda1ca6747471481f0ffe778a8d54bf668ac84f9e",
+    "docs/guidance-pin.md": "a71397cfe6cedec48c110224e162005ac0477d54874442e3e06cf3a71d7e2eee",
+    "docs/improvement-report.md": "6d2787556e7a60b2f83b2bddfed7a8a98e1189f6789816660e992a8d458f45ad",
+    "docs/morning-workflow.md": "5b04cc968189db2b770ef6514fdc4c29fc77d6e763cc29acc9db2a882afd179e",
+    "docs/operating-brief.md": "613dfc5e89d0eb44c540c42221ef34394dfbf23ac5150b9eb39baca077d20af9",
+    "docs/operating-procedure.md": "0ba57f96cc1ce2702ea43b24fa6251f079d1454f592f905a6da2a4449d195594",
+    "docs/research/calendar-tasks-integration.md": "5dd8a9eb8070db7f69130351fd07aa0a1216fbb8f9267f66751f0281229ecb87",
+    "docs/token-review.md": "f345647d50fb9a8e2500d001d3b657b10ee0ea28a157da0198ff6c618c4fa36e",
+    "docs/verification-index.json": "91fda8f60ff86dddc7e3c83836471eadf51cb2d28a7455ca0b7888b796d99d18",
+    "procedures/bounded-automation-v1.json": "926ec4a3ca46d8605c7da48f8898cfa628ed805340a2abeb5cb4861c06d18e34",
+    "registry/catalog.json": "5867f129ad5b297e182a8b2f7e4286234dce44277bda08cba212d73ff5fb64a9",
+    "scripts/agent.mjs": "314099e863b0153da4415ac68f38a6f340dc112b1d9f7c5d5453760d21f2d7d5",
+    "scripts/briefing-cloud-exchange.mjs": "ece4c710643cb2c1f4d32610324f1a346669ef67cfeaee7c8a833af878458703",
+    "scripts/check.mjs": "f8b710af8abcafa21d3090a9739b820f04b01b98e9dfdfb8b49ca1b4877b204c",
+    "scripts/cloud-acceptance.mjs": "9940ac43b1c277bfe1f9f9cebbf60568e62aee293af2817c4cb5689548e07583",
+    "scripts/collect-morning.mjs": "861b14011777a382c9a35a4bc3f6c21de1ec9b0f3e395168eb740819226b2f86",
+    "scripts/foundation-release.mjs": "8d4740442cd3fbbf6e0d5454568bef52ea1596e9207ae528a65f5c8e2fec692c",
+    "scripts/improvement-report.mjs": "7a84179a8b5d955fa7cdb1d4408b0fe29ac8421984ca073ae57b39ee17952f12",
+    "scripts/verify-behavior.mjs": "be49654632e6953f92da7365b2755470d3dc787d0452071e6a3ca3678cb832d0",
+    "scripts/verify-formal.mjs": "c9d43d42de0a9e4b46f1173e80870818e11857387230da12dcbf74b6591598ba",
+    "src/academic-os-task-plan.mjs": "9e997cf82ba3bc408fb3b0c01c14f76794a507f706da67856231fccc55ab35a9",
+    "src/automation-plan.mjs": "4a9a94eea37330dfe7521a98448b5e6c63a92dcb7c296517e58a112adeeb9f59",
+    "src/automation-procedure.mjs": "c52e2228ef4c241598f95892b18268f174e42b64afca5b4124731c36a651e35b",
+    "src/automation-reporting.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
+    "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
+    "src/briefing-acquisition.mjs": "0fa631189ec2b7a2a656b5f0e172adf6cf3342c85bd3b47fa5a046b9e54cbe47",
+    "src/briefing-cloud-caller.mjs": "635a524c41c8784de042768a9c51d66fb6ce671e2a090c318d1145cdbd996867",
+    "src/briefing-cloud-exchange.mjs": "cc8a0d121889e037ddf504088080b24381c9e56378bb8b026b3d857218ea1779",
+    "src/briefing-core.mjs": "ddb4583942b2b1328e56d6ebc63b4f2dc98c04470713fbf31d47f6233be795c9",
+    "src/briefing-observation.mjs": "1482eddda3ed1f8aa1778e18d49b9ead4000b3d868d9dbba6084205a0a5f5d01",
+    "src/briefing-plan.mjs": "4c89d562a714b5cd314e952c8a7cf5c263fbbb4085a855cae386bee11bf77225",
+    "src/briefing-policy.mjs": "4f810fe256874753c5ad5e7957fd1f69536c8573b2f02a044431d2de2701b02c",
+    "src/briefing-reporting.mjs": "3bee7e7e912efa31ecda166099ee37f1d21ec00508157981c353584a8dc43e15",
+    "src/briefing-source-normalization.mjs": "c364b1552acf88b4b4d8792a8547e17bade6bb3f693c1ea9e610902e4e613c9a",
+    "src/briefing.mjs": "355717f83aa3c582d8c3a37352f8366cf94a8a4b3b2e5c0ec878fe1dd2676d62",
+    "src/calendar-collection.mjs": "38f2bdfe3fb813158a0246153cdb9e0d65095b10319f6a4f07d6f25c477a48a5",
+    "src/calendar-handoff.mjs": "a2b8c10702c6982cf994d7b6da56cfac0356919a90cb7f781d11f3a403975d23",
+    "src/calendar-policy.mjs": "2b40d5d2cf26efa2307741df89b60d87bcf0589aab612dff08362f7db598d1f9",
+    "src/calendar-register-io.mjs": "6d0443dd60b59a49dcd620c73f7a78d21489ac48fc552eef9fc74fe58dbfc005",
+    "src/calendar-register.mjs": "1a750c0bcfb4c05ebe559fdf7882cb4fc7f263a50ff1fe831680be2afbb4f15e",
+    "src/calendar-timing.mjs": "7850f2dfea9935363e8ddab61bd0cbaac87d6eeda94cbaa6573bf19762955e57",
+    "src/calendar.mjs": "6ff6bd2e854aba0f4f8ac051f3cf663dddc6ec578b7a98ccc6da385b886eee54",
+    "src/catalog.mjs": "d2c333d10851197c893a96eed024d3163473306189c8dce220ba9cfc5c14c27e",
+    "src/cloud-migration.mjs": "03677e6b0a50afa25ccadf1c65057ec3bc5e65c2e57c8803dd3b48e6e1f4a08b",
+    "src/cloud-schema.mjs": "2179301f012a5832b597f493f9744df8d86f60427d2bbac0664f4f6fd95853bd",
+    "src/cloud.mjs": "9e48c4f64f95ac23a8e7fb0a33e51b21fb9a2022a48e355dee06de3d76ef1a7f",
+    "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
+    "src/daily-briefing.mjs": "5395f4a0e6f8731d8244adc7febbfc6b01f7fc256a1f34af92a3636af0fe7045",
+    "src/dispatch.mjs": "9156804f77c06577d02ebd7f142c627db2474fcb6fa14e826b08cac799a08383",
+    "src/fleet-schema.mjs": "d9d87c7834b006fb5dd7dac1bb41b0f2075b2e20057f40c656c0974b4576ea27",
+    "src/fleet-state.mjs": "4e3f1d689b3cb7df2301e4df46298c7bea221584b3e67b76d844685046439d53",
+    "src/fleet.mjs": "058bf69e0e69c49d0aed09a57ae743cd1a48b796a598ecc443ff1c02b0b87f12",
+    "src/foundation-release.mjs": "2e76c64c1a318eb1b61f7f5c2a676ebc1455f680b047aa2b40aaaf13987d5d96",
+    "src/guidance-pin.mjs": "f037a3f461db221e884f9f72da45515d51e536f6f271bf70ff11a36b6cf238b7",
+    "src/immutable-slot.mjs": "59e8ccd7c37783268e22703f63897c8c6d2b97c497ab37ff300e636a33744035",
+    "src/improvement-report.mjs": "fbab0e0b543ad481ed95a31bd5b6f427103c90d2e60b69008800f91ffdfd27b9",
+    "src/maintenance.mjs": "d41afce0605a3c3f60bd26b3326fbd523c3f52d64fffa53b269c53803eb82751",
+    "src/metadata.mjs": "04dde9842a694abc4678920359d7f0cc702ffbdc02302cac0f570ccfa9235ecf",
+    "src/morning-collection.mjs": "37dae6e547e0e20494e714ecc1b20f28364989600ed751ee7fa2c817ae985287",
+    "src/morning-presentation.mjs": "36d171d854c34b3062da02e9c9ac5b095e509164e2c674bf0dd4ccae1268a343",
+    "src/morning.mjs": "c01412274bccfb57e15a423b88c830a9cdb8d6486b2b264c074e7ce30b34d026",
+    "src/operating-contract.mjs": "a8c513f23eeee99679d6b4e0e3d3ac0b6e91d26258abf33491e49a4f32143362",
+    "src/process-incarnation.mjs": "63810f9602f223315fe8d9ccfcda11b6591cf7bb5626092a8ea308a98acfe2ff",
+    "src/records.mjs": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58",
+    "src/responsibilities.mjs": "07914317b5b8d310f2e347cdda0392f18c6a791cf26101124a5d651cb43a8674",
+    "src/signin.mjs": "5152185349d8fa2a61ec9c65a3ebe2a67ce03ae51a3345347d34ce24e6229444",
+    "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
+    "src/token-review.mjs": "27e6313bbb88c8650c10aa184addf1521dee3d95effe5894e892775edfce027c",
+    "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
+    "test/academic-os-task-plan.test.mjs": "2111ebf0045b452b0220ca17209cf66eeec6b5179238f0f3c7aecdd092cb4269",
+    "test/agent-local.test.mjs": "15994fac88628550a8afcaefa5aa5cf084961dfcd8a353703365737e479b6119",
+    "test/automation-procedure.test.mjs": "b60afb7c63430dda95b440b16881c229302e663c57e44873e2f015f1632f179a",
+    "test/briefing-cloud-caller.test.mjs": "25919b20bc39defae84f7b4cd9dd134cf5fcb8a63ac334979c4c6441f920a0f9",
+    "test/briefing-policy.test.mjs": "450e59ed67c9ce8fc9ca6d3456fed486e12898eaac0f30d92ab73d37b1058a4e",
+    "test/briefing-reporting.test.mjs": "1314aca8159ce5e99b3bee7402a845d5eb5455136539467d44e4d28c6d660a38",
+    "test/briefing-source-normalization.test.mjs": "4150c805a48415a807d4713428767ca33cc971f32557218cdd37b814a186c023",
+    "test/calendar-collection.test.mjs": "a8f195c8c232f19d667863649be3ff7a279d2ecffde82f3046f94e548f352139",
+    "test/calendar-handoff.test.mjs": "8d5776b194a82769926d2488b9586479a828c81ab228a553839438e8bcbcf059",
+    "test/calendar-register.test.mjs": "770a2c3b171f9226810b98d180f44d9ba113b3b5abd3ffdb7f6dd6f38442740c",
+    "test/calendar-timing.test.mjs": "58785c60de65c2081e84dd62188189e8436e65ca4e98bc370081c3e332ab7575",
+    "test/cloud-migration.test.mjs": "749d80285d093088f1d15c6ec560ae7a2db31bea2bc71498c10112a7df8a693c",
+    "test/daily-briefing.test.mjs": "4566f12eede514684a7410cee88f123be7083e2c11731929a7df7aa160053f71",
+    "test/fixtures/briefing-policy.mjs": "28b28341a46269a53c1c62a029575eb89bb070d215f393a869b32f7cbd1908a6",
+    "test/fixtures/fleet-v1-journal.json": "03c8524ab16eb085bcd25e05a5ae55d9e5ac4bf9454b6a7600bc475b9cee4fee",
+    "test/fixtures/fleet-v1-review.json": "73ed74da219b33491e77e4dab8703260a5a0fb4ec68f3709b2e0ffc07f0b5fbb",
+    "test/fixtures/foundation-release-v1.txt": "b452d94c2a4d780820cba9026950d32cf7ee24e603d1129ff0dcb124bf4d33d3",
+    "test/fleet-history.test.mjs": "378006c2e2511c7bb8971bba56bbfd02a73ab210a4a2d7246d7d3fb7578f31c8",
+    "test/fleet-overrun.test.mjs": "61deb53a4947da8da2ffab1ff47eb14af91120a66bcfea3cad8582122f884bc8",
+    "test/fleet-semantics.test.mjs": "4d31d8ed7e3e9ae5fbbe6e51b437b8762922b4ee6a38b363e2ff8dd0e0513c00",
+    "test/fleet.test.mjs": "2a3bd0ca424abe26f9b57c9ce8f3a640ff72b38fd62955b4a0ddf5cebd557858",
+    "test/foundation-release.test.mjs": "4a5cd19d1c107e2ad37d85a38f8e1555282cfa2a106397d7f6aadffdddc91a6b",
+    "test/guidance-pin.test.mjs": "d4ce04c46c250a62a410b15f33428d41e08ada29a6025acff343caa7e4bab21c",
+    "test/improvement-report.test.mjs": "350ad1eb8b9657172e329ca2fb23c7d458dae92763cbcb7686e358f0cfb7e7f6",
+    "test/morning-collection.test.mjs": "6c4911d954e8f176191cc9e9bf33c80fa9d8ddbd20ff31be16ccad5db257d851",
+    "test/morning-compact.test.mjs": "90b3ff238e9fbc143a9e4988ecddd5370bc2237cf7921b32999428b9fb8abb0f",
+    "test/morning-observation.test.mjs": "5b6dabb723e30f692449da59b4d41a6a2022693556e34cccf6119ab5c96c2a5a",
+    "test/morning-v3.test.mjs": "d676a34aa54ccb50272b4ba8e34ce4fbfe4ec3ec164211a9e33fd0d578c3ca6a",
+    "test/morning.test.mjs": "8fdd62ed3f68b6df1451d2eee7044b7a3773797f8de39582c04cadbb62b1a9da",
+    "test/process-incarnation.test.mjs": "3df49dab78220aa1bcc2acb93ea0b6b9a710626899d163818615d82b654e95e4",
+    "test/token-review.test.mjs": "e175b8c6cce940ca337fb0a461e1a5bec9616a94812e3165a20493e95ffc7331",
+    "verification/academic-os-plan-fixtures.mjs": "1a5408b97b9ca870b8a641d09afef5d4edef29034b81f110ee0f4d499f8f48ca",
+    "verification/automation-fixtures.mjs": "37e1e4061989bd81759795cacabe962e9890727dd2a44623dfc3ce9554c371a6",
+    "verification/automation-properties.mjs": "6160612a902eb4f7232548bc916e33f68bfa85fbc4a820324d926bde4463a837",
+    "verification/briefing-drive.mjs": "341c7f8846cc9bb07f6a7189420855862e05d9b2c54e0589dc6f3277d8c2396b",
+    "verification/briefing-fixtures.mjs": "b882ee5e672110184e8ebb1f1159c721d1d3ce9be037339fd367d4e9d7dad792",
+    "verification/briefing-workflow-properties.mjs": "9bf166211f3b71b0eae581c74ef9e46ac81c573352658d5d18070347928d6010",
+    "verification/calendar-drive.mjs": "5b5e9340c13cfd9de05546b54ef1abc9035417f65c7f6cb4462b013db1ab4410",
+    "verification/calendar-fixtures.mjs": "c94524d874a9d209463a6243176bec1e00097db809e605245e0b56abd6a288c5",
+    "verification/calendar-mutations.mjs": "b911302cb61295eed5b3f8f16a4ea9cc3556dc61e457b383caf620146821eda3",
+    "verification/calendar-policy-fixtures.mjs": "11ad91ecfaf9f07d7dc5962913bfd39088065032918c15ff2900811269f9005e",
+    "verification/calendar-properties.mjs": "aa69413c21f6a5b2809a019cfb83eeb181cca70de6717517826b98ef9cc39726",
+    "verification/calendar-register-drive.mjs": "67c89b80bb93f36279b105041588ad62ab39574ee8f6ca107520cfc2ba51861b",
+    "verification/calendar-register-fixtures.mjs": "307c62c12a7e6e8f9cdd1fdb5715198d0f0387f925ce07df057f0cc907885783",
+    "verification/calendar-register-properties.mjs": "d31d675e205ff3bfd153c4fd434365bd0ca4c3a74c0aa5b2a86d3623055ade42",
+    "verification/calendar-timing-fixtures.mjs": "1a1c975ba90496fa52987f7cc1c3eaab24afe433cb7b6bb4d7732350e9863587",
+    "verification/cloud-drive.mjs": "86f35cc6ccd9e5335406fd950df1f184ed0ccf75e702ec380cfd88b8affdcbca",
+    "verification/cloud-migration-fixtures.mjs": "5cdb30a0a1eb48889034039388c742aefd8ee5501d757073da8eb2cfee3d4a20",
+    "verification/cloud-mutations.mjs": "c948e32cff4b8dd0226c149f81013cc751b62311896c040deba6c22c4112895f",
+    "verification/cloud-properties.mjs": "c2639d858364b8b9e293757c98d67afb5efe929aced3264bf5b69446d0f95541",
+    "verification/daily-briefing-drive.mjs": "345a3f0d431bb368a646f9311a718c6db9d3c17705e22d8d1f0e8e7df2fdea49",
+    "verification/daily-briefing-fixtures.mjs": "cd93bb95e17b0d14934891262998b62bd3287c7ccf00b11df90a86af61e403e1",
+    "verification/dispatch-drive.mjs": "bc43637428fcbfe78acd42bac4bd039e3d8663217c64b13f6a28163b5f99fca5",
+    "verification/dispatch-properties.mjs": "373a2c4b6bf50f7f40733d63c38c93b1cf24a1199329e8fe815ad8d66faa5932",
+    "verification/fixtures.mjs": "388cf9e2fc5ccec675367a7110ea123902b53f7d22198c5c51035db12517f98c",
+    "verification/fleet-drive.mjs": "09362197dc203aa39c17e5b346b308a116468f13b55d4fa467433debb5b55e67",
+    "verification/fleet-fixtures.mjs": "4257eeaa42d60df8d226ea7ffd9b48ab83099799d54c8883379392cdfcee1d4b",
+    "verification/fleet-mutations.mjs": "7e6d2b97aa2ab8aaaa9aa96dd7f060f3ceaf48759b67ab2f31926f968cf5b53c",
+    "verification/fleet-properties.mjs": "c800ecf054cd1acb5ca19ae03c654eeb59d5b5aa4df8674c5921721a4adc868c",
+    "verification/guidance-pin-fixtures.mjs": "1040063c43d4bbbdfbc37e75151f3aae07873bc2bbc20a711b681e6295269644",
+    "verification/improvement-drive.mjs": "3a69639a0d83ebb9d94f036d216b5ce12c6756b8063b63941cac5a76431f6eb4",
+    "verification/incarnation-mutations.mjs": "76468d1b92ffd4d7955a4a4f9e343b1509d2672af0b0d6cf949c73bbc327bf5c",
+    "verification/incarnation-properties.mjs": "c27b8cc34199f83a556b5c7d9df09a14285c46621fe1c3aeb1be5796e925eff5",
+    "verification/morning-compact-fixtures.mjs": "c6a353f0131896b741e9ed845cd10157465b4dddd8611bcc49003ac0d9b4746e",
+    "verification/morning-drive.mjs": "6917a9a49536397f036dc2ba26628e35771bc8488e4c87461d7d12c6ef8b33cb",
+    "verification/morning-fixtures.mjs": "46d30552715990237b0c27af2278f97e03afd950aa679dd32be5d50f285ad8bb",
+    "verification/morning-properties.mjs": "8a0b21e06a5fab8753d9e8d6fdb62ce313588ada3a2365116c14490f4e070666",
+    "verification/morning-v3-drive.mjs": "cda8d4b1d147959db3089978645652f0c017f988673ac5b0f60a795d55a73dcd",
+    "verification/morning-v3-fixtures.mjs": "f13d5a19cc6d275fe2472ac057e044d1d447683ef8b8369d50bde19e84e505b4",
+    "verification/mutations.mjs": "7c8c78fc58fc73da6a2e6a267b41e7ed35b199d4c9044233fdfd62e5b3ba0840",
+    "verification/process-incarnation-fixtures.mjs": "ce6d81cfef3730bac0d57f7b482773ba1a5d691d815a7cb2f87f7608c419ed9c",
+    "verification/properties.mjs": "441e845b3bc15db8734916d57f05b2f4a77893e3ec43f10aa93bb4240535c7a3",
+    "verification/publication/drive.mjs": "d7a63754ae3d2c20a90111f5051c814013cbac9f241c48aad8a144524662e97a",
+    "verification/token-review-fixtures.mjs": "da496709392746ccc01d42d8606330629f85534efd2c516a6d0a734b361fdab2",
+    "src/planning-policy.mjs": "ec3c8bd2a3d9d03e0cc75a77af2d014381b28c24d81ee9ee108d5ab89aecadcc"
   },
   "mapping": [
     {
@@ -422,6 +517,171 @@
       "properties": [
         "morning-contract"
       ]
+    },
+    {
+      "function": "assessCalendarRegister",
+      "source": "src/calendar-register.mjs",
+      "properties": [
+        "calendar-register"
+      ]
+    },
+    {
+      "function": "assessCalendarPolicy",
+      "source": "src/calendar-policy.mjs",
+      "properties": [
+        "calendar-register"
+      ]
+    },
+    {
+      "function": "sourceLabel",
+      "source": "src/calendar-policy.mjs",
+      "properties": [
+        "calendar-register"
+      ]
+    },
+    {
+      "function": "speedPolicy",
+      "source": "src/dispatch.mjs",
+      "properties": [
+        "dispatch-recovery"
+      ]
+    },
+    {
+      "function": "validateBriefingPolicy",
+      "source": "src/briefing-policy.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "classifyBriefingMail",
+      "source": "src/briefing-policy.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "validateDuplicateCaptures",
+      "source": "src/briefing-policy.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "briefingHumanText",
+      "source": "src/briefing-policy.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "preparePolicyBriefing",
+      "source": "src/briefing-plan.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "assessBriefingReporting",
+      "source": "src/briefing-reporting.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "migrationInput",
+      "source": "src/morning.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "deterministicSeal",
+      "source": "src/morning.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "calendarObservationClock",
+      "source": "src/briefing-observation.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "combineCalendarObservations",
+      "source": "src/briefing-observation.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "validateCollection",
+      "source": "src/morning-collection.mjs",
+      "properties": [
+        "morning-contract"
+      ]
+    },
+    {
+      "function": "planAutomation",
+      "source": "src/automation-plan.mjs",
+      "properties": [
+        "automation-contract"
+      ]
+    },
+    {
+      "function": "validateAutomationArtifact",
+      "source": "src/automation-reporting.mjs",
+      "properties": [
+        "automation-contract"
+      ]
+    },
+    {
+      "function": "assessAutomationReporting",
+      "source": "src/automation-reporting.mjs",
+      "properties": [
+        "automation-contract"
+      ]
+    },
+    {
+      "function": "validateRecord",
+      "source": "src/automation-reporting.mjs",
+      "properties": [
+        "automation-contract"
+      ]
+    },
+    {
+      "function": "timingEvidence",
+      "source": "src/automation-reporting.mjs",
+      "properties": [
+        "automation-contract"
+      ]
+    },
+    {
+      "function": "measuredTelemetry",
+      "source": "src/automation-reporting.mjs",
+      "properties": [
+        "automation-contract"
+      ]
+    },
+    {
+      "source": "src/planning-policy.mjs",
+      "functions": [
+        "assessRoundedBooking"
+      ],
+      "properties": [
+        "calendar-register"
+      ],
+      "scope": "Existing register finite cases consume extracted historical minimum/increment and actual-duration rounding. Separate planning-policy graph owns version-two rule resolution."
+    },
+    {
+      "source": "src/records.mjs",
+      "function": "dispatchIdentity",
+      "properties": [
+        "dispatch-recovery"
+      ],
+      "note": "Shared immutable legacy/direct identity owner; direct-specific claims have their own coverage record."
     }
   ],
   "boundsSource": "verification/properties.mjs#bounds",
@@ -649,7 +909,111 @@
         "cloud-admission"
       ]
     },
-    "Morning actual fresh-process CLI boundaries retain source/context/assessment/input/body bytes, original evaluation timestamps, same-ID unread-preserved reversible intents/results, duplicate-safe replay and same-message edit receipts. All native provider interpretation remains synthetic/reported."
+    "Morning actual fresh-process CLI boundaries retain source/context/assessment/input/body bytes, original evaluation timestamps, same-ID unread-preserved reversible intents/results, duplicate-safe replay and same-message edit receipts. All native provider interpretation remains synthetic/reported.",
+    {
+      "source": "src/calendar-collection.mjs",
+      "functions": [
+        "collectCalendarSnapshot"
+      ],
+      "scenarios": [
+        "calendar-register"
+      ]
+    },
+    {
+      "source": "src/calendar-register-io.mjs",
+      "functions": [
+        "calendarRegister",
+        "createAcademicOsCalendarReader",
+        "retainCalendarSnapshot"
+      ],
+      "scenarios": [
+        "calendar-register"
+      ]
+    },
+    {
+      "source": "verification/calendar-register-drive.mjs",
+      "functions": [
+        "driveCalendarRegister"
+      ],
+      "scenarios": [
+        "calendar-register"
+      ]
+    },
+    {
+      "source": "src/calendar-handoff.mjs",
+      "functions": [
+        "assessCalendarHandoff"
+      ],
+      "scenarios": [
+        "calendar-register"
+      ]
+    },
+    {
+      "source": "src/records.mjs",
+      "functions": [
+        "parseDefinition calendar-planning guard"
+      ],
+      "scenarios": [
+        "calendar-register"
+      ]
+    },
+    {
+      "source": "src/academic-os-task-plan.mjs",
+      "functions": [
+        "prepareAcademicOsTaskPlan",
+        "assessAcademicOsTaskResult"
+      ],
+      "scenarios": [
+        "calendar-register"
+      ]
+    },
+    {
+      "source": "src/guidance-pin.mjs",
+      "functions": [
+        "selectedGuidance",
+        "manageGuidancePin"
+      ],
+      "scenarios": [
+        "briefing-boundaries"
+      ]
+    },
+    {
+      "source": "src/calendar-timing.mjs",
+      "functions": [
+        "prepareCalendarTiming",
+        "assessCalendarTimingReadback"
+      ],
+      "scenarios": [
+        "calendar-register"
+      ]
+    },
+    {
+      "source": "src/token-review.mjs",
+      "functions": [
+        "assessTokenReview",
+        "tokenReview"
+      ],
+      "scenarios": [
+        "token-review"
+      ]
+    },
+    {
+      "source": "src/improvement-report.mjs",
+      "functions": [
+        "improvementReport",
+        "readImprovementRequest",
+        "readResult"
+      ],
+      "scenarios": [
+        "improvement-report"
+      ]
+    },
+    "Ported fleet() measured failure proof handling remains a behavioral boundary. Complete response bytes are required when retention fits. Explicit measurement-only proof requires numeric existing file/count/total retention overflow, incomplete raw coverage/omission gap, exact attempt/caps/counts/ended/no-effect declarations, clocks, commitment identity and exact BigInt size/count consistency. Omitted raw bytes/provider truth are not verified by finite/TLC claims. Current root report-handover behaviors remain separately driven.",
+    "V3 caller invokes actual fresh fleet CLI with synthetic supported tools, actual claim/result schema, same-ID readback and post-cleanup raw evidence. Cross-day prior delivered facts/check history, positive learning attribution and unavailable edit behavior remain behavioral; provider truth and live pilot remain external.",
+    "Direct whole-source release rebuild/materialization, pure dependency closure, fresh-process equivalence, trusted capsule hash before parse/import, and actual collection-to-v3-journal intake/seal. Reported source clocks do not authenticate provider truth.",
+    "Generic automation CLI reads exact pinned procedure/configuration files and one named canonical outcome; validates original byte and semantic identities without history enumeration. Reporting producer/publication implementation moves unchanged to a generic owner; old briefing entry forwards compatible actions. Capsule v2 adds a pure generic planner; v1 read/materialization remains supported.",
+    "Actual generic CLI refuses correctly rehashed invalid report timing/telemetry/nonterminal objects and non-string revisions. Publication and predecessor paths share producer evidence validation; valid optional null measurements and historical terminal report:null retain wire compatibility.",
+    "Studio-primary CLI dependency boundary and default onboarding selection are actual CLI controls in test/agent-local.test.mjs and probe-packet, not new finite predicates. Catalogue-independent commands retain exact named-input validation; catalogue consumers still refuse missing inventory. Cloud delegation is explicit proposal-only. Current host/account truth and sustained authentication remain native evidence."
   ],
   "excluded": [
     "Arbitrary-size inputs or a full Cartesian product of every field",
@@ -671,6 +1035,14 @@
     "Backup unresolved-claim refusal is a preflight check, not atomic exclusion against concurrent new claims. Pending escalation remains undelivered until the parent independently confirms actual Dot delivery.",
     "Process incarnation finite cases use honest symbolic kernel snapshots and exclude hostile substituted/overmounted proc entries, active adversarial mount replacement, historical namespace identity spoofing and start-tick collisions. Equality is same or conservatively indistinguishable; it is never fresh. OS acquisition and proc descriptor semantics require actual Linux controls.",
     "macOS and unsupported/missing proc evidence cannot establish the Linux incarnation, owner absence or migrated-baseline freshness. Studio synthetic fixtures and ordinary queue controls are not actual parent cloud acceptance.",
-    "Legacy review/tool-call attestations remain reported and cannot authenticate parent authority or missing historical process identity. Migration writes no job work, never replaces the original checkpoint, and establishes only a new observed baseline. Standalone sidecar publication rejects incomplete content; no canonical PublishedComplete or atomic source-file/journal snapshot promise applies."
+    "Legacy review/tool-call attestations remain reported and cannot authenticate parent authority or missing historical process identity. Migration writes no job work, never replaces the original checkpoint, and establishes only a new observed baseline. Standalone sidecar publication rejects incomplete content; no canonical PublishedComplete or atomic source-file/journal snapshot promise applies.",
+    "Calendar register source truth, authenticated accounts, complete owner history and native visual/schedule/projection evidence remain reported. REST Task query completeness cannot establish Task timing or recurrence. No native writes, collector installation, live full-account capture or automatic invocation is established.",
+    "New derived export hard-link publication is covered by local unit/CLI controls, not the existing canonical-record TLC model. Existing journal records, publication awaits, dependency edges and legacy calendar acceptance semantics are unchanged.",
+    "Academic OS API-plan preparation and result correlation are declared-evidence behavioral boundaries. Literal unit plans, real CLI drives and a private actual-counterpart parser/guard probe do not authenticate policy, approval, accounts, durable retry history, native timing, deployed MCP or provider writes.",
+    "Local guidance pin filesystem selection/administration is behaviorally driven, not a finite property or canonical journal publication. It assumes operator-approved immutable local releases and ordinary bounded filesystem reads; no hostile concurrent-swap, native-note, public-publication or power-loss claim follows.",
+    "Supplied token accounting and compact improvement report guard/publication/read are separately unit/CLI-driven behavioral boundaries. No new finite property or canonical publication theorem covers them. Measured labels, inventories, usage, outcomes, scheduled origin and source windows remain supplied declarations; no provider truth, savings, recurrence, native exclusion, automatic orphan recovery or delivery is proved."
+  ],
+  "limits": [
+    "Version-two shared planning policy has its own area graph/skill; original82register predicates and23mutants are preserved. Receipt/retention/native timing and provider truth remain empirical or external."
   ]
 }

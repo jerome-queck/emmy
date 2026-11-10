@@ -1,5 +1,25 @@
 const mutant = (id, before, after, counterexample) => ({ id: `fleet-${id}`, source: 'src/fleet-state.mjs', property: 'fleet-contract', edits: [[before, after]], counterexample });
 export const fleetMutations = [
+  mutant('overrun-ceiling-bytes', 'job.usedBytes = totalBytes;', 'job.usedBytes = Math.min(totalBytes, 262144);', 'overrun/ceiling/bytes'),
+  mutant('overrun-unsafe-byte-sum', '&& Number.isSafeInteger(totalBytes)', '', 'overrun/aggregate/Bytes'),
+  mutant('overrun-unsafe-read-sum', '&& Number.isSafeInteger(totalReads)', '', 'overrun/aggregate/Reads'),
+  mutant('overrun-retention-label', 'rawResponseBytesVerified: false', 'rawResponseBytesVerified: true', 'overrun/retention-label'),
+
+  mutant('overrun-compliance', "budgetCompliance: 'exceeded'", "budgetCompliance: 'compliant'", 'overrun/accounting'),
+  mutant('overrun-breach', '(totalReads > job.input.maxReads || totalBytes > job.input.maxBytes)', 'true', 'overrun/actual-breach'),
+  mutant('overrun-monotone', 'readDelta >= 0 && byteDelta >= 0 && Number.isSafeInteger(totalReads)', 'Number.isSafeInteger(totalReads)', 'overrun/monotone'),
+  mutant('overrun-mutating', "['health-read', 'briefing-source-read'].includes(job.input.kind) && action.outcome === 'blocked', 'Measured overrun", "action.outcome === 'blocked', 'Measured overrun", 'overrun/read-only'),
+
+  mutant('forget-pending-recovery', "semanticsVersion === 2 && state.entities.some(row => row.recoveryPending)", 'false', 'policy/pending-attention'),
+  mutant('old-wrapper-recovery', 'Date.parse(receipt.observedAt) >= Date.parse(pending.at)', 'true', 'policy/old-source-wrapper'),
+  mutant('omit-current-origin', "insist(capture.invocation, 'Current run capture requires explicit invocation origin')", "insist(true, 'Current run capture requires explicit invocation origin')", 'schedule/origin-required'),
+  mutant('manual-as-scheduled', "capture.invocation.origin === 'manual'", "false", 'schedule/origin/manual'),
+  mutant('unknown-origin-green', "capture.invocation.origin === 'unknown'", "false", 'schedule/origin/unknown'),
+  mutant('borrow-occurrence', 'capture.invocation.occurrenceId !== entity.expected.occurrenceId', 'false', 'schedule/origin/wrong-occurrence'),
+  mutant('prose-action-identity', 'actionIdentity: current.actionIdentity } :', 'actionIdentity: current.nextAction } :', 'alert/paraphrase'),
+  { id: 'fleet-policy-recovery-without-read', source: 'src/fleet-state.mjs', property: 'fleet-contract', edits: [['entity.recoveryPending && freshIds.includes(entity.expected.id)', 'entity.recoveryPending'], ['Date.parse(receipt.observedAt) >= Date.parse(pending.at) && (!pending.observedAt || Date.parse(receipt.observedAt) > Date.parse(pending.observedAt)) && digest(receipt) !== pending.receiptDigest', 'true']], counterexample: 'policy/no-recovery' },
+  mutant('upgrade-unbound', 'action.stateDigest === digest(original)', 'true', 'semantics/upgrade-binding'),
+
   mutant('unknown-total-zero', 'job.usedBytes = null;', 'job.usedBytes = 0;', 'unknown-bytes/accounting'),
   { id: 'fleet-unknown-numeric-substitute', source: 'src/fleet-schema.mjs', property: 'fleet-contract', edits: [["value.failure === undefined && value.usage.knownBytesLowerBound === undefined", "value.usage.knownBytesLowerBound === undefined"]], counterexample: 'unknown-bytes/no-numeric-substitute' },
 
@@ -21,7 +41,7 @@ export const fleetMutations = [
   mutant('ignore-coverage', '!receipt.coverage.complete || receipt.coverage.gaps.length', 'false', 'age/0/false'),
   mutant('ignore-monitor-failure', 'if (entity.expected.monitorId) {', 'if (false) {', 'monitor/failure'),
   mutant('ignore-delivery', 'entity.expected.requiresDelivery && !capture.deliveryRef', 'false', 'schedule/delivery-unverified'),
-  mutant('repeat-alert', 'if (fingerprint !== entity.fingerprint) {', 'if (true) {', 'alert/unchanged'),
+  mutant('repeat-alert', 'if (fingerprint !== entity.fingerprint) {\n          entity.episode++', 'if (true) {\n          entity.episode++', 'alert/unchanged'),
   mutant('duplicate-job', 'if (existing) { insist(existing.inputDigest === inputDigest', 'if (false) { insist(existing.inputDigest === inputDigest', 'job/duplicate'),
   mutant('ignore-reservations', 'pending.length >= capacity', 'false', 'admission/interactive/4'),
   mutant('retry-uncertain', "['attempted', 'uncertain'].includes(job.status)", "['attempted'].includes(job.status)", 'job/uncertain'),

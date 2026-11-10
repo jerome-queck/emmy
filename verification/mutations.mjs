@@ -1,19 +1,33 @@
+import { automationMutations } from './automation-properties.mjs';
 import { morningMutations } from './morning-properties.mjs';
 import { incarnationMutations } from './incarnation-mutations.mjs';
 import { cloudMutations } from './cloud-mutations.mjs';
 import { calendarMutations } from './calendar-mutations.mjs';
+import { registerMutations } from './calendar-register-properties.mjs';
 import { fleetMutations } from './fleet-mutations.mjs';
 
 export const mutations = [
+  ...automationMutations,
+  ...registerMutations,
   ...morningMutations,
-  { id: 'dispatch-reuse-completed-conversation', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["contextNeeded ? 'prepare-fresh-task' : 'inspect-outcome'", "contextNeeded ? 'continue-child' : 'inspect-outcome'"]] },
-  { id: 'dispatch-restart-running-follow-on', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["'inspect-outcome' : 'read-or-wait', followOn:", "'inspect-outcome' : 'create-via-dispatcher', followOn:"]] },
-  { id: 'dispatch-drop-prior-task-handover', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["priorThreadId: task.nativeId", "priorThreadId: null"]] },
+  { id: 'dispatch-speed-without-approval', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["approval?.status === 'approved'", "true"]] },
+  { id: 'dispatch-speed-borrow-objective', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["approval?.objectiveId === objectiveId", "true"]] },
+  { id: 'dispatch-speed-borrow-role', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["approval?.role === role", "true"]] },
+  { id: 'dispatch-speed-borrow-tier', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["approval?.serviceTier === requestedServiceTier", "true"]] },
+  { id: 'dispatch-speed-ignore-inheritance', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["settings.serviceTier !== speed.serviceTier", "false"]] },
+  { id: 'dispatch-speed-ignore-missing-readback', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["if (!settings.serviceTier)", "if (false)"], ["settings.serviceTier !== speed.serviceTier", "settings.serviceTier && settings.serviceTier !== speed.serviceTier"]] },
+
+  { id: 'dispatch-ignore-one-time-permission', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["if (exceptional && !(", "if (false && !("]] },
+  { id: 'dispatch-borrow-one-time-objective', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["permission?.objectiveId === id", "true"]] },
+  { id: 'dispatch-borrow-one-time-role', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["permission?.role === role", "true"]] },
+  { id: 'dispatch-borrow-one-time-model', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["permission?.model === settings.model", "true"]] },
+  { id: 'dispatch-borrow-one-time-effort', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["permission?.effort === settings.effort", "true"]] },
+
   { id: 'dispatch-hardcode-coordinator-high', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["spec.coordinatorRequestedSettings ?? ordinarySettings", "ordinarySettings"]] },
   { id: 'dispatch-borrow-child-model-policy', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["spec.coordinatorRequestedSettings ?? ordinarySettings", "spec.coordinatorRequestedSettings ?? requested"]] },
   { id: 'dispatch-ignore-coordinator-override-source', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["!coordinatorRequested.scopedOverrideRef", "false"]] },
   { id: 'dispatch-ignore-coordinator-policy-scope', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["coordinatorRequested.scope?.objectiveId !== id || coordinatorRequested.scope?.role !== 'coordinator'", "false"]] },
-  { id: 'dispatch-freeze-coordinator-policy-as-identity', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill", "correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill, coordinatorRequestedSettings: value.coordinatorRequestedSettings"]] },
+  { id: 'dispatch-freeze-coordinator-policy-as-identity', property: 'dispatch-recovery', source: 'src/records.mjs', edits: [["correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill", "correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill, coordinatorRequestedSettings: value.coordinatorRequestedSettings"]] },
   ...fleetMutations,
   ...incarnationMutations,
   ...cloudMutations,
