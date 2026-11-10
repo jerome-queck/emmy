@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "737adc754321b17b2dcb0121fbcdde0d91c186b3",
+  "sourceCommit": "545742eb3e0fb854a7352657a63ae8f668f1b02b",
   "files": {
     "scripts/github-auto-merge.mjs": "3c89e3044e08fd70841e481da1943a8efa2dea615a3a98c27cbe7d020e7bce9d",
     "verification/merge-policy.mjs": "9c3592fa9bbc84fc37f31e89c16734f50c352f9c2f537a5ab1d3c9b01b720e86"
@@ -41,5 +41,5 @@
     "Publisher, protection presence, required contexts and metadata normalization have focused tests beyond the finite enumeration.",
     "The verifier does not execute a GitHub merge or prove actual reviewer independence or provider race freedom."
   ],
-  "reviewBasis": "Focused R1/R2 review read all changed ingress, reducer, original intent, provider text readback and actual graph facts. Promise intentionally adds selected PR payload equality and one explicitly scoped confirmed-absence retry. Original unknown and denied history remains. Focused CLI, pure cases, copied-source mutants and restored graph pass. No full v2 aggregate claimed; combined isolated preview receives the next full exact gate and independent review."
+  "reviewBasis": "Actual main-rooted port source and verification reviewed in private delivery-covered-review.json. All hosted metadata domains retained; exact accepted delivery owner/CLI and R1/R2/R3 promises preserved with twelve-suite current-main assurance dependency. No abstract model promise changed; actual CLI and adapter source guard controls passed,16384 admission+1024 resolution cases and all10 lifecycle runs passed in development. This pin is not independent acceptance; exact per-head/base aggregate and independent stack verdict required."
 }
