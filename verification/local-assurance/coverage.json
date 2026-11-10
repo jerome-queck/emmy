@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "3ae16d5de8ce633c50d3e58858d43ceb1ae07c74",
+  "sourceFiles": {
+    "src/assurance.mjs": "ae5e96b2b18821d3760523faeca548335279aec0f2d1920c8fc4d3b6661c990c",
+    "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
+    "src/local-assurance.mjs": "6ff678f407e56d2b9b0f338698628dc08b07eda768cb8cb20ad288d0c9cb8764",
+    "scripts/check.mjs": "f8b710af8abcafa21d3090a9739b820f04b01b98e9dfdfb8b49ca1b4877b204c",
+    "scripts/check-markdown-links.mjs": "b40227b7d9e9617c9c1930c8286d67c550db6c4bf48c74d3d2ee3d1c4b78899c",
+    "scripts/agent.mjs": "12761343edc9dd8b4d51d5d77b573834c8c60dab1be11c72e76d9bc0735493b5",
+    "src/metadata.mjs": "8f997a6eba8f0ff56d25559ea79a92c2d980f82e76e089fd4b55cf6fbb0b4092",
+    "scripts/verify-publication.mjs": "f883deaedb39f8c551baa065ea43fbeec51f9412b835d6f487f8de2cd2fd954a"
+  },
+  "verificationFiles": {
+    "verification/local-assurance/graph.mjs": "9f89bbfc3f42841149600c0549603da719b3835cd20d0f41353d0607f8b22de5",
+    "verification/local-assurance/check.mjs": "e3638f1141a7cc30d10ca032c95b130fd423131b47022dcc505a005ae0bfcb9d",
+    "verification/local-assurance/drive.mjs": "426134c62cc29c9d0228dd49c05d3f6926e5c13ff38825216c91a81edaabf8f1",
+    "verification/local-assurance/view.mjs": "987369e603e24ffdc5813e1f23e45d036e2dc663f129f939f8dea338b24fe0a6",
+    "verification/local-assurance/chart.mmd": "555d30c6f63b8be9e4cf91840f29b767b9df697b0adac2cde5d62ed4ff927b68",
+    "test/local-assurance.test.mjs": "dd08e3e27d7c0530d9671767831ff0afe2405432c3362d7aed66f075416e2f8e",
+    "test/markdown-links.test.mjs": "4c6b41c15971a063723cd82d8d915acf629e791270c767c6303df1cb5a5b97e3",
+    ".agents/skills/local-assurance/SKILL.md": "8f205efdb1b3f6b49addb64d9c47a69b81d34e37bf5b9d50cbc32e2c344f7824"
+  },
+  "mapping": [
+    {
+      "property": "PassedComplete",
+      "files": [
+        "src/assurance.mjs"
+      ],
+      "functions": [
+        "assuranceTransition",
+        "assurancePlan"
+      ],
+      "harm": "Early success hides omitted checks",
+      "mutants": [
+        "coverage"
+      ]
+    },
+    {
+      "property": "PassedClean",
+      "files": [
+        "src/assurance.mjs"
+      ],
+      "functions": [
+        "assuranceTransition"
+      ],
+      "harm": "Changed context, failed or unrelated results can be accepted",
+      "mutants": [
+        "context",
+        "suite-order",
+        "result-id",
+        "exit",
+        "output"
+      ]
+    },
+    {
+      "property": "RefusalTerminal",
+      "files": [
+        "src/assurance.mjs"
+      ],
+      "functions": [
+        "assuranceTransition"
+      ],
+      "harm": "Later input can erase a failed run",
+      "mutants": [
+        "resurrection"
+      ]
+    }
+  ],
+  "bounds": {
+    "runs": 1,
+    "suiteCount": 12,
+    "contextSymbols": 2,
+    "eventClasses": 12,
+    "maxGraphStates": 5000,
+    "scope": "All reachable reducer states in current-main ten suites plus two assurance groups; excluded unpublished features are outside this branch."
+  },
+  "atomicity": "Each actual reducer call is synchronous. Git/file acquisition, child execution and output reads are separate non-atomic I/O steps.",
+  "assumptions": [
+    "Trusted checker and fixed plan",
+    "Collision-free digests",
+    "Honest process/context normalization",
+    "Finite symbolic equality and output-validity abstraction"
+  ],
+  "empiricalClosure": [
+    "src/local-assurance.mjs",
+    "scripts/check.mjs",
+    "scripts/check-markdown-links.mjs",
+    "scripts/agent.mjs",
+    "verification/local-assurance/drive.mjs"
+  ],
+  "limits": [
+    "Source/CLI hashes bind empirical integration only; TLC checks the reducer graph",
+    "No atomic filesystem pinning, process containment, authorship/independence authentication, native host identity, provider effects or deployment"
+  ],
+  "reviewBasis": "Read actual current-main and accepted7cd37af owning source before selective port. All ten current-main aggregate groups and existing production properties remain; only Markdown exact-tree acquisition and new assurance command/driver/area proof are added. No Calendar/briefing/planning/direct/model-policy context is ported. Twelve-suite reducer model/mutants and actual focused CLI passed; publication function navigation was compared to actual unchanged canonical source and five stale ranges corrected. New per-head full verification and independent verdict are required; v3 acceptance does not transfer."
+}

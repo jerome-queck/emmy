@@ -1,5 +1,7 @@
 # Emmy
 
+[Local assurance](docs/local-assurance.md) retains exact source/base/environment receipts for every current-main suite. This main-rooted port preserves all ten existing groups and adds its two verification groups; unrelated unpublished features are excluded.
+
 Emmy is Jerome's ChatGPT Dot. This repository gives one chief of staff durable responsibility context, current evidence checks, retained failures and repairs, and bounded next proposals.
 
 Use Node 24 or later. The agent CLI needs no dependency install. Verification uses locked development dependencies. No database, server, or API key is required.

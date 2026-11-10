@@ -18,6 +18,7 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 | calendar | `--file <value>` required | Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution. | evidence |
 | briefing | `--file <value>` | Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown. | evidence |
 | probe | `--id <value>`, `--nonce <value>` required | Publish a proposed Dot onboarding packet with eight probes. | routing |
+| assurance | `--file <value>` required | Replay one exact retained local check receipt against current source, base, suite and environment without executing checks. | upkeep |
 | maintain | `--check`, `--write` | Compare or regenerate public references without changing review records. | upkeep |
 | backup | `--to <value>` required | Verify and atomically archive a pinned private record/evidence manifest and bindings. | upkeep |
 | restore | `--from <value>` required, `--into <value>` required | Verify an archive and restore into a new suspended private home. | upkeep |

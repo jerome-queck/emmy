@@ -5,6 +5,8 @@ description: Drive Emmy's real CLI after changes to responsibility context, reco
 
 # Verify Emmy
 
+Run `node scripts/verify-behavior.mjs --focus assurance` for exact retained local receipt replay and failure/drift/output controls. The full driver includes this scenario. The fixture substitutes a labelled two-command plan; full `npm run check` separately runs the twelve-group main-rooted plan. Follow [local assurance](../local-assurance/SKILL.md) for its bounded reducer graph and source mutants. These checks establish no provider effects or authentic execution.
+
 ## Launch and health
 
 Use Node 24 or later. Run `npm ci --ignore-scripts` to install locked verification dependencies. Run `npm run agent -- help --json`. It returns `ok: true` with the metadata-defined commands. Run `npm run agent -- doctor` and `maintain --check`. Doctor checks local runtime, catalog, bindings, store references/evidence, historical records, generated drift, and restored suspension. It does not probe native tools.

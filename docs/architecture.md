@@ -1,5 +1,7 @@
 # Persistent Emmy contract
 
+The [local assurance owner](local-assurance.md) retains the current-main fixed suite under one source/base/environment admission boundary. It adds no provider executor, dispatch policy or merge permission.
+
 Selected design, 22 October 2026. This replaces the initial proposal-only registry design. The implementation must satisfy the acceptance cases below before release. Read [the setup critique](research/setup-critique.md) for observed evidence and design judgments.
 
 ## Usage first
