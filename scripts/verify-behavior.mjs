@@ -4,7 +4,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { hostname, tmpdir } from 'node:os';
 import { basename, join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { canonical, digest, parseObservation, recordPayload, readRecord, readStore } from '../src/records.mjs';
 import { fixtureScripts } from '../verification/fixtures.mjs';
@@ -48,10 +48,13 @@ const review = data => data.responsibilities[0].record;
 const reconcile = async (id, expected = 0, imports = null, selectedHome = home, asOf = now()) => run(['reconcile', '--id', id, '--as-of', asOf, ...(imports ? ['--import', await fixture(`import-${randomUUID()}.json`, { schemaVersion: 1, records: imports })] : [])], expected, selectedHome);
 try {
   assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review', 'assurance'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing|dispatch|calendar|cloud|fleet|token-review|assurance');
-  for (const path of ['registry', 'docs', '.agents', 'src', 'scripts']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
+  for (const path of ['registry', 'docs', '.agents', 'src', 'scripts', 'verification', 'test', 'procedures', '.github', '.codex', 'AGENTS.md', 'package.json', 'package-lock.json']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
   await mkdir(join(home, 'records'), { recursive: true }); await mkdir(join(root, 'bin'));
   for (const name of ['gh', 'codex', 'curl', 'ssh']) await writeFile(join(root, 'bin', name), `#!/bin/sh\necho invoked >> '${join(home, 'executor-invoked')}'\nexit 99\n`, { mode: 0o755 });
   await writeFile(join(root, '.gitignore'), '.local/\nbin/\n');
+  const fixtureInventoryPath = join(root, 'verification/subsystems.json'); const fixtureInventory = JSON.parse(await readFile(fixtureInventoryPath, 'utf8'));
+  fixtureInventory.subsystems.flatMap(area => area.files).find(file => file.path === '.gitignore').sha256 = digest(await readFile(join(root, '.gitignore')));
+  await writeFile(fixtureInventoryPath, JSON.stringify(fixtureInventory));
   await mkdir(join(root, 'fixture-verifiers'));
   for (const [name, source] of Object.entries(fixtureScripts)) await writeFile(join(root, 'fixture-verifiers', name), source);
   git(['init', '-q']); git(['config', 'user.email', 'fixture@example.invalid']); git(['config', 'user.name', 'Synthetic fixture']); git(['remote', 'add', 'origin', 'https://example.invalid/fixture']); git(['add', '.']); git(['commit', '-qm', 'Synthetic fixture baseline']);
@@ -342,7 +345,7 @@ try {
     await assert.rejects(readFile(authorityMarker), { code: 'ENOENT' });
     const waitForFile = async (path, ready = bytes => bytes.length > 0) => { for (let i = 0; i < 400; i++) { try { const bytes = await readFile(path, 'utf8'); if (ready(bytes)) return bytes; } catch (error) { if (error.code !== 'ENOENT') throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Timed out waiting for complete contents of ${path}`); };
     const gone = async pid => { for (let i = 0; i < 200; i++) { try { process.kill(pid, 0); } catch (error) { if (error.code === 'ESRCH') return; throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Owned verifier child survived ${pid}`); };
-    const cleanupEnv = (path, mode = 'observe') => ({ NODE_OPTIONS: `--import=${join(root, 'fixture-verifiers/record-group-kill.mjs')}`, EMMY_VERIFY_GROUP_CALL_FILE: path, EMMY_VERIFY_GROUP_CALL_MODE: mode });
+    const cleanupEnv = (path, mode = 'observe') => ({ NODE_OPTIONS: `--import=${pathToFileURL(join(root, 'fixture-verifiers/record-group-kill.mjs')).href}`, EMMY_VERIFY_GROUP_CALL_FILE: path, EMMY_VERIFY_GROUP_CALL_MODE: mode });
     const groupCalls = async path => (await waitForFile(path, bytes => bytes.endsWith('\n'))).trim().split('\n').map(line => JSON.parse(line));
     const teardownGroups = async (path, entry) => {
       entry.harnessCleanup = [];
@@ -399,7 +402,7 @@ try {
       const deniedPid = join(home, `denied-${mode}-child.pid`); const deniedGroups = join(home, `denied-${mode}-groups.txt`);
       const deniedCheck = await makeCheck(`local-command-denied-${mode}`, 'output.mjs', [deniedPid]); await adopt(deniedCheck);
       try {
-        const data = await run(['reconcile', '--id', deniedCheck.id, '--as-of', now(), '--import', await fixture(`denied-${mode}-tasks.json`, { schemaVersion: 1, records: [tasks(deniedCheck.id)] })], 3, home, { NODE_OPTIONS: `--import=${join(root, 'fixture-verifiers/deny-group-kill.mjs')}`, EMMY_VERIFY_DENIED_GROUP_FILE: deniedGroups, EMMY_VERIFY_DENIED_GROUP_MODE: mode });
+        const data = await run(['reconcile', '--id', deniedCheck.id, '--as-of', now(), '--import', await fixture(`denied-${mode}-tasks.json`, { schemaVersion: 1, records: [tasks(deniedCheck.id)] })], 3, home, { NODE_OPTIONS: `--import=${pathToFileURL(join(root, 'fixture-verifiers/deny-group-kill.mjs')).href}`, EMMY_VERIFY_DENIED_GROUP_FILE: deniedGroups, EMMY_VERIFY_DENIED_GROUP_MODE: mode });
         const result = (await checkBytes(review(data))).check;
         assert.equal(result.outcome, 'fail'); assert.equal(result.reason, 'process-group-cleanup-failed'); assert.equal(result.terminationReason, 'output-limit');
         assert.equal(result.cleanup.status, 'unverified'); assert.ok(result.cleanup.errors.includes('EPERM')); assert.equal(result.cleanup.processGroup, Number((await waitForFile(deniedGroups)).trim().split('\n')[0]));
@@ -599,7 +602,11 @@ try {
       const destination = join(root, 'bin', `restore-interrupt-${boundary.replaceAll(':', '-')}`); const args = ['restore', '--from', archive, '--into', destination]; await interruptAt(args, boundary); const recoveredRestore = await run(args, boundary === 'restore:published' ? 2 : 0); if (boundary !== 'restore:published') assert.equal(recoveredRestore.suspended, true); else assert.match(recoveredRestore.error, /already exists/); await readStore(destination);
     }
     assert.equal(report.interruptions.length, 10); scenario('publication-interruption', 'Actual SIGSTOP checkpoints followed by SIGKILL at three record, three archive, three restore boundaries and forward-dependent import prefix; replay converges or explicitly refuses existing restored destination. No all-instruction crash-durability claim.');
-    const catalogBefore = await readFile(join(root, 'registry/catalog.json')); const formalPath = join(root, 'verification/coverage.json'); await mkdir(dirname(formalPath), { recursive: true }); await writeFile(formalPath, '{"sourceCommit":"do-not-advance"}\n'); const formalBefore = await readFile(formalPath);
+    const catalogBefore = await readFile(join(root, 'registry/catalog.json')); const formalPath = join(root, 'verification/coverage.json'); await mkdir(dirname(formalPath), { recursive: true });
+    const formalFixture = JSON.parse(await readFile(formalPath, 'utf8')); formalFixture.sourceCommit = 'do-not-advance'; await writeFile(formalPath, JSON.stringify(formalFixture)); const formalBefore = await readFile(formalPath);
+    const inventoryPath = join(root, 'verification/subsystems.json'); const syntheticInventory = JSON.parse(await readFile(inventoryPath, 'utf8'));
+    for (const area of syntheticInventory.subsystems) for (const file of area.files) if (file.path === 'verification/coverage.json') file.sha256 = digest(formalBefore);
+    await writeFile(inventoryPath, JSON.stringify(syntheticInventory));
     await writeFile(join(root, 'docs/cli.md'), 'Stale generated reference'); assert.equal((await run(['maintain', '--check'], 3)).status, 'drift'); await run(['maintain', '--write']); await run(['maintain', '--check']); assert.deepEqual((await run(['maintain', '--write'])).changed, []);
     const publicBefore = await readFile(join(root, 'docs/catalog.md')); await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, privateSentinel: 'synthetic-private-never-public' })); await run(['maintain', '--write']); assert.deepEqual(await readFile(join(root, 'docs/catalog.md')), publicBefore); assert.equal((await readFile(join(root, 'docs/catalog.md'), 'utf8')).includes('synthetic-private-never-public'), false); assert.deepEqual(await readFile(formalPath), formalBefore); assert.deepEqual(await readFile(join(root, 'registry/catalog.json')), catalogBefore);
     scenario('derived-boundaries', 'Generated drift fails then regenerates idempotently; private state never enters public references; catalog review dates and formal pins stay unchanged.');

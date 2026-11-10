@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { cp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { setTimeout } from 'node:timers/promises';
 import { Parser } from 'commonmark';
 import { briefingTransport } from './briefing-fixtures.mjs';
@@ -37,7 +38,7 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
   const bundle = await readFile(join(sourceRoot, 'docs/briefing-guidance.json'));
   const transport = { commit: 'a'.repeat(40), tree: 'd'.repeat(40), blob: blobId(bundle), bytes: bundle.toString('base64'), requests: join(home, 'briefing-requests.jsonl') };
   const transportFile = join(home, 'inbox/briefing-transport.json'); await mkdir(join(home, 'inbox'), { recursive: true });
-  const env = { NODE_OPTIONS: `--import=${preload}`, EMMY_VERIFY_BRIEFING_FIXTURE: transportFile };
+  const env = { NODE_OPTIONS: `--import=${pathToFileURL(preload).href}`, EMMY_VERIFY_BRIEFING_FIXTURE: transportFile };
   const invoke = async (draft = null, expected = 0, overrides = {}, selectedHome = home) => {
     await writeFile(transportFile, JSON.stringify({ ...transport, ...overrides }));
     const args = ['briefing'];

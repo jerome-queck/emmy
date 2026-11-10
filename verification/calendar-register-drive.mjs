@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { digest } from '../src/records.mjs';
-import { bindRegister, refreshRegisterEvidence, registerFixture, registerHash } from './calendar-register-fixtures.mjs';
+import { bindRegister, refreshRegisterEvidence, registerAttempt, registerFixture, registerHash } from './calendar-register-fixtures.mjs';
 import { academicOsPlanFixture } from './academic-os-plan-fixtures.mjs';
 import { timingRegisterFixture, syntheticTimingPacket, syntheticTimingReceipt } from './calendar-timing-fixtures.mjs';
 import { planningBundle, versionedApi } from './planning-policy/fixtures.mjs';
@@ -52,6 +52,10 @@ module.exports.GoogleAuth = class {
     const candidate = structuredClone(input); mutate(candidate); candidate.request.history.completeThrough = new Date().toISOString(); bindRegister(candidate);
     await writeFile(snapshotFile, JSON.stringify(candidate.snapshot)); await writeFile(requestFile, JSON.stringify(candidate.request));
     const before = [digest(await readFile(snapshotFile)), digest(await readFile(requestFile))];
+    if (name === 'proposed' || name.startsWith('attempt-')) {
+      await writeFile(join(directory, `${name}.snapshot.json`), JSON.stringify(candidate.snapshot));
+      await writeFile(join(directory, `${name}.request.json`), JSON.stringify(candidate.request));
+    }
     const result = await run(['calendar-register', '--file', envelopeFile], expected);
     assert.equal(result.execution, 'none'); assertion(result);
     assert.deepEqual([digest(await readFile(snapshotFile)), digest(await readFile(requestFile))], before);
@@ -62,6 +66,26 @@ module.exports.GoogleAuth = class {
     assert.equal(result.status, 'proposed'); assert.equal(result.proposals[0].sourceTiming.actualDurationMinutes, 40);
     assert.equal(result.proposals[0].changes.durationMinutes, 60); assert.equal(result.availability.freeIntervals.length, 3);
   });
+  const firstAttempt = registerAttempt(input, baseline.proposals[0]);
+  firstAttempt.attemptedAt = firstAttempt.prepared.capturedAt;
+  await assess('attempt-unresolved', 3, candidate => { candidate.request.attempts.push(structuredClone(firstAttempt)); }, result => assert.ok(result.proposals[0].findings.includes('reconcile-uncertain-effect')));
+  for (const name of ['no-effect', 'rebased', 'saved']) {
+    await assess(`attempt-${name}`, name === 'rebased' ? 3 : 0, candidate => {
+      candidate.request.attempts.push(structuredClone(firstAttempt));
+      candidate.evaluatedAt = new Date().toISOString();
+      if (name === 'rebased') {
+        const task = candidate.snapshot.taskLists[0].tasks[0]; task.title = 'Owner changed this task';
+        candidate.request.taskSchedules[0].taskDigest = registerHash(task);
+        candidate.request.operations[0].baselineDigest = registerHash({ native: task, intervals: [] });
+      }
+      if (name === 'saved') candidate.request.taskSchedules[0].intervals = [{ start: baseline.proposals[0].changes.start, end: baseline.proposals[0].changes.end }];
+      refreshRegisterEvidence(candidate);
+      candidate.request.attempts[0].resolution = { kind: name === 'saved' ? 'saved' : 'no-effect', snapshotDigest: candidate.request.snapshotDigest, evidenceRef: 'synthetic-fresh-attempt-evidence' };
+    }, result => {
+      if (name === 'rebased') assert.ok(result.proposals[0].findings.includes('reconcile-uncertain-effect'));
+      else assert.equal(result.proposals[0].status, name === 'saved' ? 'already-saved' : 'proposed');
+    });
+  }
   for (const [name, mutate, code] of [
     ['versioned-policy-ready', () => {}, null],
     ['versioned-unsupported', bundle => { bundle.rules[0].predicate = 'future-predicate'; }, 'planning-predicate-unsupported'],

@@ -24,6 +24,8 @@ The archive also excludes disposable guidance snapshots and briefing artifacts u
 
 Every executable criterion reevaluates that epoch's retained observations after acquisition reads and immediately before launch. Authority expiring during an earlier check suspends the next command. The driver retains a three-second expiry counterexample and a current-authority positive control.
 
+The [restoration-suspension contract](../../restoration-suspension/SKILL.md) explores bounded epoch, record-arrival, supersession, expiry and reconciliation histories. `restored-current-context` remains the separate empirical CLI boundary.
+
 ## Source and drive
 
 `records.mjs` owns immutable publication, dependency-first import order, archive manifests, and restore. `work.mjs` owns current epoch eligibility. `maintenance.mjs` derives public references. Scenarios `archive-recovery`, `cloud-recovery`, `restored-current-context`, `publication-interruption`, and `derived-boundaries` exercise actual bytes, corruption/traversal/symlink controls, local and cloud restore, superseded authority with a real execution marker, ten record/archive/restore/import checkpoints, forward-reference retry, drift repair, and public/private separation. Briefing adds one cache-publication cancellation in its separate advisory drive.
