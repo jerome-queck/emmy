@@ -56,7 +56,7 @@ Follow [the daily review procedure](docs/daily-improvement.md). Review prior-day
 
 ## Persistent calendar planning
 
-Follow the calendar procedure in [the delivered operating brief](docs/operating-brief.md#plan-and-maintain-calendar-tasks). Find existing Tasks, choose slots, and create, move, or resize the same saved items within the user's concrete scope. Preserve Task versus Event intent and native IDs. Use capable connectors first and Emmy's cloud Calendar UI when duration needs it. A connected Mac's browser is a separate environment. Reopen saved items to verify their fields. Keep intent and readbacks in existing private notes or responsibilities. No recurring schedule is needed to establish this procedure.
+Follow the calendar procedure in [the delivered operating brief](docs/operating-brief.md#plan-and-maintain-calendar-tasks). Find existing Tasks, choose slots, and create, move, or resize the same saved items within the user's concrete scope. Preserve Task versus Event intent and native IDs. Use capable connectors first and the supported Calendar UI in the current verified execution environment when duration needs it. Follow the operating brief's environment and identity checks. A connected Mac's browser is a separate environment. Reopen saved items to verify their fields. Keep intent and readbacks in existing private notes or responsibilities. No recurring schedule is needed to establish this procedure.
 
 ## Evidence and scope
 

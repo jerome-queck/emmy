@@ -233,9 +233,14 @@ try {
     const wrongRepository = review(await reconcile(definition.id, 3)); assert.ok(wrongRepository.route.reasons.includes('repository-binding-mismatch')); assert.equal(wrongRepository.proposals.some(item => item.type === 'work'), false);
     await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
     scenario('binding-boundaries', 'Unknown inherited project and host keys stay unbound; explicit constructor IDs work; cloud needs prepared binding, reason and explicit scoped authority.');
-    const probes = await run(['probe', '--nonce', 'synthetic-nonce']); assert.equal(probes.record.probes.length, 8); assert.equal(probes.record.accountStatus, 'unverified');
+    const probes = await run(['probe', '--nonce', 'synthetic-nonce']); assert.equal(probes.record.probes.length, 7); assert.equal(probes.record.accountStatus, 'unverified');
     assert.match(await readFile(join(probes.path, 'packet.md'), 'utf8'), /Not installed\. No probe or schedule ran\./);
-    scenario('probe-packet', 'Retained actual onboarding packet contains eight proposals and remains uninstalled/unverified.');
+    assert.equal(probes.record.probes.some(probe => probe.id === 'cloud-delegation'), false);
+    assert.match(probes.record.probes.find(probe => probe.id === 'runtime').prompt, /current attached execution environment/);
+    const cloudProbe = await run(['probe', '--id', 'cloud-delegation', '--nonce', 'synthetic-explicit-cloud']);
+    assert.deepEqual(cloudProbe.record.probes.map(probe => probe.id), ['cloud-delegation']);
+    assert.equal(cloudProbe.record.execution, 'proposal-only'); assert.equal(cloudProbe.record.accountStatus, 'unverified');
+    scenario('probe-packet', 'Default onboarding omits cloud delegation and inspects the current environment; explicit cloud selection remains proposal-only and unverified.');
     const forkDefinition = { ...definition, id: 'fork-case' }; const forkBase = await adopt(forkDefinition);
     await reconcile(forkDefinition.id, 0, [tasks(forkDefinition.id)]);
     const forkArgs = async goal => ['responsibility', '--file', await fixture(`fork-${randomUUID()}.json`, { ...forkDefinition, parents: [forkBase.hash], goal })];

@@ -184,7 +184,7 @@
     },
     {
       "name": "probe",
-      "description": "Publish a proposed Dot onboarding packet with eight probes.",
+      "description": "Publish current-environment onboarding proposals; cloud delegation requires an explicit probe ID.",
       "options": [
         {
           "name": "id"

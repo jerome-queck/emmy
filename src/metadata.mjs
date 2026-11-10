@@ -15,7 +15,7 @@ export const commands = [
   { name: 'daily-briefing', description: 'Read the staged operating contract, validate private briefing policy, prepare fixed reports and reporting contracts, or compile/read exact held artifact slots without native effects.', options: [{ name: 'file', required: true }], feature: 'upkeep' },
   { name: 'briefing', description: 'Load an explicitly pinned local release or canonical public guidance, check a declared draft, and retain exact advisory Markdown.', options: [{ name: 'file' }], feature: 'evidence' },
   { name: 'guidance-pin', description: 'Activate, inspect or deactivate an exact approved installed local guidance release without changing canonical caches.', options: [{ name: 'file', required: true }], feature: 'evidence' },
-  { name: 'probe', description: 'Publish a proposed Dot onboarding packet with eight probes.', options: [{ name: 'id' }, { name: 'nonce', required: true }], feature: 'routing' },
+  { name: 'probe', description: 'Publish current-environment onboarding proposals; cloud delegation requires an explicit probe ID.', options: [{ name: 'id' }, { name: 'nonce', required: true }], feature: 'routing' },
   { name: 'maintain', description: 'Compare or regenerate public references without changing review records.', options: [{ name: 'check', flag: true }, { name: 'write', flag: true }], feature: 'upkeep' },
   { name: 'backup', description: 'Verify and atomically archive a pinned private record/evidence manifest and bindings.', options: [{ name: 'to', required: true }], feature: 'upkeep' },
   { name: 'restore', description: 'Verify an archive and restore into a new suspended private home.', options: [{ name: 'from', required: true }, { name: 'into', required: true }], feature: 'upkeep' }
