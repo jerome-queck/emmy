@@ -109,4 +109,3 @@ export async function awaitBriefingChecks(initial, adapters, { signal } = {}) {
     }
   }
 }
-
