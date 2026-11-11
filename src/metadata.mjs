@@ -191,7 +191,9 @@ export const subsystemEvidence = {
       "kind": "hand-mapped-await",
       "path": "verification/briefing-slot/BriefingSlot.tla",
       "record": "verification/briefing-slot/coverage.json",
-      "checker": "scripts/verify-briefing-slot.mjs"
+      "checker": "scripts/verify-briefing-slot.mjs",
+      "reviewedSha256": "ce970cea18806e44fe923e9bb6771b2543f199071bbcfff1efac81aeb327580a",
+      "checkerSha256": "0e61fb002d6b2b0a175920d644411b024a02f1fee5b9b2bbc37c698650781ae3"
     }
   },
   "calendar": {
@@ -277,7 +279,9 @@ export const subsystemEvidence = {
       "kind": "hand-mapped-await",
       "path": "verification/publication/RecordPublication.tla",
       "record": "verification/publication/coverage.json",
-      "checker": "scripts/verify-publication.mjs"
+      "checker": "scripts/verify-publication.mjs",
+      "reviewedSha256": "9570ee406a8ea90a767dc5093186585860f83cbf082b94b9b8e13e67a83d0edb",
+      "checkerSha256": "f883deaedb39f8c551baa065ea43fbeec51f9412b835d6f487f8de2cd2fd954a"
     }
   },
   "local-assurance": {

@@ -156,6 +156,17 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
     const unsupportedWrite = run(root, ['maintain', '--write']); assert.equal(unsupportedWrite.status, 2, unsupportedWrite.stdout);
     assert.match(JSON.parse(unsupportedWrite.stdout).error, /invalid graph interface/);
     await writeFile(graph, graphBytes); await writeFile(formalPath, formalBytes);
+    const modelPath = 'verification/publication/RecordPublication.tla'; const model = join(root, modelPath); const modelBytes = await readFile(model, 'utf8');
+    const commentedModel = modelBytes.split('\n').map(line => `\\* ${line}`).join('\n'); await writeFile(model, commentedModel);
+    const publicationRecord = join(root, 'verification/publication/coverage.json'); const publicationBytes = await readFile(publicationRecord, 'utf8'); const changedRecord = JSON.parse(publicationBytes); changedRecord.verificationFiles[modelPath] = digest(commentedModel); const changedBytes = JSON.stringify(changedRecord); await writeFile(publicationRecord, changedBytes);
+    await mutate(value => { const files = value.subsystems.flatMap(area => area.files); files.find(file => file.path === modelPath).sha256 = digest(commentedModel); files.find(file => file.path === 'verification/publication/coverage.json').sha256 = digest(changedBytes); });
+    check(2, /unreviewed hand-mapped model or checker/);
+    const modelWrite = run(root, ['maintain', '--write']); assert.equal(modelWrite.status, 2, modelWrite.stdout); assert.match(JSON.parse(modelWrite.stdout).error, /unreviewed hand-mapped model or checker/);
+    await writeFile(model, modelBytes); await writeFile(publicationRecord, publicationBytes);
+    const runnerPath = 'scripts/verify-publication.mjs'; const runner = join(root, runnerPath); const runnerBytes = await readFile(runner, 'utf8'); const commentedRunner = runnerBytes.split('\n').map(line => `// ${line}`).join('\n'); await writeFile(runner, commentedRunner);
+    const changedRunnerRecord = JSON.parse(publicationBytes); changedRunnerRecord.verificationFiles[runnerPath] = digest(commentedRunner); const changedRunnerBytes = JSON.stringify(changedRunnerRecord); await writeFile(publicationRecord, changedRunnerBytes);
+    await mutate(value => { const files = value.subsystems.flatMap(area => area.files); files.find(file => file.path === runnerPath).sha256 = digest(commentedRunner); files.find(file => file.path === 'verification/publication/coverage.json').sha256 = digest(changedRunnerBytes); });
+    check(2, /unreviewed hand-mapped model or checker/); await writeFile(runner, runnerBytes); await writeFile(publicationRecord, publicationBytes);
     await mutate(value => { value.foundationReady = true; }); check(2, /invalid schema or readiness/);
     await writeFile(manifest, originalManifest); check(0);
   } finally { await rm(root, { recursive: true, force: true }); }
