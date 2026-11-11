@@ -16,6 +16,10 @@ for (const [path, expected] of Object.entries(coverage.sourceFiles)) {
 }
 for (const [path, expected] of Object.entries(coverage.verificationFiles)) assert.equal(hash(await readFile(join(root, path))), expected, `Review closure verifier after ${path} changes`);
 assert.equal(hash(await readFile(actualJar)), '936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88');
+const java = process.env.EMMY_JAVA_BIN || 'java';
+const version = spawnSync(java, ['-version'], { encoding: 'utf8' });
+assert.equal(version.status, 0, 'Selected Java must answer the version probe');
+assert.match(`${version.stdout}${version.stderr}`, /version "21[."]/, 'Java 21 required');
 const evidenceRoot = resolve(root, '.local/verification/responsibility-closure');
 await mkdir(evidenceRoot, { recursive:true });
 const out = await mkdtemp(join(evidenceRoot, 'run-'));
@@ -37,7 +41,7 @@ async function run(name, mutation) {
   const tla=`---- MODULE Closure ----\nEXTENDS Naturals\nVARIABLE node\nInit == node = 1\n${steps}\nNext == ${actions.join(' \\/ ')}\nClosure == node \\notin ${set(bad)}\n====\n`;
   await writeFile(join(dir,'Closure.tla'),tla); await writeFile(join(dir,'Closure.cfg'),'INIT Init\nNEXT Next\nINVARIANT Closure\nCHECK_DEADLOCK FALSE\n');
   await writeFile(join(dir,'graph.json'),JSON.stringify({states,edges,bad},null,2));
-  const tlc=spawnSync(process.env.EMMY_JAVA_BIN || 'java',[`-Djava.io.tmpdir=${temp}`, '-XX:+UseParallelGC','-cp',actualJar,'tlc2.TLC','-workers','1','-config','Closure.cfg','Closure.tla'],{cwd:dir,env:{...process.env,TMPDIR:temp},encoding:'utf8',timeout:120000,maxBuffer:20*1024*1024});
+  const tlc=spawnSync(java,[`-Djava.io.tmpdir=${temp}`, '-XX:+UseParallelGC','-cp',actualJar,'tlc2.TLC','-workers','1','-config','Closure.cfg','Closure.tla'],{cwd:dir,env:{...process.env,TMPDIR:temp},encoding:'utf8',timeout:120000,maxBuffer:20*1024*1024});
   const output=(tlc.stdout??'')+(tlc.stderr??''); await writeFile(join(dir,'tlc.out'),output);
   if(mutation) {
     assert.match(output,/Invariant Closure is violated/); const nodes=[...output.matchAll(/node = (\d+)/g)].map(x=>Number(x[1])-1); assert.ok(nodes.length>1);
