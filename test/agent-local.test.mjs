@@ -128,6 +128,8 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
       await mutate(value => { const files = value.subsystems.flatMap(area => area.files); files.find(file => file.path === 'src/metadata.mjs').sha256 = forged.files['src/metadata.mjs']; files.find(file => file.path === 'verification/coverage.json').sha256 = digest(forgedBytes); });
       const wrongRegistered = spawnSync(process.execPath, [join(root, 'scripts/agent.mjs'), 'maintain', '--check', '--root', root], { encoding: 'utf8' });
       assert.equal(wrongRegistered.status, 2, wrongRegistered.stdout); assert.match(JSON.parse(wrongRegistered.stdout).error, /unregistered evidence/);
+      const wrongWrite = spawnSync(process.execPath, [join(root, 'scripts/agent.mjs'), 'maintain', '--write', '--root', root], { encoding: 'utf8' });
+      assert.equal(wrongWrite.status, 2, wrongWrite.stdout); assert.match(JSON.parse(wrongWrite.stdout).error, /unregistered evidence/);
       await writeFile(coverage, coverageBefore);
       await writeFile(metadata, metadataBefore); await writeFile(manifest, originalManifest);
     }
