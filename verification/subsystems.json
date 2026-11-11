@@ -1111,7 +1111,7 @@
         },
         {
           "path": ".agents/skills/coordination-contract/SKILL.md",
-          "sha256": "38b6bd1756694135b7143157c08943bcde4874cec0e99f0b0bb624d03c93f14c",
+          "sha256": "896485623a952e24b3c2d113f1d39e1272bd613e5dd51f5d9339a9d15789da06",
           "callers": [
             "public configuration"
           ]
@@ -1421,7 +1421,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "0b54b43f6016237257eb8dc866bc0f659431a0f69f14f77169b4a74e1230d1c4",
+          "sha256": "baeb3413591fa43ded41c08803cd1ee7c316272cefcd43b049e30abfe1da436d",
           "callers": [
             "verification input"
           ]
