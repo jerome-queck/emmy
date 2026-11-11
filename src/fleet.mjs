@@ -31,7 +31,7 @@ export async function fleetPendingTurns(home, records) {
   for (const name of names.filter(name => name.endsWith('.json')).sort()) {
     const turn = await boundedJson(join(home, 'fleet-turns', name), 4194304);
     const expected = recordPayload(turn.payload, Object.fromEntries(Object.entries(turn.files).map(([key, value]) => [key, Buffer.from(value, 'base64')])));
-    if (!records.some(record => record.hash === expected.hash)) pending.push({ path: join(home, 'fleet-turns', name), requestDigest: turn.payload.requestDigest, nextAction: turn.payload.action.operation === 'morning' ? 'Preserve this intent. Complete its pure publication using the exact retained historical installation on a copy, then verify and import the recovered record. Do not repeat native effects.' : 'Repeat the exact retained input to finish this pure journal publication. Do not repeat a parent tool read.' });
+    if (!records.some(record => record.hash === expected.hash)) pending.push({ path: join(home, 'fleet-turns', name), requestDigest: turn.payload.requestDigest, nextAction: turn.payload.action.operation === 'morning' ? 'Preserve this intent. Complete its pure publication using the exact retained historical installation on a copy, then verify and archive/restore the recovered copy into a new home. Do not repeat native effects.' : 'Repeat the exact retained input to finish this pure journal publication. Do not repeat a parent tool read.' });
   }
   return pending;
 }
