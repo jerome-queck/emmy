@@ -70,15 +70,6 @@ export const verification = {
 
 // Reviewed association of subsystem evidence; file inventory remains in verification/subsystems.json.
 export const subsystemEvidence = {
-  "incarnation-ownership": {
-    "drivers": ["verification/cloud-drive.mjs"],
-    "skills": [".agents/skills/incarnation-ownership/SKILL.md"],
-    "replay": ["verification/incarnation-ownership/check.mjs"],
-    "coverageRecords": ["verification/coverage.json", "verification/incarnation-ownership/coverage.json"],
-    "model": "reachable-history",
-    "skillStatus": "maintained",
-    "graph": { "kind": "reachable-history", "path": "verification/incarnation-ownership/graph.mjs", "record": "verification/incarnation-ownership/coverage.json", "checker": "verification/incarnation-ownership/check.mjs", "exports": ["graph", "spec"] }
-  },
   "cooperative-cloud": {
     "drivers": ["verification/cloud-drive.mjs"],
     "skills": [".agents/skills/cooperative-cloud/SKILL.md"],
@@ -444,5 +435,14 @@ export const subsystemEvidence = {
     ],
     "model": "empirical-only",
     "skillStatus": "not-applicable"
+  },
+  "incarnation-ownership": {
+    "drivers": ["verification/cloud-drive.mjs"],
+    "skills": [".agents/skills/incarnation-ownership/SKILL.md"],
+    "replay": ["verification/incarnation-ownership/check.mjs"],
+    "coverageRecords": ["verification/coverage.json", "verification/incarnation-ownership/coverage.json"],
+    "model": "reachable-history",
+    "skillStatus": "maintained",
+    "graph": { "kind": "reachable-history", "path": "verification/incarnation-ownership/graph.mjs", "record": "verification/incarnation-ownership/coverage.json", "checker": "verification/incarnation-ownership/check.mjs", "exports": ["graph", "spec"] }
   }
 };
