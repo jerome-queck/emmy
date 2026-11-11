@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { cp, mkdir, readFile, realpath, symlink, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { canonical, digest } from '../../src/content.mjs';
 
 export async function driveAssurance(sourceRoot, directory) {
   const root = join(directory, 'fixture'); await mkdir(root, { recursive: true });
   for (const path of ['src', 'scripts', 'docs', 'registry', '.agents']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
-  await mkdir(join(root, 'verification/publication'), { recursive: true });
+  await cp(join(sourceRoot, 'verification/publication'), join(root, 'verification/publication'), { recursive: true });
   const coverage = JSON.parse(await readFile(join(sourceRoot, 'verification/publication/coverage.json'), 'utf8'));
   await writeFile(join(root, 'verification/publication/coverage.json'), JSON.stringify(coverage));
   await writeFile(join(root, '.gitignore'), '.local/\nnode_modules/\n');
@@ -27,8 +28,8 @@ export async function driveAssurance(sourceRoot, directory) {
   git(['init', '-q']); git(['config', 'user.name', 'Synthetic assurance']); git(['config', 'user.email', 'fixture@example.invalid']); git(['add', '.']); git(['commit', '-qm', 'Synthetic assurance baseline']);
   git(['commit', '--allow-empty', '-qm', 'Synthetic second revision']); git(['branch', 'acceptance-base']);
   const commands = [];
-  const run = (args, expected, executable = process.execPath) => {
-    const result = spawnSync(executable, args, { cwd: root, encoding: 'utf8', timeout: 60_000, maxBuffer: 16 * 1024 * 1024 });
+  const run = (args, expected, executable = process.execPath, env = process.env) => {
+    const result = spawnSync(executable, args, { cwd: root, env, encoding: 'utf8', timeout: 60_000, maxBuffer: 16 * 1024 * 1024 });
     commands.push({ executable, args, code: result.status, signal: result.signal, stdout: result.stdout, stderr: result.stderr });
     assert.equal(result.error, undefined); assert.equal(result.status, expected, result.stdout + result.stderr);
     return JSON.parse(result.stdout.trim().split('\n').at(-1));
@@ -37,10 +38,10 @@ export async function driveAssurance(sourceRoot, directory) {
     await writeFile(join(root, '.local/mode'), mode);
     return run(npm ? ['run', 'check', '--', '--base', 'acceptance-base'] : ['scripts/check.mjs', '--base', 'acceptance-base'], expected, npm ? 'npm' : process.execPath);
   };
-  const assess = async (result, expected) => {
+  const assess = async (result, expected, env = process.env) => {
     const path = join(root, '.local/request.json');
     await writeFile(path, JSON.stringify({ receiptFile: result.receiptFile, receiptDigest: result.receiptDigest }));
-    return run(['scripts/agent.mjs', 'assurance', '--file', path], expected);
+    return run(['scripts/agent.mjs', 'assurance', '--file', path], expected, process.execPath, env);
   };
   const health = run(['scripts/agent.mjs', 'doctor'], 0);
   assert.equal(health.data.status, 'ready');
@@ -89,7 +90,23 @@ export async function driveAssurance(sourceRoot, directory) {
   await assess({ ...green, receiptDigest: '0'.repeat(64) }, 2);
   const restored = await check('pass'); await assess(restored, 0);
   assert.equal(digest(await readFile(failure.receiptFile)), failure.receiptDigest, 'A later success preserves the failed receipt');
-  const report = { status: 'passed', syntheticFixedPlan: true, fixtureRoot: root, cases: ['npm-ingress', 'fresh-cli', 'source-drift', 'installed-dependency-drift', 'head-drift', 'exit-failure', 'signal', 'mid-run-source', 'mid-run-base', 'missing-suite', 'reordered-suite', 'failed-result', 'different-host', 'different-node', 'corrupt-output', 'wrong-receipt-hash', 'restored-original', 'failure-preserved'], commands, receipts: { green, failure, signalled, drift, moved, restored } };
+  const override = run(['scripts/check.mjs'], 1, process.execPath, { ...process.env, EMMY_TLC_JAR: join(root, '.local/missing-override.jar') });
+  assert.equal(override.status, 'refused');
+  const jar = join(root, '.local/tools', coverage.tool.filename); const originalJar = await readFile(jar);
+  await rm(jar); await writeFile(jar, 'corrupt existing jar');
+  const corrupt = await check('pass', 1); assert.match(corrupt.reason, /differs from pinned/);
+  await rm(jar); await writeFile(join(root, '.local/original-tool.jar'), originalJar);
+  const preload = join(root, '.local/fetch-tools.mjs');
+  await writeFile(preload, `import { readFileSync, writeFileSync } from 'node:fs';\nglobalThis.fetch=async url=>{if(url!==${JSON.stringify(coverage.tool.url)})throw new Error('Unexpected network request');writeFileSync('.local/tools-fetch.json',JSON.stringify({url,synthetic:true}));return new Response(readFileSync('.local/original-tool.jar'));};\n`);
+  const coldEnv = { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --import ${pathToFileURL(preload).href}` };
+  delete coldEnv.EMMY_TLC_JAR;
+  const cold = run(['scripts/check.mjs', '--base', 'acceptance-base'], 0, process.execPath, coldEnv);
+  assert.equal(cold.status, 'passed-local'); await assess(cold, 0, coldEnv);
+  assert.equal(digest(await readFile(jar)), coverage.tool.sha256);
+  assert.equal(JSON.parse(await readFile(join(root, '.local/tools-fetch.json'))).url, coverage.tool.url);
+  const toolsOnly = run(['scripts/verify-publication.mjs', '--prepare-tools'], 0, process.execPath, coldEnv);
+  assert.equal(toolsOnly.status, 'tools-ready'); assert.equal(toolsOnly.sourceReviewGate, false); assert.equal(toolsOnly.baseline, undefined);
+  const report = { status: 'passed', syntheticFixedPlan: true, syntheticToolAcquisition: true, fixtureRoot: root, cases: ['npm-ingress', 'fresh-cli', 'source-drift', 'installed-dependency-drift', 'head-drift', 'exit-failure', 'signal', 'mid-run-source', 'mid-run-base', 'missing-suite', 'reordered-suite', 'failed-result', 'different-host', 'different-node', 'corrupt-output', 'wrong-receipt-hash', 'restored-original', 'failure-preserved', 'missing-tool-override', 'corrupt-existing-tool', 'cold-tool-cache', 'tools-ready-is-not-model-pass'], commands, receipts: { green, failure, signalled, drift, moved, restored, cold } };
   await writeFile(join(directory, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
   return report;
 }

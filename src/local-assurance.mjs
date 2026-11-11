@@ -86,6 +86,18 @@ async function formalTools(root) {
   return { java, tlc: { path: jarPath, ...jar } };
 }
 
+async function prepareFormalTools(root, directory) {
+  if (process.env.EMMY_TLC_JAR) return;
+  const coverage = JSON.parse(await readFile(join(root, 'verification/publication/coverage.json'), 'utf8'));
+  try { await lstat(join(root, '.local/tools', coverage.tool.filename)); return; }
+  catch (error) { if (error.code !== 'ENOENT') throw error; }
+  const out = openSync(join(directory, 'tools.stdout'), 'wx'); const err = openSync(join(directory, 'tools.stderr'), 'wx');
+  let result;
+  try { result = spawnSync(process.execPath, ['scripts/verify-publication.mjs', '--prepare-tools'], { cwd: root, stdio: ['ignore', out, err], timeout: 90_000 }); }
+  finally { closeSync(out); closeSync(err); }
+  need(result.status === 0 && result.signal === null && !result.error, 'Existing pinned TLC preparation failed; read retained tools output');
+}
+
 export async function observeAssurance(root, baseRef = 'HEAD') {
   root = await realpath(root);
   need(await realpath(git(root, ['rev-parse', '--show-toplevel'])) === root, 'Assurance root must be the repository root');
@@ -120,6 +132,7 @@ export async function runAssurance(root, { baseRef = 'HEAD' } = {}) {
   await mkdir(directory, { recursive: true });
   const events = []; const startedAt = new Date().toISOString();
   try {
+    await prepareFormalTools(root, directory);
     const initial = await observeAssurance(root, baseRef);
     await writeFile(join(directory, 'initial.json'), `${canonical(initial)}\n`, { flag: 'wx' });
     let state = beginAssurance(initial.contextDigest);

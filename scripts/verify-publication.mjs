@@ -97,41 +97,48 @@ function passed(run) {
 }
 
 try {
-  assert.equal(process.argv.length, 2, 'Use npm run verify:model without arguments');
+  const prepareOnly = process.argv.length === 3 && process.argv[2] === '--prepare-tools';
+  assert.ok(process.argv.length === 2 || prepareOnly, 'Use npm run verify:model or --prepare-tools');
   const coverage = JSON.parse(await readFile(join(root, 'verification/publication/coverage.json'), 'utf8'));
-  assert.match(coverage.sourceCommit, /^[a-f0-9]{40}$/);
-  for (const [path, expected] of Object.entries(coverage.sourceFiles)) {
-    assert.equal(sha256(await readFile(join(root, path))), expected, `${path} changed. Review the source diff and model mapping before moving the publication coverage record.`);
-    const bytes = execFileSync('git', ['show', `${coverage.sourceCommit}:${path}`], { cwd: root });
-    assert.equal(sha256(bytes), expected, `${path} does not describe the reviewed source commit`);
+  if (prepareOnly) {
+    report.sourceReviewGate = false;
+    report.tool = { ...coverage.tool, java: javaBinary(), jar: await jarFile(coverage.tool) };
+    report.status = 'tools-ready';
+  } else {
+    assert.match(coverage.sourceCommit, /^[a-f0-9]{40}$/);
+    for (const [path, expected] of Object.entries(coverage.sourceFiles)) {
+      assert.equal(sha256(await readFile(join(root, path))), expected, `${path} changed. Review the source diff and model mapping before moving the publication coverage record.`);
+      const bytes = execFileSync('git', ['show', `${coverage.sourceCommit}:${path}`], { cwd: root });
+      assert.equal(sha256(bytes), expected, `${path} does not describe the reviewed source commit`);
+    }
+    for (const [path, expected] of Object.entries(coverage.verificationFiles)) {
+      assert.equal(sha256(await readFile(join(root, path))), expected, `${path} changed. Review the model, bridge and skill before refreshing verification digests.`);
+    }
+    report.coverage = coverage;
+    const java = javaBinary();
+    const jar = await jarFile(coverage.tool);
+    report.tool = { ...coverage.tool, jar, java };
+    report.baseline = [];
+    for (const config of ['same-hash', 'distinct-import']) report.baseline.push(passed(await tlc(java, jar, config, 'baseline')));
+    report.modelMutants = [];
+    for (const [config, invariant, action] of [
+      ['direct-canonical-mutant', 'PublishedComplete', 'CreatePending'],
+      ['reversed-import-mutant', 'ImportPrefixSafe', 'Rename'],
+    ]) {
+      const run = await tlc(java, jar, config, 'mutant');
+      assert.equal(run.signal, null);
+      assert.notEqual(run.code, 0, `Model mutant survived ${config}`);
+      assert.match(run.stdout, new RegExp(`Invariant ${invariant} is violated`));
+      assert.match(run.stdout, /The behavior up to this point is/);
+      assert.match(run.stdout, new RegExp(`State \\d+: <${action}`));
+      report.modelMutants.push({ config, invariant, action, status: 'intended-counterexample', trace: run.log });
+    }
+    report.filesystem = await drivePublication(root, join(evidenceDir, 'filesystem'));
+    report.restored = [];
+    for (const config of ['same-hash', 'distinct-import']) report.restored.push(passed(await tlc(java, jar, config, 'restored')));
+    assert.deepEqual(report.restored, report.baseline, 'The unchanged model must reproduce the original complete state graph after mutants');
+    report.status = 'passed';
   }
-  for (const [path, expected] of Object.entries(coverage.verificationFiles)) {
-    assert.equal(sha256(await readFile(join(root, path))), expected, `${path} changed. Review the model, bridge and skill before refreshing verification digests.`);
-  }
-  report.coverage = coverage;
-  const java = javaBinary();
-  const jar = await jarFile(coverage.tool);
-  report.tool = { ...coverage.tool, jar, java };
-  report.baseline = [];
-  for (const config of ['same-hash', 'distinct-import']) report.baseline.push(passed(await tlc(java, jar, config, 'baseline')));
-  report.modelMutants = [];
-  for (const [config, invariant, action] of [
-    ['direct-canonical-mutant', 'PublishedComplete', 'CreatePending'],
-    ['reversed-import-mutant', 'ImportPrefixSafe', 'Rename'],
-  ]) {
-    const run = await tlc(java, jar, config, 'mutant');
-    assert.equal(run.signal, null);
-    assert.notEqual(run.code, 0, `Model mutant survived ${config}`);
-    assert.match(run.stdout, new RegExp(`Invariant ${invariant} is violated`));
-    assert.match(run.stdout, /The behavior up to this point is/);
-    assert.match(run.stdout, new RegExp(`State \\d+: <${action}`));
-    report.modelMutants.push({ config, invariant, action, status: 'intended-counterexample', trace: run.log });
-  }
-  report.filesystem = await drivePublication(root, join(evidenceDir, 'filesystem'));
-  report.restored = [];
-  for (const config of ['same-hash', 'distinct-import']) report.restored.push(passed(await tlc(java, jar, config, 'restored')));
-  assert.deepEqual(report.restored, report.baseline, 'The unchanged model must reproduce the original complete state graph after mutants');
-  report.status = 'passed';
 } catch (error) {
   report.status = 'failed';
   report.error = { message: error.message, stack: error.stack };

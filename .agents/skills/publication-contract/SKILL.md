@@ -13,6 +13,8 @@ npm run verify:model
 
 The command runs pinned TLC 2.19 from the official TLA+ tools 1.7.4 release. It verifies the jar's SHA-256 before executing it. A missing jar downloads into ignored `.local/tools/`. Set `EMMY_JAVA_BIN` or `EMMY_TLC_JAR` to use existing tools. An override still requires Java 21 and the pinned jar digest. No package, account, or API key is required.
 
+The aggregate assurance runner may call `node scripts/verify-publication.mjs --prepare-tools` before its source/environment binding. That mode reuses only the existing Java selection and pinned jar acquisition. It reports `tools-ready` with `sourceReviewGate: false`, runs no model or filesystem witness and cannot satisfy publication verification. Normal `npm run verify:model` retains every reviewed-source, model and real-source mutation gate.
+
 Expect JSON with `status: "passed"`, two baseline state graphs, two intended model counterexamples, and two actual copied-source filesystem mutants. The command reruns both unchanged state graphs and filesystem baselines after the mutants. Logs, traces, copied source, actual record bytes, witness JSON and failures remain under the printed `.local/publication-model/run-*/report.json` path. A nonzero result requires reading that report and its named logs.
 
 `npm run verify:formal` adds the existing actual-source finite predicates and merge-policy enumeration. Those checks remain complementary. `npm run check` also drives the real CLI and checks generated references and merge tests.
