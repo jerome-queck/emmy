@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { cp, mkdir, readFile, readdir, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { digest } from '../src/records.mjs';
 import { bindCalendar, calendarChange, calendarFields, calendarFixture, calendarIdentity, calendarSaved } from './calendar-fixtures.mjs';
 
@@ -50,7 +49,7 @@ export async function driveCalendar({ home, run, scenario, report }) {
   await mkdir(records, { recursive: true }); await writeFile(join(records, 'retained.bin'), 'Synthetic register bytes remain unchanged.\n');
   const sentinel = join(directory, 'executor-invoked'); const loaded = join(directory, 'guard-loaded'); const guard = join(directory, 'guards.mjs');
   await writeFile(guard, `import { appendFileSync } from 'node:fs';\nimport childProcess from 'node:child_process';\nimport net from 'node:net';\nimport { syncBuiltinESMExports } from 'node:module';\nappendFileSync(${JSON.stringify(loaded)}, String(process.pid) + '\\n');\nconst blocked = () => { appendFileSync(${JSON.stringify(sentinel)}, 'attempt\\n'); throw new Error('Calendar fixture forbids executor and network calls'); };\nfor (const name of ['spawn', 'spawnSync', 'exec', 'execSync', 'execFile', 'execFileSync', 'fork']) childProcess[name] = blocked;\nnet.Socket.prototype.connect = blocked; globalThis.fetch = blocked; syncBuiltinESMExports();\n`);
-  const env = { NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --import=${pathToFileURL(guard).href}` };
+  const env = { NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --import=${guard}` };
   const originalRegister = await readFile(join(records, 'retained.bin')); const before = await readdir(records);
   report.calendar = { provenance: 'synthetic', controls: [], retainedFiles: [{ path: 'private-home/records/retained.bin', bytes: originalRegister.length, sha256: digest(originalRegister) }], registerDigest: digest(originalRegister), limitations: ['Retained-shape controls are synthetic analogues of retained notes evidence.', 'Handoff-derived controls establish local semantics only. They invent no native ledger or execution.'] };
   const retain = async path => { const bytes = await readFile(path); report.calendar.retainedFiles.push({ path: path.slice(directory.length + 1), bytes: bytes.length, sha256: digest(bytes) }); };
