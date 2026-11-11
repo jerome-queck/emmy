@@ -1,8 +1,8 @@
 {
-  "sourceCommit": "7053425c37eb05833d9634f452c388f33c1b2163",
+  "sourceCommit": "fc7664044b3ab870ee4b8e502914922d5a7a1a09",
   "files": {
-    "scripts/github-auto-merge.mjs": "3c89e3044e08fd70841e481da1943a8efa2dea615a3a98c27cbe7d020e7bce9d",
-    "verification/merge-policy.mjs": "9c3592fa9bbc84fc37f31e89c16734f50c352f9c2f537a5ab1d3c9b01b720e86"
+    "scripts/github-auto-merge.mjs": "ac133794197dbae3983c1aabbac5419a8395edcdee290df7825b2a93d01203db",
+    "verification/merge-policy.mjs": "e909f86c4d44b482c255e61f841e6361347edf409e8f8d38e440096cf6615bac"
   },
   "mapping": [
     {
@@ -41,5 +41,5 @@
     "Publisher, protection presence, required contexts and metadata normalization have focused tests beyond the finite enumeration.",
     "The verifier does not execute a GitHub merge or prove actual reviewer independence or provider race freedom."
   ],
-  "reviewBasis": "Focused R1/R2 review read all changed ingress, reducer, original intent, provider text readback and actual graph facts. Promise intentionally adds selected PR payload equality and one explicitly scoped confirmed-absence retry. Original unknown and denied history remains. Focused CLI, pure cases, copied-source mutants and restored graph pass. No full v2 aggregate claimed; combined isolated preview receives the next full exact gate and independent review. Retained authorized source port. Every covered byte was compared against the original witness and the new reachable anchor. The only mapped byte change removes an inherited trailing blank line in briefing acquisition. Mappings, bounds and assumptions are unchanged. New head requires fresh review."
+  "reviewBasis": "Coordinator read 493ec6e..fc76640 covered source, adapter test and workflow diffs. Repository identity is human-confirmed; merge commits preserve formal source ancestry. Eligibility fields and finite domains are unchanged. Old checker rejected intended hash drift; intended source mutants must pass before release."
 }
