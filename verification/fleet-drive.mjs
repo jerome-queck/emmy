@@ -55,7 +55,11 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
     assert.deepEqual((await publishRecord(legacyHome, payload, files)).record, original);
   }
   const legacyHead = legacyFixture.records.filter(row => row.type === 'fleet-step').at(-1);
-  const legacyStored = (await readStore(legacyHome)).records; assert.deepEqual(replayReview(legacyFixture.review, legacyStored), legacyFixture.expected);
+  const legacyStored = (await readStore(legacyHome)).records;
+  const { cloud: retiredSummary, ...expectedReview } = legacyFixture.expected;
+  assert.deepEqual(retiredSummary, []);
+  assert.deepEqual(legacyStored.find(record => record.hash === legacyFixture.review.hash), legacyFixture.review);
+  assert.deepEqual(replayReview(legacyFixture.review, legacyStored), expectedReview);
   const legacyStatus = await run(['fleet', '--file', await fixture('legacy-status', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'status' } })], 3, legacyHome); assert.equal(legacyStatus.inventory.find(row => row.expected.id === 'routine').invocationOrigin, 'unknown');
   const legacyEnvelope = { schemaVersion: 1, responsibilityId: definition.id, expectedHead: legacyHead.hash };
   const oldWrite = await run(['fleet', '--file', await fixture('legacy-rejected-assess', { ...legacyEnvelope, action: { operation: 'assess', captures: [] } })], 2, legacyHome); assert.match(oldWrite.error, /replay-only/);

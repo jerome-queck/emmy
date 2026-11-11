@@ -168,19 +168,9 @@ The existing dispatch command resolves explicit destinations from a caller-retai
 
 The finite dispatch domain has 160 phase products and 79 targeted cases, each with record-order permutation. Nine added source mutants exercise the new boundaries. The real CLI drive uses two synthetic Git roots, remote reports and native request data without native creation. Source evidence for non-Git or origin-less roots stays unavailable. Optional ChatGPT conversational membership remains unsupported. Actual remote creation, effective access, provider execution, saved-note adoption and ordinary human-turn invocation remain separate native acceptance.
 
-## Cooperative cloud work
-
-`cloud.mjs` owns one cooperative queue per private home. A `cloud-request` pins its responsibility definition, stable existing effect identity and bounded configuration. Immutable `cloud-step` successors retain the complete queue checkpoint, terminal outputs and pending escalation. Existing journal readers, reference validation, reconciliation input manifests, replay, doctor and archives consume these records. Imported reports cannot create executable cloud records.
-
-Each turn claims its head under ignored `cloud-turns/`, computes at most one built-in pure chunk and publishes one successor. This keeps queue capacity and one logical active job serialized across cooperative callers. The runner retains old claim directories. An interrupted turn requires exact-token comparable-kernel-incarnation verified-absence recovery, which publishes a deterministic successor. It never deletes processes or claims. Restore uses the existing epoch and fresh evidence gates. Backup refuses unresolved current claims.
-
-`cloudTransition`, `capacityDecision` and `cloudState` form the pure state-machine boundary. Live clock, telemetry, authority, file bytes, turn acquisition and publication surround it. Bounded finite cases check those production functions; actual CLI controls check process restart, monitoring, abandonment and archive boundaries. The built-in SHA-256 workload commits its terminal effect with its final checkpoint. Pure uncommitted computation can repeat after interruption. This does not establish arbitrary external exactly-once effects or provider-wide admission.
-
-`process-incarnation.mjs` owns bounded Linux kernel witnesses for both acceptance freshness and turn ownership. It has no hostname/PID fallback. `cloud-migration.mjs` validates declared legacy originals and establishes a separate observed baseline without modifying the journal or original checkpoint. Later resume must demonstrate a different observed incarnation. Unsupported native platforms remain unknown. These sidecars are not canonical journal records or authority grants.
-
 ## Fleet and parent-owned reads
 
-The selected design adds `fleet-root` and `fleet-step` snapshots to the existing responsibility journal. A typed observation/disposition extension was considered. The complete reducer was chosen because bounded parent read tickets, uncertainty, checkpoints and notification attempts need one consistent transition owner. It leaves the pure SHA cloud executor unchanged and adds no mutable status database.
+The selected design adds `fleet-root` and `fleet-step` snapshots to the existing responsibility journal. A typed observation/disposition extension was considered. The complete reducer was chosen because bounded parent read tickets, uncertainty, checkpoints and notification attempts need one consistent transition owner. It adds no mutable status database or native executor.
 
 `fleet-state.mjs` owns classification, inventory projection, alert episodes and parent read transitions. `fleet-schema.mjs` validates closed data shapes. `fleet.mjs` checks current responsibility authority, retains real receipt bytes and publishes the deterministic successor. `records.mjs` validates root/parent/definition/epoch edges and recomputes every snapshot from the retained action. Reviews pin fleet inputs and replay the same source/time. Doctor includes source gaps and unfinished intents. Archives retain canonical snapshots and evidence.
 

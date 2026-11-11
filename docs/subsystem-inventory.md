@@ -8,7 +8,6 @@ Discovery covers all files in .github, .codex, .agents, procedures, registry, ve
 | --- | --- | --- | --- |
 | responsibility | responsibilities.mjs reconcileState; records.mjs journal and work.mjs review | stateful; finite predicates | Reachable repair and restore lifecycle and dedicated contract missing. |
 | dispatch | dispatch.mjs dispatchDecision; records.mjs immutable lineage | stateful advice; finite assessment | Native authority, execution and complete history remain external. |
-| cloud | cloud.mjs cloudTransition; process-incarnation.mjs ownerDecision | stateful; finite predicates | Dedicated lifecycle graph and formal contract missing. |
 | fleet | fleet-state.mjs fleetTransition; fleet.mjs retained operations | stateful; finite predicates | Dedicated lifecycle graph and formal contract missing. |
 | morning | morning.mjs morningTransition; morning-collection.mjs acquisition | stateful; finite predicates | Collection-to-delivery lifecycle contract missing. |
 | briefing | briefing-plan.mjs and daily-briefing.mjs artifact preparation; immutable-slot.mjs publication | stateful slots and pure assessment; partial hand-mapped model | Dedicated briefing lifecycle and immutable-slot formal skill missing. |
@@ -25,8 +24,6 @@ Discovery covers all files in .github, .codex, .agents, procedures, registry, ve
 | verification-tooling | scripts/verify-formal.mjs and scripts/verify-behavior.mjs execute maintained properties and journeys | verification inputs and tests; source-backed scope varies by area | Individual model assumptions and test adequacy require area-by-area review. |
 | responsibility-closure | responsibilities.mjs reconcileState; work.mjs repairStatus | stateful; bounded reachable history | Multiple failure generations, multi-criterion findings, restoration, arbitrary inputs and native or I/O effects remain outside this graph. |
 | restoration-suspension | work.mjs restoredState and currentObservations; responsibilities.mjs reconcileState | stateful; bounded reachable history | Native remote mode, actual publication, authentication, arbitrary arrivals and unbounded histories are excluded. |
-| cooperative-cloud | cloud.mjs cloudTransition; synchronous logical-job reducer | bounded actual-source reachable reducer | Async claim/publication, Linux incarnation, migration and provider effects remain unproved. |
-| incarnation-ownership | process-incarnation.mjs captureProcessIncarnation and inspectOwnerIncarnation | bounded actual-source reachable asynchronous I/O histories | Linux kernel, actual acquisition, claims, migration, sidecars, resume, and provider effects remain unproved. |
 | fleet-health-history | fleet-state.mjs fleetInitial, fleetTransition and captureCondition | bounded actual-source reachable reducer histories | Unmodeled input histories, provider truth, sign-in, journal publication and delivery. |
 | morning-send-history | fleetTransition and morningTransition initial send | bounded actual-source reachable reducer histories | Source truth, asynchronous publication, provider effects, arbitrary histories and actual delivery. |
 | calendar-attempt-history | assessCalendarRegister declared Task attempt reconciliation | bounded actual-source reachable assessment histories | Native source truth, writer, handoff retry, arbitrary histories and provider state. |

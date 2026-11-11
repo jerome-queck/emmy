@@ -1,3 +1,4 @@
+import { tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
@@ -8,7 +9,7 @@ import * as original from '../../src/fleet-state.mjs';
 import { graph, spec, cfg, root, rules } from './graph.mjs';
 const digest = value => createHash('sha256').update(value).digest('hex');
 const work = process.cwd(); const evidence = join(work, '.local/verification/fleet-health', randomUUID());
-const scratch = await mkdtemp('/tmp/emmy-fleet-health-'); await mkdir(evidence, {recursive:true});
+const scratch = await mkdtemp(join(tmpdir(), 'emmy-fleet-health-')); await mkdir(evidence, {recursive:true});
 const jar = join(work, '.local/tools/tla2tools-1.7.4.jar');
 const report = {status:'running', scratch, runs:[]};
 const mutations = [

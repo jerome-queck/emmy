@@ -1,6 +1,6 @@
 # Local check assurance
 
-`npm run check` runs thirty ordered groups through one local admission owner. It retains original child output and an exact receipt under ignored `.local/verification/local-assurance/`. The plan retains the twenty-eight producer and subsystem groups and adds reporting tests and formal checks.
+`npm run check` runs twenty-seven ordered groups through one local admission owner. It retains original child output and an exact receipt under ignored `.local/verification/local-assurance/`.
 
 Use Node 24 or later, locked verification dependencies and existing Java 21. If the default TLC cache is missing, the gate runs the existing publication verifier's hash-pinned acquisition before binding the checked run. It installs no new toolchain. Corrupt existing jars and missing explicit jar overrides refuse. Existing `EMMY_JAVA_BIN` and `EMMY_TLC_JAR` selections remain subject to version/hash checks. Tool preparation alone reports `tools-ready` with no source-review/model pass.
 

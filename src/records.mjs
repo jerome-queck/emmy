@@ -1,5 +1,4 @@
 import { morningEvidence } from './morning.mjs';
-import { parseCloudRecord } from './cloud-schema.mjs';
 import { parseFleetRecord } from './fleet-schema.mjs';
 import { fleetHistory, fleetInitial, fleetTransition } from './fleet-state.mjs';
 import { effectKey } from './work.mjs';
@@ -338,7 +337,7 @@ export function parseImport(input) {
   });
 }
 
-const recordTypes = ['definition', 'observation', 'repair', 'review', 'feature-review', 'probe', 'epoch', 'cloud-request', 'cloud-step', 'fleet-root', 'fleet-step'];
+const recordTypes = ['definition', 'observation', 'repair', 'review', 'feature-review', 'probe', 'epoch', 'fleet-root', 'fleet-step'];
 export const publicationBoundaries = ['record:created', 'record:files-written', 'record:published', 'archive:created', 'archive:files-written', 'archive:published', 'restore:created', 'restore:files-written', 'restore:published'];
 
 export async function publicationBoundary(boundary) {
@@ -349,8 +348,7 @@ export async function publicationBoundary(boundary) {
 }
 
 export function recordPayload(payload, extraFiles = {}) {
-  requireValue(recordTypes.includes(payload.type), 'Unknown record type');
-  if (payload.type.startsWith('cloud-')) parseCloudRecord(payload);
+  requireValue(recordTypes.includes(payload.type), 'Unsupported record type; retired histories require their exact retained installation');
   if (payload.type.startsWith('fleet-')) parseFleetRecord(payload);
   requireValue(!Object.hasOwn(payload, 'hash') && !Object.hasOwn(payload, 'fileDigests'), 'Payload uses reserved record metadata');
   const fileDigests = Object.fromEntries(Object.entries(extraFiles).map(([name, bytes]) => {
@@ -387,8 +385,8 @@ export async function readRecord(home, reference) {
   requireValue((await lstat(directory)).isDirectory() && !(await lstat(directory)).isSymbolicLink(), 'Record is not an ordinary directory');
   const record = JSON.parse(await ordinaryFile(join(directory, 'record.json')));
   const { hash: storedHash, ...body } = record;
-  requireValue(storedHash === reference && digest(body) === reference && recordTypes.includes(record.type), 'Immutable record digest mismatch');
-  if (record.type.startsWith('cloud-')) parseCloudRecord(record);
+  requireValue(storedHash === reference && digest(body) === reference, 'Immutable record digest mismatch');
+  requireValue(recordTypes.includes(record.type), 'Unsupported record type; retired histories require their exact retained installation');
   if (record.type.startsWith('fleet-')) parseFleetRecord(record);
   const files = record.fileDigests ?? {};
   requireValue(canonical((await readdir(directory)).sort()) === canonical(['record.json', ...Object.keys(files)].sort()), 'Immutable record has unexpected or missing files');
@@ -418,8 +416,6 @@ export function references(record) {
   if (record.type === 'repair') return [...record.failureRefs, ...record.recheckRefs];
   if (record.type === 'review') return [record.definitionHash, ...record.inputHashes];
   if (record.type === 'epoch') return record.priorHashes;
-  if (record.type === 'cloud-request') return [record.definitionHash];
-  if (record.type === 'cloud-step') return [...new Set([record.definitionHash, record.rootHash, record.parentHash, ...(record.state.epochHash ? [record.state.epochHash] : [])])];
   if (record.type === 'fleet-root') return [record.definitionHash, ...(record.epochHash ? [record.epochHash] : [])];
   if (record.type === 'fleet-step') return [...new Set([record.definitionHash, record.rootHash, record.parentHash, ...(record.epochHash ? [record.epochHash] : [])])];
   return [];
@@ -448,25 +444,6 @@ export function validateReferences(records) {
     requireValue(parent.state?.semanticsVersion === 2 || root.action.semanticsVersion === 2 || record.state.semanticsVersion !== 2 || record.action.operation === 'upgrade', 'Fleet semantics require explicit upgrade');
     const transition = fleetTransition(parent.type === 'fleet-root' ? fleetInitial(root) : parent.state, record.action, root, record.at, record.epochHash, parent.state?.archived ? fleetHistory(known, parent) : null);
     requireValue(canonical(transition.state) === canonical(record.state) && transition.outcome === record.outcome, 'Fleet state differs from deterministic retained transition');
-  }
-  for (const record of records.filter(record => record.type.startsWith('cloud-'))) {
-    parseCloudRecord(record);
-    const definition = known.get(record.definitionHash);
-    requireValue(definition.type === 'definition' && definition.id === record.responsibilityId, 'Cloud definition reference crosses responsibility');
-    if (record.type === 'cloud-request') continue;
-    const root = known.get(record.rootHash); const parent = known.get(record.parentHash);
-    requireValue(root.type === 'cloud-request' && root.responsibilityId === record.responsibilityId && parent.responsibilityId === record.responsibilityId && (parent.hash === root.hash || parent.type === 'cloud-step' && parent.rootHash === root.hash), 'Cloud lineage crosses controller scope');
-    requireValue(record.seq === (parent.seq ?? 0) + 1, 'Cloud sequence is not a direct successor');
-    requireValue(record.state.jobs.length <= root.config.maxJobs && record.state.jobs.filter(job => !['finished', 'dead'].includes(job.status)).length <= root.config.maxPending, 'Cloud queue exceeds retained bounds');
-    requireValue(record.state.jobs.filter(job => !['finished', 'dead'].includes(job.status)).reduce((sum, job) => sum + Buffer.byteLength(job.input.payload), 0) <= root.config.maxPendingBytes, 'Cloud pending bytes exceed retained bounds');
-    for (const job of record.state.jobs) {
-      requireValue(Buffer.byteLength(job.input.payload) <= root.config.maxPayloadBytes && job.key === digest({ effectKey: root.effectKey, jobId: job.input.id }) && job.inputDigest === digest(job.input), 'Cloud job identity or payload differs');
-      const prior = parent.state?.jobs.find(item => item.key === job.key);
-      if (prior) requireValue(prior.inputDigest === job.inputDigest && job.completedUnits >= prior.completedUnits && job.failures >= prior.failures && (!['finished', 'dead'].includes(prior.status) || canonical(job) === canonical(prior)), 'Cloud checkpoint loses committed state');
-    }
-    requireValue((parent.state?.jobs ?? []).every(prior => record.state.jobs.some(job => job.key === prior.key)), 'Cloud transition loses retained jobs');
-    requireValue((parent.state?.escalations ?? []).every(prior => record.state.escalations.some(entry => canonical(entry) === canonical(prior))), 'Cloud transition loses pending escalation');
-    if (record.state.epochHash) requireValue(known.get(record.state.epochHash).type === 'epoch', 'Cloud epoch reference is not an epoch');
   }
   for (const repair of records.filter(record => record.type === 'repair')) {
     requireValue(records.some(record => record.type === 'review' && record.responsibilityId === repair.responsibilityId && record.findings.some(finding => finding.id === repair.findingId)), 'Repair names an unknown retained finding');
@@ -603,11 +580,6 @@ export async function backupHome(home, destination) {
     const planned = recordPayload(turn.payload, Object.fromEntries(Object.entries(turn.files).map(([key, bytes]) => [key, Buffer.from(bytes, 'base64')])));
     requireValue(snapshot.records.some(record => record.hash === planned.hash), 'Backup refuses an unresolved fleet journal turn. Repeat its exact retained input first.');
   }
-  const cloudRoots = snapshot.records.filter(record => record.type === 'cloud-request');
-  const cloudParents = new Set(snapshot.records.filter(record => record.type === 'cloud-step').map(record => record.parentHash));
-  const cloudHeads = snapshot.records.filter(record => record.type.startsWith('cloud-') && !cloudParents.has(record.hash));
-  const claimKeys = cloudRoots.length ? cloudHeads.map(record => record.hash) : ['configure'];
-  for (const key of claimKeys) requireValue(!await exists(join(home, 'cloud-turns', key)), 'Backup refuses an unresolved cloud turn claim. Recover the exact owned operation first.');
   const files = await selectedFiles(home);
   const selected = files.map(file => ({ path: file.path, sha256: digest(file.bytes) }));
   if (await exists(destination)) {

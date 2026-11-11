@@ -50,14 +50,6 @@ The reviewed source commit is recorded in `verification/publication/coverage.jso
 
 Dispatch metadata adds pure validation and immutable lineage guards. The cross-project extension adds optional remote authority, creator and destination skill validation plus a separate parsed project-discovery input. All remain pure boundaries with no publication await or graph-reference change. It adds no publication await or reference edge. The import model starts after full bundle preparation and reference validation. It includes one dependency edge, not every record-type validation rule. Writer 2 has no dependencies. The observer's reads are deliberately not one atomic `readStore` action. Symbolic hash order and conservative list subsets overapproximate the configured callers.
 
-## Cooperative cloud boundary
-
-Cloud records add definition, controller-root, parent and optional epoch references. `cloud` validates the complete proposed record and its already-retained dependencies before calling `publishRecord`. Its schema guards are synchronous. The publisher, per-file readback, rename, pending-only cleanup and import ordering retain their mapped awaits.
-
-The unchanged TLC model covers its configured one-edge importer and canonical byte-publication interleavings. It does not enumerate cloud lineage, controller claims, telemetry, retry policy, cooperative admission or cloud archive/recovery. The imported schema digest binds the copied-source filesystem driver dependency; it does not turn parser validation into a TLC theorem. The separate finite cloud property and real CLI driver cover their named domains.
-
-Backup checks for unresolved current/configuration claims before selecting archive files. That preflight refusal does not atomically exclude concurrent claim acquisition. Completed claims are excluded from the archive; restored executable state still requires fresh responsibility epoch evidence and explicit controller resume. Neither this model nor those controls prove external exactly-once effects or provider restart survival.
-
 ## Fleet boundary
 
 Fleet adds definition/root/parent/epoch reference edges and synchronous replay validation through `fleet-schema.mjs`, `fleet-state.mjs` and `work.mjs`. The copied-source filesystem driver includes this dependency closure. Canonical publisher, rename, per-file readback, pending cleanup and importer awaits retain their mapped operations. The same one-edge import and canonical byte-publication model remains unchanged.

@@ -1,3 +1,4 @@
+import { tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
@@ -9,7 +10,7 @@ import { graph, spec, cfg, step } from './graph.mjs';
 
 const hash = value => createHash('sha256').update(value).digest('hex');
 const root = process.cwd(), output = join(root, '.local/verification/automation-lineage', randomUUID());
-const scratch = await mkdtemp('/tmp/emmy-lineage-');
+const scratch = await mkdtemp(join(tmpdir(), 'emmy-lineage-'));
 await mkdir(output, { recursive: true });
 const report = { status: 'running', scratch, runs: [] };
 const mutants = [

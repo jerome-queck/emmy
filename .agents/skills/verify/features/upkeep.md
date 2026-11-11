@@ -87,3 +87,5 @@ Generic ingestion controls reject rehashed invalid timing/telemetry and nontermi
 The [automation lineage contract](../../automation-lineage/SKILL.md) checks selected supplied run histories through the actual synchronous producer. The existing `automation-foundation` CLI drive covers the separate plan, report and exact-read adapter boundary; it does not establish external history completeness or publication.
 
 The reporting CLI and its bounded publication verification run in the full aggregate. Generic automation producers use `src/automation-producer.mjs`; private reporting uses `src/automation-reporting.mjs`. Hosted CI and independent review remain required.
+
+The default runtime refuses retired cooperative queue records before archive publication or restore. Exact retained installations provide explicit legacy recovery on copies. Current responsibility and native task/effect history remains readable, including historical workload objectives. No workload is executed by history inspection.

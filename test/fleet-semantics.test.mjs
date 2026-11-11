@@ -60,11 +60,13 @@ test('current inventory and captures require explicit occurrence and origin decl
   assert.throws(() => step(green(), { operation: 'assess', captures: [capture('routine', 'healthy', fleetTime, { invocation: undefined })] }), /invocation origin/);
 });
 
-test('frozen legacy responsibility review replays every exact projected field', () => {
+test('frozen legacy review preserves original bytes and replays every retained field', () => {
   const fixture = JSON.parse(readFileSync(new URL('./fixtures/fleet-v1-review.json', import.meta.url)));
   assert.equal(digest(fixture), '99cac0ced49dc4b73ac0ca16e7fc4ab1c2641ca0110f00ef71547a8a24587352');
   validateReferences(fixture.records);
-  assert.deepEqual(replayReview(fixture.review, fixture.records), fixture.expected);
+  const { cloud: retiredSummary, ...expectedReview } = fixture.expected;
+  assert.deepEqual(retiredSummary, []);
+  assert.deepEqual(replayReview(fixture.review, fixture.records), expectedReview);
 });
 
 test('policy eligibility remains actionable after every old alert is acknowledged', () => {
