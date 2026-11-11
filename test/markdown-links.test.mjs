@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -147,10 +147,32 @@ test('CLI refuses symlink targets and symlinked source directories before readin
 
 test('CLI rejects missing option values and unknown options', () => {
   fixture({ 'README.md': '# Source\n' }, root => {
-    for (const args of [['--root'], ['--unknown'], ['--root', root, '--root', root]]) {
+    for (const args of [['--root'], ['--unknown'], ['--root', root, '--root', root], ['--tree'], ['--tree', 'HEAD'], ['--tree', '0'.repeat(40), '--tree', '0'.repeat(40)]]) {
       const result = check(root, args);
       assert.equal(result.status, 2, result.stderr);
       assert.match(result.stderr, /Usage:/);
     }
+  });
+});
+
+test('explicit immutable inventory checks working bytes including new files while preserving the real index', () => {
+  fixture({ 'README.md': '[new](new.md#new)\n' }, root => {
+    const directory = mkdtempSync(join(tmpdir(), 'emmy-link-index-'));
+    try {
+      const env = { ...process.env, GIT_INDEX_FILE: join(directory, 'index') };
+      const git = (args, selectedEnv = env) => execFileSync('git', args, { cwd: root, env: selectedEnv, encoding: 'utf8' }).trim();
+      const original = git(['write-tree'], process.env);
+      const index = readFileSync(join(root, '.git/index'));
+      git(['read-tree', original]);
+      writeFileSync(join(root, 'new.md'), '# New\n');
+      assert.equal(check(root).status, 1);
+      git(['add', '-A']); const tree = git(['write-tree']);
+      assert.equal(check(root, ['--root', root, '--tree', tree]).status, 0);
+      writeFileSync(join(root, 'new.md'), '# Changed heading\n');
+      const changed = check(root, ['--root', root, '--tree', tree]);
+      assert.equal(changed.status, 1); assert.match(changed.stderr, /missing heading/);
+      assert.deepEqual(readFileSync(join(root, '.git/index')), index);
+      assert.equal(check(root, ['--root', root, '--tree', '0'.repeat(40)]).status, 2);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
   });
 });

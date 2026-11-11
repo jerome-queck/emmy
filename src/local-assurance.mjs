@@ -1,6 +1,6 @@
 import { spawnSync, execFileSync } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
-import { lstat, mkdir, readFile, readdir, readlink, realpath, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readFile, readdir, readlink, realpath, rm, writeFile } from 'node:fs/promises';
 import { hostname } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -13,6 +13,18 @@ const need = (condition, message) => { if (!condition) throw new Error(message);
 const sha = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const git = (root, args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const commit = (root, ref) => git(root, ['rev-parse', '--verify', '--end-of-options', `${ref}^{commit}`]);
+
+async function workingTree(root) {
+  const directory = join(root, '.local/local-assurance-index', randomUUID());
+  await mkdir(directory, { recursive: true });
+  const options = { cwd: root, env: { ...process.env, GIT_INDEX_FILE: join(directory, 'index') }, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] };
+  try {
+    execFileSync('git', ['read-tree', 'HEAD'], options);
+    execFileSync('git', ['add', '-A', '--', '.'], options);
+    execFileSync('git', ['update-index', '--force-remove', '--', 'node_modules'], options);
+    return execFileSync('git', ['write-tree'], options).trim();
+  } finally { await rm(directory, { recursive: true, force: true }); }
+}
 
 async function fileIdentity(path) {
   const info = await lstat(path);
@@ -91,7 +103,7 @@ export async function observeAssurance(root, baseRef = 'HEAD') {
     catch (error) { if (error.code !== 'ENOENT') throw error; files.push({ path, type: 'missing' }); }
   }
   const head = commit(root, 'HEAD'); const base = commit(root, baseRef);
-  const context = { schemaVersion: 1, source: { root, head, baseRef, base, mergeBase: git(root, ['merge-base', head, base]), files }, planDigest: assurancePlanDigest, host: { hostname: hostname(), platform: process.platform, arch: process.arch }, node: await toolIdentity(process.execPath, ['--version']), dependencies: await dependencyIdentity(root), formal: await formalTools(root), environment: Object.fromEntries(['NODE_OPTIONS', 'NODE_PATH', 'TZ', 'LANG', 'LC_ALL', 'EMMY_JAVA_BIN', 'EMMY_TLC_JAR', 'JAVA_HOME', 'JAVA_HOME_21_X64'].map(key => [key, process.env[key] ?? null])) };
+  const context = { schemaVersion: 1, source: { root, head, baseRef, base, mergeBase: git(root, ['merge-base', head, base]), workingTree: await workingTree(root), files }, planDigest: assurancePlanDigest, host: { hostname: hostname(), platform: process.platform, arch: process.arch }, node: await toolIdentity(process.execPath, ['--version']), dependencies: await dependencyIdentity(root), formal: await formalTools(root), environment: Object.fromEntries(['NODE_OPTIONS', 'NODE_PATH', 'TZ', 'LANG', 'LC_ALL', 'EMMY_JAVA_BIN', 'EMMY_TLC_JAR', 'JAVA_HOME', 'JAVA_HOME_21_X64'].map(key => [key, process.env[key] ?? null])) };
   return { context, contextDigest: hash(context) };
 }
 
@@ -121,11 +133,12 @@ export async function runAssurance(root, { baseRef = 'HEAD' } = {}) {
       const stdout = `${suite.id}.stdout`; const stderr = `${suite.id}.stderr`;
       const out = openSync(join(directory, stdout), 'wx'); const err = openSync(join(directory, stderr), 'wx');
       let result;
-      try { result = spawnSync(process.execPath, suite.args, { cwd: root, stdio: ['ignore', out, err], timeout: 1_200_000 }); }
+      const args = suite.args.map(value => value === '@source-tree' ? initial.context.source.workingTree : value);
+      try { result = spawnSync(process.execPath, args, { cwd: root, stdio: ['ignore', out, err], timeout: 1_200_000 }); }
       finally { closeSync(out); closeSync(err); }
       const after = await observeAssurance(root, baseRef);
       await writeFile(join(directory, `${suite.id}-after.json`), `${canonical(after)}\n`, { flag: 'wx' });
-      const finish = { kind: 'finish', id: suite.id, contextDigest: after.contextDigest, code: result.status, signal: result.signal, error: result.error?.code ?? null, stdout: await artifact(directory, stdout), stderr: await artifact(directory, stderr) };
+      const finish = { kind: 'finish', id: suite.id, args, contextDigest: after.contextDigest, code: result.status, signal: result.signal, error: result.error?.code ?? null, stdout: await artifact(directory, stdout), stderr: await artifact(directory, stderr) };
       events.push(finish); state = assuranceTransition(state, { ...finish, evidenceValid: true });
       if (state.phase === 'refused') break;
     }
@@ -164,6 +177,7 @@ export async function assessAssurance(root, request) {
     if (event.kind === 'finish') {
       const suite = assurancePlan.find(row => row.id === event.id);
       need(suite && event.stdout?.file === `${suite.id}.stdout` && event.stderr?.file === `${suite.id}.stderr`, 'Exact suite output required');
+      need(canonical(event.args) === canonical(suite.args.map(value => value === '@source-tree' ? receipt.initial.context.source.workingTree : value)), 'Exact executed suite arguments required');
       evidenceValid = canonical(await artifact(directory, event.stdout.file)) === canonical(event.stdout) && canonical(await artifact(directory, event.stderr.file)) === canonical(event.stderr);
     }
     state = assuranceTransition(state, { ...event, evidenceValid });

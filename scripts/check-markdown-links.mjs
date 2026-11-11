@@ -9,11 +9,14 @@ const markdown = /\.(?:md|markdown)$/i;
 const compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 
 function rootOption(args) {
-  if (args.length === 0) return resolve(dirname(fileURLToPath(import.meta.url)), '..');
-  if (args.length === 2 && args[0] === '--root' && args[1] && !args[1].startsWith('--')) {
-    return resolve(args[1]);
+  const options = { root: resolve(dirname(fileURLToPath(import.meta.url)), '..'), tree: null };
+  const seen = new Set();
+  while (args.length) {
+    const key = args.shift(); const value = args.shift();
+    if (!['--root', '--tree'].includes(key) || seen.has(key) || !value || value.startsWith('--') || key === '--tree' && !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(value)) throw new Error('Usage: node scripts/check-markdown-links.mjs [--root <directory>] [--tree <exact-tree>]');
+    seen.add(key); options[key.slice(2)] = key === '--root' ? resolve(value) : value;
   }
-  throw new Error('Usage: node scripts/check-markdown-links.mjs [--root <directory>]');
+  return options;
 }
 
 function localKind(root, target) {
@@ -75,8 +78,9 @@ function localDestination(source, destination) {
 }
 
 function main() {
-  const root = rootOption(process.argv.slice(2));
-  const files = new Set(execFileSync('git', ['ls-files', '-z', '--cached'], {
+  const { root, tree } = rootOption(process.argv.slice(2));
+  if (tree && execFileSync('git', ['cat-file', '-t', tree], { cwd: root, encoding: 'utf8' }).trim() !== 'tree') throw new Error('An exact Git tree object is required');
+  const files = new Set(execFileSync('git', tree ? ['ls-tree', '-r', '-z', '--name-only', tree] : ['ls-files', '-z', '--cached'], {
     cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024,
   }).split('\0').filter(Boolean));
   const directories = new Set(['.']);
@@ -90,7 +94,7 @@ function main() {
       if (localKind(root, source) !== 'file') throw new Error('not a regular file');
       documents.set(source, parseDocument(readFileSync(join(root, source), 'utf8'), parser));
     } catch (error) {
-      throw new Error(`${source}: cannot read tracked Markdown source (${error.code ?? error.message})`);
+      throw new Error(`${source}: cannot read ${tree ? 'snapshot' : 'tracked'} Markdown source (${error.code ?? error.message})`);
     }
   }
   const diagnostics = [];
@@ -104,7 +108,7 @@ function main() {
         checked += 1;
         const { target, fragment } = local;
         if (!files.has(target) && !directories.has(target)) {
-          reason = `missing tracked file or directory ${JSON.stringify(target)} (exact case required)`;
+          reason = `missing ${tree ? 'snapshot' : 'tracked'} file or directory ${JSON.stringify(target)} (exact case required)`;
         } else {
           let kind;
           try {
@@ -132,7 +136,7 @@ function main() {
     console.error(`${source}:${line}: ${JSON.stringify(destination)}: ${reason} (link block lines ${line}-${lineEnd})`);
   }
   if (diagnostics.length) return 1;
-  console.log(`Markdown links passed (${documents.size} tracked documents, ${checked} local links).`);
+  console.log(`Markdown links passed (${documents.size} ${tree ? 'snapshot' : 'tracked'} documents, ${checked} local links).`);
   return 0;
 }
 

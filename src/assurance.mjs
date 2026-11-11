@@ -1,7 +1,7 @@
 import { canonical, digest } from './content.mjs';
 
 export const assurancePlan = Object.freeze([
-  { id: 'markdown-links', args: ['scripts/check-markdown-links.mjs'] },
+  { id: 'markdown-links', args: ['scripts/check-markdown-links.mjs', '--tree', '@source-tree'] },
   { id: 'cli-boundaries', args: ['--test', 'test/markdown-links.test.mjs', 'test/agent-local.test.mjs'] },
   { id: 'generated-references', args: ['scripts/agent.mjs', 'maintain', '--check'] },
   { id: 'calendar', args: ['--test', 'test/calendar-collection.test.mjs', 'test/calendar-register.test.mjs', 'test/calendar-timing.test.mjs', 'test/calendar-handoff.test.mjs', 'test/academic-os-task-plan.test.mjs'] },
@@ -22,7 +22,8 @@ export const assurancePlan = Object.freeze([
 export const assurancePlanDigest = digest(canonical(assurancePlan));
 
 export const beginAssurance = contextDigest => ({ phase: 'prepared', contextDigest, completed: 0, active: null, reason: null });
-export function assuranceTransition(state, event, plan = assurancePlan) {
+export function assuranceTransition(state, event) {
+  const plan = assurancePlan;
   if (state.phase === 'refused') return state;
   const refuse = reason => ({ ...state, phase: 'refused', reason });
   if (event.contextDigest !== state.contextDigest) return refuse('context-changed');

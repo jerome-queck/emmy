@@ -19,6 +19,7 @@ const mutations = [
   ['exit', 'event.code !== 0 || event.signal !== null || event.error !== null', 'event.signal !== null || event.error !== null', 'PassedClean'],
   ['output', 'if (event.evidenceValid !== true)', 'if (false)', 'PassedClean'],
   ['coverage', 'completed === plan.length', 'completed >= 1', 'PassedComplete'],
+  ['result-id', "state.phase !== 'running' || event.id !== state.active", "state.phase !== 'running'", 'PassedClean'],
   ['resurrection', "if (state.phase === 'refused') return state;", "if (state.phase === 'refused') state = { ...state, phase: 'prepared', reason: null };", 'RefusalTerminal'],
 ];
 try {
@@ -42,13 +43,28 @@ try {
     await writeFile(join(path, 'Assurance.tla'), graphSpec(graph));
     await writeFile(join(path, 'Assurance.cfg'), graphConfig);
     const reasons = { 'context-changed': 'Source or environment changed', 'unexpected-suite': 'Wrong check requested', 'unmatched-result': 'No matching running check', 'suite-failed': 'Check failed or was interrupted', 'output-unverified': 'Output was not verified', 'unexpected-event': 'Unknown event' };
-    const labels = graph.states.map(row => row.refusalBroken ? 'Resumed after refusal' : row.state.phase === 'refused' ? reasons[row.state.reason] : row.state.phase === 'passed' ? row.state.completed !== graph.suiteCount ? 'Accepted with missing checks' : row.bad ? 'Accepted invalid evidence' : 'All required checks passed' : row.state.phase === 'running' ? row.bad ? 'Wrong check admitted' : 'Required check running' : row.state.completed === 0 ? 'Ready to begin' : 'More checks remain');
+    const labels = graph.states.map(row => row.refusalBroken ? 'Resumed after refusal' : row.state.phase === 'refused' ? reasons[row.state.reason] : row.state.phase === 'passed' ? row.state.completed !== graph.suiteCount ? 'Accepted with missing checks' : row.bad ? 'Accepted invalid evidence' : 'All required checks passed' : row.state.phase === 'running' ? row.bad ? 'Check running after invalid evidence' : 'Required check running' : row.state.completed === 0 ? 'Ready to begin' : 'More checks remain');
     await writeFile(join(path, 'view.mjs'), `const labels = ${JSON.stringify(labels)};\nexport const title = 'Local assurance';\nexport const state = v => labels[v.node-1];\nexport { step } from ${JSON.stringify(pathToFileURL(join(root, 'verification/local-assurance/view.mjs')).href)};\n`);
     const result = spawnSync(java, ['-XX:+UseParallelGC', '-Xmx1g', '-cp', jar, 'tlc2.TLC', '-workers', '1', '-fp', '0', '-config', 'Assurance.cfg', 'Assurance.tla'], { cwd: path, encoding: 'utf8', timeout: 60_000, maxBuffer: 16 * 1024 * 1024 });
     const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
     await writeFile(join(path, 'tlc.out'), output);
     assert.equal(result.signal, null); assert.equal(result.error, undefined);
-    if (expectedRule) { assert.notEqual(result.status, 0); assert.match(output, new RegExp(`Invariant ${expectedRule} is violated`)); assert.match(output, /The behavior up to this point is/); }
+    if (expectedRule) {
+      assert.notEqual(result.status, 0); assert.match(output, new RegExp(`Invariant ${expectedRule} is violated`)); assert.match(output, /The behavior up to this point is/);
+      const trace = [...output.matchAll(/State \d+: <([^>\n]+)>\nnode = (\d+)/g)].map(match => ({ action: match[1].split(' ')[0], node: Number(match[2]) - 1 }));
+      assert.ok(trace.length > 1 && trace[0].node === 0, 'A real TLC path is required');
+      let replay = module.beginAssurance('same'); const replayed = [];
+      for (let index = 1; index < trace.length; index++) {
+        const edge = graph.edges.find(row => row.from === trace[index - 1].node && row.to === trace[index].node && row.action === trace[index].action);
+        assert.ok(edge, 'Every TLC action must map to a production event');
+        replay = module.assuranceTransition(replay, edge.event);
+        assert.deepEqual(replay, graph.states[trace[index].node].state, 'Replay actual copied code at every TLC step');
+        replayed.push({ action: edge.action, event: edge.event, state: replay });
+      }
+      const last = graph.states[trace.at(-1).node];
+      assert.ok(expectedRule === 'PassedComplete' ? replay.phase === 'passed' && replay.completed !== graph.suiteCount : expectedRule === 'PassedClean' ? replay.phase === 'passed' && last.bad : last.refusalBroken, 'The intended harm must occur in actual code');
+      await writeFile(join(path, 'actual-code-replay.json'), `${canonical({ expectedRule, steps: replayed })}\n`);
+    }
     else { assert.equal(result.status, 0, output); assert.match(output, /Model checking completed\. No error has been found\./); }
     const counts = output.match(/([\d,]+) states generated, ([\d,]+) distinct states found, ([\d,]+) states left on queue/);
     assert.ok(counts, 'TLC must report actual state exploration');

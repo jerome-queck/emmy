@@ -17,6 +17,7 @@ export function assuranceGraph({ beginAssurance, assuranceTransition, assuranceP
       ['StartNext', started], ['WrongSuite', { ...started, id: 'wrong-suite' }],
       ['StartChangedContext', { ...started, contextDigest: 'different' }],
       ['SuitePass', finished], ['SuiteFail', { ...finished, code: 1 }],
+      ['WrongResult', { ...finished, id: 'wrong-suite' }],
       ['FinishChangedContext', { ...finished, contextDigest: 'different' }],
       ['SuiteSignal', { ...finished, signal: 'SIGTERM' }], ['SpawnError', { ...finished, error: 'ENOENT' }],
       ['OutputChanges', { ...finished, evidenceValid: false }],

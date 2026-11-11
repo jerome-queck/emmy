@@ -21,7 +21,7 @@ This rereads the receipt and original output, replays production transitions and
 
 ## Observed binding
 
-The binding includes canonical checkout path, HEAD, base reference/resolved commit, merge base, fixed suite digest, tracked and nonignored untracked bytes, executable bits and tracked deletions. Ignored private evidence is outside source. Source symlinks refuse because their external closure is unknown.
+The binding includes canonical checkout path, HEAD, base reference/resolved commit, merge base, complete working-source tree, fixed suite digest, tracked and nonignored untracked bytes, executable bits and tracked deletions. Ignored private evidence is outside source. Source symlinks refuse because their external closure is unknown. The tree uses an isolated temporary Git index; the real index is preserved. The Markdown suite receives that exact inventory through `--tree`, so new reviewed files participate without staging them. Standalone Markdown checking keeps its tracked-index default.
 
 Installed dependency files are observed separately from source and lockfile. A dependency root symlink binds its resolved directory and contents; external links inside that directory refuse. Selected Node and Java executable bytes/versions, pinned TLC jar, platform, architecture, hostname and named runtime environment settings are also bound. These are comparable local observations, not authenticated native host identities or a complete operating-system dependency closure.
 
