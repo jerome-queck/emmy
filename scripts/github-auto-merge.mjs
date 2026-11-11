@@ -8,6 +8,7 @@ export const MERGE_POLICY = Object.freeze({
   repository: intendedRepository,
   base: 'main',
   ci: 'emmy-check',
+  local: 'emmy-local-assurance',
   review: 'emmy-independent-review',
   reviewer: intendedRepository.split('/')[0],
 });
@@ -27,12 +28,56 @@ function successfulStatus(status, sha) {
   return status?.sha === sha && status.state === 'success';
 }
 
+export function evaluateLocalEvidence(local) {
+  const { binding: b = {}, assurance: a = {}, review: r = {}, authorization: grant = {}, now, action } = local ?? {};
+  const same = value => value?.head === b.head && value?.base === b.base && value?.tree === b.tree;
+  const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+  const gates = {
+    binding: b.repository === MERGE_POLICY.repository && shaPattern.test(b.head) && shaPattern.test(b.base)
+      && shaPattern.test(b.tree) && typeof b.branch === 'string' && /^codex\/[a-z0-9][a-z0-9/-]*$/.test(b.branch),
+    localEvidence: a.status === 'current-local-reported' && same(a) && a.clean === true
+      && digest(a.contextDigest) && digest(a.receiptDigest),
+    localReview: same(r) && ['PASS', 'PASS+NOTES'].includes(r.verdict) && r.practical === true
+      && typeof r.author === 'string' && r.author.length > 0 && typeof r.reviewer === 'string'
+      && r.reviewer.length > 0 && r.reviewer !== r.author && r.author === b.author
+      && r.contextDigest === a.contextDigest && r.receiptDigest === a.receiptDigest
+      && typeof r.acceptanceRef === 'string' && r.acceptanceRef.length > 0,
+    authorization: same(grant) && grant.repository === b.repository && grant.branch === b.branch
+      && ['publish', 'open-pr', 'attest', 'merge'].includes(action) && Array.isArray(grant.actions) && grant.actions.includes(action)
+      && typeof grant.sourceRef === 'string' && grant.sourceRef.length > 0
+      && Number.isFinite(now) && Number.isFinite(Date.parse(grant.notBefore))
+      && Date.parse(grant.notBefore) <= now && now < Date.parse(grant.expiresAt),
+  };
+  return { eligible: Object.values(gates).every(Boolean), waiting: Object.keys(gates).filter(key => !gates[key]) };
+}
+
+export const beginDelivery = () => ({ phase: 'draft', active: null, completed: [] });
+export function deliveryTransition(state, event) {
+  if (state.phase === 'merged') return state;
+  if (event.kind === 'drift') return state.phase === 'unknown' ? { ...state, drift: true } : { ...state, phase: 'drift' };
+  if (event.kind === 'check-start' && state.phase === 'draft') return { ...state, phase: 'checking' };
+  if (event.kind === 'check-result' && state.phase === 'checking') return { ...state, phase: event.valid ? 'checked' : 'failed' };
+  if (event.kind === 'review' && state.phase === 'checked' && event.valid) return { ...state, phase: 'reviewed' };
+  if (event.kind === 'ready' && state.phase === 'reviewed' && event.valid) return { ...state, phase: 'publishable' };
+  const allowed = { publish: 'publishable', 'open-pr': 'published', attest: 'pr-open', merge: 'merge-authorized' };
+  if (event.kind === 'authorize-merge' && state.phase === 'pr-open' && event.valid) return { ...state, phase: 'merge-authorized' };
+  if (event.kind === 'intent' && state.phase === allowed[event.action] && event.valid && !state.completed.includes(event.action)) return { ...state, phase: 'unknown', active: event.action };
+  if (event.kind === 'observe' && state.phase === 'unknown' && event.action === state.active && event.exact === true) {
+    const outcomes = { publish: 'published', 'open-pr': 'pr-open', attest: 'pr-open', merge: 'merged' };
+    if (event.confirmed === true) return { ...state, phase: outcomes[state.active], active: null, completed: [...state.completed, state.active] };
+  }
+  return state;
+}
+
 export function evaluateEligibility(snapshot) {
   const { repository, pr, expectedHead, expectedBase, branch, checks, statuses } = snapshot;
   const ciCheck = latest(checks, MERGE_POLICY.ci, 'name');
   const ciStatus = latest(statuses, MERGE_POLICY.ci, 'context');
   const reviewStatus = latest(statuses, MERGE_POLICY.review, 'context');
   const reviewCheck = latest(checks, MERGE_POLICY.review, 'name');
+  const localMode = snapshot.mode === 'local';
+  const localStatus = latest(statuses, MERGE_POLICY.local, 'context');
+  const localCheck = latest(checks, MERGE_POLICY.local, 'name');
   const gates = {
     repository: repository.name === MERGE_POLICY.repository
       && pr.headRepository === MERGE_POLICY.repository && pr.baseRepository === MERGE_POLICY.repository,
@@ -42,13 +87,23 @@ export function evaluateEligibility(snapshot) {
     base: pr.baseRef === MERGE_POLICY.base && branch.name === MERGE_POLICY.base
       && shaPattern.test(expectedBase) && pr.baseSha === expectedBase && branch.sha === expectedBase,
     protection: branch.protected === true && branch.enforcement === 'everyone'
-      && [MERGE_POLICY.ci, MERGE_POLICY.review].every(name => branch.contexts.includes(name)),
-    ci: successfulCheck(ciCheck, expectedHead) && ciCheck.app === 'github-actions'
-      && (!ciStatus || successfulStatus(ciStatus, expectedHead)),
+      && (localMode ? branch.strict === true && branch.contexts.length === 2
+        && [MERGE_POLICY.local, MERGE_POLICY.review].every(name => branch.contexts.includes(name))
+        : [MERGE_POLICY.ci, MERGE_POLICY.review].every(name => branch.contexts.includes(name))),
+    ci: localMode ? successfulStatus(localStatus, expectedHead) && localStatus.creator === MERGE_POLICY.reviewer
+      && localStatus.creatorType === 'User' && (!localCheck || successfulCheck(localCheck, expectedHead))
+      : successfulCheck(ciCheck, expectedHead) && ciCheck.app === 'github-actions'
+        && (!ciStatus || successfulStatus(ciStatus, expectedHead)),
     independentReview: successfulStatus(reviewStatus, expectedHead)
       && reviewStatus.creator === MERGE_POLICY.reviewer && reviewStatus.creatorType === 'User'
       && (!reviewCheck || successfulCheck(reviewCheck, expectedHead)),
   };
+  if (snapshot.mode !== undefined && !['hosted', 'local'].includes(snapshot.mode)) gates.mode = false;
+  if (localMode) {
+    const local = snapshot.local;
+    gates.localBinding = local?.binding?.head === expectedHead && local?.binding?.base === expectedBase && local?.action === 'merge';
+    gates.localAdmission = evaluateLocalEvidence(local).eligible;
+  }
   const waiting = Object.keys(gates).filter(name => !gates[name]);
   return { eligible: waiting.length === 0, waiting };
 }
@@ -101,6 +156,7 @@ export function normalizeSnapshot({ repository, pr, branch, checks, statuses }, 
       protected: branch.protected,
       enforcement: branch.protection?.required_status_checks?.enforcement_level,
       contexts: branch.protection?.required_status_checks?.contexts ?? [],
+      strict: branch.protection?.required_status_checks?.strict,
     },
     checks: checks.map(check => ({
       id: check.id, name: check.name, sha: check.head_sha,
@@ -217,6 +273,10 @@ export function createGitHub(token, fetcher = fetch) {
 }
 
 export async function main(env = process.env) {
+  if (process.argv[2] === '--local') {
+    const { localMain } = await import('./local-delivery.mjs');
+    return [await localMain(process.argv.slice(3), env)];
+  }
   if (env.GITHUB_REPOSITORY !== MERGE_POLICY.repository) {
     return [{ outcome: 'skipped', waiting: ['repository'] }];
   }
@@ -233,7 +293,7 @@ export async function main(env = process.env) {
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   main().then(results => {
     process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);
-    if (results.some(result => ['failed', 'unverified'].includes(result.outcome))) process.exitCode = 1;
+    if (results.some(result => ['failed', 'unverified', 'held', 'unknown', 'drift'].includes(result.outcome))) process.exitCode = 1;
   }).catch(error => {
     process.stderr.write(`${error.message}\n`);
     process.exitCode = 1;

@@ -18,6 +18,7 @@ concurrency:
 
 jobs:
   check:
+    if: vars.EMMY_DELIVERY_MODE != 'local'
     name: emmy-check
     runs-on: ubuntu-latest
     timeout-minutes: 10

@@ -1,5 +1,7 @@
 # Persistent Emmy contract
 
+The [local delivery route](local-delivery.md) extends the existing merge owner. `scripts/github-auto-merge.mjs` owns both explicit verification modes and the pure delivery reducer. `scripts/local-delivery.mjs` reuses assurance assessment, serializes retained branch intent and owns provider readback. It adds no dispatcher or service. Provider rules and accepted native review remain external trust boundaries.
+
 The [architecture reassessment](architecture-evolution.md) records the first shared-policy slice and the exact-ID Academic OS gateway and module convergence as unfinished work. The first [local assurance slice](local-assurance.md) gives the aggregate check ingress one fixed suite/admission owner and exact source/base/environment receipts. It adds no provider executor or merge authority.
 
 `automation-plan.mjs` owns pure generic procedure/configuration validation and deterministic staged plans. `automation-procedure.mjs` owns exact file acquisition and the generic CLI boundary. `automation-reporting.mjs` owns the existing canonical producer/publication contract; the briefing adapter retains only briefing check assessment. The reusable procedure lives in `procedures/`, with private per-automation configuration outside Git. This shared path builds plans for any automation kind without adding a scheduler, controller or native writer.
