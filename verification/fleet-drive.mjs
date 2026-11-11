@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { digest, readStore } from '../src/records.mjs';
+import { digest, publishRecord, readStore } from '../src/records.mjs';
+import { effectKey } from '../src/work.mjs';
 import { replayReview } from '../src/responsibilities.mjs';
 import { spawn } from 'node:child_process';
 import { fleetCapture, fleetEntities, fleetJob } from './fleet-fixtures.mjs';
@@ -25,8 +26,11 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   const assess = async (captures, expected = 3) => call({ operation: 'assess', captures }, expected, await receipts(captures));
   const scheduleDueAt = new Date(Date.now() - 1000).toISOString();
   const currentCapture = (id, condition = 'healthy', changes = {}) => fleetCapture(id, condition, now(), { ...(id === 'routine' ? { runDueAt: scheduleDueAt } : {}), ...changes });
-  await call({ operation: 'configure', config: { retryMs: 1 }, entities: fleetEntities.map(entity => ({ ...entity, ...(entity.dueAt ? { dueAt: scheduleDueAt } : {}) })) });
+  await call({ operation: 'configure', semanticsVersion: 2, config: { retryMs: 1 }, entities: fleetEntities.map(entity => ({ ...entity, ...(entity.dueAt ? { dueAt: scheduleDueAt } : {}) })) });
   await assess(fleetEntities.map(entity => currentCapture(entity.id)), 0); assert.equal(last.pendingAlerts.length, 0);
+  const noActionIdentity = currentCapture('protected'); delete noActionIdentity.actionIdentity; const refusedIdentity = await assess([noActionIdentity], 2); assert.match(refusedIdentity.result.error, /action identity/);
+  const noInvocation = currentCapture('routine', 'healthy', { invocation: undefined }); const refusedOrigin = await assess([noInvocation], 2); assert.match(refusedOrigin.result.error, /invocation origin/);
+
   const interruptionInput = { schemaVersion: 1, responsibilityId: definition.id, expectedHead: last.headHash, action: { operation: 'assess', captures: [] } };
   const interruptionFile = await fixture('interruption-input', interruptionInput); const markerPath = join(selectedHome, 'interruption-marker.json');
   const args = ['fleet', '--file', interruptionFile, '--root', root, '--home', selectedHome];
@@ -41,10 +45,50 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
     const blockedBackup = await run(['backup', '--to', join(root, 'bin', 'fleet-interrupted-backup')], 2, selectedHome); assert.match(blockedBackup.error, /unresolved fleet journal turn/);
     const resumed = await run(['fleet', '--file', interruptionFile], 0, selectedHome); assert.equal(resumed.outcome, 'reconciled-publication'); assert.equal(resumed.ticket, null); last = resumed;
   } finally { if (children.has(child)) { child.kill('SIGKILL'); await completion; } }
+  const legacyFixture = JSON.parse(await readFile(join(sourceRoot, 'test/fixtures/fleet-v1-review.json'), 'utf8'));
+  const legacyHome = join(home, 'fleet-legacy'); await mkdir(join(legacyHome, 'records'), { recursive: true }); await writeFile(join(legacyHome, 'bindings.json'), JSON.stringify(bindings));
+  for (const original of [...legacyFixture.records, legacyFixture.review]) {
+    const { hash, fileDigests, ...payload } = original;
+    const files = Object.fromEntries(Object.entries(fileDigests ?? {}).map(([name, sha256]) => {
+      const capture = original.action.captures.find(row => row.receipt.sha256 === sha256); assert.ok(capture); return [name, Buffer.from(`fixture ${capture.entityId}`)];
+    }));
+    assert.deepEqual((await publishRecord(legacyHome, payload, files)).record, original);
+  }
+  const legacyHead = legacyFixture.records.filter(row => row.type === 'fleet-step').at(-1);
+  const legacyStored = (await readStore(legacyHome)).records; assert.deepEqual(replayReview(legacyFixture.review, legacyStored), legacyFixture.expected);
+  const legacyStatus = await run(['fleet', '--file', await fixture('legacy-status', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'status' } })], 3, legacyHome); assert.equal(legacyStatus.inventory.find(row => row.expected.id === 'routine').invocationOrigin, 'unknown');
+  const legacyEnvelope = { schemaVersion: 1, responsibilityId: definition.id, expectedHead: legacyHead.hash };
+  const oldWrite = await run(['fleet', '--file', await fixture('legacy-rejected-assess', { ...legacyEnvelope, action: { operation: 'assess', captures: [] } })], 2, legacyHome); assert.match(oldWrite.error, /replay-only/);
+  const oldConfig = await run(['fleet', '--file', await fixture('legacy-rejected-configure', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'configure', entities: fleetEntities } })], 2, legacyHome); assert.match(oldConfig.error, /semanticsVersion/);
+  const upgradeBytes = Buffer.from('Synthetic owner authorizes only explicit fleet evidence-semantics migration.'); const upgradePath = join(legacyHome, 'upgrade-owner.txt'); await writeFile(upgradePath, upgradeBytes); const upgradeEvidence = [{ path: upgradePath, sha256: digest(upgradeBytes), sourceRef: 'synthetic-upgrade-owner' }];
+  const sameEpochResume = await run(['fleet', '--file', await fixture('legacy-same-epoch-resume-refused', { ...legacyEnvelope, action: { operation: 'resume', sourceRef: 'synthetic-upgrade-owner', reason: 'No epoch change exists.' }, evidence: upgradeEvidence })], 2, legacyHome); assert.match(sameEpochResume.error, /replay-only/);
+  const upgradeAction = { operation: 'upgrade', semanticsVersion: 2, stateDigest: digest(legacyHead.state), sourceRef: 'synthetic-upgrade-owner', reason: 'Preserve old evidence and require current invocation provenance.' };
+  const wrongUpgrade = await run(['fleet', '--file', await fixture('legacy-rejected-upgrade', { ...legacyEnvelope, action: { ...upgradeAction, stateDigest: '0'.repeat(64) }, evidence: upgradeEvidence })], 2, legacyHome); assert.match(wrongUpgrade.error, /state digest/);
+  const upgraded = await run(['fleet', '--file', await fixture('legacy-upgrade', { ...legacyEnvelope, action: upgradeAction, evidence: upgradeEvidence })], 3, legacyHome); assert.equal(upgraded.state.semanticsVersion, 2); assert.deepEqual(upgraded.state.alerts, legacyHead.state.alerts); assert.deepEqual(upgraded.state.entities.map(row => row.capture), legacyHead.state.entities.map(row => row.capture));
+  await run(['fleet', '--file', await fixture('legacy-current-assess', { ...legacyEnvelope, expectedHead: upgraded.headHash, action: { operation: 'assess', captures: [] } })], 3, legacyHome);
+  const legacySeed = join(home, 'fleet-legacy-restore-seed'); await mkdir(join(legacySeed, 'records'), { recursive: true }); await writeFile(join(legacySeed, 'bindings.json'), JSON.stringify(bindings));
+  const actualDefinition = (await readStore(selectedHome)).records.find(row => row.type === 'definition'); await cp(join(selectedHome, 'records', actualDefinition.hash), join(legacySeed, 'records', actualDefinition.hash), { recursive: true });
+  const { hash: historicalRootHash, ...legacyRootPayload } = legacyFixture.records.find(row => row.type === 'fleet-root');
+  await publishRecord(legacySeed, { ...legacyRootPayload, definitionHash: actualDefinition.hash, effectKey: effectKey(actualDefinition), at: now(), requestDigest: digest('synthetic-legacy-restore-root') });
+  const legacyArchive = join(root, 'bin', 'fleet-legacy-archive'); await run(['backup', '--to', legacyArchive], 0, legacySeed);
+  const legacyRestored = join(home, 'fleet-legacy-restored'); await run(['restore', '--from', legacyArchive, '--into', legacyRestored], 0, legacySeed);
+  let legacyRestoredLast = await run(['fleet', '--file', await fixture('legacy-restored-status', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'status' } })], 3, legacyRestored); assert.equal(legacyRestoredLast.status, 'suspended');
+  const legacyRestoredCall = async (name, action, expected = 3) => { const result = await run(['fleet', '--file', await fixture(name, { schemaVersion: 1, responsibilityId: definition.id, expectedHead: legacyRestoredLast.headHash, action, evidence: upgradeEvidence })], expected, legacyRestored); if (result.headHash) legacyRestoredLast = result; return result; };
+  await legacyRestoredCall('legacy-upgrade-before-fresh-epoch', { ...upgradeAction, stateDigest: digest(legacyRestoredLast.state) }, 2);
+  const legacyEpoch = (await readStore(legacyRestored)).records.find(row => row.type === 'epoch');
+  const legacyObservations = ['authority', 'tasks', 'schedule'].map(category => ({ type: 'observation', responsibilityId: definition.id, subject: target, observedAt: now(), observer: 'Synthetic legacy restore acquisition', category, availability: 'available', coverage: { complete: true, gaps: [] }, claims: [], evidenceRefs: [], homeEpoch: legacyEpoch.hash, ...(category === 'authority' ? { authority: definition.authorityRef } : category === 'tasks' ? { tasks: [] } : { schedules: [] }) }));
+  const legacyRefreshed = await run(['reconcile', '--id', definition.id, '--as-of', now(), '--import', await fixture('legacy-restored-observations', { schemaVersion: 1, records: legacyObservations })], 3, legacyRestored); assert.equal(legacyRefreshed.responsibilities[0].record.restore.suspended, false);
+  const beforeResume = await legacyRestoredCall('legacy-upgrade-before-resume', { ...upgradeAction, stateDigest: digest(legacyRestoredLast.state) }, 2); assert.match(beforeResume.error, /explicit resume/);
+  await legacyRestoredCall('legacy-resume', { operation: 'resume', sourceRef: upgradeEvidence[0].sourceRef, reason: 'Fresh exact epoch evidence permits only lifecycle resume.' }); assert.equal(legacyRestoredLast.state.epochHash, legacyEpoch.hash); assert.equal(legacyRestoredLast.state.semanticsVersion, undefined); assert.equal(legacyRestoredLast.ticket, null);
+  const repeatedLegacyResume = await legacyRestoredCall('legacy-second-resume-refused', { operation: 'resume', sourceRef: upgradeEvidence[0].sourceRef, reason: 'A second old-semantics evaluation is not allowed.' }, 2); assert.match(repeatedLegacyResume.error, /replay-only/);
+  const resumedAlerts = structuredClone(legacyRestoredLast.state.alerts);
+  await legacyRestoredCall('legacy-restored-upgrade', { ...upgradeAction, stateDigest: digest(legacyRestoredLast.state) }); assert.equal(legacyRestoredLast.state.semanticsVersion, 2); assert.deepEqual(legacyRestoredLast.state.alerts, resumedAlerts); assert.equal(legacyRestoredLast.state.epochHash, legacyEpoch.hash);
+  report.retainedFleetLegacyRestored = join(evidenceDir, 'fleet-legacy-restored'); await cp(legacyRestored, report.retainedFleetLegacyRestored, { recursive: true }); await readStore(report.retainedFleetLegacyRestored);
+  report.retainedFleetLegacy = join(evidenceDir, 'fleet-legacy'); await cp(legacyHome, report.retainedFleetLegacy, { recursive: true }); await readStore(report.retainedFleetLegacy);
   const healthyHead = last.headHash;
   const first = await assess([currentCapture('protected', 'login-expired')]); const failureId = last.pendingAlerts[0].id; const failureCount = last.state.alerts.length;
   await run(['fleet', '--file', first.file], 3, selectedHome); assert.equal((await readStore(selectedHome)).records.filter(row => row.type === 'fleet-step' && row.parentHash === healthyHead).length, 1);
-  await assess([currentCapture('protected', 'login-expired')]); assert.equal(last.state.alerts.length, failureCount, 'Refreshed same failure creates no new alert');
+  await assess([currentCapture('protected', 'login-expired', { nextAction: 'Inspect this same scoped login failure.' })]); assert.equal(last.state.alerts.length, failureCount, 'Refreshed same failure creates no new alert');
   const correctionBytes = Buffer.from('Synthetic owner corrected this exact source and dismissed its old episode.'); const correctionPath = join(selectedHome, 'owner-correction.txt'); await writeFile(correctionPath, correctionBytes); const correctionEvidence = [{ path: correctionPath, sha256: digest(correctionBytes), sourceRef: 'fixture-owner-correction' }];
   await call({ operation: 'correct', entityId: 'protected', sourceRef: 'fixture-owner-correction', reason: 'Use the exact browser account and preserve connector coverage separately.' }, 3, correctionEvidence);
   await call({ operation: 'inventory', entities: [{ ...fleetEntities[1], maxAgeMs: 300000 }], sourceRef: 'fixture-owner-correction', reason: 'Explicit same-scope inventory revision.' }, 3, correctionEvidence);
@@ -64,14 +108,22 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   await call({ operation: 'dismiss', alertId: 'f'.repeat(64), sourceRef: 'fixture-owner-correction', reason: 'Invalid cross-episode dismissal.' }, 2, correctionEvidence);
   await assess([currentCapture('protected')]); assert.equal(last.state.alerts.at(-1).condition, 'recovered');
   await assess([currentCapture('protected', 'login-expired')]); assert.notEqual(last.state.alerts.at(-1).id, failureId);
+  const manual = currentCapture('routine', 'healthy', { invocation: { origin: 'manual' }, runRef: 'synthetic-manual-rescue' }); await assess([manual]); assert.equal(last.inventory.find(row => row.expected.id === 'routine').issueKey, 'manual-run-only'); assert.equal(last.inventory.find(row => row.expected.id === 'routine').capture.runRef, 'synthetic-manual-rescue');
+  await assess([currentCapture('routine')]); assert.equal(last.inventory.find(row => row.expected.id === 'routine').condition, 'healthy');
   const stale = currentCapture('protected'); stale.receipt.observedAt = new Date(Date.now() - 300001).toISOString();
   await assess([stale], 2);
   const staleHome = join(home, 'fleet-staleness'); await mkdir(staleHome, { recursive: true }); await writeFile(join(staleHome, 'bindings.json'), JSON.stringify(bindings));
   await run(['responsibility', '--file', await fixture('stale-definition', definition)], 0, staleHome);
-  const staleConfigured = await run(['fleet', '--file', await fixture('stale-configure', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'configure', entities: [fleetEntities[0]] } })], 3, staleHome);
+  const staleConfigured = await run(['fleet', '--file', await fixture('stale-configure', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'configure', semanticsVersion: 2, entities: [fleetEntities[0]] } })], 3, staleHome);
   const staleMonitor = currentCapture('monitor'); staleMonitor.receipt.observedAt = new Date(Date.now() - 300001).toISOString(); const staleEvidence = await receipts([staleMonitor]);
   const staleResult = await run(['fleet', '--file', await fixture('stale-assess', { schemaVersion: 1, responsibilityId: definition.id, expectedHead: staleConfigured.headHash, action: { operation: 'assess', captures: [staleMonitor] }, evidence: staleEvidence })], 3, staleHome);
-  assert.equal(staleResult.inventory[0].condition, 'stale-source'); assert.equal(staleResult.pendingAlerts[0].condition, 'stale-source'); await cp(staleHome, join(evidenceDir, 'fleet-staleness'), { recursive: true });
+  assert.equal(staleResult.inventory[0].condition, 'stale-source'); assert.equal(staleResult.pendingAlerts[0].condition, 'stale-source');
+  const policyAction = { operation: 'policy-revise', version: 1, previousDigest: null, maxAgeMs: 86400000, entities: [{ entityId: 'monitor', scope: fleetEntities[0].scope, maxAgeMs: 86400000 }], sourceRef: correctionEvidence[0].sourceRef, reason: 'Synthetic explicit age eligibility only.' };
+  const eligibleResult = await run(['fleet', '--file', await fixture('policy-only-eligibility', { schemaVersion: 1, responsibilityId: definition.id, expectedHead: staleResult.headHash, action: policyAction, evidence: correctionEvidence })], 3, staleHome);
+  assert.equal(eligibleResult.inventory[0].condition, 'healthy'); assert.equal(eligibleResult.inventory[0].recoveryStatus, 'fresh-recovery-unverified'); assert.deepEqual(eligibleResult.state.alerts, staleResult.state.alerts); assert.deepEqual(eligibleResult.state.entities[0].capture, staleMonitor);
+  const freshMonitor = currentCapture('monitor'); const freshEvidence = await receipts([freshMonitor]);
+  const recoveredResult = await run(['fleet', '--file', await fixture('policy-fresh-recovery', { schemaVersion: 1, responsibilityId: definition.id, expectedHead: eligibleResult.headHash, action: { operation: 'assess', captures: [freshMonitor] }, evidence: freshEvidence })], 3, staleHome);
+  assert.equal(recoveredResult.state.alerts.at(-1).condition, 'recovered'); assert.equal(recoveredResult.state.entities[0].recoveryPending, null); await cp(staleHome, join(evidenceDir, 'fleet-staleness'), { recursive: true });
   await assess([currentCapture('monitor', 'monitoring-failed'), currentCapture('protected')]); assert.equal(last.inventory.find(row => row.expected.id === 'protected').condition, 'unknown');
   await assess([currentCapture('monitor'), currentCapture('protected'), currentCapture('routine', 'healthy', { enabled: false })]); assert.equal(last.inventory.find(row => row.expected.id === 'routine').issueKey, 'disabled-run');
   const captureWithGap = currentCapture('protected'); captureWithGap.receipt.coverage = { complete: false, gaps: ['missing protected account read'] };
@@ -114,7 +166,7 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   report.fleetHistory = { synthetic: true, archivedJob: ticket.key, ancestorHead: historyHead, crashReplay: 'passed', archivedIdentity: 'coalesced-without-reactivation', liveEffects: false };
   const timeoutHome = join(home, 'fleet-timeout'); await mkdir(timeoutHome, { recursive: true }); await writeFile(join(timeoutHome, 'bindings.json'), JSON.stringify(bindings));
   await run(['responsibility', '--file', await fixture('timeout-definition', definition)], 0, timeoutHome);
-  let timeoutView = await run(['fleet', '--file', await fixture('timeout-configure', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'configure', config: { attemptMs: 2000 }, entities: fleetEntities.slice(0, 2) } })], 3, timeoutHome);
+  let timeoutView = await run(['fleet', '--file', await fixture('timeout-configure', { schemaVersion: 1, responsibilityId: definition.id, action: { operation: 'configure', semanticsVersion: 2, config: { attemptMs: 2000 }, entities: fleetEntities.slice(0, 2) } })], 3, timeoutHome);
   const timeoutCall = async (name, action, expected = 3, evidence = []) => { const data = await run(['fleet', '--file', await fixture(name, { schemaVersion: 1, responsibilityId: definition.id, expectedHead: timeoutView.headHash, action, evidence })], expected, timeoutHome); if (data.headHash) timeoutView = data; return data; };
   await timeoutCall('timeout-submit', { operation: 'submit', job: fleetJob('deadline-read') });
   const timeoutAdmission = await timeoutCall('timeout-claim', { operation: 'claim', ownerRef: 'fixture-parent' }); const deadlineTicket = timeoutAdmission.ticket; assert.ok(deadlineTicket, 'A fresh admission ticket must actually be returned before this timeout control.');
@@ -138,6 +190,67 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   await failureEnvelope(proof, 'unknown-ended-proof', 3); const unknownJob = timeoutView.state.jobs.find(job => job.key === unknownTicket.key);
   assert.equal(unknownJob.status, 'blocked'); assert.equal(unknownJob.usedBytes, null); assert.equal(unknownJob.byteAccounting.knownBytesLowerBound, 78082); assert.equal(unknownJob.byteAccounting.budgetCompliance, 'unverified');
   report.fleetUnknownBytes = { reads: 13, measuredBytes: null, knownBytesLowerBound: 78082, endedReadonlySlotReleased: true, liveClosure: false };
+
+  await timeoutCall('overrun-submit', { operation: 'submit', job: fleetJob('measured-overrun', 'morning', { maxReads: 3, maxBytes: 131072 }) });
+  const overrunTicket = (await timeoutCall('overrun-claim', { operation: 'claim', ownerRef: 'fixture-parent' })).ticket;
+  const overrunCapture = currentCapture('protected'); const responseRefs = []; const responses = [];
+  for (const [index, bytes] of [12813, 149040].entries()) {
+    const path = join(root, 'bin', `overrun-response-${index}.bin`); const raw = Buffer.alloc(bytes, 120); await writeFile(path, raw);
+    const ref = { path, sourceRef: `overrun-response-${index}`, sha256: digest(raw) }; responseRefs.push(ref);
+    responses.push({ sourceRef: ref.sourceRef, sha256: ref.sha256, bytes, startedAt: overrunCapture.receipt.capturedAt, capturedAt: overrunCapture.receipt.capturedAt });
+  }
+  const overrunProof = { jobKey: overrunTicket.key, ticket: overrunTicket.ticket, scope: overrunCapture.receipt.scope, actualReadAttempts: 2, totalSerializedResponseBytes: 161853, admittedMaxReads: 3, admittedMaxBytes: 131072, allReadsEnded: true, readOnly: true, nativeEffects: 'none', responses };
+  while (Date.now() <= Date.parse(overrunTicket.deadline)) await new Promise(resolve => setTimeout(resolve, 25));
+  const overrunEnvelope = async (value, name, expected = 2, changes = {}) => {
+    const path = await fixture(`${name}-proof`, value); const ref = { path, sourceRef: name, sha256: digest(await readFile(path)) };
+    const receipt = { ...overrunCapture.receipt, sourceRef: name, sha256: ref.sha256, coverage: { complete: false, gaps: value.retention === 'measurement-only' ? ['Raw responses omitted because existing evidence-retention bounds were exceeded.'] : ['Measured overrun; observed workload status is independent.'] } };
+    return timeoutCall(name, { operation: 'resolve', jobKey: overrunTicket.key, ticket: overrunTicket.ticket, checkpoint: 0, outcome: 'blocked', usage: { reads: 2, bytes: 161853 }, receipt, reason: 'Observer calls ended without native effects.', failure: { kind: 'read-only-known-overrun', sourceRef: name, sha256: ref.sha256, reason: 'Original byte cap exceeded.', ...(value.retention ? { retention: value.retention } : {}) }, ...changes }, expected, [...responseRefs, ref]);
+  };
+  for (const [field, value] of [['jobKey', 'b'.repeat(64)], ['ticket', 'b'.repeat(64)], ['scope', { ...overrunProof.scope, resource: 'foreign' }], ['allReadsEnded', false], ['readOnly', false], ['nativeEffects', 'uncertain'], ['workerStopped', false], ['mailOpened', true], ['mailMutations', 1], ['actualReadAttempts', 1], ['totalSerializedResponseBytes', null], ['admittedMaxBytes', 161853]]) await overrunEnvelope({ ...overrunProof, [field]: value }, `overrun-negative-${field}`);
+  await overrunEnvelope({ ...overrunProof, responses: [responses[0], responses[0]] }, 'overrun-duplicate-response');
+  await overrunEnvelope({ ...overrunProof, responses: [{ ...responses[0], sha256: 'b'.repeat(64) }, responses[1]] }, 'overrun-wrong-response');
+  await overrunEnvelope(overrunProof, 'overrun-success-refused', 2, { outcome: 'completed', checkpoint: 1 });
+  const falseOverflow = await overrunEnvelope({ ...overrunProof, responses: undefined, retention: 'measurement-only', largestResponseBytes: 149040, rawResponsesRetained: false, rawResponseCommitment: digest('omitted-fixture'), startedAt: responses[0].startedAt, capturedAt: responses.at(-1).capturedAt }, 'overrun-retention-not-exceeded'); assert.match(falseOverflow.error, /numeric retention overflow/);
+  const overrunSettled = await overrunEnvelope(overrunProof, 'overrun-ended', 3); const blockedOverrun = overrunSettled.state.jobs.find(row => row.key === overrunTicket.key);
+  assert.equal(blockedOverrun.status, 'blocked'); assert.equal(blockedOverrun.usedBytes, 161853); assert.equal(blockedOverrun.usedReads, 2); assert.equal(blockedOverrun.input.maxBytes, 131072); assert.equal(blockedOverrun.byteAccounting.budgetCompliance, 'exceeded');
+  await overrunEnvelope(overrunProof, 'overrun-ended', 3); assert.equal(timeoutView.outcome, 'coalesced');
+  await run(['doctor'], 3, timeoutHome);
+  report.fleetMeasuredOverrun = { synthetic: true, actualReads: 2, measuredBytes: 161853, originalCap: 131072, budgetCompliance: 'exceeded', status: 'blocked', originalTicketRetained: true, replay: 'passed', providerReads: false };
+
+  for (const [name, counts, largest, measurementOnly] of [
+    ['maximum-byte-plus-one', { reads: 1, bytes: 262145 }, 262145, true],
+    ['maximum-read-plus-one', { reads: 33, bytes: 33 }, 1, false],
+    ['retention-total-overflow', { reads: 5, bytes: 1048577 }, 262144, true],
+    ['retention-count-overflow', { reads: 64, bytes: 64 }, 1, true]
+  ]) {
+    await timeoutCall(`${name}-submit`, { operation: 'submit', job: fleetJob(name, 'morning', { maxReads: 32, maxBytes: 262144 }) });
+    const admitted = (await timeoutCall(`${name}-claim`, { operation: 'claim', ownerRef: 'fixture-parent' })).ticket;
+    const captured = currentCapture('protected'); const rawRefs = []; const rawResponses = [];
+    if (!measurementOnly) for (let i = 0; i < counts.reads; i++) {
+      const path = join(root, 'bin', `${name}-${i}.bin`); const raw = Buffer.from('x'); await writeFile(path, raw);
+      const ref = { path, sourceRef: `${name}-${i}`, sha256: digest(raw) }; rawRefs.push(ref); rawResponses.push({ sourceRef: ref.sourceRef, sha256: ref.sha256, bytes: 1, startedAt: captured.receipt.capturedAt, capturedAt: captured.receipt.capturedAt });
+    }
+    const measuredProof = { jobKey: admitted.key, ticket: admitted.ticket, scope: captured.receipt.scope, actualReadAttempts: counts.reads, totalSerializedResponseBytes: counts.bytes, admittedMaxReads: 32, admittedMaxBytes: 262144, allReadsEnded: true, readOnly: true, nativeEffects: 'none', ...(measurementOnly ? { retention: 'measurement-only', largestResponseBytes: largest, rawResponseCommitment: digest(`synthetic-unretained-${name}`), rawResponsesRetained: false, startedAt: captured.receipt.capturedAt, capturedAt: captured.receipt.capturedAt } : { responses: rawResponses }) };
+    while (Date.now() <= Date.parse(admitted.deadline)) await new Promise(resolve => setTimeout(resolve, 25));
+    const submitMeasured = async (suffix, proof, changes = {}, expected = 2) => {
+      const path = await fixture(`${name}-${suffix}-proof`, proof); const ref = { path, sourceRef: `${name}-${suffix}`, sha256: digest(await readFile(path)) };
+      const { completeCoverage, ...actionChanges } = changes;
+      const receipt = { ...captured.receipt, sourceRef: ref.sourceRef, sha256: ref.sha256, coverage: { complete: completeCoverage === true, gaps: completeCoverage ? [] : measurementOnly ? ['Raw responses omitted because existing evidence-retention bounds were exceeded.'] : ['Read admission exceeded.'] } };
+      return timeoutCall(`${name}-${suffix}`, { operation: 'resolve', jobKey: admitted.key, ticket: admitted.ticket, checkpoint: 0, outcome: 'blocked', usage: counts, receipt, reason: 'Exact safe measured counts; no further call permitted.', failure: { kind: 'read-only-known-overrun', sourceRef: ref.sourceRef, sha256: ref.sha256, reason: 'Original admission exceeded.', ...(measurementOnly ? { retention: 'measurement-only' } : {}) }, ...actionChanges }, expected, [...rawRefs, ref]);
+    };
+    await submitMeasured('success-refused', measuredProof, { outcome: 'completed', checkpoint: 1 });
+    if (measurementOnly) {
+      await submitMeasured('wrong-count', { ...measuredProof, totalSerializedResponseBytes: null });
+      if (counts.bytes > counts.reads) await submitMeasured('impossible-largest', { ...measuredProof, largestResponseBytes: 1 });
+      await submitMeasured('ongoing', { ...measuredProof, allReadsEnded: false });
+      await submitMeasured('wrong-commitment', { ...measuredProof, rawResponseCommitment: 'unknown' });
+      await submitMeasured('out-of-window', { ...measuredProof, startedAt: '2000-01-01T00:00:00.000Z' });
+      await submitMeasured('claims-complete', measuredProof, { completeCoverage: true });
+    }
+    const settled = await submitMeasured('blocked', measuredProof, {}, 3); const actual = settled.state.jobs.find(row => row.key === admitted.key);
+    assert.equal(actual.usedReads, counts.reads); assert.equal(actual.usedBytes, counts.bytes); assert.equal(actual.input.maxReads, 32); assert.equal(actual.input.maxBytes, 262144); assert.equal(actual.byteAccounting.budgetCompliance, 'exceeded');
+    if (measurementOnly) { assert.equal(actual.byteAccounting.responseRetention, 'measurement-only'); assert.equal(actual.byteAccounting.rawResponseBytesVerified, false); }
+  }
   await call({ operation: 'submit', job }); assert.equal(last.state.jobs.length, 0);
   await call({ operation: 'submit', job: fleetJob('heavy-one', 'heavy') });
   await call({ operation: 'submit', job: fleetJob('heavy-two', 'heavy') });
@@ -146,7 +259,7 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   await call({ operation: 'submit', job: fleetJob('interactive', 'interactive') }); assert.equal(last.state.jobs.filter(row => row.status === 'queued').length, 4);
   await assess([currentCapture('monitor', 'resource-pressure')]); await call({ operation: 'claim', ownerRef: 'fixture-parent' }); assert.equal(last.ticket, null); assert.equal(last.outcome, 'resource-pressure');
   const review = await run(['reconcile', '--id', definition.id, '--as-of', now()], 3, selectedHome); const stored = (await readStore(selectedHome)).records; const retainedReview = review.responsibilities[0].record;
-  assert.deepEqual(replayReview(retainedReview, stored).fleet, retainedReview.fleet);
+  assert.equal(retainedReview.fleetViewVersion, 2); assert.deepEqual(replayReview(retainedReview, stored).fleet, retainedReview.fleet);
   assert.equal((await run(['doctor'], 3, selectedHome)).store.fleetNeedsAttention, true);
   const archive = join(root, 'bin', 'fleet-archive'); await run(['backup', '--to', archive], 0, selectedHome);
   const restored = join(home, 'fleet-restored'); await run(['restore', '--from', archive, '--into', restored], 0, selectedHome);

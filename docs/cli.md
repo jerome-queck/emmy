@@ -6,18 +6,24 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 
 | Command | Options | Purpose | Feature |
 | --- | --- | --- | --- |
+| reporting | `--file <value>` required | Inspect validated private automation records or publish only a producer-owned immutable record; no workload execution. | upkeep |
 | help | none | List commands and JSON contracts. | orientation |
 | doctor | none | Check runtime, public references, bindings, private integrity, and restored suspension. | orientation |
 | catalog | none | Read public projects, source claims, capabilities, tools, and probes. | orientation |
 | responsibility | `--file <value>` required | Retain an immutable goal, context, exact target, criteria, authority, feature, and lifecycle definition. | routing |
 | reconcile | `--id <value>`, `--import <value>`, `--as-of <value>` required | Import evidence, inspect current local state, retain findings/repairs, and propose bounded next work. | evidence |
-| dispatch | `--id <value>`, `--project <value>`, `--resolve <value>`, `--discovery <value>`, `--as-of <value>` required, `--context-needed` | Resolve a saved destination, recover private bindings, and advise creation, monitoring or fresh-task handover. --context-needed never permits conversation reuse. | routing |
+| dispatch | `--id <value>`, `--project <value>`, `--resolve <value>`, `--discovery <value>`, `--as-of <value>` required, `--context-needed` | Resolve saved destinations, recover explicit direct-root or historical bindings, and return read-only native dispatch advice. | routing |
 | cloud | `--file <value>` required | Run bounded cooperative cloud jobs with durable checkpoints, priority admission and pending health escalation. | cloud |
 | fleet | `--file <value>` required | Retain scoped fleet health, parent read admission, alert delivery and explicit bounded history archival in the responsibility journal. | fleet |
 | signin | `--file <value>` required | Choose a scoped sign-in recovery handoff without accepting or retaining secrets. | fleet |
+| token-review | `--file <value>` required | Assess bounded supplied usage captures and complete cost per verified success without telemetry or execution. | evidence |
 | calendar | `--file <value>` required | Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution. | evidence |
-| briefing | `--file <value>` | Refresh pinned public guidance, optionally check a declared draft, and retain its exact advisory Markdown. | evidence |
-| probe | `--id <value>`, `--nonce <value>` required | Publish a proposed Dot onboarding packet with eight probes. | routing |
+| calendar-register | `--file <value>` required | Collect read-only Calendar/Tasks snapshots, assess exact-ID proposals, validate shared versioned planning rules and handoffs, or prepare Academic OS API plans and inspect reports without applying them. | evidence |
+| automation | `--file <value>` required | Plan a staged automation from exact procedure/configuration bytes, prepare existing canonical outcome artifacts, or read one exact artifact without native execution. | upkeep |
+| daily-briefing | `--file <value>` required | Read the staged operating contract, validate private briefing policy, prepare fixed reports and reporting contracts, or compile/read exact held artifact slots without native effects. | upkeep |
+| briefing | `--file <value>` | Load an explicitly pinned local release or canonical public guidance, check a declared draft, and retain exact advisory Markdown. | evidence |
+| guidance-pin | `--file <value>` required | Activate, inspect or deactivate an exact approved installed local guidance release without changing canonical caches. | evidence |
+| probe | `--id <value>`, `--nonce <value>` required | Publish current-environment onboarding proposals; cloud delegation requires an explicit probe ID. | routing |
 | assurance | `--file <value>` required | Replay one exact retained local check receipt against current source, base, suite and environment without executing checks. | upkeep |
 | maintain | `--check`, `--write` | Compare or regenerate public references without changing review records. | upkeep |
 | backup | `--to <value>` required | Verify and atomically archive a pinned private record/evidence manifest and bindings. | upkeep |
@@ -25,8 +31,8 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 
 Exit 0 means the command completed and its applicable checks passed. Exit 2 means invalid input, corrupt storage, or an operational error. Exit 3 means actionable findings, definition conflict, restored suspension, generated reference drift, or advisory revision/degradation. These exit codes do not report native task execution.
 
-`maintain` requires exactly one of `--check` and `--write`. `probe` selects all eight probes unless `--id` names one. `reconcile` reviews one responsibility with `--id`, or all when omitted. Imports are optional immutable bundles. Local checks require separately scoped execution authority. Restore always needs a new destination and fresh observations in its new epoch.
+`maintain` requires exactly one of `--check` and `--write`. `probe` omits optional cloud delegation by default; select it with `--id cloud-delegation`. Other probes can be selected when `--id` names one. `reconcile` reviews one responsibility with `--id`, or all when omitted. Imports are optional immutable bundles. Local checks require separately scoped execution authority. Restore always needs a new destination and fresh observations in its new epoch.
 
-`briefing` without a file returns readable pinned canonical-main guidance. With `--file <draft.json>`, it returns advisory checked/revise/degraded results and exact rendered Markdown when usable. Revision has no normal body. Cached guidance retains its original successful main-check time. Global `--root` does not change the canonical guidance origin. See [the briefing procedure](briefing.md). No command installs native invocation.
+`briefing` without a file loads verified local guidance when explicitly pinned, otherwise canonical public-main guidance. With `--file <draft.json>`, it returns advisory checked/revise/degraded results and exact rendered Markdown when usable. Revision has no normal body. Cached guidance retains its original successful main-check time. Global `--root` does not change the canonical guidance origin. See [the briefing procedure](briefing.md). No command installs native invocation.
 
 `calendar --file <private-envelope.json>` checks declared saved fields, current bindings, complete inventory, source budgets, full morning windows, conflicts, and retained attempts. It reads one regular UTF-8 file of at most 2 MiB and writes no journal or native request. Exit 0 means all declared checks pass, 3 retains mismatches or missing evidence, and 2 rejects malformed input. Standard JSON parsing uses the last duplicate key value. See [the calendar contract](calendar.md).

@@ -55,3 +55,7 @@ This revises eligibility, not history or source time. Original captures, failed 
 Run `node --test test/fleet.test.mjs test/morning.test.mjs`, `node scripts/verify-behavior.mjs --focus fleet`, then the strict aggregate. The behavioral driver uses fresh CLI processes and retains a synthetic home plus exact byte receipts through teardown. The morning finite partition and paired source mutants check declared contracts, not mail semantics or provider state.
 
 The parent separately verifies one real one-off, duplicate-safe rerun, degraded-source behavior and the first genuine scheduled delivery. Reopen real output, unread state and saved locations for every acted ID. The parent alone rediscovers and updates the existing schedule; disabled status, configured runtime, run outcome and delivery remain separate. Do not add a recurrence or change schedules in a coding child. Preserve blocked cloud-restart evidence; no retry or new namespace probe is authorized by this contract.
+
+## Held version-three policy path
+
+The [briefing migration contracts](briefing-migration.md) add an exact accepted transfer to a private v3 policy in this same journal. Existing v2 records retain replay semantics. Current deployment and the single parent-supervised ChatGPT pilot remain held. The portable caller has no default cloud adapters. It retains stable invocation metadata and raw bytes, uses the existing fleet CLI for intents, and requires exact independent native readback before success. No second effect owner is introduced.

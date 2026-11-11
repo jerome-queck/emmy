@@ -1,16 +1,17 @@
 import { morningTransition, morningView, deliveryReadback } from './morning.mjs';
-import { canonical, digest } from './records.mjs';
+import { canonical, digest } from './content.mjs';
 import { actionInput, fleetConfig, insist, jobInput, priorities } from './fleet-schema.mjs';
 
 const unfinished = job => !['completed', 'dead', 'blocked'].includes(job.status);
 const bad = condition => !['healthy', 'recovered'].includes(condition);
 export function fleetInitial(root) {
   const state = { lifecycle: 'active', epochHash: root.epochHash, entities: root.action.entities.map(expected => ({ expected, capture: null, condition: 'unknown', issueKey: 'not-checked', episode: 0, fingerprint: null, alertId: null, corrections: [] })), jobs: [], alerts: [] };
+  if (root.action.semanticsVersion === 2) state.semanticsVersion = 2;
   insist(Buffer.byteLength(canonical(state)) <= 1048576, 'Fleet state retention byte bound reached'); return state;
 }
 export function captureCondition(entity, capture, state, config, at) {
   const ageMs = capture ? Date.parse(at) - Date.parse(capture.receipt.observedAt) : null;
-  const result = (condition, issueKey, nextAction) => ({ condition, issueKey, nextAction, ageMs });
+  const result = (condition, issueKey, nextAction) => ({ condition, issueKey, nextAction, ageMs, ...(state.semanticsVersion === 2 ? { actionIdentity: condition === capture?.condition && issueKey === capture?.issueKey && capture.actionIdentity ? capture.actionIdentity : { kind: 'inspect', target: `${entity.expected.id}/${issueKey}` } } : {}) });
   if (!capture) return result('unknown', 'not-checked', 'Parent must acquire a fresh scoped read and retain its receipt.');
   const receipt = capture.receipt;
   if (state.resumedAt && Date.parse(receipt.observedAt) < Date.parse(state.resumedAt)) return result('unknown', 'restore-needs-fresh-read', 'Parent must reacquire this exact source after resume.');
@@ -29,6 +30,11 @@ export function captureCondition(entity, capture, state, config, at) {
   }
   if (entity.expected.kind === 'authentication' && capture.protectedContent !== true) return result('unknown', 'protected-content-unverified', 'Verify protected same-account content through this exact browser or connector.');
   if (capture.enabled === false) return result(entity.expected.kind === 'monitor' ? 'monitoring-failed' : 'workflow-failed', 'disabled-run', 'Parent must inspect the disabled schedule and obtain scoped owner direction.');
+  if (state.semanticsVersion === 2 && (entity.expected.dueAt || entity.expected.kind === 'schedule')) {
+    if (!entity.expected.occurrenceId || !capture.invocation || capture.invocation.origin === 'unknown') return result('unknown', 'invocation-origin-unverified', 'Retain actual scheduled invocation provenance for this exact occurrence.');
+    if (capture.invocation.origin === 'manual') return result('workflow-failed', 'manual-run-only', 'Retain this manual rescue separately and inspect the expected scheduled occurrence.');
+    if (capture.invocation.occurrenceId !== entity.expected.occurrenceId) return result('workflow-failed', 'occurrence-mismatch', 'Acquire the actual invocation for this exact expected occurrence.');
+  }
   if (entity.expected.dueAt && Date.parse(at) > Date.parse(entity.expected.dueAt)) {
     if (Date.parse(receipt.observedAt) < Date.parse(entity.expected.dueAt)) return result('unknown', 'post-window-coverage-needed', 'Acquire a complete read after the expected run window.');
     if (!capture.runRef || capture.runDueAt !== entity.expected.dueAt) return result(entity.expected.kind === 'monitor' ? 'monitoring-failed' : 'workflow-failed', 'missed-run', 'Parent must inspect this exact expected run window and retain its actual outcome.');
@@ -39,17 +45,32 @@ export function captureCondition(entity, capture, state, config, at) {
   if (entity.expected.requiresDelivery && !capture.deliveryRef) return result('workflow-failed', 'delivery-unverified', 'Parent must inspect the delivered artifact and its native readback.');
   return result('healthy', 'current', capture.nextAction);
 }
-function addAlert(state, scope, condition, issueKey, nextAction, at, episode, receipt = null) {
+function addAlert(state, scope, condition, issueKey, nextAction, at, episode, receipt = null, actionIdentity = null) {
   const id = digest({ scope, condition, issueKey, episode });
-  if (!state.alerts.some(alert => alert.id === id)) state.alerts.push({ id, scope, condition, issueKey, nextAction, episode, firstAt: at, receipt, disposition: null, delivery: 'pending', bodyDigest: null, sendRef: null, readbackRef: null });
+  if (!state.alerts.some(alert => alert.id === id)) state.alerts.push({ id, scope, condition, issueKey, nextAction, episode, firstAt: at, receipt, ...(actionIdentity ? { actionIdentity } : {}), disposition: null, delivery: 'pending', bodyDigest: null, sendRef: null, readbackRef: null });
   return id;
 }
-function evaluate(state, root, at) {
+const fingerprintOf = (current, version) => digest(version === 2 ? { condition: current.condition, issueKey: current.issueKey, actionIdentity: current.actionIdentity } : { condition: current.condition, issueKey: current.issueKey, nextAction: current.nextAction });
+const recoveryBaseline = (entity, at) => ({ alertId: entity.alertId, at, observedAt: entity.capture?.receipt.observedAt ?? null, receiptDigest: entity.capture ? digest(entity.capture.receipt) : null });
+function evaluate(state, root, at, freshIds = []) {
   const config = fleetConfig(root.action.config);
   for (const entity of state.entities) {
     const current = captureCondition(entity, entity.capture, state, config, at);
-    const fingerprint = digest({ condition: current.condition, issueKey: current.issueKey, nextAction: current.nextAction });
-    if (fingerprint !== entity.fingerprint) {
+    const fingerprint = fingerprintOf(current, state.semanticsVersion);
+    if (state.semanticsVersion === 2) {
+      if (bad(current.condition)) {
+        if (fingerprint !== entity.fingerprint) {
+          entity.episode++; entity.alertId = addAlert(state, entity.expected.id, current.condition, current.issueKey, current.nextAction, at, entity.episode, entity.capture?.receipt ?? null, current.actionIdentity);
+          entity.recoveryPending = recoveryBaseline(entity, at);
+        }
+      } else if (entity.recoveryPending && freshIds.includes(entity.expected.id)) {
+        const pending = entity.recoveryPending; const receipt = entity.capture.receipt;
+        if (Date.parse(receipt.observedAt) >= Date.parse(pending.at) && (!pending.observedAt || Date.parse(receipt.observedAt) > Date.parse(pending.observedAt)) && digest(receipt) !== pending.receiptDigest) {
+          entity.episode++; entity.alertId = addAlert(state, entity.expected.id, 'recovered', current.issueKey, current.nextAction, at, entity.episode, receipt, current.actionIdentity); entity.recoveryPending = null;
+        }
+      }
+      entity.fingerprint = fingerprint;
+    } else if (fingerprint !== entity.fingerprint) {
       const previousFailure = entity.fingerprint !== null && bad(entity.condition);
       if (bad(current.condition) || previousFailure) {
         entity.episode++;
@@ -98,10 +119,22 @@ function archiveState(state, action, at) {
   state.archived = true;
 }
 export function fleetTransition(original, action, root, at, epochHash = original.epochHash, history = null) {
-  actionInput(action); const state = structuredClone(original); const config = fleetConfig(root.action.config);
+  actionInput(action, original.semanticsVersion ?? 1); const state = structuredClone(original); const config = fleetConfig(root.action.config);
   let outcome = 'retained'; let ticket = null;
   const entity = id => { const value = state.entities.find(row => row.expected.id === id); insist(value, 'Unknown fleet entity'); return value; };
   const alert = id => { const value = state.alerts.find(row => row.id === id); insist(value, 'Unknown fleet alert'); return value; };
+  if (action.operation === 'upgrade') {
+    insist(state.semanticsVersion !== 2, 'Fleet semantics already upgraded');
+    insist(action.stateDigest === digest(original), 'Upgrade predecessor state digest differs');
+    state.semanticsVersion = 2; state.semanticsUpgrade = { sourceRef: action.sourceRef, reason: action.reason, at, predecessorDigest: action.stateDigest };
+    for (const row of state.entities) {
+      const current = captureCondition(row, row.capture, state, config, at);
+      row.recoveryPending = bad(row.condition) || bad(current.condition) ? recoveryBaseline(row, at) : null;
+      Object.assign(row, current); row.fingerprint = fingerprintOf(current, 2);
+    }
+    insist(Buffer.byteLength(canonical(state)) <= 1048576, 'Fleet state retention byte bound reached');
+    return { state, outcome: 'upgraded', ticket: null };
+  }
   if (action.operation === 'resume') { state.lifecycle = 'active'; if (state.epochHash !== epochHash) { state.epochHash = epochHash; state.resumedAt = at; for (const job of state.jobs) if (job.status === 'attempted') job.status = 'uncertain'; } }
   else if (action.operation === 'suspend') { state.lifecycle = 'suspended'; }
   else {
@@ -159,6 +192,7 @@ export function fleetTransition(original, action, root, at, epochHash = original
     }
     if (action.operation === 'assess') for (const capture of action.captures) {
       const row = entity(capture.entityId);
+      if (state.semanticsVersion === 2 && (row.expected.dueAt || row.expected.kind === 'schedule')) insist(capture.invocation, 'Current run capture requires explicit invocation origin');
       insist(canonical(row.expected.scope) === canonical(capture.receipt.scope), 'Capture crosses exact source, account or environment scope');
       insist(!row.capture || Date.parse(capture.receipt.observedAt) >= Date.parse(row.capture.receipt.observedAt), 'Capture predates retained source');
       insist(!row.capture || capture.receipt.observedAt !== row.capture.receipt.observedAt || canonical(row.capture) === canonical(capture), 'Contradictory same-time capture requires a fresh attributable read');
@@ -209,6 +243,13 @@ export function fleetTransition(original, action, root, at, epochHash = original
           job.usedReads += readDelta; job.attemptReads = action.usage.reads;
           job.byteAccounting = { measuredTotalBytes: null, knownBytesLowerBound, knownAttemptBytesLowerBound: action.usage.knownBytesLowerBound, previouslyMeasuredBytes: previousBytes, budgetReservedBytes: job.input.maxBytes, reservedUnknownBytes: job.input.maxBytes - knownBytesLowerBound, budgetCompliance: 'unverified', failure: action.failure };
           job.usedBytes = null; job.attemptBytes = null;
+        } else if (action.failure?.kind === 'read-only-known-overrun') {
+          insist(['health-read', 'briefing-source-read'].includes(job.input.kind) && action.outcome === 'blocked', 'Measured overrun can close only a blocked read-only failure');
+          const readDelta = action.usage.reads - job.attemptReads; const byteDelta = action.usage.bytes - job.attemptBytes;
+          const totalReads = job.usedReads + readDelta; const totalBytes = job.usedBytes + byteDelta;
+          insist(readDelta >= 0 && byteDelta >= 0 && Number.isSafeInteger(totalReads) && Number.isSafeInteger(totalBytes) && (totalReads > job.input.maxReads || totalBytes > job.input.maxBytes), 'Measured overrun requires monotone actual usage exceeding original caps');
+          job.usedReads = totalReads; job.usedBytes = totalBytes; job.attemptReads = action.usage.reads; job.attemptBytes = action.usage.bytes;
+          job.byteAccounting = { measuredTotalBytes: totalBytes, measuredTotalReads: totalReads, admittedMaxReads: job.input.maxReads, admittedMaxBytes: job.input.maxBytes, budgetCompliance: 'exceeded', failure: action.failure, ...(action.failure.retention === 'measurement-only' ? { responseRetention: 'measurement-only', rawResponseBytesVerified: false } : {}) };
         } else {
         const readDelta = action.usage.reads - job.attemptReads; const byteDelta = action.usage.bytes - job.attemptBytes;
         insist(readDelta >= 0 && byteDelta >= 0 && job.usedReads + readDelta <= job.input.maxReads && job.usedBytes + byteDelta <= job.input.maxBytes, 'Parent usage rewinds or exceeds the admitted total budget');
@@ -245,7 +286,7 @@ export function fleetTransition(original, action, root, at, epochHash = original
       row.delivery = 'pending'; row.reconciliation = { sourceRef: action.sourceRef, reason: action.reason, at };
     }
   }
-  if (state.lifecycle === 'active') evaluate(state, root, at);
+  if (state.lifecycle === 'active') evaluate(state, root, at, action.operation === 'assess' ? action.captures.map(row => row.entityId) : []);
   insist(Buffer.byteLength(canonical(state)) <= 1048576, 'Fleet state retention byte bound reached. No prior history was discarded.');
   return { state, outcome, ticket };
 }
@@ -259,13 +300,14 @@ export function fleetState(records, responsibilityId) {
   if (heads.length !== 1) return { status: 'unknown', reason: 'fleet-head-conflict', roots: heads.map(head => head.hash) };
   const head = heads[0]; return { status: 'ready', root, head, state: head.type === 'fleet-root' ? fleetInitial(root) : head.state };
 }
-export function fleetView(records, responsibilityId, at) {
+export function fleetView(records, responsibilityId, at, { semanticsVersion = 2 } = {}) {
   const projected = fleetState(records, responsibilityId);
   if (projected.status !== 'ready') return projected;
   const { root, head } = projected; const state = structuredClone(projected.state); const config = fleetConfig(root.action.config);
   const epoch = records.filter(record => record.type === 'epoch').sort((a, b) => a.restoredAt.localeCompare(b.restoredAt) || a.hash.localeCompare(b.hash)).at(-1);
   const restored = Boolean(epoch && state.epochHash !== epoch.hash);
-  const inventory = state.entities.map(entity => ({ ...entity, ...captureCondition(entity, entity.capture, state, config, at), assurance: 'reported', sourceAgeMs: entity.capture ? Date.parse(at) - Date.parse(entity.capture.receipt.observedAt) : null, capturedAt: entity.capture?.receipt.capturedAt ?? null, coverage: entity.capture?.receipt.coverage ?? { complete: false, gaps: ['No source receipt'] }, ...(restored ? { condition: 'unknown', issueKey: 'restore-needs-fresh-read' } : {}) }));
-  const needsAssessment = inventory.some(entity => digest({ condition: entity.condition, issueKey: entity.issueKey, nextAction: entity.nextAction }) !== state.entities.find(row => row.expected.id === entity.expected.id).fingerprint) || state.jobs.some(job => job.status === 'attempted' && Date.parse(at) > Date.parse(job.deadline));
-  return { status: restored || state.lifecycle === 'suspended' ? 'suspended' : inventory.some(row => bad(row.condition)) || needsAssessment || state.alerts.some(alert => !alert.disposition && alert.delivery !== 'delivered') || state.jobs.some(job => ['uncertain', 'blocked', 'dead'].includes(job.status)) || state.morningRuns?.some(run => morningView([run], at)[0].status !== 'complete') ? 'needs-attention' : 'ready', responsibilityId, rootHash: root.hash, headHash: head.hash, state, inventory, needsAssessment, ...(state.morningRuns ? { morning: morningView(state.morningRuns, at) } : {}), pendingAlerts: state.alerts.filter(alert => !alert.disposition && alert.delivery === 'pending'), uncertainAlerts: state.alerts.filter(alert => !alert.disposition && alert.delivery === 'uncertain'), delivery: 'parent-owned', assurance: 'reported', limits: ['Receipts are attributable parent claims. Code does not authenticate their truth or own connectors, browsers, schedules or Dot sends.', 'A completed read is not delivery. No provider-wide admission, automatic retry of uncertain actions or total-dormancy detection.'] };
+  const viewState = { ...state, semanticsVersion };
+  const inventory = state.entities.map(entity => ({ ...entity, ...captureCondition(entity, entity.capture, viewState, config, at), ...(semanticsVersion === 2 && entity.recoveryPending ? { recoveryStatus: 'fresh-recovery-unverified' } : {}), ...(semanticsVersion === 2 && entity.expected.dueAt ? { invocationOrigin: entity.capture?.invocation?.origin ?? 'unknown' } : {}), assurance: 'reported', sourceAgeMs: entity.capture ? Date.parse(at) - Date.parse(entity.capture.receipt.observedAt) : null, capturedAt: entity.capture?.receipt.capturedAt ?? null, coverage: entity.capture?.receipt.coverage ?? { complete: false, gaps: ['No source receipt'] }, ...(restored ? { condition: 'unknown', issueKey: 'restore-needs-fresh-read' } : {}) }));
+  const needsAssessment = inventory.some(entity => fingerprintOf(entity, semanticsVersion === 2 ? state.semanticsVersion : 1) !== state.entities.find(row => row.expected.id === entity.expected.id).fingerprint) || state.jobs.some(job => job.status === 'attempted' && Date.parse(at) > Date.parse(job.deadline));
+  return { status: restored || state.lifecycle === 'suspended' ? 'suspended' : inventory.some(row => bad(row.condition)) || needsAssessment || semanticsVersion === 2 && state.entities.some(row => row.recoveryPending) || state.alerts.some(alert => !alert.disposition && alert.delivery !== 'delivered') || state.jobs.some(job => ['uncertain', 'blocked', 'dead'].includes(job.status)) || state.morningRuns?.some(run => morningView([run], at)[0].status !== 'complete') ? 'needs-attention' : 'ready', responsibilityId, rootHash: root.hash, headHash: head.hash, state, inventory, needsAssessment, ...(state.morningRuns ? { morning: morningView(state.morningRuns, at) } : {}), pendingAlerts: state.alerts.filter(alert => !alert.disposition && alert.delivery === 'pending'), uncertainAlerts: state.alerts.filter(alert => !alert.disposition && alert.delivery === 'uncertain'), delivery: 'parent-owned', assurance: 'reported', limits: ['Receipts are attributable parent claims. Code does not authenticate their truth or own connectors, browsers, schedules or Dot sends.', 'A completed read is not delivery. No provider-wide admission, automatic retry of uncertain actions or total-dormancy detection.'] };
 }

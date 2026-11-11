@@ -3,19 +3,12 @@ import { parseCloudRecord } from './cloud-schema.mjs';
 import { parseFleetRecord } from './fleet-schema.mjs';
 import { fleetHistory, fleetInitial, fleetTransition } from './fleet-state.mjs';
 import { effectKey } from './work.mjs';
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, readdir, rename, rm, writeFile, lstat } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 
-export function canonical(value) {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  if (value && typeof value === 'object') return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`;
-  return JSON.stringify(value);
-}
-
-export function digest(value) {
-  return createHash('sha256').update(typeof value === 'string' || Buffer.isBuffer(value) ? value : canonical(value)).digest('hex');
-}
+import { canonical, digest } from './content.mjs';
+export { canonical, digest } from './content.mjs';
 
 export const readJson = async path => JSON.parse(await readFile(path, 'utf8'));
 export const dispatchEfforts = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra'];
@@ -52,6 +45,7 @@ export async function readBindings(home) {
     if (project.path !== undefined) requireValue(isAbsolute(project.path), 'Project path must be absolute');
     for (const name of ['hostId', 'nativeProjectId', 'cloudEnvironmentId', 'repository']) if (project[name] !== undefined) text(project[name], name);
     if (project.dispatcher !== undefined) dispatcherBinding(project.dispatcher);
+    if (project.directRoot !== undefined) directRootBinding(project.directRoot);
   }
   return value;
 }
@@ -104,6 +98,30 @@ function dispatcherBinding(value) {
   choice(value.childAccessIntent, ['full-access-inherit'], 'dispatcher.childAccessIntent');
 }
 
+function principal(value) {
+  object(value, 'root principal');
+  choice(value.kind, ['native-thread', 'chatgpt-control', 'coordination-agent'], 'root principal kind');
+  text(value.id, 'root principal ID');
+}
+
+function directRootBinding(value) {
+  object(value, 'direct root'); principal(value.principal);
+  for (const field of ['hostId', 'selectionRef']) text(value[field], `root.${field}`);
+  authority(value.authorityRef, 'root.authorityRef');
+  if (value.remoteAuthorityRef !== undefined) authority(value.remoteAuthorityRef, 'root.remoteAuthorityRef');
+  choice(value.childAccessIntent, ['supported-policy'], 'root.childAccessIntent');
+  object(value.childPolicy, 'root.childPolicy');
+  choice(value.childPolicy.sandboxMode, ['read-only', 'workspace-write', 'danger-full-access'], 'root child sandbox');
+  choice(value.childPolicy.approvalPolicy, ['untrusted', 'on-failure', 'on-request', 'never'], 'root child approval');
+}
+
+export function dispatchIdentity(value) {
+  if (!value) return value;
+  return value.mode === 'direct-root'
+    ? { mode: value.mode, correlationKey: value.correlationKey, root: value.root, skill: value.skill }
+    : { correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill };
+}
+
 function nativeReadback(value) {
   object(value, 'native readback'); text(value.threadId, 'readback.threadId');
   for (const field of ['hostId', 'nativeProjectId']) if (value[field] !== null) text(value[field], `readback.${field}`);
@@ -114,13 +132,21 @@ function nativeReadback(value) {
   if (value.recordedSettings !== undefined && value.recordedSettings !== null) {
     object(value.recordedSettings, 'recordedSettings');
     for (const field of ['model', 'effort', 'sandboxMode', 'approvalPolicy', 'sourceRef']) text(value.recordedSettings[field], `recordedSettings.${field}`);
+    if (value.recordedSettings.serviceTier !== undefined && value.recordedSettings.serviceTier !== null) text(value.recordedSettings.serviceTier, 'recordedSettings.serviceTier');
     timestamp(value.recordedSettings.observedAt, 'recordedSettings.observedAt');
     if (value.recordedSettings.recordedAt !== undefined) timestamp(value.recordedSettings.recordedAt, 'recordedSettings.recordedAt');
   }
 }
 
 function dispatchDefinition(value, objectiveId) {
-  object(value, 'dispatch'); text(value.correlationKey, 'dispatch.correlationKey'); dispatcherBinding(value.dispatcher);
+  object(value, 'dispatch'); text(value.correlationKey, 'dispatch.correlationKey');
+  if (value.mode === 'direct-root') {
+    requireValue(value.dispatcher === undefined, 'Direct root cannot contain a legacy dispatcher');
+    directRootBinding(value.root);
+  } else {
+    requireValue(value.mode === undefined && value.root === undefined, 'Unknown or mixed dispatch mode');
+    dispatcherBinding(value.dispatcher);
+  }
   object(value.skill, 'dispatch.skill'); requireValue(isAbsolute(value.skill.path ?? ''), 'dispatch.skill.path must be absolute'); hash(value.skill.sha256, 'dispatch.skill.sha256');
   for (const field of ['requestedSettings', 'coordinatorRequestedSettings']) {
     const settings = value[field];
@@ -129,6 +155,21 @@ function dispatchDefinition(value, objectiveId) {
     for (const key of ['model', 'effort', 'sourceRef']) text(settings[key], `${field}.${key}`);
     choice(settings.effort, dispatchEfforts, `${field}.effort`);
     if (settings.scopedOverrideRef !== undefined) text(settings.scopedOverrideRef, `${field}.scopedOverrideRef`);
+    if (settings.serviceTier !== undefined) text(settings.serviceTier, `${field}.serviceTier`);
+    if (settings.speedApproval !== undefined) {
+      const approval = settings.speedApproval;
+      object(approval, `${field}.speedApproval`);
+      for (const key of ['objectiveId', 'role', 'serviceTier', 'sourceRef']) text(approval[key], `speedApproval.${key}`);
+      choice(approval.role, ['child', 'coordinator'], 'speedApproval.role');
+      choice(approval.status, ['requested', 'approved', 'declined'], 'speedApproval.status');
+    }
+    if (settings.oneTimePermission !== undefined) {
+      const permission = settings.oneTimePermission;
+      object(permission, `${field}.oneTimePermission`);
+      for (const key of ['objectiveId', 'role', 'model', 'effort', 'sourceRef']) text(permission[key], `oneTimePermission.${key}`);
+      choice(permission.role, ['child', 'coordinator'], 'oneTimePermission.role');
+      choice(permission.effort, dispatchEfforts, 'oneTimePermission.effort');
+    }
     if (field === 'coordinatorRequestedSettings') {
       object(settings.scope, `${field}.scope`);
       requireValue(settings.scope.objectiveId === objectiveId && settings.scope.role === 'coordinator', 'Coordinator settings require this objective and coordinator role scope');
@@ -141,6 +182,25 @@ function dispatchObservation(value, input) {
   text(value.correlationKey, 'dispatch.correlationKey'); choice(value.phase, ['absent', 'attempted', 'pending', 'uncertain', 'ready'], 'dispatch.phase');
   if (value.dispatcher !== undefined) nativeReadback(value.dispatcher);
   if (value.child !== undefined) nativeReadback(value.child);
+  if (value.root !== undefined) {
+    object(value.root, 'root readback'); principal(value.root.principal);
+    text(value.root.hostId, 'root readback host'); text(value.root.sourceRef, 'root readback source');
+    timestamp(value.root.observedAt, 'root readback time');
+    if (value.root.recordedSettings !== undefined && value.root.recordedSettings !== null) {
+      const settings = value.root.recordedSettings;
+      object(settings, 'root recorded settings');
+      for (const field of ['model', 'effort', 'serviceTier', 'sourceRef']) text(settings[field], `root settings.${field}`);
+      choice(settings.effort, dispatchEfforts, 'root settings effort');
+      timestamp(settings.observedAt, 'root settings time');
+    }
+  }
+  if (value.creation !== undefined) {
+    const creation = value.creation; object(creation, 'direct creation'); principal(creation.principal);
+    hash(creation.attemptKey, 'creation attempt'); hash(creation.requestDigest, 'creation request');
+    text(creation.childThreadId, 'creation child'); text(creation.sourceRef, 'creation source');
+    timestamp(creation.observedAt, 'creation time');
+    if (creation.nativeCallerThreadId !== undefined && creation.nativeCallerThreadId !== null) text(creation.nativeCallerThreadId, 'actual native caller');
+  }
   if (value.destinationSkill !== undefined) {
     object(value.destinationSkill, 'destinationSkill');
     for (const field of ['hostId', 'sourceRef']) text(value.destinationSkill[field], `destinationSkill.${field}`);
@@ -182,7 +242,8 @@ function criterion(value) {
 export function parseDefinition(input) {
   object(input, 'definition');
   id(input.id, 'responsibility ID'); hashes(input.parents, 'parents');
-  if (input.workClass !== undefined) choice(input.workClass, ['code', 'academic', 'research', 'coordination'], 'workClass');
+  if (input.workClass !== undefined) choice(input.workClass, ['code', 'academic', 'research', 'coordination', 'calendar-planning'], 'workClass');
+  if (input.workClass === 'calendar-planning') requireValue(input.target?.executor === 'dot-cloud', 'New calendar planning requires explicit target.executor dot-cloud; local tasks implement exact plans only');
   if (input.cloudReason !== undefined) text(input.cloudReason, 'cloudReason');
   for (const name of ['goal', 'context', 'action', 'resource', 'destination']) text(input[name], name);
   const target = { ...input.target, executor: input.target?.executor ?? 'local-codex' };
@@ -383,6 +444,8 @@ export function validateReferences(records) {
     requireValue(root.type === 'fleet-root' && root.responsibilityId === record.responsibilityId && root.effectKey === record.effectKey && parent.responsibilityId === record.responsibilityId && (parent.hash === root.hash || parent.type === 'fleet-step' && parent.rootHash === root.hash), 'Fleet lineage crosses controller scope');
     requireValue(record.seq === (parent.seq ?? 0) + 1 && Date.parse(record.at) >= Date.parse(parent.at), 'Fleet sequence or clock is not a direct successor');
     requireValue(record.action.operation === 'resume' || record.epochHash === parent.epochHash, 'Fleet epoch requires explicit resume');
+    requireValue(parent.state?.semanticsVersion !== 2 || record.state.semanticsVersion === 2, 'Fleet semantics cannot downgrade');
+    requireValue(parent.state?.semanticsVersion === 2 || root.action.semanticsVersion === 2 || record.state.semanticsVersion !== 2 || record.action.operation === 'upgrade', 'Fleet semantics require explicit upgrade');
     const transition = fleetTransition(parent.type === 'fleet-root' ? fleetInitial(root) : parent.state, record.action, root, record.at, record.epochHash, parent.state?.archived ? fleetHistory(known, parent) : null);
     requireValue(canonical(transition.state) === canonical(record.state) && transition.outcome === record.outcome, 'Fleet state differs from deterministic retained transition');
   }
@@ -413,8 +476,7 @@ export function validateReferences(records) {
     const parent = known.get(ref);
     requireValue(parent.type === 'definition' && parent.id === record.id, 'Definition parent belongs to another responsibility');
     if (parent.dispatch) {
-      const stable = value => value && { correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill };
-      requireValue(canonical(stable(parent.dispatch)) === canonical(stable(record.dispatch)), 'An objective cannot silently replace its dispatch binding or correlation');
+      requireValue(canonical(dispatchIdentity(parent.dispatch)) === canonical(dispatchIdentity(record.dispatch)), 'An objective cannot silently replace its dispatch binding or correlation');
       for (const field of ['requestedSettings', 'coordinatorRequestedSettings']) if (canonical(parent.dispatch[field] ?? null) !== canonical(record.dispatch[field] ?? null)) requireValue(Boolean(record.dispatch[field]?.scopedOverrideRef), 'A changed model request requires its explicit scoped override source');
     }
   }

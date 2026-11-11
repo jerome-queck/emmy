@@ -3,14 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "agent": "node scripts/agent.mjs",
     "check": "node scripts/check.mjs",
     "check:links": "node scripts/check-markdown-links.mjs",
     "verify:behavior": "node scripts/verify-behavior.mjs",
     "verify:model": "node scripts/verify-publication.mjs",
-    "verify:formal": "node scripts/verify-formal.mjs && node verification/merge-policy.mjs && node scripts/verify-publication.mjs"
+    "verify:formal": "node scripts/verify-formal.mjs && node verification/merge-policy.mjs && node scripts/verify-publication.mjs",
+    "reporting": "node scripts/automation-reporting.mjs",
+    "reporting:transport": "node scripts/automation-reporting-transport.mjs",
+    "reporting:upkeep": "node scripts/automation-reporting-upkeep.mjs",
+    "build:reporting-cloud": "node scripts/build-reporting-cloud.mjs",
+    "verify:reporting": "node scripts/verify-automation-reporting.mjs"
   },
   "devDependencies": {
     "commonmark": "0.31.2"

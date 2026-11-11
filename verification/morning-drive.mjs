@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { digest, readStore, validateReferences } from '../src/records.mjs';
 import { compactAssessments } from './morning-compact-fixtures.mjs';
 import { morningAssessments, morningDelivery, morningEntities, morningItem } from './morning-fixtures.mjs';
+import { driveMorningV3 } from './morning-v3-drive.mjs';
 export async function driveMorning({ home, bindings, target, run, scenario, report }) {
   const selected = join(home, 'morning-drive'); await mkdir(selected, { recursive: true }); await writeFile(join(selected, 'bindings.json'), JSON.stringify(bindings));
   let ordinal = 0; let view;
@@ -17,7 +18,7 @@ export async function driveMorning({ home, bindings, target, run, scenario, repo
   const call = async (action, refs = [], expected = 3) => { const input = { schemaVersion: 1, responsibilityId: definition.id, ...(view?.headHash ? { expectedHead: view.headHash } : {}), action, evidence: refs }; const path = await file('command', input); const result = await run(['fleet', '--file', path], expected, selected); if (result.headHash) view = result; return { result, path }; };
   const command = (step, fields = {}, refs = [], expected = 3) => call({ operation: 'morning', command: { step, runId: day, ...fields } }, refs, expected);
   const receipt = async (id, value) => { const ref = await evidence(`synthetic-${id}-${ordinal}`, value); return { ref, receipt: { sourceRef: ref.sourceRef, sha256: ref.sha256, observedAt: now(), capturedAt: now(), observer: 'Synthetic fresh-process parent harness', scope: morningEntities.find(row => row.id === id)?.scope ?? { service: 'assessment', environment: 'parent-cloud', surface: 'cloud', resource: id }, coverage: { complete: true, gaps: [] } } }; };
-  await call({ operation: 'configure', entities: morningEntities });
+  await call({ operation: 'configure', semanticsVersion: 2, entities: morningEntities });
   const open = { day, cleanupMode: 'batched-v1', policyVersion: 2, delivery: { ...morningDelivery, ownerRef: owner.sourceRef }, ownerRef: owner.sourceRef, accounts: { gmail: { account: 'owner@example.test', entityId: 'gmail' }, outlook: { account: 'student@example.test', entityId: 'outlook' } }, sources: morningEntities.map(row => ({ id: row.id, role: row.id, entityId: row.id })), rules: [{ id: 'foodpanda-promotions', version: 1, ownerRef: owner.sourceRef }] };
   const opened = await command('open', open, [owner]); await run(['fleet', '--file', opened.path], 3, selected); assert.equal(view.state.morningRuns.length, 1);
   const start = new Date(Date.parse(`${day}T00:00:00.000Z`) - 28800000).toISOString(); const window = { start, end: new Date(Date.parse(start) + 86400000).toISOString() };
@@ -96,5 +97,7 @@ export async function driveMorning({ home, bindings, target, run, scenario, repo
   await command('action-result', { adapter: 'outlook', nativeId: 'outlook-one', intentDigest: refreshedAttempt.intentDigest, receipt: freshAfterReceipt.receipt, after: freshAfter, outcome: 'verified' }, [freshAfterReceipt.ref]);
   assert.deepEqual(view.state.morningRuns[0].delivery, originalIdentity); assert.equal(view.state.morningRuns[0].sealed.body, originalBody); assert.equal(view.state.morningRuns[0].items[1].reviewHistory.length, 1);
   const retained = await readStore(selected); const corrupted = structuredClone(retained.records); const reviewedRecord = corrupted.find(record => record.action?.operation === 'morning' && record.action.command.step === 'review'); reviewedRecord.fileDigests = {}; assert.throws(() => validateReferences(corrupted), /receipt bytes|context bytes/); report.morning = { synthetic: true, records: retained.records.length, reviewedIds: view.state.morningRuns[0].items.map(row => row.before.nativeId), presentation: sealed.presentation, privateDiagnosticDigest: sealed.diagnostic.bodyDigest, exactBodyDigest: sealed.bodyDigest, exactSummaryDigest: summary.bodyDigest, nativeToolsInvoked: false, actualDelivery: 'not-tested' };
-  scenario('morning-run', 'Fresh-process fleet-backed morning acquisition, exact context/body bytes, reviewed sender/subject/disposition, send/readback-before-cleanup, unread-preserved same-ID action, duplicate-safe replay exact same-message summary edit and generation-bound selected-ID refresh without replacing original delivery or terminal moves. Synthetic parent declarations only.');
+  await driveMorningV3({ home, bindings, target, run, report });
+  await driveMorningV3({ home, bindings, target, run, report, collectorMode: true });
+  scenario('morning-run', 'Fresh-process fleet-backed morning acquisition, exact context/body bytes, reviewed sender/subject/disposition, send/readback-before-cleanup, unread-preserved same-ID action, duplicate-safe replay exact same-message summary edit and generation-bound selected-ID refresh without replacing original delivery or terminal moves. V3 also drives the production cloud caller through actual journal CLI, interrupted send and exact ChatGPT readback. Synthetic parent declarations only.');
 }

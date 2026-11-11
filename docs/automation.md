@@ -4,6 +4,8 @@ This document describes repository behavior for `jerome-queck/emmy`, the canonic
 
 ## Checks and evidence
 
+The [local delivery route](local-delivery.md) retains local receipts, practical review and expiring action scope. The protected main branch requires hosted CI and independent review. Both hosted jobs run unconditionally under that policy.
+
 `Emmy checks` publishes one required job named `emmy-check`. It uses Node 24.19.0 and the hosted runner's Java 21. It installs locked verification dependencies with `npm ci --ignore-scripts`, then runs `npm run check`. The publication checker downloads the official TLA+ tools 1.7.4 jar into ignored `.local/tools/` when absent and verifies its pinned SHA-256 before execution. The job checks the PR head for pull requests and the event SHA for other events. It records the actual checkout SHA before running the command.
 
 `npm run check` first runs the tracked Markdown link checker and its CLI fixture tests, then checks generated references and combines three verification layers:

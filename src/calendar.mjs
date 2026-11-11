@@ -1,6 +1,6 @@
 import { constants } from 'node:fs';
 import { open } from 'node:fs/promises';
-import { canonical, digest } from './records.mjs';
+import { canonical, digest } from './content.mjs';
 
 const fields = ['type', 'title', 'date', 'start', 'end', 'durationMinutes', 'timeZone', 'deadline', 'completed', 'recurrence', 'notes'];
 const scheduleFields = ['date', 'start', 'end', 'durationMinutes', 'timeZone'];

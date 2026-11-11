@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "3ced171735cb3ed7bc9c979060b8d7411902b39c",
+  "sourceFiles": {
+    "src/planning-policy.mjs": "ec3c8bd2a3d9d03e0cc75a77af2d014381b28c24d81ee9ee108d5ab89aecadcc",
+    "src/calendar-policy.mjs": "2b40d5d2cf26efa2307741df89b60d87bcf0589aab612dff08362f7db598d1f9",
+    "src/calendar-register.mjs": "1a750c0bcfb4c05ebe559fdf7882cb4fc7f263a50ff1fe831680be2afbb4f15e",
+    "src/calendar-handoff.mjs": "a2b8c10702c6982cf994d7b6da56cfac0356919a90cb7f781d11f3a403975d23",
+    "src/academic-os-task-plan.mjs": "9e997cf82ba3bc408fb3b0c01c14f76794a507f706da67856231fccc55ab35a9",
+    "src/calendar-register-io.mjs": "6d0443dd60b59a49dcd620c73f7a78d21489ac48fc552eef9fc74fe58dbfc005",
+    "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
+    "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d"
+  },
+  "verificationFiles": {
+    "verification/planning-policy/check.mjs": "3bd54282104b2469b27fd28b55cdce3641aa32bdcf793ea8ca5ba3661dfa4075",
+    "verification/planning-policy/domain.mjs": "c60bca3d08ab302c88db3ec9262a59a01a14132bdbe37d8474e474f8761e963e",
+    "verification/planning-policy/graph.mjs": "d9f5ca3db6c30034e2432edf883f5d4e46a89c462734c2fb8c0eba11de10e37c",
+    "verification/planning-policy/fixtures.mjs": "5ae2ef8291af59ef0572c295862dff5254ded37e2053d96d1bb49adc59fd3231",
+    "verification/planning-policy/view.mjs": "85b6a9f37a6e9be75258643f15456d2d6905e6fa9413cc269ad84f2932a2d67d",
+    "verification/planning-policy/chart.mmd": "9d14aff29ced031fd6e851d5b0ad8871c870217b430d15551a71a2b28de5aaf6",
+    "test/planning-policy.test.mjs": "fa1604fe2c9c7592d68ed073a7831618ce90959fca4b50276882838e84b08dba",
+    ".agents/skills/planning-policy/SKILL.md": "806ebafa751b30de961cbc40bf18a53614089e822ecdd927eb94d69b58211951",
+    "verification/calendar-register-drive.mjs": "5770264be9d6f824cbdb1ab85bf0175ba1705d836bf7142e9fdedac406054ef8"
+  },
+  "mapping": [
+    {
+      "property": "ResolvedAdmission",
+      "functions": [
+        "assessPlanningPolicy",
+        "applicability",
+        "nonapplicable",
+        "assessCalendarPolicy",
+        "assessCalendarRegister",
+        "prepareAcademicOsTaskPlan"
+      ],
+      "harm": "Unresolved/unsupported/scope-conflicting rules or missing timing could permit dependent application",
+      "mutants": [
+        "unsupported",
+        "missing-timing",
+        "supersession-digest",
+        "supersession-overlap",
+        "duplicate-version",
+        "hard-conflict",
+        "native-caller",
+        "api-caller"
+      ]
+    },
+    {
+      "property": "ViableAdmission",
+      "functions": [
+        "applicability",
+        "assessPlanningPolicy"
+      ],
+      "harm": "Global scoped replacement or advisory strength could block valid unrelated operations",
+      "mutants": [
+        "supersession-scope",
+        "source-scope",
+        "preference-strength"
+      ]
+    },
+    {
+      "property": "RoundedExact",
+      "functions": [
+        "assessRoundedBooking",
+        "assessCalendarRegister"
+      ],
+      "harm": "Wrong booked duration corrupts actual source accounting",
+      "mutants": [
+        "rounding"
+      ]
+    },
+    {
+      "property": "ScopedSelection",
+      "functions": [
+        "assessPlanningPolicy"
+      ],
+      "harm": "Wrong revision loses original owner-rule association",
+      "mutants": [
+        "selected-version"
+      ]
+    }
+  ],
+  "bounds": {
+    "cases": 87,
+    "states": 175,
+    "edges": 261,
+    "roundingCases": 50,
+    "actualDurationValues": [
+      1,
+      29,
+      30,
+      31,
+      40,
+      59,
+      60,
+      61,
+      1439,
+      1440
+    ],
+    "scheduledDurationValues": [
+      29,
+      30,
+      60,
+      90,
+      1440
+    ],
+    "callers": [
+      "pure",
+      "native",
+      "api"
+    ],
+    "adapterCases": 10,
+    "sourceMutants": 13
+  },
+  "atomicity": "Supply one normalized context, then one actual synchronous pure evaluator/adapter call, then terminal retained-result stutter. No persistent reducer or asynchronous I/O lifecycle is modeled.",
+  "assumptions": [
+    "Trusted checker and independent case expectations",
+    "Collision-free hashes",
+    "Honest declared source/account/clock/capture facts",
+    "Adapter-normalized pure context"
+  ],
+  "empiricalClosure": [
+    "src/calendar-handoff.mjs",
+    "src/academic-os-task-plan.mjs",
+    "src/calendar-register-io.mjs",
+    "verification/calendar-register-drive.mjs",
+    "test/planning-policy.test.mjs"
+  ],
+  "limits": [
+    "Explicit named finite partitions, not their Cartesian product or arbitrary input size",
+    "Prepared/receipt association and source/owner semantics beyond named adapter cases require unit/CLI coverage",
+    "No provider truth, global immutable rule store, authorization authenticity, async/concurrent safety, durable writes, gateway/module publication, installation or native adoption",
+    "Historicalv1remains explicitly callable without v2assurance"
+  ],
+  "reviewBasis": "Read entire original semantic policy and both callers, source ownership/retention flows, new evaluator/domain/graph/checker, unchanged semantic guards and all slice diffs. Reviewed-source pins follow actual copied-source mutations and /statechart paths. Current source changes only formatting/refusal labels after final dev graph; strict full gate reruns actual source. Retention repair: reviewed complete delta from eab50f0. Shared v2 resolution now includes semanticPolicyDigest; native/API original associations remain exact. Added actual native source-reassociation regression/CLI refusal; graph semantics/bounds/mutations unchanged, retained original failing real-code probe. Source pins follow new source commit. Original v1wire unchanged. Ported accepted mapped source to the reachable local source witness. Reviewed exact bytes and retained existing properties and guards. The local-assurance plan count records the actual 27 suites. Main integration review preserves existing model domains and invariants. Generic producer bytes move to automation-producer.mjs; shared validator bodies and publisher awaits retain their semantics. New metadata, copied dependency closure, generated references and mandatory reporting commands are reviewed in the integration source audit. Source witnesses are reachable neutral commits. Main integration review preserves existing model domains and invariants. Generic producer bytes move to automation-producer.mjs; shared validator bodies and publisher awaits retain their semantics. New metadata, copied dependency closure, generated references and mandatory reporting commands are reviewed in the integration source audit. Source witnesses are reachable neutral commits."
+}

@@ -7,8 +7,7 @@ import { canonical, digest } from '../../src/content.mjs';
 
 export async function driveAssurance(sourceRoot, directory) {
   const root = join(directory, 'fixture'); await mkdir(root, { recursive: true });
-  for (const path of ['src', 'scripts', 'docs', 'registry', '.agents']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
-  await cp(join(sourceRoot, 'verification/publication'), join(root, 'verification/publication'), { recursive: true });
+  for (const path of ['src', 'scripts', 'docs', 'registry', '.agents', 'verification', 'test', 'schemas', 'procedures', '.github', '.codex', 'AGENTS.md', 'package-lock.json']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
   const coverage = JSON.parse(await readFile(join(sourceRoot, 'verification/publication/coverage.json'), 'utf8'));
   await writeFile(join(root, 'verification/publication/coverage.json'), JSON.stringify(coverage));
   await writeFile(join(root, '.gitignore'), '.local/\nnode_modules/\n');
@@ -21,6 +20,12 @@ export async function driveAssurance(sourceRoot, directory) {
   const last = original.indexOf('].map(row =>', first);
   assert.ok(first > 0 && last > first);
   await writeFile(modulePath, `${original.slice(0, first)}\n  { id: 'first', args: ['fixture-first.mjs'] },\n  { id: 'second', args: ['fixture-second.mjs'] },\n${original.slice(last)}`);
+  const inventoryPath = join(root, 'verification/subsystems.json');
+  const inventory = JSON.parse(await readFile(inventoryPath, 'utf8'));
+  for (const area of inventory.subsystems) for (const file of area.files) {
+    if (['src/assurance.mjs', 'package.json', '.gitignore', 'verification/publication/coverage.json'].includes(file.path)) file.sha256 = digest(await readFile(join(root, file.path)));
+  }
+  await writeFile(inventoryPath, JSON.stringify(inventory));
   await writeFile(join(root, 'fixture-first.mjs'), `import { readFileSync, writeFileSync } from 'node:fs';\nimport { execFileSync } from 'node:child_process';\nconst mode = readFileSync('.local/mode','utf8');\nconsole.log('original first output');\nif(mode==='fail') process.exitCode=7;\nif(mode==='drift') writeFileSync('source.txt','changed');\nif(mode==='base') execFileSync('git',['update-ref','refs/heads/acceptance-base','HEAD^']);\nif(mode==='signal') process.kill(process.pid,'SIGTERM');\n`);
   await writeFile(join(root, 'fixture-second.mjs'), "import { readFileSync, writeFileSync, existsSync } from 'node:fs'; const count=existsSync('.local/second-ran')?Number(readFileSync('.local/second-ran','utf8')):0; writeFileSync('.local/second-ran',String(count+1)); console.log('original second output');\n");
   await writeFile(join(root, 'source.txt'), 'original');

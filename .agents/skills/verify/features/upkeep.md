@@ -1,12 +1,18 @@
 # Upkeep and recovery
 
-`assurance --file` replays one exact retained local check receipt against current source/base/environment. The `local-assurance` driver and [formal area skill](../../local-assurance/SKILL.md) cover refusal, ordering, output retention and bounded admission. It changes no native or provider state.
+The standalone `scripts/github-auto-merge.mjs --local <request>` route consumes exact retained assurance and separately accepted review for scoped publication, PR opening, attestation and guarded merge. `test/github-auto-merge.test.mjs` imports the local delivery tests and fresh CLI/provider-fake drive. The existing merge formal suite also runs the [local lifecycle contract](../../merge-assurance/SKILL.md). This route is outside metadata-defined agent commands. Source support does not activate protection or publish code.
+
+## Local check assurance
+
+Run `npm run check` for the fixed complete production plan. It retains original output and exact receipts under ignored `.local/verification/local-assurance/`. `assurance --file <request>` reads `{receiptFile, receiptDigest}` and returns `current-local-reported` only after replay and fresh source/base/environment observation. Failed, incomplete, reordered, changed or corrupted evidence cannot pass. Source symlinks and external dependency links refuse; ignored files are outside the source inventory. See [the contract](../../../../docs/local-assurance.md).
+
+The `local-assurance` empirical scenario uses labelled copied source with two synthetic commands and actual package/agent entry points. It proves orchestration/refusal behavior. Full aggregate execution separately proves the complete production plan. The [area formal skill](../../local-assurance/SKILL.md) covers the bounded reducer graph and actual-source mutants. These checks authenticate neither authorship nor independent review, native access, installation or future execution.
 
 ## User route
 
 Run `maintain --check` at session start. After public metadata changes, run `maintain --write`, inspect derived files, and run the aggregate check. Metadata owns commands, feature map, scenario names, and property IDs. Maintenance preserves research dates and formal sync records.
 
-Maintenance also generates `docs/briefing-guidance.json` from exactly the metadata-approved operating brief and briefing procedure. It binds each path, UTF-8 byte length and SHA-256 plus the complete content digest. Local generation does not publish canonical main or install native instructions.
+Maintenance also generates `docs/briefing-guidance.json` from exactly the metadata-approved operating brief, briefing procedure, and sign-in skill. It binds each path, UTF-8 byte length and SHA-256 plus the complete content digest. Local generation does not publish canonical main or install native instructions.
 
 Use `backup --to <archive>` to pin and validate immutable records, referenced evidence bytes, historical records, and private bindings. Use `restore --from <archive> --into <new-home>`. Existing destinations, unsafe paths, symlinks, missing files, corrupt bytes, and invalid references are refused.
 
@@ -17,6 +23,8 @@ A restored home has a new epoch. Fresh exact target, authority, task, and schedu
 The archive also excludes disposable guidance snapshots and briefing artifacts under `<home>/briefing/`. Preserve any wanted briefing evidence separately. The briefing cache has no mutable latest pointer; only complete verified snapshots can support fallback, with their original successful main-check time and schema-1 receipt. Immutable run receipts bind the refresh trace and draft assessment as well as the exact body. Successful recovery preserves its failed attempt and retry decision privately.
 
 Every executable criterion reevaluates that epoch's retained observations after acquisition reads and immediately before launch. Authority expiring during an earlier check suspends the next command. The driver retains a three-second expiry counterexample and a current-authority positive control.
+
+The [restoration-suspension contract](../../restoration-suspension/SKILL.md) explores bounded epoch, record-arrival, supersession, expiry and reconciliation histories. `restored-current-context` remains the separate empirical CLI boundary.
 
 ## Source and drive
 
@@ -35,3 +43,47 @@ Cloud admission records and checkpoint/terminal state use the same canonical jou
 Fleet canonical snapshots and receipt bytes use the same archive. Backup additionally refuses a retained pure fleet intent whose planned record is absent. Repeating its exact input finishes publication without replaying any parent read. Restored fleets preserve job and alert uncertainty, require the existing fresh responsibility epoch observations, then explicit resume and fresh post-resume captures. Read [the fleet feature](fleet.md) and run the full drive or `--focus fleet`. These boundaries remain outside the publication model's one-edge importer and canonical byte-publication promise.
 
 Fleet projection archival keeps complete immutable ancestors and evidence in the backup. The fleet drive retains a restored home, proves suspension until fresh epoch observations and explicit resume, then verifies old identity protection and new admission. A separately retained corrupt ancestor control must fail doctor. Archival reclaims current projection capacity only; disk history and replay cost continue to grow.
+
+## Compact terminal reports
+
+The independent [improvement report helper](../../../../docs/improvement-report.md) owns cooperative cross-job claims and immutable derived occurrence reports outside the responsibility journal. Run `node --test test/improvement-report.test.mjs` and the `--focus token-review` behavioral drive. The `improvement-report` scenario exercises fresh helper processes and retained refusal evidence. Concurrent claims, exact-token release, duplicate publication, immutable first-conflict markers, degraded conflict reads, concurrent candidates, marker corruption and interruption after marker creation, missing/stale/future/failed/empty/partial results, manual provenance and read-only queries are behavioral checks. A declared complete report cannot authenticate native execution or coverage. The canonical publication model and backup do not cover these derived files. No new formal property or pin is introduced.
+
+The same scenario drives cleanup, weekly-upkeep and lifecycle-check reports. Completed execution with partial evidence keeps both dimensions. Stable snapshot digests exclude acquisition time and change on a selected report/conflict or eligibility change. Old schema-1 report bytes remain unchanged. A real isolated fleet CLI journey retains complete bounded-report output as receipt evidence, coalesces repeated requests/results, and leaves delivery pending. Its retained `fleetReceiptExample` is synthetic parent acceptance, never a live send. Supported exact-ID archived reads and actual producer/parent adoption require separate native evidence. Early completion cannot bypass the scheduled report generation-time guard; later adaptations retain original timestamps and attribution. No native run ID is synthesized.
+
+
+## Deterministic briefing pilot
+
+`daily-briefing` compiles exact byte-referenced declarations and reads one dedicated occurrence slot. `daily-briefing-pilot` runs fresh real CLI processes in the `--focus token-review` drive, after the isolated doctor's health check. It retains synthetic source/context files, requests, report bytes and conflicts under the behavioral evidence directory. `test/daily-briefing.test.mjs` adds ID/resource omissions, original source age, adapter and judgment refusal, protected context and missing-policy holds. The compiler always reports compiled-only, effects unauthorized and delivery unverified. It changes no existing morning/fleet effect owner, saved policy, install or schedule.
+
+The shared `immutable-slot.mjs` extraction retains improvement-report slot/conflict behavior. Its separate `node scripts/verify-briefing-slot.mjs` bounded TLA and copied-source witnesses cover only the mapped local publication operations. Read that model's bounds and assumptions. Existing canonical journal promises remain separate. Normal reads inspect exact slot and conflict paths without scanning unrelated history. Complete declared local coverage cannot prove source truth or authorize the held briefing migration.
+
+## Versioned briefing migration contracts
+
+The [v3 migration](../../../../docs/briefing-migration.md) adds pure `policy`, `prepare`, `reporting`, and `learning` actions to `daily-briefing`. Private current rules stay outside Git. The existing journal remains the only effect owner after explicit transfer. The fleet driver exercises the production cloud caller through fresh CLI processes with synthetic tool adapters. Run its fleet focus and the four v3 test suites named in that reference. Exact source clocks, terminal checks, one-off lifecycle, retained delivery-based snapshot deduplication, raw byte accounting, completed Tasks, safe human text, and prior-facts fallback have separate controls.
+
+Installed-client compatibility tests execute the retained frozen reporting client locally when present and label an absent client as skipped. They prove wire compatibility only. Deployment, live source completeness, actual ChatGPT delivery, and schedule adoption remain held. No new collector, reporting writer, scheduler, or other automation rebuild is included.
+
+Due checks with no acquired attempt remain unstarted and block a complete briefing. The real v3 CLI drive distinguishes this refusal from a supplied terminal missing result that permits a disclosed gap. The caller returns acquisition-required when there is no existing follow identity, with zero reads and no tight loop. Do not treat an empty results array as a terminal source outage.
+
+Strict v3 evidence controls drive malformed context through the real prepare CLI and journal review refusal. The same fresh-process seal and replay retain future Task exclusion, separately labelled upcoming deadlines, and explicit unknown overlay gaps. Unit controls cover every mail boolean with missing, null, string, numeric, array and object values, source-clock absence, and partial page accumulation. No control invokes real providers.
+
+The [cloud exchange](../../../../docs/briefing-cloud-exchange.md) supplies a concrete file-backed read/retention boundary for the held daily briefing. Run `node --test test/briefing-source-normalization.test.mjs`. It drives exact raw files and separately hashed observation sidecars through the actual caller and fresh prepare CLI. Task browser provenance, null overlays, partial and empty continuation pages, generic field pointers, exact native/sidecar cursors, wrapped business errors, conflicting native occurrence identities, tampering and bounded-file refusals are behavioral controls. Identical Calendar copies deduplicate while recurring original instants remain distinct. Date-only Calendar events preserve source dates, exclusive ends and IANA evidence; the compiler currently refuses non-Singapore source zones. No live connector/browser binding or provider truth is established. Existing canonical publication and journal semantics are unchanged.
+
+The `calendar-search-flat-v1` exchange adds synthetic tests for the parent-reported flat `structuredContent.events` shape. Run the same normalization suite. Independently pinned sidecars bind requested calendar, source provenance, exact inventory/window, clocks and coverage. Midnight stays unknown; no native Task link or IANA zone is inferred. Explicit offsets normalize to UTC while original response blocks survive. Recurrence identity and cancellation survive; conflicting copies, missing scope/provenance, unzoned/date-only strings and sidecar tampering refuse. The real prepare CLI discloses unknown timing and partial coverage. This is offline adapter evidence only, outside existing finite/TLC promises.
+
+Flat Calendar raw `next_page_token` must be explicit null or nonempty text for cursor equality. An omitted token preserves only a null sidecar cursor with both source completeness flags false and an explicit pagination-unknown gap; complete assertions or invented continuation refuse. Explicit null is the local terminal contract, not authenticated provider completeness.
+
+
+Calendar collector observations retain explicit original cloud start/end and basis separately from nullable provider clocks. Run the normalization suite for real caller/exchange/prepare CLI controls covering unknown provider clocks, stale collector versus stale provider classification, invalid bounds/basis, replay, missing inventory and field gaps, and mixed page bases. File ingestion clocks never refresh collection evidence. Existing pagination/error/identity controls remain required. These synthetic checks add no provider-truth or finite/TLC claim. See [collector contract](../../../../docs/briefing-cloud-exchange.md#calendar-collector-observation).
+
+The common foundation uses direct `content.mjs` and `strict-json.mjs` helpers. The shared `briefing-core.mjs` serves local CLI and portable consumers. Run the new release and morning-observation suites plus the fleet focus. Separate collector-mode CLI evidence retains null provider clocks, original bounds, packet identity and a partial same-journal seal without effects. Same acquisition receipt cannot lose its observation. Exact-source release materialization remains staged.
+
+Run `node --test test/foundation-release.test.mjs test/morning-observation.test.mjs` for the direct-source release and observation boundary. Follow the [operating procedure](../../../../docs/operating-procedure.md) for exact staged inputs and consumer gates. The actual `daily-briefing-pilot` drive also queries action `foundation` and verifies its staged, effects-unauthorized response.
+
+`automation --file` is the generic plan/report/exact-read boundary for all automation kinds. Run `node --test test/automation-procedure.test.mjs`; `automation-foundation` in the token-review focus drives a synthetic non-briefing configuration through fresh CLI processes. It retains exact procedure/configuration, deterministic plan, existing canonical report bytes, exact read and semantic/byte hash refusal. No native task is created or procedure executed. The pure planner has a separate bounded `automation-contract` domain.
+
+Generic ingestion controls reject rehashed invalid timing/telemetry and nonterminal report objects through exact CLI reads, publication and predecessor validation. Source revisions require strings. Valid historical null reports remain readable. The bounded automation domain pairs these refusals with actual-source mutations.
+
+The [automation lineage contract](../../automation-lineage/SKILL.md) checks selected supplied run histories through the actual synchronous producer. The existing `automation-foundation` CLI drive covers the separate plan, report and exact-read adapter boundary; it does not establish external history completeness or publication.
+
+The reporting CLI and its bounded publication verification run in the full aggregate. Generic automation producers use `src/automation-producer.mjs`; private reporting uses `src/automation-reporting.mjs`. Hosted CI and independent review remain required.

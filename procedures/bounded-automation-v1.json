@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "bounded-automation",
+  "version": 1,
+  "steps": [
+    { "id": "acquire", "kind": "cli", "operation": "Read only the configured sources within the declared source budgets.", "acceptance": "Retain exact source identities, original clocks, raw evidence and coverage. Missing evidence stays unknown." },
+    { "id": "assess", "kind": "judgment", "operation": "Apply the exact versioned procedure and private configuration to the acquired evidence.", "acceptance": "Retain failures, stopped work, uncertainty and policy holds. A generated plan is not a completed native action." },
+    { "id": "effects", "kind": "native", "operation": "Use the existing effect owner only for separately accepted operations. Otherwise retain recommendations.", "acceptance": "Rediscover uncertain identities before any retry. Claim an effect only after exact native readback." },
+    { "id": "report", "kind": "cli", "operation": "Prepare canonical automation-outcome artifacts for the configured owner and known destination.", "acceptance": "Bind the procedure and configuration evidence references. Keep execution, coverage, publication and delivery separate." }
+  ]
+}

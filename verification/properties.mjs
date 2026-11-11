@@ -1,9 +1,11 @@
+import { automationBounds, verifyAutomationContract } from './automation-properties.mjs';
 import { morningBounds, verifyMorningPolicy } from './morning-properties.mjs';
 import { incarnationBounds, legacyBounds, verifyIncarnationPolicy, verifyLegacyPolicy } from './incarnation-properties.mjs';
 import { canonical, digest, parseDefinition, parseObservation, recordPayload } from '../src/records.mjs';
 import { verifyDispatchPolicy } from './dispatch-properties.mjs';
 import { cloudBounds, verifyCloudPolicy } from './cloud-properties.mjs';
 import { calendarBounds, verifyCalendarPolicy } from './calendar-properties.mjs';
+import { registerBounds, verifyRegisterPolicy } from './calendar-register-properties.mjs';
 import { fleetBounds, verifyFleetPolicy } from './fleet-properties.mjs';
 
 const asOf = '2026-10-22T12:00:00.000Z';
@@ -54,9 +56,10 @@ export const bounds = {
   temporalTraces: ['green-unknown', 'fail-pass-repair-fail', 'fail-pass-repair-fail-pass-repair', 'recurrence-before-source-advance', 'weakened-definition', 'two-failed-repairs', 'completed-fail-failed-repair-failed-repair'],
   temporalMaximum: { criteria: 2, criterionObservations: 4, targetObservations: 2, taskObservations: 1, effectObservations: 2, repairs: 2, priorReviews: 3 },
   importGraph: { records: 2, orderings: 2, testedPrefixes: [0, 1, 2], explicitAbstractCycle: true },
-  dispatchRecovery: { phases: ['absent', 'attempted', 'pending', 'uncertain', 'ready'], coverage: ['complete', 'partial'], availability: ['available', 'unavailable', 'denied', 'unknown'], agesMs: [-1, 0, 86400000, 86400001], stateCombinations: 160, targetedCases: 108, permutations: ['original', 'reversed'], assumptions: 'Parsed byte-verified journal inputs and symbolic hash identities; native state remains reported.' },
+  dispatchRecovery: { phases: ['absent', 'attempted', 'pending', 'uncertain', 'ready'], coverage: ['complete', 'partial'], availability: ['available', 'unavailable', 'denied', 'unknown'], agesMs: [-1, 0, 86400000, 86400001], stateCombinations: 160, targetedCases: 219, permutations: ['original', 'reversed'], assumptions: 'Parsed byte-verified journal inputs and symbolic hash identities; native state remains reported.' },
   calendarAcceptance: calendarBounds,
-  fleetContract: fleetBounds, morningContract: morningBounds,
+  calendarRegister: registerBounds,
+  fleetContract: fleetBounds, morningContract: morningBounds, automationContract: automationBounds,
   assumptions: [
     'These are finite products and targeted temporal traces, not one full Cartesian product of every field.',
     'Active zero-criterion definitions are rejected by the actual boundary parser. Zero criteria cover retired/merged states.',
@@ -66,7 +69,7 @@ export const bounds = {
   ]
 };
 
-export function verifyProperties({ work, responsibilities, records, dispatch, calendar, cloud, incarnation, migration, fleet, morning, collection }, selected = null) {
+export function verifyProperties({ work, responsibilities, records, dispatch, calendar, register, cloud, incarnation, migration, fleet, morning, collection, policy, plan, reporting, automation }, selected = null) {
   const counts = {};
   const check = (property, input, condition, expectation) => {
     if (selected && selected !== property) return;
@@ -412,13 +415,18 @@ export function verifyProperties({ work, responsibilities, records, dispatch, ca
     const calendarResult = verifyCalendarPolicy({ calendar }, check);
     if (counts['calendar-acceptance'] !== bounds.calendarAcceptance.cases || calendarResult.cases !== counts['calendar-acceptance']) throw new Error('Declared calendar bounds differ from executed predicates');
   }
+  if (enabled('calendar-register')) {
+    const result = verifyRegisterPolicy({ register }, check);
+    if (result.cases !== bounds.calendarRegister.cases || counts['calendar-register'] !== result.cases) throw new Error('Declared register bounds differ from executed predicates');
+  }
   if (enabled('cloud-admission')) {
     const result = verifyCloudPolicy({ cloud }, check);
     if (result.cases !== bounds.cloudAdmission.cases || counts['cloud-admission'] !== result.cases) throw new Error(`Declared cloud bounds differ from executed predicates ${result.cases}`);
   }
   if (enabled('process-incarnation')) { const result = verifyIncarnationPolicy({ incarnation }, check); if (result.cases !== bounds.processIncarnation.cases || counts['process-incarnation'] !== result.cases) throw new Error(`Incarnation bounds differ ${result.cases}`); }
   if (enabled('legacy-baseline')) { const result = verifyLegacyPolicy({ migration }, check); if (result.cases !== bounds.legacyBaseline.cases || counts['legacy-baseline'] !== result.cases) throw new Error(`Legacy bounds differ ${result.cases}`); }
-  if (enabled('morning-contract')) { const result = verifyMorningPolicy({ morning, fleet, collection }, check); if (result.cases !== bounds.morningContract.cases || counts['morning-contract'] !== result.cases) throw new Error(`Morning bounds differ ${result.cases}`); }
+  if (enabled('automation-contract')) { const result = verifyAutomationContract(automation, check, reporting); if (result.cases !== bounds.automationContract.cases || counts['automation-contract'] !== result.cases) throw new Error('Automation bounds differ'); }
+  if (enabled('morning-contract')) { const result = verifyMorningPolicy({ morning, fleet, collection, policy, plan, reporting }, check); if (result.cases !== bounds.morningContract.cases || counts['morning-contract'] !== result.cases) throw new Error(`Morning bounds differ ${result.cases}`); }
   if (enabled('fleet-contract')) { const result = verifyFleetPolicy({ fleet }, check); if (result.cases !== bounds.fleetContract.cases || counts['fleet-contract'] !== result.cases) throw new Error(`Fleet bounds differ ${result.cases}`); }
   return { counts, checks: Object.values(counts).reduce((sum, count) => sum + count, 0) };
 }

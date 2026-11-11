@@ -1,0 +1,12 @@
+---
+title: "Shared planning policy"
+---
+stateDiagram-v2
+  s0: Awaiting scoped operation
+  s1: Rules and evidence supplied
+  s2: Exact rules satisfied or evidenced inapplicable
+  s3: Dependent application refused
+  [*] --> s0
+  s0 --> s1: supply scoped rules and operation evidence
+  s1 --> s3: check exact rules and booking evidence
+  s1 --> s2: check exact rules and booking evidence
