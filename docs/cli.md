@@ -19,7 +19,7 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 | calendar | `--file <value>` required | Assess declared current calendar intent, exact saved fields, inventory, allocations and retained attempts without execution. | evidence |
 | calendar-register | `--file <value>` required | Collect read-only Calendar/Tasks snapshots, assess exact-ID proposals, validate shared versioned planning rules and handoffs, or prepare Academic OS API plans and inspect reports without applying them. | evidence |
 | automation | `--file <value>` required | Plan a staged automation from exact procedure/configuration bytes, prepare existing canonical outcome artifacts, or read one exact artifact without native execution. | upkeep |
-| daily-briefing | `--file <value>` required | Read the staged operating contract, validate private briefing policy, prepare fixed reports and reporting contracts, or compile/read exact held artifact slots without native effects. | upkeep |
+| daily-briefing | `--file <value>` required | Read the staged operating contract, validate private briefing policy, prepare policy-v3 briefings and reporting contracts without native effects or artifact-slot publication. | upkeep |
 | briefing | `--file <value>` | Load an explicitly pinned local release or canonical public guidance, check a declared draft, and retain exact advisory Markdown. | evidence |
 | guidance-pin | `--file <value>` required | Activate, inspect or deactivate an exact approved installed local guidance release without changing canonical caches. | evidence |
 | probe | `--id <value>`, `--nonce <value>` required | Publish current-environment onboarding proposals; cloud delegation requires an explicit probe ID. | routing |

@@ -19,7 +19,7 @@ import { boundedJson } from '../src/bounded-json.mjs';
 import { automationReporting } from '../src/automation-reporting.mjs';
 import { assertNoCredentials } from '../src/reporting-privacy.mjs';
 import { assessAssurance } from '../src/local-assurance.mjs';
-import { dailyBriefing, readDailyBriefingRequest } from '../src/daily-briefing.mjs';
+import { executeBriefing } from '../src/briefing-core.mjs';
 
 const args = process.argv.slice(2);
 const commandName = args.shift() ?? 'help';
@@ -68,13 +68,12 @@ try {
       exitCode = request.action === 'read' && data.status !== 'available' ? 3 : 0; break;
     }
     case 'daily-briefing': {
-      const request = await readDailyBriefingRequest(resolve(options.file));
-      data = await dailyBriefing(request);
+      const request = await boundedJson(resolve(options.file), 1048576);
+      data = executeBriefing(request, { now: new Date().toISOString() });
       exitCode = request.action === 'prepare' ? data.checksTerminal && data.coverage === 'complete-declared' ? 0 : 3
         : ['policy', 'foundation'].includes(request.action) ? 0
         : request.action === 'reporting' ? data.readyForBriefing === false || data.publication === 'unverified' ? 3 : 0
-        : request.action === 'learning' ? data.status === 'held' ? 3 : 0
-        : ['published', 'identical', 'available'].includes(data.status) ? 0 : 3;
+        : data.status === 'held' ? 3 : 0;
       break;
     }
     case 'briefing':

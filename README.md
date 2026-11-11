@@ -8,7 +8,7 @@ The [generic automation foundation](docs/automation-foundation.md) builds staged
 
 Use the [common operating procedure](docs/operating-procedure.md) for the staged source release, exact consumer bindings, fixed report reads, and briefing-only pilot hold. The shared compiler and acquisition modules build directly from one Git commit. Existing installations remain separately accepted consumers.
 
-The [deterministic briefing pilot](docs/deterministic-briefing.md) retains exact immutable local reports. The [v3 migration](docs/briefing-migration.md) adds private policy, a cloud caller contract, and ChatGPT delivery through the existing morning journal. Deployment and the parent-observed pilot remain held. No installed release or automation changes.
+The [shared daily briefing compiler](docs/deterministic-briefing.md) uses one pure local/portable policy entry. The former v1 artifact-slot compiler is retired from new source; retained artifacts and installations stay unchanged. The [v3 migration](docs/briefing-migration.md) adds private policy, a cloud caller contract, and ChatGPT delivery through the existing morning journal. Deployment and the parent-observed pilot remain held. No installed release or automation changes.
 
 Emmy is Jerome's ChatGPT Dot. This repository gives one chief of staff durable responsibility context, current evidence checks, retained failures and repairs, and bounded next proposals.
 

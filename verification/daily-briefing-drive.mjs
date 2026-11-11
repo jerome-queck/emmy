@@ -2,10 +2,12 @@ import { automationProcedureFixture, automationConfigurationFixture, automationO
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { dailyFixture } from './daily-briefing-fixtures.mjs';
+import { createHash } from 'node:crypto';
+import { executeBriefing } from '../src/briefing-core.mjs';
+import { plan } from '../test/fixtures/briefing-policy.mjs';
 export async function driveDailyBriefing({ home, run, scenario, report, evidenceDir }) {
   const directory = join(evidenceDir, 'daily-briefing'); await mkdir(directory, { recursive: true });
-  const { input, save } = await dailyFixture(directory);
+  const save = async (name, value) => { const raw = typeof value === 'string' ? value : JSON.stringify(value); const path = join(directory, name); await writeFile(path, raw); return { path, sha256: createHash('sha256').update(raw).digest('hex') }; };
   const foundation = await run(['daily-briefing', '--file', (await save('foundation-request.json', { action: 'foundation', input: {} })).path]);
   assert.equal(foundation.id, 'emmy-operating-foundation'); assert.equal(foundation.state, 'staged'); assert.equal(foundation.effectsAuthorized, false);
   const genericProcedure = await save('generic-procedure.json', automationProcedureFixture);
@@ -24,17 +26,25 @@ export async function driveDailyBriefing({ home, run, scenario, report, evidence
   await run(['automation', '--file', (await save('generic-tamper-request.json', { ...genericReadRequest, recordId: genericReference.sha256 })).path], 2);
   report.retainedAutomationFoundation = { directory, planDigest: genericPlan.planDigest, artifact: genericReference, recordId: genericArtifact.id, sourceTruth: 'synthetic', nativeCreation: 'not-performed' };
   scenario('automation-foundation', 'Generic non-briefing procedure/configuration compiles a deterministic staged plan, prepares the existing canonical outcome and reads only its exact artifact. No native execution, creation or history discovery.');
-  const request = await save('compile-request.json', { action: 'compile', directory, input });
-  const first = await run(['daily-briefing', '--file', request.path]); assert.equal(first.status, 'published');
-  assert.equal((await run(['daily-briefing', '--file', request.path])).status, 'identical');
-  const read = await save('read-request.json', { action: 'read', directory, identity: input.identity, maxAgeSeconds: 300 });
-  await writeFile(join(directory, 'unrelated-malformed.json'), 'unselected malformed history');
-  const selected = await run(['daily-briefing', '--file', read.path]); assert.equal(selected.status, 'available'); assert.equal(selected.effectsAuthorized, false); assert.equal(selected.result.execution, 'compiled-only'); assert.equal(selected.delivery, 'unverified');
-  const original = await readFile(first.path);
-  const source = input.sources[0]; const data = JSON.parse(await readFile(source.artifact.path)); data.inboxIds.push('unreviewed-native-id'); source.artifact = await save('gmail-partial.json', data);
-  const partial = await save('conflict-request.json', { action: 'compile', directory, input });
-  assert.equal((await run(['daily-briefing', '--file', partial.path], 3)).status, 'conflict'); assert.deepEqual(await readFile(first.path), original); assert.equal((await run(['daily-briefing', '--file', read.path], 3)).status, 'conflict');
-  const invalid = await save('invalid-request.json', { action: 'compile', directory, input: { ...input, asOf: 'invalid' } }); await run(['daily-briefing', '--file', invalid.path], 2);
-  report.retainedDailyBriefing = { directory, artifact: first.path, bodyDigest: selected.result.bodyDigest, originalBytes: original.length, synthetic: true };
-  scenario('daily-briefing-pilot', 'Fresh real CLI compiles exact supplied source files, repeats idempotently, reads only exact occurrence/marker, preserves contradictory candidates and refuses invalid clocks. Every artifact remains held without effect or delivery authority.');
+  const input = plan();
+  const request = await save('prepare-request.json', { action: 'prepare', input });
+  const expected = executeBriefing({ action: 'prepare', input }, { now: new Date().toISOString() });
+  const first = await run(['daily-briefing', '--file', request.path], 3);
+  assert.deepEqual(first, expected);
+  const prepared = await save('prepared-result.json', first);
+  const body = await save('prepared-body.md', first.body);
+  assert.equal((await run(['daily-briefing', '--file', request.path], 3)).bodyDigest, first.bodyDigest);
+  assert.equal(createHash('sha256').update(first.body).digest('hex'), first.bodyDigest);
+  const artifact = await save('retained-v1-artifact.json', 'Retained historical bytes; never an input to the current compiler.');
+  const original = await readFile(artifact.path);
+  for (const action of ['compile', 'read']) {
+    const identity = { day: input.day, provenance: 'manual', scheduledFor: null };
+    const retired = await save(`${action}-request.json`, action === 'compile' ? { action, directory, input } : { action, directory, identity, maxAgeSeconds: 300 });
+    await run(['daily-briefing', '--file', retired.path], 2);
+    assert.deepEqual(await readFile(artifact.path), original);
+  }
+  const future = structuredClone(input); future.asOf = '9999-11-03T01:00:00.000Z'; future.day = '9999-11-03';
+  const invalid = await save('future-request.json', { action: 'prepare', input: future }); await run(['daily-briefing', '--file', invalid.path], 2);
+  report.retainedDailyBriefing = { directory, artifact: artifact.path, prepared: prepared.path, body: body.path, bodyDigest: first.bodyDigest, originalBytes: original.length, synthetic: true, retiredActions: ['compile', 'read'] };
+  scenario('daily-briefing-pilot', 'Fresh real CLI prepares the same policy-v3 body as the portable core, repeats deterministically, refuses future and retired v1 requests, and preserves retained historical artifact bytes without publishing slots. Native effects and delivery remain separate.');
 }
