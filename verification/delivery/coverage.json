@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "3c09b4fa98b53139b88c6210a40ac7e20a405c2a",
+  "sourceCommit": "11f1d50c1a0b46453141491ed7210046c80d2e94",
   "sourceFiles": {
     "scripts/github-auto-merge.mjs": "3c89e3044e08fd70841e481da1943a8efa2dea615a3a98c27cbe7d020e7bce9d",
-    "scripts/local-delivery.mjs": "374422dbabfd50c0ea5bc1ba469b6dc2960d5e5d55dde4c1aab56e01434820fc",
+    "scripts/local-delivery.mjs": "b339a2c581ad2751ffe013d93652b6917439c10e4268e636dbe91fb8e14657bf",
     "src/local-assurance.mjs": "6ff678f407e56d2b9b0f338698628dc08b07eda768cb8cb20ad288d0c9cb8764",
     "src/assurance.mjs": "5861cf2154b957e614745cf863f76ddf07558f363fb281116476df120d4c9f7b",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
@@ -12,17 +12,17 @@
   },
   "verificationFiles": {
     "verification/delivery/check.mjs": "f126298040e9739a8c337d54184718d5a307c8af48a048f8181a5d1f36e2ed64",
-    "verification/delivery/drive.mjs": "c0d0d12e985ae3f33fc841020458d3bf9e56e2803222a9e68ecc4ac46879ce19",
+    "verification/delivery/drive.mjs": "b43424a0fe4729f874c0f5cb1d1f442aded600e1418b3eaadc6b4ccbd4ff2822",
     "verification/delivery/fixtures.mjs": "3b8f75ee9dcba69a8a176c0244a4f1bff2c82f39e1b4391f3101e87064f5f0bf",
     "verification/delivery/graph.mjs": "c5991e788169474ab1d70836625509081ac77055dec8383d4d5518bb6f124d88",
     "verification/delivery/view.mjs": "74326e92da34329aaf524f59c9c14673d23c2917f90e46997738a08badba599d",
     "verification/delivery/chart.mmd": "c4bba229358771f495c65cdc622461ba1dc66a0e2da8940f5252e3b248bcba92",
     "test/github-auto-merge.test.mjs": "41f5a82045765c1c2c1fcaf8cc6341da790e3a90081ea216953a198da4e6f728",
-    "test/local-delivery.test.mjs": "c2e2f8a3e23450a3db300da1a2b8a408d9f52c1ad104375633fa43679060c5e9",
-    ".agents/skills/merge-assurance/SKILL.md": "6f14f5b60c3769c11e99ff6efb39d563b5a15daf0ecfcdb7347f146814b39f85",
-    "docs/local-delivery.md": "31d2ba4123831a0a4d6a5e9b254077bbdecdc86faa96fdb175f62d8dd9266254"
+    "test/local-delivery.test.mjs": "8357705533cf40553cb6ea2d3dbbd017d433567cdebc84dc9e0b75e98774cfe1",
+    ".agents/skills/merge-assurance/SKILL.md": "be1eb5ff37343876c11e181be2bb0ce5ca6c33c1ae9b39366342b11c33ec7834",
+    "docs/local-delivery.md": "37d5a302e651435a90ddb5ca2d766ea8b6171e6a5b463da5ce907f56a53c73c9"
   },
-  "reviewBasis": "Isolated three-way reconciliation of exact delivery-v2 924681b and independently accepted direct b119422 over c5f8b46. Owner read every affected source delta and five overlapping docs/metadata files. Direct and delivery production bytes are retained exactly. Coordination coverage changes only merged prose hashes; delivery coverage additionally binds the twentieth direct-dispatch suite. Old gates refused intended drift. No canonical publication await or mapped property was weakened. New combined source needs its own full gate and independent exact-head verdict; old receipts/verdicts do not attest it.",
+  "reviewBasis": "Focused remaining R2/R3 correction over frozen combined bd16e0d. Owner read exact original-scope comparison and the immutable intent/evidence representation. Compare all request fields before resolution, excluding only authorization/resolution renewal, while preserving unknown/history and retry credit on mismatch. Old actual CLI reproduced retry-ready on changed review; corrected fresh CLI stays unknown, and removing the actual adapter guard reproduces the forbidden advance. No reducer or temporal property changed. Original full gates do not attest this new head.",
   "mapping": [
     {
       "property": "LocalAdmission",
@@ -120,6 +120,20 @@
         "wrong-resolution-attempt",
         "uncertain-resolution",
         "repeated-resolution"
+      ]
+    },
+    {
+      "property": "OriginalActionScopeBeforeResolution",
+      "files": [
+        "scripts/local-delivery.mjs"
+      ],
+      "functions": [
+        "scopeDigest",
+        "deliverLocal"
+      ],
+      "verification": "Actual adapter/CLI boundary; not inferred from abstract TLC event.valid.",
+      "mutations": [
+        "adapter-original-scope-resolution"
       ]
     }
   ],
