@@ -48,7 +48,7 @@
     },
     {
       "name": "dispatch",
-      "description": "Resolve saved destinations, recover explicit direct-root or historical bindings, and return read-only native dispatch advice.",
+      "description": "Resolve an explicit saved destination from fresh discovery, recover private bindings, and return read-only native dispatch advice.",
       "options": [
         {
           "name": "id"
@@ -130,7 +130,7 @@
     },
     {
       "name": "calendar-register",
-      "description": "Collect read-only Calendar/Tasks snapshots, assess exact-ID proposals, validate shared versioned planning rules and handoffs, or prepare Academic OS API plans and inspect reports without applying them.",
+      "description": "Collect read-only Calendar/Tasks snapshots, assess exact-ID proposals, validate handoffs, or prepare Academic OS API plans and inspect reports without applying them.",
       "options": [
         {
           "name": "file",
@@ -184,7 +184,7 @@
     },
     {
       "name": "probe",
-      "description": "Publish current-environment onboarding proposals; cloud delegation requires an explicit probe ID.",
+      "description": "Publish a proposed Dot onboarding packet with eight probes.",
       "options": [
         {
           "name": "id"
@@ -195,17 +195,6 @@
         }
       ],
       "feature": "routing"
-    },
-    {
-      "name": "assurance",
-      "description": "Replay one exact retained local check receipt against current source, base, suite and environment without executing checks.",
-      "options": [
-        {
-          "name": "file",
-          "required": true
-        }
-      ],
-      "feature": "upkeep"
     },
     {
       "name": "maintain",
@@ -368,8 +357,7 @@
         "backup",
         "restore",
         "automation",
-        "daily-briefing",
-        "assurance"
+        "daily-briefing"
       ],
       "scenarios": [
         "archive-recovery",
@@ -379,8 +367,7 @@
         "derived-boundaries",
         "improvement-report",
         "automation-foundation",
-        "daily-briefing-pilot",
-        "local-assurance"
+        "daily-briefing-pilot"
       ],
       "properties": [
         "restore-suspension",

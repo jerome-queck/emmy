@@ -1,57 +1,56 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "5a2f68528214fac9c5269091871a9ce9cbc3dcc5",
-  "reviewBasis": "Isolated three-way reconciliation of exact delivery-v2 924681b and independently accepted direct b119422 over c5f8b46. Owner read every affected source delta and five overlapping docs/metadata files. Direct and delivery production bytes are retained exactly. Coordination coverage changes only merged prose hashes; delivery coverage additionally binds the twentieth direct-dispatch suite. Old gates refused intended drift. No canonical publication await or mapped property was weakened. New combined source needs its own full gate and independent exact-head verdict; old receipts/verdicts do not attest it. Coverage-admission follow-on: reviewed starting byte equality and the exact maintenance, behavioral fixture and CLI test diff. Existing coordination predicates and properties are unchanged. Structural inventory checks do not establish semantic coverage, independently executed verification or whole-foundation readiness. COV-R1/R2 follow-on reviews authoritative generated-byte comparison, unchanged non-generated source guards and the explicit configured guidance input inventory. Existing coordination properties and bounds remain unchanged; new controls are empirical. Caller-admission follow-on reviews literal relative import matching and its CLI negative controls. Dynamic and external callers remain a manual-review boundary; coordination properties and bounds are unchanged. Reviewer correction follow-on: a single reviewed metadata registry binds evidence to areas; parsed module requests and linked export interfaces replace filename substrings and comment-sensitive graph claims. Existing coordination properties and bounds remain unchanged. Owner-interface follow-on replaces symbol substring checks with parsed exported-owner checks; existing coordination properties and bounds remain unchanged. Hand-mapped follow-on binds reviewed model and runner bytes in existing metadata after a double-rebinding negative control. This is identity admission only; coordination predicates and bounds are unchanged. Configuration-discovery follow-on reviews explicit supported families and synthetic fixture bindings; coordination properties and bounds are unchanged. Other unrecognized configuration families remain a manual-review boundary. Responsibility closure follow-on: reviewed full mapped source diff; one appended fixed formal suite, metadata evidence binding and feature documentation; reducer guards and prior properties retained. Source-derived closure graph has separate bounded proof; no native claims. Reachable-history admission uses the same graph interface, registered bytes and export checks; all earlier model categories and guards remain. Added unknown-kind and commented-graph refusal controls. Restoration-suspension adds bounded history and a fixed suite; existing predicates and admission guards are retained. Restoration integration source review: fixed suite appends one group; metadata adds one history binding; upkeep and local-assurance skill wording follows. Existing reducer, guards, graph, publication awaits, dispatch and delivery semantics unchanged. Registry order restored for pre-existing negative control; no behavior or earlier guards changed. Preload path repair changes only fixture import specifiers to encoded file URLs; mapped production predicates, guards, bounds and model semantics remain unchanged. Cooperative-cloud integration adds one reachable-reducer evidence binding and a fixed suite; existing coordination predicates, source guards and mutations are unchanged. Fleet history integration appends one suite and one metadata evidence association; prior fixed plan order, reducer guards and production fleet behavior are unchanged. Source review and full recheck remain required. Morning-send integration: reviewed 175 mapped source files from prior sync; only an appended assurance row and appended metadata association differ. Existing reducer guards, prior plan order and modeled boundaries remain unchanged. Full exact-head gate and independent review remain pending. Calendar attempt integration: appended one fixed suite and one metadata association; reviewed the synthetic Calendar driver and evidence feature additions. Existing transition guards and prior suite rows are unchanged. Full gate and independent review pending. Ported accepted mapped source to the reachable local source witness. Reviewed exact bytes and retained existing properties and guards. The local-assurance plan count records the actual 27 suites.",
+  "sourceCommit": "037e3ad4354ffe8b2954c74fe0eb248ca2f71637",
+  "reviewBasis": "Reviewed complete covered diff from 2278e19ade107df44f6fd85cfe295f8000d32e31 through a4b8d9d36cdd79771aacfde74dfa3302f0d28c57. Canonical hashing and strict JSON implementation moved verbatim to pure leaf owners; compatibility exports remain. Read-only acquisition now has one complete source owner; shared compiler entry and versioned staged procedure remove private source-slice packaging. Calendar original provider observation is retained separately from acquisition receipts only for v3 Calendar sources. Source role/version/freshness, exact collector seal binding, same-receipt metadata immutability across retained history, and packet equality have seven added finite cases and six paired actual-source mutations. Existing domains and mutation promises remain. Reviewed original surviving freshness mutant and ambiguous role anchor; corrected isolation and replayed intended counterexamples. Publication awaits, dependency edges, filesystem operations and TLC domains are unchanged. New release builder and consumer integrity are behavioral checks, outside the finite and TLC claims. Strict old-pin refusals retained; independent source review found and verified same-receipt stripping repair. Development 8676 predicates and272 intended mutants pass. No provider truth, permission, installation, schedule, delivery or adoption claim. Reviewed compact portable distribution selector at c05bac922b2c25a50a3e371a68dbbac9188e8321. Same direct-source builder and capsule verifier; portable output retains only declared compiler/acquisition modules and refuses runtime materialization. It adds no publication or finite semantics. Actual isolated-source release tests pass. Reviewed entire generic foundation delta from c05bac922b2c25a50a3e371a68dbbac9188e8321 through 730f9c6426f0e310555b0ed74a12899a31f59a74. Shared versioned procedures and exact private configuration now compile generic deterministic staged plans, self-contained short prompts and known report destinations. One generic canonical reporting owner preserves existing producer/publication bytes; briefing check assessment remains an adapter. Twenty-four new automation-contract cases and five paired actual-source mutants cover supplied bindings, scope, nonnegative budgets, deterministic plan identity, configuration changes and no effect authority. Retained duplicate-stage survivor was isolated from procedure-digest refusal; a too-broad lost-config mutant was narrowed to the intended lost-parameters disagreement. Development8700predicates/277mutants pass with restored baseline. Independent review compared six producer modes and two publication modes byte-for-byte. Capsule v2 and v1 compatibility correction independently reviewed and retested. No canonical publisher await, journal edge, TLC graph/bound or existing property is weakened. Actual source authenticity, future execution, native permissions, budget enforcement, adoption and delivery remain separate. Documentation-only portable entry inventory correction reviewed at ef6ae4323a18cfd2e8a80078263f3a18806deef4; production and verifier bytes remain unchanged. Independent verification reviewed the full covered delta through ac16c58440017409002541d7faed8d491639019a. Reproduced rehashed malformed run evidence and coerced revision through the actual CLI. Source revision now requires a string. Existing producer timing/telemetry predicates are shared with artifact/predecessor ingestion; non-null reports require terminal execution. Historical terminal report:null remains accepted and valid producer bytes are unchanged. Generic automation domain adds ten predicates and four intended source mutations, total8710/281. No publication await, reference edge, model state, bound or invariant changes. Bounded validation cannot authenticate provider claims or grant execution/adoption. Reviewed subsequent delta through 037e3ad4354ffe8b2954c74fe0eb248ca2f71637. A correctly rehashed capsule could carry an array revision. The release reader/materializer now require a string full commit, with actual reader/materializer/CLI regression and v1 compatibility controls. Valid build/output bytes are unchanged apart from the explicit source revision. Release validation remains behavioral, not a new finite or TLC theorem. No covered production state transition, canonical writer or model promise changed.",
   "files": {
-    ".agents/skills/coordination-contract/SKILL.md": "7812065ec2f9cec1e5b8fef68a250c4246ef8534c2ae684060c18287e37a5a6a",
+    ".agents/skills/coordination-contract/SKILL.md": "a47e031f3f050ef683c8ebd5722ca4a92fd5b61733a98fd29ce88a5a3723b559",
     ".agents/skills/morning-collect/SKILL.md": "cb26be9998b456c6f538af9d257d1a78330d4cd23a804b86e86c38ce2bc8c499",
-    ".agents/skills/publication-contract/SKILL.md": "862ded159098cb4fe6fbfb0a4f02b6dd4330720be669e4e6e11bfcffc4c797b6",
+    ".agents/skills/publication-contract/SKILL.md": "2f5e3736f2ef702fa75a19f9ab462a9967fb4e68e6b30aca82e4111efff26f0f",
     ".agents/skills/sign-in/SKILL.md": "558542d0c5a9eecf5c9a5b605fd6e57200c8ff25fd725515ccbc2ee8aac2b252",
-    ".agents/skills/verify/SKILL.md": "82255cba81c25a4aa24cced062d49ad287f6d023dbc50f8809d6768efa7bd316",
-    ".agents/skills/verify/features/cloud.md": "b7241522ae38f278098693d208f21a50a8244db75dd7a48ea5aaec1f413ef9da",
-    ".agents/skills/verify/features/evidence.md": "318227a4c44a9da39523beebec08b5e146a258a12a0a2043e446c0bd75e234c5",
-    ".agents/skills/verify/features/fleet.md": "12da999b8014148a5ce5181b86d16cf9d74947871d834a378bec601daa2f6644",
-    ".agents/skills/verify/features/upkeep.md": "c6509a61326e74c0316060eca459a775aacd5fa293001aebc7313b18ad8871b3",
-    "README.md": "2004741ce906ecbf490b040d379c1e36ff867c275aead51f411af0d8bc7230e0",
+    ".agents/skills/verify/SKILL.md": "2dea2c9e6f5bc8ab1e90f36a62e2a1c6ecc2e22726ad910cb142fa60bb56b9a7",
+    ".agents/skills/verify/features/cloud.md": "1d8482545d28f81a6adfce62958536ad0a24b0cdbdc521c16cb5bc55a626f32a",
+    ".agents/skills/verify/features/evidence.md": "dff8cd2d29754f6e95e7fe849de8ed0f7cddb1c0be0ce1f7808df0d074d3698f",
+    ".agents/skills/verify/features/fleet.md": "f6728fb39f6bc605c7425833d8ecddb1226c54723aeeec2390e74447da5e3bf8",
+    ".agents/skills/verify/features/upkeep.md": "7074e1b605e3dc8bbd3b17b6b491f71bd932ab05293596bc1f472a5ef8759605",
+    "README.md": "cfe9fe1b05784b9f3130065f662b4400bcd5ec993929db16de32f59216ab58e7",
     "docs/academic-os-alignment.md": "168cbf7c92f46a8374417ecaac38a3be517c1ca9fb031df834c55db96b79b268",
-    "docs/academic-os-task-plan.md": "96bf04e00acb1bc9a212c675270d714876d9afb4f42427543e2f4e3a60baab10",
-    "docs/architecture.md": "879b280d147d4a8944595d2d98140f7cc1099e2b117324fc9517d695df7ccc36",
+    "docs/academic-os-task-plan.md": "43d55680542996c8c78f77682a0df2529d348212217fd9d9090035b927546f75",
+    "docs/architecture.md": "ac3798e65c3f95b396d7be9a0caa6fc54120406ac597208ee0fee3971022848b",
     "docs/automation-foundation.md": "2e86d866b7e25c3a11e7f3b20296689a07613ae5ef6173aa76e43c2fd9f54ad2",
     "docs/briefing-cloud-exchange.md": "676921c90a9e5e2e5bd9907a0bb66b160f42bd4c07e8227650109f59b35170ed",
     "docs/briefing-migration.md": "9ece61de0bb41fc4dc2dc830ff5f52fc8c1eb5b2c6ede611f1fa25d02252a9b4",
-    "docs/calendar-handoff.md": "da6af966ccd2caf1336e7b12e7a2d2577fb18977d8f487b2d6e90e280270b010",
-    "docs/calendar-register.md": "060c1b9d2f57d6c908ceb34bff55200c97ff422321e4f90ca768cdde3838865b",
+    "docs/calendar-handoff.md": "6457b14e71cb82950fbdf29ca93a2f9698ead1447dcf8d5a489a6bd39a04cc6f",
+    "docs/calendar-register.md": "81a09f870e08345bb9c024be5fd35d1fee0c5c7fe5390c544284a392407ae272",
     "docs/calendar-timing.md": "5c990e6f647f1c2d70a36ee5197110417c5d09bb250a5b4cc306f39aee9cb7a9",
     "docs/calendar.md": "02f9502edc5b0581c8931d27f74ccc9c4c41b56550adb3a78af8c0d8dd932b79",
-    "docs/cli.md": "53a0fec0630b6ff569d3dc203b6805d510eb11b75c692345866b2a43eb8f9677",
+    "docs/cli.md": "a7e5a9dbd89f394de4de952dedae89ab99d51f8746686515a611dedbb94510e0",
     "docs/cloud-admission.md": "e12785d1f2656b4257556a97332832df2f9c58f413f4548e5d7c6304b94bdb0f",
     "docs/deterministic-briefing.md": "da2fa4b44f7ebb984c9af7f848552bc5419cbb72674253925ad53cefa718f05c",
     "docs/fleet-health.md": "4b8760b3e9c2d98a6839bcddda1ca6747471481f0ffe778a8d54bf668ac84f9e",
     "docs/guidance-pin.md": "a71397cfe6cedec48c110224e162005ac0477d54874442e3e06cf3a71d7e2eee",
     "docs/improvement-report.md": "6d2787556e7a60b2f83b2bddfed7a8a98e1189f6789816660e992a8d458f45ad",
     "docs/morning-workflow.md": "5b04cc968189db2b770ef6514fdc4c29fc77d6e763cc29acc9db2a882afd179e",
-    "docs/operating-brief.md": "613dfc5e89d0eb44c540c42221ef34394dfbf23ac5150b9eb39baca077d20af9",
+    "docs/operating-brief.md": "023678ef0fb954c7837c987836bfa2908d4955faff5ceb4e60c71796f44f1de4",
     "docs/operating-procedure.md": "0ba57f96cc1ce2702ea43b24fa6251f079d1454f592f905a6da2a4449d195594",
     "docs/research/calendar-tasks-integration.md": "5dd8a9eb8070db7f69130351fd07aa0a1216fbb8f9267f66751f0281229ecb87",
     "docs/token-review.md": "f345647d50fb9a8e2500d001d3b657b10ee0ea28a157da0198ff6c618c4fa36e",
-    "docs/verification-index.json": "91fda8f60ff86dddc7e3c83836471eadf51cb2d28a7455ca0b7888b796d99d18",
+    "docs/verification-index.json": "0db6b9fcc10d464d1a07f2cfd104110dd7832ffc1fc41e93f50220bf44cb5f44",
     "procedures/bounded-automation-v1.json": "926ec4a3ca46d8605c7da48f8898cfa628ed805340a2abeb5cb4861c06d18e34",
-    "registry/catalog.json": "5867f129ad5b297e182a8b2f7e4286234dce44277bda08cba212d73ff5fb64a9",
-    "scripts/agent.mjs": "314099e863b0153da4415ac68f38a6f340dc112b1d9f7c5d5453760d21f2d7d5",
+    "scripts/agent.mjs": "dd5f4643746778628ea58820368686b7602f189b51d91a08f67404b208aa0862",
     "scripts/briefing-cloud-exchange.mjs": "ece4c710643cb2c1f4d32610324f1a346669ef67cfeaee7c8a833af878458703",
-    "scripts/check.mjs": "f8b710af8abcafa21d3090a9739b820f04b01b98e9dfdfb8b49ca1b4877b204c",
+    "scripts/check.mjs": "b436ed3c66ab17bcf039a553b0ee227ba94b080dbdc3cc41da03c9e196f16683",
     "scripts/cloud-acceptance.mjs": "9940ac43b1c277bfe1f9f9cebbf60568e62aee293af2817c4cb5689548e07583",
     "scripts/collect-morning.mjs": "861b14011777a382c9a35a4bc3f6c21de1ec9b0f3e395168eb740819226b2f86",
     "scripts/foundation-release.mjs": "8d4740442cd3fbbf6e0d5454568bef52ea1596e9207ae528a65f5c8e2fec692c",
     "scripts/improvement-report.mjs": "7a84179a8b5d955fa7cdb1d4408b0fe29ac8421984ca073ae57b39ee17952f12",
-    "scripts/verify-behavior.mjs": "459445e4303fb51495ac63840d36f0a4119c2b4ca74ed1743ff62842a9eb2500",
-    "scripts/verify-formal.mjs": "c9d43d42de0a9e4b46f1173e80870818e11857387230da12dcbf74b6591598ba",
-    "src/academic-os-task-plan.mjs": "9e997cf82ba3bc408fb3b0c01c14f76794a507f706da67856231fccc55ab35a9",
+    "scripts/verify-behavior.mjs": "b00d23c6434a451eae5bf16a2a3fb8b5a181be7f3ee857035855ad82b0c7dc0a",
+    "scripts/verify-formal.mjs": "946d7e6924e35b6310169d2176c16616440008583240ddf2ef4bbb96512f1807",
+    "src/academic-os-task-plan.mjs": "813acd43f2dae26dfdd4247043ef880f292ca67392e6b961a4b1be4dec12ea71",
     "src/automation-plan.mjs": "4a9a94eea37330dfe7521a98448b5e6c63a92dcb7c296517e58a112adeeb9f59",
     "src/automation-procedure.mjs": "c52e2228ef4c241598f95892b18268f174e42b64afca5b4124731c36a651e35b",
     "src/automation-reporting.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
     "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
-    "src/briefing-acquisition.mjs": "3511cb9112404dc4e63275ee09cc368f1abbf27bdfa48cf87dade388082aa8dc",
+    "src/briefing-acquisition.mjs": "0fa631189ec2b7a2a656b5f0e172adf6cf3342c85bd3b47fa5a046b9e54cbe47",
     "src/briefing-cloud-caller.mjs": "635a524c41c8784de042768a9c51d66fb6ce671e2a090c318d1145cdbd996867",
     "src/briefing-cloud-exchange.mjs": "cc8a0d121889e037ddf504088080b24381c9e56378bb8b026b3d857218ea1779",
     "src/briefing-core.mjs": "ddb4583942b2b1328e56d6ebc63b4f2dc98c04470713fbf31d47f6233be795c9",
@@ -62,10 +61,10 @@
     "src/briefing-source-normalization.mjs": "c364b1552acf88b4b4d8792a8547e17bade6bb3f693c1ea9e610902e4e613c9a",
     "src/briefing.mjs": "355717f83aa3c582d8c3a37352f8366cf94a8a4b3b2e5c0ec878fe1dd2676d62",
     "src/calendar-collection.mjs": "38f2bdfe3fb813158a0246153cdb9e0d65095b10319f6a4f07d6f25c477a48a5",
-    "src/calendar-handoff.mjs": "a2b8c10702c6982cf994d7b6da56cfac0356919a90cb7f781d11f3a403975d23",
-    "src/calendar-policy.mjs": "2b40d5d2cf26efa2307741df89b60d87bcf0589aab612dff08362f7db598d1f9",
+    "src/calendar-handoff.mjs": "0aa53a5b7b6af235a14a48b99a484920f1bfb20f37b517a70b2e6a3a4044c813",
+    "src/calendar-policy.mjs": "f15fb6ace894c67567d7e81bce8b7467369d317f808ca0bde60734a7710445f7",
     "src/calendar-register-io.mjs": "6d0443dd60b59a49dcd620c73f7a78d21489ac48fc552eef9fc74fe58dbfc005",
-    "src/calendar-register.mjs": "1a750c0bcfb4c05ebe559fdf7882cb4fc7f263a50ff1fe831680be2afbb4f15e",
+    "src/calendar-register.mjs": "b3ad3dfafb2e1508c06e7bb1c58c8f2c00032a965ecf6ac37628ae159bf21182",
     "src/calendar-timing.mjs": "7850f2dfea9935363e8ddab61bd0cbaac87d6eeda94cbaa6573bf19762955e57",
     "src/calendar.mjs": "6ff6bd2e854aba0f4f8ac051f3cf663dddc6ec578b7a98ccc6da385b886eee54",
     "src/catalog.mjs": "d2c333d10851197c893a96eed024d3163473306189c8dce220ba9cfc5c14c27e",
@@ -74,7 +73,7 @@
     "src/cloud.mjs": "9e48c4f64f95ac23a8e7fb0a33e51b21fb9a2022a48e355dee06de3d76ef1a7f",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
     "src/daily-briefing.mjs": "5395f4a0e6f8731d8244adc7febbfc6b01f7fc256a1f34af92a3636af0fe7045",
-    "src/dispatch.mjs": "9156804f77c06577d02ebd7f142c627db2474fcb6fa14e826b08cac799a08383",
+    "src/dispatch.mjs": "628d42d6ebea291ae12fbbc711cf354018ac3263e05267746976e1bce1215916",
     "src/fleet-schema.mjs": "d9d87c7834b006fb5dd7dac1bb41b0f2075b2e20057f40c656c0974b4576ea27",
     "src/fleet-state.mjs": "4e3f1d689b3cb7df2301e4df46298c7bea221584b3e67b76d844685046439d53",
     "src/fleet.mjs": "058bf69e0e69c49d0aed09a57ae743cd1a48b796a598ecc443ff1c02b0b87f12",
@@ -82,22 +81,21 @@
     "src/guidance-pin.mjs": "f037a3f461db221e884f9f72da45515d51e536f6f271bf70ff11a36b6cf238b7",
     "src/immutable-slot.mjs": "59e8ccd7c37783268e22703f63897c8c6d2b97c497ab37ff300e636a33744035",
     "src/improvement-report.mjs": "fbab0e0b543ad481ed95a31bd5b6f427103c90d2e60b69008800f91ffdfd27b9",
-    "src/maintenance.mjs": "67512cc54add622d94f4a19517fd42453519d3d93719ce82d38c10944f393e81",
-    "src/metadata.mjs": "a14533cfd8cc6c153fce0e7788240f9f9f9b25c3d47d6b3d521bcea860fe63a6",
+    "src/maintenance.mjs": "05e54b1b3876d094abbea1b3626c0447e79ec337801e99abf8ac7f6f5efd2c19",
+    "src/metadata.mjs": "340c34e3a1415e7e7be60e633a13c57f4abb13f484ffd826b4e221787b8ac31b",
     "src/morning-collection.mjs": "37dae6e547e0e20494e714ecc1b20f28364989600ed751ee7fa2c817ae985287",
     "src/morning-presentation.mjs": "36d171d854c34b3062da02e9c9ac5b095e509164e2c674bf0dd4ccae1268a343",
     "src/morning.mjs": "c01412274bccfb57e15a423b88c830a9cdb8d6486b2b264c074e7ce30b34d026",
     "src/operating-contract.mjs": "a8c513f23eeee99679d6b4e0e3d3ac0b6e91d26258abf33491e49a4f32143362",
     "src/process-incarnation.mjs": "63810f9602f223315fe8d9ccfcda11b6591cf7bb5626092a8ea308a98acfe2ff",
-    "src/records.mjs": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58",
+    "src/records.mjs": "d2de0bf154b0672845269cf0a14abd111c1b88f578bb7f1c43a08dc08e2859db",
     "src/responsibilities.mjs": "07914317b5b8d310f2e347cdda0392f18c6a791cf26101124a5d651cb43a8674",
     "src/signin.mjs": "5152185349d8fa2a61ec9c65a3ebe2a67ce03ae51a3345347d34ce24e6229444",
     "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
     "src/token-review.mjs": "27e6313bbb88c8650c10aa184addf1521dee3d95effe5894e892775edfce027c",
     "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
     "test/academic-os-task-plan.test.mjs": "2111ebf0045b452b0220ca17209cf66eeec6b5179238f0f3c7aecdd092cb4269",
-    "test/agent-local.test.mjs": "a49c0bb5027ac9e315c5eeda9715bc466c330d7e10bd356da79bf528e7e5a61a",
-    "test/automation-procedure.test.mjs": "b60afb7c63430dda95b440b16881c229302e663c57e44873e2f015f1632f179a",
+    "test/automation-procedure.test.mjs": "fb6afb22ee5c95d31be3d170983ec97527f975624337782879c0ca9c76a97b6e",
     "test/briefing-cloud-caller.test.mjs": "25919b20bc39defae84f7b4cd9dd134cf5fcb8a63ac334979c4c6441f920a0f9",
     "test/briefing-policy.test.mjs": "450e59ed67c9ce8fc9ca6d3456fed486e12898eaac0f30d92ab73d37b1058a4e",
     "test/briefing-reporting.test.mjs": "1314aca8159ce5e99b3bee7402a845d5eb5455136539467d44e4d28c6d660a38",
@@ -129,15 +127,15 @@
     "verification/academic-os-plan-fixtures.mjs": "1a5408b97b9ca870b8a641d09afef5d4edef29034b81f110ee0f4d499f8f48ca",
     "verification/automation-fixtures.mjs": "37e1e4061989bd81759795cacabe962e9890727dd2a44623dfc3ce9554c371a6",
     "verification/automation-properties.mjs": "6160612a902eb4f7232548bc916e33f68bfa85fbc4a820324d926bde4463a837",
-    "verification/briefing-drive.mjs": "01666a53390870f5a7a4ffb24dd376bf2e989332187910b2b46ebe4dd6641279",
+    "verification/briefing-drive.mjs": "55d400dfe047963aff0d6c92777829660ed46f377df1862e4b09cb8472263208",
     "verification/briefing-fixtures.mjs": "b882ee5e672110184e8ebb1f1159c721d1d3ce9be037339fd367d4e9d7dad792",
     "verification/briefing-workflow-properties.mjs": "9bf166211f3b71b0eae581c74ef9e46ac81c573352658d5d18070347928d6010",
-    "verification/calendar-drive.mjs": "54123e69977e520e42eef2ffb3dbff6bc3462cd7e987288be890ed6ac67c6ed2",
+    "verification/calendar-drive.mjs": "5b5e9340c13cfd9de05546b54ef1abc9035417f65c7f6cb4462b013db1ab4410",
     "verification/calendar-fixtures.mjs": "c94524d874a9d209463a6243176bec1e00097db809e605245e0b56abd6a288c5",
     "verification/calendar-mutations.mjs": "b911302cb61295eed5b3f8f16a4ea9cc3556dc61e457b383caf620146821eda3",
     "verification/calendar-policy-fixtures.mjs": "11ad91ecfaf9f07d7dc5962913bfd39088065032918c15ff2900811269f9005e",
     "verification/calendar-properties.mjs": "aa69413c21f6a5b2809a019cfb83eeb181cca70de6717517826b98ef9cc39726",
-    "verification/calendar-register-drive.mjs": "5770264be9d6f824cbdb1ab85bf0175ba1705d836bf7142e9fdedac406054ef8",
+    "verification/calendar-register-drive.mjs": "e71d8ab7aa942e13bbeae9cceb9670049e9285582a92e9c3f8ba07ae752042cd",
     "verification/calendar-register-fixtures.mjs": "307c62c12a7e6e8f9cdd1fdb5715198d0f0387f925ce07df057f0cc907885783",
     "verification/calendar-register-properties.mjs": "d31d675e205ff3bfd153c4fd434365bd0ca4c3a74c0aa5b2a86d3623055ade42",
     "verification/calendar-timing-fixtures.mjs": "1a1c975ba90496fa52987f7cc1c3eaab24afe433cb7b6bb4d7732350e9863587",
@@ -147,7 +145,7 @@
     "verification/cloud-properties.mjs": "c2639d858364b8b9e293757c98d67afb5efe929aced3264bf5b69446d0f95541",
     "verification/daily-briefing-drive.mjs": "345a3f0d431bb368a646f9311a718c6db9d3c17705e22d8d1f0e8e7df2fdea49",
     "verification/daily-briefing-fixtures.mjs": "cd93bb95e17b0d14934891262998b62bd3287c7ccf00b11df90a86af61e403e1",
-    "verification/dispatch-drive.mjs": "bc43637428fcbfe78acd42bac4bd039e3d8663217c64b13f6a28163b5f99fca5",
+    "verification/dispatch-drive.mjs": "dd115268fd9f50b8f743f1ef25d368318164d1e1052d3ed5a77f2441befad396",
     "verification/dispatch-properties.mjs": "373a2c4b6bf50f7f40733d63c38c93b1cf24a1199329e8fe815ad8d66faa5932",
     "verification/fixtures.mjs": "388cf9e2fc5ccec675367a7110ea123902b53f7d22198c5c51035db12517f98c",
     "verification/fleet-drive.mjs": "09362197dc203aa39c17e5b346b308a116468f13b55d4fa467433debb5b55e67",
@@ -164,12 +162,11 @@
     "verification/morning-properties.mjs": "8a0b21e06a5fab8753d9e8d6fdb62ce313588ada3a2365116c14490f4e070666",
     "verification/morning-v3-drive.mjs": "cda8d4b1d147959db3089978645652f0c017f988673ac5b0f60a795d55a73dcd",
     "verification/morning-v3-fixtures.mjs": "f13d5a19cc6d275fe2472ac057e044d1d447683ef8b8369d50bde19e84e505b4",
-    "verification/mutations.mjs": "7c8c78fc58fc73da6a2e6a267b41e7ed35b199d4c9044233fdfd62e5b3ba0840",
+    "verification/mutations.mjs": "103c1e8fde2cc886c93ad34710e8b454adf8018b84309e9b2ed9c1f28603e408",
     "verification/process-incarnation-fixtures.mjs": "ce6d81cfef3730bac0d57f7b482773ba1a5d691d815a7cb2f87f7608c419ed9c",
     "verification/properties.mjs": "441e845b3bc15db8734916d57f05b2f4a77893e3ec43f10aa93bb4240535c7a3",
     "verification/publication/drive.mjs": "d7a63754ae3d2c20a90111f5051c814013cbac9f241c48aad8a144524662e97a",
-    "verification/token-review-fixtures.mjs": "da496709392746ccc01d42d8606330629f85534efd2c516a6d0a734b361fdab2",
-    "src/planning-policy.mjs": "ec3c8bd2a3d9d03e0cc75a77af2d014381b28c24d81ee9ee108d5ab89aecadcc"
+    "verification/token-review-fixtures.mjs": "da496709392746ccc01d42d8606330629f85534efd2c516a6d0a734b361fdab2"
   },
   "mapping": [
     {
@@ -664,24 +661,6 @@
       "properties": [
         "automation-contract"
       ]
-    },
-    {
-      "source": "src/planning-policy.mjs",
-      "functions": [
-        "assessRoundedBooking"
-      ],
-      "properties": [
-        "calendar-register"
-      ],
-      "scope": "Existing register finite cases consume extracted historical minimum/increment and actual-duration rounding. Separate planning-policy graph owns version-two rule resolution."
-    },
-    {
-      "source": "src/records.mjs",
-      "function": "dispatchIdentity",
-      "properties": [
-        "dispatch-recovery"
-      ],
-      "note": "Shared immutable legacy/direct identity owner; direct-specific claims have their own coverage record."
     }
   ],
   "boundsSource": "verification/properties.mjs#bounds",
@@ -749,13 +728,11 @@
     {
       "source": "src/maintenance.mjs",
       "functions": [
-        "coverageInventory",
         "generatedFiles",
         "maintain"
       ],
       "scenarios": [
-        "derived-boundaries",
-        "maintain CLI subsystem admission controls"
+        "derived-boundaries"
       ]
     },
     {
@@ -1014,8 +991,7 @@
     "V3 caller invokes actual fresh fleet CLI with synthetic supported tools, actual claim/result schema, same-ID readback and post-cleanup raw evidence. Cross-day prior delivered facts/check history, positive learning attribution and unavailable edit behavior remain behavioral; provider truth and live pilot remain external.",
     "Direct whole-source release rebuild/materialization, pure dependency closure, fresh-process equivalence, trusted capsule hash before parse/import, and actual collection-to-v3-journal intake/seal. Reported source clocks do not authenticate provider truth.",
     "Generic automation CLI reads exact pinned procedure/configuration files and one named canonical outcome; validates original byte and semantic identities without history enumeration. Reporting producer/publication implementation moves unchanged to a generic owner; old briefing entry forwards compatible actions. Capsule v2 adds a pure generic planner; v1 read/materialization remains supported.",
-    "Actual generic CLI refuses correctly rehashed invalid report timing/telemetry/nonterminal objects and non-string revisions. Publication and predecessor paths share producer evidence validation; valid optional null measurements and historical terminal report:null retain wire compatibility.",
-    "Studio-primary CLI dependency boundary and default onboarding selection are actual CLI controls in test/agent-local.test.mjs and probe-packet, not new finite predicates. Catalogue-independent commands retain exact named-input validation; catalogue consumers still refuse missing inventory. Cloud delegation is explicit proposal-only. Current host/account truth and sustained authentication remain native evidence."
+    "Actual generic CLI refuses correctly rehashed invalid report timing/telemetry/nonterminal objects and non-string revisions. Publication and predecessor paths share producer evidence validation; valid optional null measurements and historical terminal report:null retain wire compatibility."
   ],
   "excluded": [
     "Arbitrary-size inputs or a full Cartesian product of every field",
@@ -1043,9 +1019,5 @@
     "Academic OS API-plan preparation and result correlation are declared-evidence behavioral boundaries. Literal unit plans, real CLI drives and a private actual-counterpart parser/guard probe do not authenticate policy, approval, accounts, durable retry history, native timing, deployed MCP or provider writes.",
     "Local guidance pin filesystem selection/administration is behaviorally driven, not a finite property or canonical journal publication. It assumes operator-approved immutable local releases and ordinary bounded filesystem reads; no hostile concurrent-swap, native-note, public-publication or power-loss claim follows.",
     "Supplied token accounting and compact improvement report guard/publication/read are separately unit/CLI-driven behavioral boundaries. No new finite property or canonical publication theorem covers them. Measured labels, inventories, usage, outcomes, scheduled origin and source windows remain supplied declarations; no provider truth, savings, recurrence, native exclusion, automatic orphan recovery or delivery is proved."
-  ],
-  "limits": [
-    "Version-two shared planning policy has its own area graph/skill; original82register predicates and23mutants are preserved. Receipt/retention/native timing and provider truth remain empirical or external.",
-    "Subsystem admission is structural; the retained metadata and hashes do not authenticate source-to-model completeness, execution or review independence."
   ]
 }

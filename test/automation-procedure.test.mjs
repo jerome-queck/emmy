@@ -42,10 +42,7 @@ test('generic CLI reads exact pinned files, prepares the existing report format 
     const cliPath = fileURLToPath(new URL('../scripts/agent.mjs', import.meta.url));
     const run = async (value, name) => { const saved = await save(name, value); const before = await readdir(directory); const result = spawnSync(process.execPath, [cliPath, 'automation', '--file', saved.path], { encoding: 'utf8' }); assert.deepEqual(await readdir(directory), before); return result; };
     const planned = await run(planRequest, 'plan-request.json'); assert.equal(planned.status, 0, planned.stderr); assert.equal(JSON.parse(planned.stdout).data.planDigest, plan.planDigest); assert.ok(JSON.parse(planned.stdout).data.prompt.includes(p.path)); assert.ok(JSON.parse(planned.stdout).data.prompt.includes(c.path));
-    const cliAt = new Date().toISOString();
-    const fresh = await automationProcedure({ ...planRequest, action: 'report', input: automationOutcomeFixture(plan.reportEvidenceRefs, cliAt) }, { now: cliAt });
-    const freshArtifact = fresh.artifacts.find(value => value.record.kind === 'run'); const freshFile = await save('fresh-outcome.json', freshArtifact.bytes);
-    const read = await run({ ...request, artifact: freshFile, recordId: freshArtifact.id }, 'read-request.json'); assert.equal(read.status, 0, read.stdout);
+    const read = await run(request, 'read-request.json'); assert.equal(read.status, 0, read.stderr);
     assert.equal(JSON.parse(read.stdout).data.record.kind, 'run');
     assert.equal((await run({ ...planRequest, configuration: { ...c, sha256: digest('changed') } }, 'invalid-request.json')).status, 2);
     const wrong = automationOutcomeFixture([], at); await assert.rejects(automationProcedure({ ...planRequest, action: 'report', input: wrong }, { now: at }), /bind exact/);

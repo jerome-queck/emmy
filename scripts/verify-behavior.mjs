@@ -4,7 +4,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { hostname, tmpdir } from 'node:os';
 import { basename, join, dirname } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { canonical, digest, parseObservation, recordPayload, readRecord, readStore } from '../src/records.mjs';
 import { fixtureScripts } from '../verification/fixtures.mjs';
@@ -19,7 +19,6 @@ import { driveMorning } from '../verification/morning-drive.mjs';
 import { driveTokenReview, driveImprovementReport } from '../verification/improvement-drive.mjs';
 import { driveDailyBriefing } from '../verification/daily-briefing-drive.mjs';
 import { driveFleet } from '../verification/fleet-drive.mjs';
-import { driveAssurance } from '../verification/local-assurance/drive.mjs';
 
 const sourceRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const evidenceDir = join(sourceRoot, '.local/verification', `behavior-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 8)}`);
@@ -47,14 +46,11 @@ const git = args => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8
 const review = data => data.responsibilities[0].record;
 const reconcile = async (id, expected = 0, imports = null, selectedHome = home, asOf = now()) => run(['reconcile', '--id', id, '--as-of', asOf, ...(imports ? ['--import', await fixture(`import-${randomUUID()}.json`, { schemaVersion: 1, records: imports })] : [])], expected, selectedHome);
 try {
-  assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review', 'assurance'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing|dispatch|calendar|cloud|fleet|token-review|assurance');
-  for (const path of ['registry', 'docs', '.agents', 'src', 'scripts', 'verification', 'test', 'procedures', '.github', '.codex', 'AGENTS.md', 'package.json', 'package-lock.json']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
+  assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing|dispatch|calendar|cloud|fleet|token-review');
+  for (const path of ['registry', 'docs', '.agents', 'src', 'scripts']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
   await mkdir(join(home, 'records'), { recursive: true }); await mkdir(join(root, 'bin'));
   for (const name of ['gh', 'codex', 'curl', 'ssh']) await writeFile(join(root, 'bin', name), `#!/bin/sh\necho invoked >> '${join(home, 'executor-invoked')}'\nexit 99\n`, { mode: 0o755 });
   await writeFile(join(root, '.gitignore'), '.local/\nbin/\n');
-  const fixtureInventoryPath = join(root, 'verification/subsystems.json'); const fixtureInventory = JSON.parse(await readFile(fixtureInventoryPath, 'utf8'));
-  fixtureInventory.subsystems.flatMap(area => area.files).find(file => file.path === '.gitignore').sha256 = digest(await readFile(join(root, '.gitignore')));
-  await writeFile(fixtureInventoryPath, JSON.stringify(fixtureInventory));
   await mkdir(join(root, 'fixture-verifiers'));
   for (const [name, source] of Object.entries(fixtureScripts)) await writeFile(join(root, 'fixture-verifiers', name), source);
   git(['init', '-q']); git(['config', 'user.email', 'fixture@example.invalid']); git(['config', 'user.name', 'Synthetic fixture']); git(['remote', 'add', 'origin', 'https://example.invalid/fixture']); git(['add', '.']); git(['commit', '-qm', 'Synthetic fixture baseline']);
@@ -66,12 +62,8 @@ try {
   assert.deepEqual((await run(['help'])).commands.map(item => item.name), commands.map(item => item.name));
   await run(['doctor']); await run(['catalog']); await run(['snapshot'], 2); await run(['help', '--bogus'], 2);
   scenario('orientation', 'Metadata-defined commands, doctor in isolated repository, catalog and rejected legacy/unknown options.');
-  if (!report.focus || report.focus === 'assurance') {
-    report.localAssurance = await driveAssurance(sourceRoot, join(evidenceDir, 'local-assurance'));
-    scenario('local-assurance', 'Actual package and fresh CLI over a separately labelled synthetic fixed suite; source/base changes, failed/incomplete evidence, output integrity and environment refusal.');
-  }
-  if (!['self-check-repair', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review', 'assurance'].includes(report.focus)) await driveBriefing({ sourceRoot, root, home, run, scenario, report, children });
-  if (!['self-check-repair', 'briefing', 'calendar', 'cloud', 'fleet', 'token-review', 'assurance'].includes(report.focus)) await driveDispatch({ root, home, run, scenario, report, bindings, target });
+  if (!['self-check-repair', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review'].includes(report.focus)) await driveBriefing({ sourceRoot, root, home, run, scenario, report, children });
+  if (!['self-check-repair', 'briefing', 'calendar', 'cloud', 'fleet', 'token-review'].includes(report.focus)) await driveDispatch({ root, home, run, scenario, report, bindings, target });
   if (!report.focus || report.focus === 'token-review') await driveDailyBriefing({ home, run, scenario, report, evidenceDir });
   if (!report.focus || report.focus === 'token-review') {
     await driveTokenReview({ home, run, scenario, report, evidenceDir });
@@ -82,7 +74,7 @@ try {
   if (!report.focus || report.focus === 'calendar') await driveCalendarRegister({ home, run, scenario, report });
   if (!report.focus || report.focus === 'fleet') await driveMorning({ home, bindings, target, run, scenario, report });
   if (!report.focus || report.focus === 'fleet') await driveFleet({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir, children });
-  if (!['briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review', 'assurance'].includes(report.focus)) {
+  if (!['briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review'].includes(report.focus)) {
   const artifact = join(home, 'artifact.txt'); const original = 'Expected fixture bytes\n'; await writeFile(artifact, original);
   const definition = { id: 'self-check', parents: [], goal: 'Retain the expected local artifact and detect damage.', context: 'Synthetic responsibility survives a fresh process without a prior conversation.', action: 'verify', resource: 'fixture', destination: 'local-evidence', target, authorityRef: { reference: 'Synthetic owner request', action: 'verify', resource: 'fixture', destination: 'local-evidence' }, criteria: [{ id: 'artifact', description: 'Actual bytes match the retained expectation.', evidence: 'local-digest', path: artifact, sha256: digest(original) }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'artifact-watch', method: 'Compare expected local bytes.', intendedEffect: 'Maintain expected artifact bytes.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' } };
   const adopted = await run(['responsibility', '--file', await fixture('definition.json', definition)]);
@@ -241,14 +233,9 @@ try {
     const wrongRepository = review(await reconcile(definition.id, 3)); assert.ok(wrongRepository.route.reasons.includes('repository-binding-mismatch')); assert.equal(wrongRepository.proposals.some(item => item.type === 'work'), false);
     await writeFile(join(home, 'bindings.json'), JSON.stringify(bindings));
     scenario('binding-boundaries', 'Unknown inherited project and host keys stay unbound; explicit constructor IDs work; cloud needs prepared binding, reason and explicit scoped authority.');
-    const probes = await run(['probe', '--nonce', 'synthetic-nonce']); assert.equal(probes.record.probes.length, 7); assert.equal(probes.record.accountStatus, 'unverified');
+    const probes = await run(['probe', '--nonce', 'synthetic-nonce']); assert.equal(probes.record.probes.length, 8); assert.equal(probes.record.accountStatus, 'unverified');
     assert.match(await readFile(join(probes.path, 'packet.md'), 'utf8'), /Not installed\. No probe or schedule ran\./);
-    assert.equal(probes.record.probes.some(probe => probe.id === 'cloud-delegation'), false);
-    assert.match(probes.record.probes.find(probe => probe.id === 'runtime').prompt, /current attached execution environment/);
-    const cloudProbe = await run(['probe', '--id', 'cloud-delegation', '--nonce', 'synthetic-explicit-cloud']);
-    assert.deepEqual(cloudProbe.record.probes.map(probe => probe.id), ['cloud-delegation']);
-    assert.equal(cloudProbe.record.execution, 'proposal-only'); assert.equal(cloudProbe.record.accountStatus, 'unverified');
-    scenario('probe-packet', 'Default onboarding omits cloud delegation and inspects the current environment; explicit cloud selection remains proposal-only and unverified.');
+    scenario('probe-packet', 'Retained actual onboarding packet contains eight proposals and remains uninstalled/unverified.');
     const forkDefinition = { ...definition, id: 'fork-case' }; const forkBase = await adopt(forkDefinition);
     await reconcile(forkDefinition.id, 0, [tasks(forkDefinition.id)]);
     const forkArgs = async goal => ['responsibility', '--file', await fixture(`fork-${randomUUID()}.json`, { ...forkDefinition, parents: [forkBase.hash], goal })];
@@ -345,7 +332,7 @@ try {
     await assert.rejects(readFile(authorityMarker), { code: 'ENOENT' });
     const waitForFile = async (path, ready = bytes => bytes.length > 0) => { for (let i = 0; i < 400; i++) { try { const bytes = await readFile(path, 'utf8'); if (ready(bytes)) return bytes; } catch (error) { if (error.code !== 'ENOENT') throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Timed out waiting for complete contents of ${path}`); };
     const gone = async pid => { for (let i = 0; i < 200; i++) { try { process.kill(pid, 0); } catch (error) { if (error.code === 'ESRCH') return; throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Owned verifier child survived ${pid}`); };
-    const cleanupEnv = (path, mode = 'observe') => ({ NODE_OPTIONS: `--import=${pathToFileURL(join(root, 'fixture-verifiers/record-group-kill.mjs')).href}`, EMMY_VERIFY_GROUP_CALL_FILE: path, EMMY_VERIFY_GROUP_CALL_MODE: mode });
+    const cleanupEnv = (path, mode = 'observe') => ({ NODE_OPTIONS: `--import=${join(root, 'fixture-verifiers/record-group-kill.mjs')}`, EMMY_VERIFY_GROUP_CALL_FILE: path, EMMY_VERIFY_GROUP_CALL_MODE: mode });
     const groupCalls = async path => (await waitForFile(path, bytes => bytes.endsWith('\n'))).trim().split('\n').map(line => JSON.parse(line));
     const teardownGroups = async (path, entry) => {
       entry.harnessCleanup = [];
@@ -402,7 +389,7 @@ try {
       const deniedPid = join(home, `denied-${mode}-child.pid`); const deniedGroups = join(home, `denied-${mode}-groups.txt`);
       const deniedCheck = await makeCheck(`local-command-denied-${mode}`, 'output.mjs', [deniedPid]); await adopt(deniedCheck);
       try {
-        const data = await run(['reconcile', '--id', deniedCheck.id, '--as-of', now(), '--import', await fixture(`denied-${mode}-tasks.json`, { schemaVersion: 1, records: [tasks(deniedCheck.id)] })], 3, home, { NODE_OPTIONS: `--import=${pathToFileURL(join(root, 'fixture-verifiers/deny-group-kill.mjs')).href}`, EMMY_VERIFY_DENIED_GROUP_FILE: deniedGroups, EMMY_VERIFY_DENIED_GROUP_MODE: mode });
+        const data = await run(['reconcile', '--id', deniedCheck.id, '--as-of', now(), '--import', await fixture(`denied-${mode}-tasks.json`, { schemaVersion: 1, records: [tasks(deniedCheck.id)] })], 3, home, { NODE_OPTIONS: `--import=${join(root, 'fixture-verifiers/deny-group-kill.mjs')}`, EMMY_VERIFY_DENIED_GROUP_FILE: deniedGroups, EMMY_VERIFY_DENIED_GROUP_MODE: mode });
         const result = (await checkBytes(review(data))).check;
         assert.equal(result.outcome, 'fail'); assert.equal(result.reason, 'process-group-cleanup-failed'); assert.equal(result.terminationReason, 'output-limit');
         assert.equal(result.cleanup.status, 'unverified'); assert.ok(result.cleanup.errors.includes('EPERM')); assert.equal(result.cleanup.processGroup, Number((await waitForFile(deniedGroups)).trim().split('\n')[0]));
@@ -602,11 +589,7 @@ try {
       const destination = join(root, 'bin', `restore-interrupt-${boundary.replaceAll(':', '-')}`); const args = ['restore', '--from', archive, '--into', destination]; await interruptAt(args, boundary); const recoveredRestore = await run(args, boundary === 'restore:published' ? 2 : 0); if (boundary !== 'restore:published') assert.equal(recoveredRestore.suspended, true); else assert.match(recoveredRestore.error, /already exists/); await readStore(destination);
     }
     assert.equal(report.interruptions.length, 10); scenario('publication-interruption', 'Actual SIGSTOP checkpoints followed by SIGKILL at three record, three archive, three restore boundaries and forward-dependent import prefix; replay converges or explicitly refuses existing restored destination. No all-instruction crash-durability claim.');
-    const catalogBefore = await readFile(join(root, 'registry/catalog.json')); const formalPath = join(root, 'verification/coverage.json'); await mkdir(dirname(formalPath), { recursive: true });
-    const formalFixture = JSON.parse(await readFile(formalPath, 'utf8')); formalFixture.sourceCommit = 'do-not-advance'; await writeFile(formalPath, JSON.stringify(formalFixture)); const formalBefore = await readFile(formalPath);
-    const inventoryPath = join(root, 'verification/subsystems.json'); const syntheticInventory = JSON.parse(await readFile(inventoryPath, 'utf8'));
-    for (const area of syntheticInventory.subsystems) for (const file of area.files) if (file.path === 'verification/coverage.json') file.sha256 = digest(formalBefore);
-    await writeFile(inventoryPath, JSON.stringify(syntheticInventory));
+    const catalogBefore = await readFile(join(root, 'registry/catalog.json')); const formalPath = join(root, 'verification/coverage.json'); await mkdir(dirname(formalPath), { recursive: true }); await writeFile(formalPath, '{"sourceCommit":"do-not-advance"}\n'); const formalBefore = await readFile(formalPath);
     await writeFile(join(root, 'docs/cli.md'), 'Stale generated reference'); assert.equal((await run(['maintain', '--check'], 3)).status, 'drift'); await run(['maintain', '--write']); await run(['maintain', '--check']); assert.deepEqual((await run(['maintain', '--write'])).changed, []);
     const publicBefore = await readFile(join(root, 'docs/catalog.md')); await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, privateSentinel: 'synthetic-private-never-public' })); await run(['maintain', '--write']); assert.deepEqual(await readFile(join(root, 'docs/catalog.md')), publicBefore); assert.equal((await readFile(join(root, 'docs/catalog.md'), 'utf8')).includes('synthetic-private-never-public'), false); assert.deepEqual(await readFile(formalPath), formalBefore); assert.deepEqual(await readFile(join(root, 'registry/catalog.json')), catalogBefore);
     scenario('derived-boundaries', 'Generated drift fails then regenerates idempotently; private state never enters public references; catalog review dates and formal pins stay unchanged.');
