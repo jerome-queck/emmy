@@ -16,6 +16,7 @@ const mutations = [
  ['monitor', 'if (bad(monitored.condition))', 'if (false)', 'ConservativeHealth'],
  ['future', 'Date.parse(receipt.capturedAt) > Date.parse(at) || ageMs < 0 || Date.parse(receipt.observedAt) > Date.parse(receipt.capturedAt)', 'false', 'ConservativeHealth'],
  ['fresh', 'entity.recoveryPending && freshIds.includes(entity.expected.id)', 'entity.recoveryPending', 'FreshRecovery'],
+ ['pending-clock', 'Date.parse(receipt.observedAt) >= Date.parse(pending.at) && ', '', 'FreshRecovery'],
  ['scope', "insist(canonical(row.expected.scope) === canonical(capture.receipt.scope), 'Capture crosses exact source, account or environment scope');", '', 'Admission'],
  ['episode', 'entity.episode++; entity.alertId = addAlert(state, entity.expected.id, current.condition', "entity.episode += state.alerts.some(a => a.id === entity.alertId && a.condition === 'recovered') ? 0 : 1; entity.alertId = addAlert(state, entity.expected.id, current.condition", 'Recurrence']
 ];
@@ -44,6 +45,8 @@ try {
       assert.equal(repeatAfter.state.entities[1].episode,repeatBefore.state.entities[1].episode); assert.equal(repeatAfter.state.entities[1].alertId,repeatBefore.state.entities[1].alertId);
       const monitorBefore=find(['both','monitor-fail','auth-good']); const monitorAfter=find(['both','monitor-fail','auth-good','monitor-good']);
       assert.equal(monitorAfter.state.entities[1].condition,'healthy'); assert.ok(monitorAfter.state.entities[1].recoveryPending); assert.equal(monitorAfter.state.alerts.filter(a=>a.scope==='protected' && a.condition==='recovered').length,monitorBefore.state.alerts.filter(a=>a.scope==='protected' && a.condition==='recovered').length);
+      const oldWrapper=find(['both','stale','policy','old-wrapper']); assert.ok(oldWrapper.state.entities[1].recoveryPending); assert.equal(oldWrapper.state.entities[1].condition,'healthy'); assert.equal(oldWrapper.state.alerts.some(a=>a.scope==='protected' && a.condition==='recovered'),false);
+      const afterWrapper=find(['both','stale','policy','old-wrapper','auth-good']); assert.equal(afterWrapper.state.alerts.filter(a=>a.scope==='protected').at(-1).condition,'recovered');
       assert.equal(find(['both','auth-partial']).state.entities[1].issueKey,'coverage-gap');
       assert.equal(find(['both','auth-unprotected']).state.entities[1].issueKey,'protected-content-unverified');
       assert.equal(find(['both','future']).state.entities[1].issueKey,'future-source');

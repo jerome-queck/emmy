@@ -8,17 +8,21 @@ const root = structuredClone(fleetRoot); root.action.entities = fleetEntities.sl
 const clock = n => new Date(Date.parse(fleetTime) + n * 1000).toISOString();
 const menus = [
   ['both', 'empty'],
-  ['monitor-fail', 'auth-fail', 'auth-partial', 'auth-unprotected', 'future', 'scope'],
-  ['monitor-good', 'auth-good', 'auth-fail', 'auth-different', 'empty', 'backdate', 'same-time'],
-  ['monitor-good', 'monitor-fail', 'auth-good', 'auth-fail'],
+  ['monitor-fail', 'auth-fail', 'auth-partial', 'auth-unprotected', 'future', 'scope', 'stale'],
+  ['monitor-good', 'auth-good', 'auth-fail', 'auth-different', 'empty', 'backdate', 'same-time', 'policy'],
+  ['monitor-good', 'monitor-fail', 'auth-good', 'auth-fail', 'old-wrapper'],
   ['monitor-good', 'auth-good', 'auth-fail', 'empty', 'stale']
 ];
 const names = ['StableEpisode', 'ConservativeHealth', 'FreshRecovery', 'Admission', 'Recurrence'];
 const bad = row => !['healthy', 'recovered'].includes(row.condition);
 const semantic = row => JSON.stringify([row.condition, row.issueKey, row.actionIdentity]);
 const entity = (state, id) => state.entities.find(row => row.expected.id === id);
-function input(choice, step, state) {
-  const now = clock(choice === 'stale' ? 400 : step); const make = (id, condition) => fleetCapture(id, condition, now, { nextAction: step % 2 ? 'Inspect this scoped result.' : 'Review the scoped result.' });
+function input(choice, step, state, path) {
+  const advanced = path.includes('stale');
+  if (choice === 'stale' && advanced) return null;
+  const now = clock(choice === 'stale' ? 400 : step + (advanced ? 400 : 0));
+  if (choice === 'policy') { if (!advanced) return null; const action = { operation: 'policy-revise', version: 1, previousDigest: null, maxAgeMs: 86400000, entities: root.action.entities.map(row => ({entityId: row.id, scope: row.scope, maxAgeMs: 86400000})), sourceRef: 'synthetic-owner', reason: 'Revise windows.' }; actionInput(action, 2); return {action, at: now}; }
+  if (choice === 'old-wrapper') { if (!advanced || !state.policy || !entity(state,'protected').capture) return null; const previous = entity(state,'protected').capture.receipt; const observedAt = new Date(Date.parse(previous.observedAt) + 1000).toISOString(); const capture = fleetCapture('protected','healthy',observedAt); capture.receipt.capturedAt = now; const action = {operation:'assess',captures:[capture]}; actionInput(action,2); return {action,at:now}; } const make = (id, condition) => fleetCapture(id, condition, now, { nextAction: step % 2 ? 'Inspect this scoped result.' : 'Review the scoped result.' });
   let captures = [];
   if (choice === 'both') captures = [make('monitor', 'healthy'), make('protected', 'healthy')];
   if (choice.startsWith('monitor-')) captures = [make('monitor', choice === 'monitor-good' ? 'healthy' : 'monitoring-failed')];
@@ -35,14 +39,14 @@ function input(choice, step, state) {
 function rules(before, after, action, at) {
   const result = Object.fromEntries(names.map(name => [name, true]));
   for (const old of before.entities) {
-    const row = entity(after, old.expected.id); const supplied = action.captures.find(c => c.entityId === old.expected.id);
+    const row = entity(after, old.expected.id); const supplied = (action.captures ?? []).find(c => c.entityId === old.expected.id);
     if (old.fingerprint !== null && bad(old) && bad(row) && semantic(old) === semantic(row)) {
       result.StableEpisode &&= row.episode === old.episode && row.alertId === old.alertId && after.alerts.filter(a => a.scope === row.expected.id).length === before.alerts.filter(a => a.scope === row.expected.id).length;
     }
     if (old.expected.id === 'protected' && row.condition === 'healthy') {
       const monitor = entity(after, 'monitor');
       const receipt = row.capture?.receipt;
-      result.ConservativeHealth &&= monitor.condition === 'healthy' && !!receipt && receipt.coverage.complete && receipt.coverage.gaps.length === 0 && row.capture.protectedContent === true && Date.parse(receipt.observedAt) <= Date.parse(receipt.capturedAt) && Date.parse(receipt.capturedAt) <= Date.parse(at) && Date.parse(at) - Date.parse(receipt.observedAt) >= 0 && Date.parse(at) - Date.parse(receipt.observedAt) <= 300000;
+      result.ConservativeHealth &&= monitor.condition === 'healthy' && !!receipt && receipt.coverage.complete && receipt.coverage.gaps.length === 0 && row.capture.protectedContent === true && Date.parse(receipt.observedAt) <= Date.parse(receipt.capturedAt) && Date.parse(receipt.capturedAt) <= Date.parse(at) && Date.parse(at) - Date.parse(receipt.observedAt) >= 0 && Date.parse(at) - Date.parse(receipt.observedAt) <= (after.policy?.entities.find(p => p.entityId === row.expected.id)?.maxAgeMs ?? 300000);
     }
     const newAlerts = after.alerts.filter(a => !before.alerts.some(b => a.id === b.id) && a.scope === old.expected.id);
     if (old.recoveryPending && supplied && row.condition === 'healthy') {
@@ -75,10 +79,10 @@ export function graph(api) {
   for (let step = 1; step <= limits.steps; step++) {
     const next = [];
     for (const from of frontier) for (const choice of menus[step - 1]) {
-      const prior = states[from].state; const event = input(choice, step, prior); if (!event) continue;
+      const prior = states[from].state; const event = input(choice, step, prior, states[from].path); if (!event) continue;
       const { action, at } = event; const snapshot = structuredClone(prior); let value;
       let expected = null;
-      for (const capture of action.captures) {
+      for (const capture of action.captures ?? []) {
         const row = entity(prior, capture.entityId); const previous = row.capture;
         if (JSON.stringify(row.expected.scope) !== JSON.stringify(capture.receipt.scope)) expected = 'Capture crosses exact source, account or environment scope';
         else if (previous && Date.parse(capture.receipt.observedAt) < Date.parse(previous.receipt.observedAt)) expected = 'Capture predates retained source';

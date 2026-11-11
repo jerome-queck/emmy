@@ -2461,33 +2461,33 @@
       "id": "fleet-health-history",
       "stateOwner": "fleet-state.mjs fleetInitial, fleetTransition and captureCondition",
       "classification": "bounded actual-source reachable reducer histories",
-      "bounds": "Five synchronous assessments from staged menus; two entities; bounded symbolic clocks and alerts.",
+      "bounds": "Five synchronous transitions from staged menus; two entities; bounded symbolic clocks and alerts.",
       "gap": "Unmodeled input histories, provider truth, sign-in, journal publication and delivery.",
       "files": [
         {
           "path": "verification/fleet-health/graph.mjs",
-          "sha256": "7d98831675153dbdd3c8e77439814a2589bf406dd5314608d6bcd0200e3005cd",
+          "sha256": "a1e7ced6ce9f7c91c0d470192ea6444b008500f891ffe6b49c85d3c3977101c8",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/fleet-health/check.mjs",
-          "sha256": "0625f01631c6eeea5cdb8c4f3c08d82281c377a541560f7ed97fb6409cbd9204",
+          "sha256": "c316d36054f13877423b6111adf1f4d32eea2e4352f40bd383bfbe8123a19dd1",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/fleet-health/coverage.json",
-          "sha256": "e8fd131727be7fcbc4c564925aa844f8e6a1c1a2658995817361dfe50d6a6d7f",
+          "sha256": "b606dfc9bdf226ea74f1cb8d03992950e6d63d48fddb46344df6b3355f5fe3c7",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": ".agents/skills/fleet-health/SKILL.md",
-          "sha256": "15452498ccb6cdf72cdeeb25654fdbcc3139f8f81141a0edf06b7eb1eb6845a7",
+          "sha256": "124b0354e7be6113a91afc5f3910d9444e2e991c36d193ca71622c26ad095cf9",
           "callers": [
             "public configuration"
           ]
