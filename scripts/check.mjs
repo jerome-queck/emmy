@@ -7,6 +7,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 for (const args of [
   ['scripts/skill-inventory.mjs', 'check'],
   ['--test', 'test/skill-inventory.test.mjs'],
+  ['--test', 'test/private-skill-refresh.test.mjs'],
   ['scripts/check-markdown-links.mjs'],
   ['--test', 'test/markdown-links.test.mjs'],
   ['scripts/agent.mjs', 'maintain', '--check'],

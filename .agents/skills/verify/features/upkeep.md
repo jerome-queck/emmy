@@ -1,5 +1,7 @@
 # Upkeep and recovery
 
+Restricted private skill revalidation uses [the exact capsule procedure](../../../../docs/private-skill-refresh.md). Its CLI stages only approved inventory work and verifies a supplied fresh raw cloud capture. It has no remote writer. Run its dedicated tests and real CLI capture separately from the existing full behavioral driver. No finite or TLA+ property covers this derived snapshot or native scheduler.
+
 ## User route
 
 Run `maintain --check` at session start. After public metadata changes, run `maintain --write`, inspect derived files, and run the aggregate check. Metadata owns commands, feature map, scenario names, and property IDs. Maintenance preserves research dates and formal sync records.
