@@ -197,7 +197,13 @@ export async function prepareInstalledPrivateRun(config, captures, runner, attem
     indexBytes = Buffer.from(json(index));
   }
   const changes = index.files.filter(file => priorIndex.files.find(prior => prior.path === file.path)?.sha256 !== file.sha256).map(({ path, sha256 }) => ({ path, previousSha256: priorIndex.files.find(prior => prior.path === path)?.sha256 ?? null, sha256 }));
-  await writeFile(join(attempt, 'collection.json'), json({ observedAt: now.toISOString(), installed: after.evidence, snapshot: index.snapshot, previousSnapshot: previous.snapshot, sources: index.sources.map(({ id, version, revision }) => ({ id, version, revision })), changes, remoteWrite: false }), { flag: 'wx', mode: 0o600 });
+  const sourceChanges = index.sources.flatMap(source => {
+    const prior = priorIndex.sources.find(item => item.id === source.id);
+    const current = { version: source.version, revision: source.revision };
+    const previous = prior ? { version: prior.version, revision: prior.revision } : null;
+    return canonical(current) === canonical(previous) ? [] : [{ id: source.id, previous, current }];
+  });
+  await writeFile(join(attempt, 'collection.json'), json({ observedAt: now.toISOString(), installed: after.evidence, snapshot: index.snapshot, previousSnapshot: previous.snapshot, sources: index.sources.map(({ id, version, revision }) => ({ id, version, revision })), sourceChanges, changes, remoteWrite: false }), { flag: 'wx', mode: 0o600 });
   if (previous.snapshot === index.snapshot && accepted.derivation?.baseSha256 === runner.sha256) {
     const result = { status: 'complete', operation: 'unchanged', snapshot: index.snapshot, sourceObservedAt: previous.observedAt, remoteWrite: false, selectionChanged: false, registration: 'unverified' };
     await writeFile(join(attempt, 'result.json'), json(result), { flag: 'wx', mode: 0o600 });
@@ -216,7 +222,7 @@ export async function prepareInstalledPrivateRun(config, captures, runner, attem
   const predecessor = { schemaVersion: 1, revision: old.revision, snapshot: old.snapshot, capsulePath: captures.candidate.rawPath, bindings: config.bindings, cloud: { fileId: old.fileId, parentId: config.parentId, owner: config.owner, sha256: old.sha256, bytes: old.bytes }, consumer: { fileId: old.fileId, sha256: old.sha256, revision: old.revision, snapshot: old.snapshot } };
   const candidateAttempt = join(attempt, 'candidate');
   const result = await preparePrivateCandidate(predecessor, captures.candidate, candidate, candidateAttempt, now);
-  return { ...result, candidateAttempt, route: 'installed-source', remoteWrite: false, selectionChanged: false };
+  return { ...result, candidateAttempt, sourceChanges, changes, route: 'installed-source', remoteWrite: false, selectionChanged: false };
 }
 
 export async function preparePrivateSelection(config, captures, candidateAttempt, attempt, now = new Date()) {

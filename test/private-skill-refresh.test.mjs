@@ -79,6 +79,8 @@ test('automatic installed text/version refresh, offline promotion after removal,
   f.row.version = '3'; await f.save();
   const second = await prepareInstalledPrivateRun(f.config, f.captures, f.runner, join(f.root, 'installed-second'), f.now);
   assert.notEqual(second.candidate.snapshot, prepared.candidate.snapshot);
+  assert.deepEqual(second.sourceChanges, [{ id: 'fixture', previous: { version: '2', revision: null }, current: { version: '3', revision: null } }]);
+  assert.deepEqual(second.changes, []);
   const result = await simulatedPromotion(f, second, 'second');
   const unchanged = await prepareInstalledPrivateRun(f.config, f.captures, f.runner, join(f.root, 'installed-third'), f.now);
   assert.equal(unchanged.operation, 'unchanged');
