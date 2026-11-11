@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "2ec0dd2a755e1101b5467831693be3e9bc2e0eff",
+  "sourceCommit": "612d672c1b3f2081350ed27e9b0b868e76c6b35a",
   "sourceFiles": {
-    "src/assurance.mjs": "823267ae4f479b499da5f5e952a57578a3d3d16187f6d8bb3a33a45a949f3af4",
+    "src/assurance.mjs": "17766080fba243c05d108dc56addac625a2869e157423284bcda92146044a013",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
     "src/local-assurance.mjs": "6ff678f407e56d2b9b0f338698628dc08b07eda768cb8cb20ad288d0c9cb8764",
     "scripts/check.mjs": "f8b710af8abcafa21d3090a9739b820f04b01b98e9dfdfb8b49ca1b4877b204c",
     "scripts/check-markdown-links.mjs": "b40227b7d9e9617c9c1930c8286d67c550db6c4bf48c74d3d2ee3d1c4b78899c",
     "scripts/agent.mjs": "314099e863b0153da4415ac68f38a6f340dc112b1d9f7c5d5453760d21f2d7d5",
-    "src/metadata.mjs": "bf8f0c5d0eecd15bef46a2cbd0871c1f9af98843685f0b3b07938394e2f60713",
+    "src/metadata.mjs": "13fba596cb110a627b4b0c081ddf7f16f1e2a4980383f2767cd0fa33fa24db3d",
     "scripts/verify-publication.mjs": "f883deaedb39f8c551baa065ea43fbeec51f9412b835d6f487f8de2cd2fd954a"
   },
   "verificationFiles": {
@@ -19,7 +19,7 @@
     "verification/local-assurance/chart.mmd": "555d30c6f63b8be9e4cf91840f29b767b9df697b0adac2cde5d62ed4ff927b68",
     "test/local-assurance.test.mjs": "dd08e3e27d7c0530d9671767831ff0afe2405432c3362d7aed66f075416e2f8e",
     "test/markdown-links.test.mjs": "4c6b41c15971a063723cd82d8d915acf629e791270c767c6303df1cb5a5b97e3",
-    ".agents/skills/local-assurance/SKILL.md": "d5a19afcd6712f53ea466996a830e14aedf0612af6fffb74fcee44a6de2fb11c"
+    ".agents/skills/local-assurance/SKILL.md": "7f45a8a2756f94372d27ee4006c39a19811f313362553d417336f2b9d55e63ad"
   },
   "mapping": [
     {

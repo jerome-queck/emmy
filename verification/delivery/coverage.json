@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "2ec0dd2a755e1101b5467831693be3e9bc2e0eff",
+  "sourceCommit": "612d672c1b3f2081350ed27e9b0b868e76c6b35a",
   "sourceFiles": {
     "scripts/github-auto-merge.mjs": "3c89e3044e08fd70841e481da1943a8efa2dea615a3a98c27cbe7d020e7bce9d",
     "scripts/local-delivery.mjs": "b339a2c581ad2751ffe013d93652b6917439c10e4268e636dbe91fb8e14657bf",
     "src/local-assurance.mjs": "6ff678f407e56d2b9b0f338698628dc08b07eda768cb8cb20ad288d0c9cb8764",
-    "src/assurance.mjs": "823267ae4f479b499da5f5e952a57578a3d3d16187f6d8bb3a33a45a949f3af4",
+    "src/assurance.mjs": "17766080fba243c05d108dc56addac625a2869e157423284bcda92146044a013",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
     ".github/workflows/check.yml": "cac728413bf79655091a4c3ceaceb5deb1c1d84261336bb85b1c01f3fbc2f06e",
     ".github/workflows/auto-merge.yml": "cdb8968eb1dc1dff2b81b71ef283fd66745fe96678afbc19aced63e0c67efbe7"

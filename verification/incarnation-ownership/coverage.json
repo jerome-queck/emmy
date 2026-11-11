@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "aab6ba82bf3e8b8cd238d9bfadfee1d3dae4ed06",
+  "sourceFiles": {
+    "src/process-incarnation.mjs": "63810f9602f223315fe8d9ccfcda11b6591cf7bb5626092a8ea308a98acfe2ff",
+    "verification/process-incarnation-fixtures.mjs": "ce6d81cfef3730bac0d57f7b482773ba1a5d691d815a7cb2f87f7608c419ed9c"
+  },
+  "verificationFiles": {
+    "verification/incarnation-ownership/explore.mjs": "f5318ec2d7addde8b9d08807cd465f90e41fc900d11a53f33ea40e9dd8fe5ba9",
+    "verification/incarnation-ownership/graph.mjs": "03a3adad8acf3f025d6d2a8b0bd66cb06c78b5adcc4957a023f45dc6e8e90c0e",
+    "verification/incarnation-ownership/check.mjs": "e1a07b36c36dd66a979e32e3a1fec155b272e81c2353ff5ca8645c8412652f12",
+    ".agents/skills/incarnation-ownership/SKILL.md": "0235fa877ffcb2e8871b74b9a043a9923ca1587592cbeedb6f1c8362d5b9566a"
+  }
+}

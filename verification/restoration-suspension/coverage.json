@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "2ec0dd2a755e1101b5467831693be3e9bc2e0eff",
+  "sourceCommit": "612d672c1b3f2081350ed27e9b0b868e76c6b35a",
   "sourceFiles": {
     "src/automation-reporting.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
     "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
@@ -16,7 +16,7 @@
     "src/fleet-state.mjs": "4e3f1d689b3cb7df2301e4df46298c7bea221584b3e67b76d844685046439d53",
     "src/fleet.mjs": "058bf69e0e69c49d0aed09a57ae743cd1a48b796a598ecc443ff1c02b0b87f12",
     "src/guidance-pin.mjs": "f037a3f461db221e884f9f72da45515d51e536f6f271bf70ff11a36b6cf238b7",
-    "src/metadata.mjs": "bf8f0c5d0eecd15bef46a2cbd0871c1f9af98843685f0b3b07938394e2f60713",
+    "src/metadata.mjs": "13fba596cb110a627b4b0c081ddf7f16f1e2a4980383f2767cd0fa33fa24db3d",
     "src/morning-collection.mjs": "37dae6e547e0e20494e714ecc1b20f28364989600ed751ee7fa2c817ae985287",
     "src/morning-presentation.mjs": "36d171d854c34b3062da02e9c9ac5b095e509164e2c674bf0dd4ccae1268a343",
     "src/morning.mjs": "c01412274bccfb57e15a423b88c830a9cdb8d6486b2b264c074e7ce30b34d026",
@@ -29,9 +29,9 @@
   },
   "verificationFiles": {
     "verification/restoration-suspension/graph.mjs": "ea28a2bd312a88ea79a98207df7788e78c52cf5c8831acb115c0b43fd1f4e93a",
-    "verification/restoration-suspension/check.mjs": "55bdb2d47809c3fcf7da4cb0b4d184e2162ca796ed764daf67530969ea7d0100",
+    "verification/restoration-suspension/check.mjs": "419d54cc43f0526744f727bf23a20ea357ad63960f81e2da3a80e9228d50a683",
     "verification/restoration-suspension/replay-statechart.mjs": "6f7cfd87745215043dff8af7cf1bce0f5321077045eb6f19b86fe9ab7b09b5fd",
-    ".agents/skills/restoration-suspension/SKILL.md": "3c6435026b6d8418c13b970cd50cf6e5eb2a293864803875ac3d5e848fb73466"
+    ".agents/skills/restoration-suspension/SKILL.md": "e610d836bfe61de78b48ecb3c958b0eba438fe772d851a2d20da3d6b67b9df96"
   },
   "mapping": {
     "EpochEvidence": "restoredState epoch and category guards",
