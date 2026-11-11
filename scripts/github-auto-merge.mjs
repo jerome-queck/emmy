@@ -29,7 +29,7 @@ function successfulStatus(status, sha) {
 }
 
 export function evaluateLocalEvidence(local) {
-  const { binding: b = {}, assurance: a = {}, review: r = {}, authorization: grant = {}, now, action } = local ?? {};
+  const { binding: b = {}, assurance: a = {}, review: r = {}, authorization: grant = {}, now, action, payloadDigest } = local ?? {};
   const same = value => value?.head === b.head && value?.base === b.base && value?.tree === b.tree;
   const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
   const gates = {
@@ -37,6 +37,7 @@ export function evaluateLocalEvidence(local) {
       && shaPattern.test(b.tree) && typeof b.branch === 'string' && /^codex\/[a-z0-9][a-z0-9/-]*$/.test(b.branch),
     localEvidence: a.status === 'current-local-reported' && same(a) && a.clean === true
       && digest(a.contextDigest) && digest(a.receiptDigest),
+    payload: digest(payloadDigest) && r.payloadDigest === payloadDigest && grant.payloadDigest === payloadDigest,
     localReview: same(r) && ['PASS', 'PASS+NOTES'].includes(r.verdict) && r.practical === true
       && typeof r.author === 'string' && r.author.length > 0 && typeof r.reviewer === 'string'
       && r.reviewer.length > 0 && r.reviewer !== r.author && r.author === b.author
@@ -51,7 +52,18 @@ export function evaluateLocalEvidence(local) {
   return { eligible: Object.values(gates).every(Boolean), waiting: Object.keys(gates).filter(key => !gates[key]) };
 }
 
-export const beginDelivery = () => ({ phase: 'draft', active: null, completed: [] });
+export function evaluateAbsenceResolution({ pending, resolution: r, authorization: grant, discovered, bindingDigest, now }) {
+  return Boolean(pending && r && grant && r.decision === 'confirmed-absence'
+    && r.attemptId === pending.id && r.requestDigest === pending.requestDigest && r.payloadDigest === pending.payloadDigest
+    && r.action === pending.action && r.bindingDigest === bindingDigest
+    && Array.isArray(grant.actions) && grant.actions.includes('resolve-absence') && grant.resolveAttemptId === pending.id
+    && grant.resolveRequestDigest === pending.requestDigest
+    && typeof r.sourceRef === 'string' && r.sourceRef.length > 0
+    && Number.isFinite(now) && Date.parse(r.observedAt) <= now && now - Date.parse(r.observedAt) <= 60_000
+    && discovered?.exact === true && discovered.absent === true && discovered.confirmed === false && !discovered.pending && !discovered.conflict);
+}
+
+export const beginDelivery = () => ({ phase: 'draft', active: null, completed: [], attempts: {}, retryUsed: [] });
 export function deliveryTransition(state, event) {
   if (state.phase === 'merged') return state;
   if (event.kind === 'drift') return state.phase === 'unknown' ? { ...state, drift: true } : { ...state, phase: 'drift' };
@@ -61,7 +73,13 @@ export function deliveryTransition(state, event) {
   if (event.kind === 'ready' && state.phase === 'reviewed' && event.valid) return { ...state, phase: 'publishable' };
   const allowed = { publish: 'publishable', 'open-pr': 'published', attest: 'pr-open', merge: 'merge-authorized' };
   if (event.kind === 'authorize-merge' && state.phase === 'pr-open' && event.valid) return { ...state, phase: 'merge-authorized' };
-  if (event.kind === 'intent' && state.phase === allowed[event.action] && event.valid && !state.completed.includes(event.action)) return { ...state, phase: 'unknown', active: event.action };
+  if (event.kind === 'resolve-absence' && state.phase === 'unknown' && event.action === state.active
+    && event.valid && event.exact === true && event.absent === true && event.attemptMatches === true
+    && (state.attempts?.[event.action] ?? 0) === 1 && !(state.retryUsed ?? []).includes(event.action)) {
+    return { ...state, phase: allowed[event.action], active: null, retryUsed: [...(state.retryUsed ?? []), event.action] };
+  }
+  if (event.kind === 'intent' && state.phase === allowed[event.action] && event.valid && !state.completed.includes(event.action)
+    && (state.attempts?.[event.action] ?? 0) < 2) return { ...state, phase: 'unknown', active: event.action, attempts: { ...state.attempts, [event.action]: (state.attempts?.[event.action] ?? 0) + 1 } };
   if (event.kind === 'observe' && state.phase === 'unknown' && event.action === state.active && event.exact === true) {
     const outcomes = { publish: 'published', 'open-pr': 'pr-open', attest: 'pr-open', merge: 'merged' };
     if (event.confirmed === true) return { ...state, phase: outcomes[state.active], active: null, completed: [...state.completed, state.active] };

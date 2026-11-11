@@ -5,11 +5,16 @@ import { randomUUID } from 'node:crypto';
 import { canonical, digest } from '../src/content.mjs';
 import { boundedFile, strictJson } from '../src/bounded-json.mjs';
 import { assessAssurance, observeAssurance } from '../src/local-assurance.mjs';
-import { beginDelivery, createGitHub, deliveryTransition, evaluateEligibility, evaluateLocalEvidence, MERGE_POLICY } from './github-auto-merge.mjs';
+import { beginDelivery, createGitHub, deliveryTransition, evaluateAbsenceResolution, evaluateEligibility, evaluateLocalEvidence, MERGE_POLICY } from './github-auto-merge.mjs';
 
 const need = (condition, message) => { if (!condition) throw new Error(message); };
 const oid = value => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value);
 const hash = value => digest(canonical(value));
+export function prPayload(request) {
+  need(typeof request.title === 'string' && request.title.trim().length > 0 && typeof request.body === 'string', 'Exact PR title and body required');
+  return { title: request.title, body: request.body, head: request.binding.branch, base: 'main', draft: false };
+}
+const scopeDigest = ({ authorization, resolution, ...request }) => hash(request);
 const git = (root, args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 
 async function selected(selection) {
@@ -28,7 +33,7 @@ export async function acquireLocalEvidence(root, request) {
   const authorization = await selected(request.authorization);
   const initial = (await selected({ file: request.assurance.receiptFile, sha256: request.assurance.receiptDigest })).initial;
   return {
-    binding: request.binding, action: request.action, now: Date.now(), review, authorization,
+    binding: request.binding, action: request.action, payloadDigest: hash(prPayload(request)), now: Date.now(), review, authorization,
     assurance: {
       status: assessment.status, head: source.head, base: source.base, tree: source.workingTree,
       clean: source.workingTree === git(root, ['rev-parse', 'HEAD^{tree}'])
@@ -61,23 +66,24 @@ export function createLocalProvider(token, root, fetcher = fetch) {
   };
   const branchPath = b => `${prefix}/git/ref/heads/${encodeURIComponent(b.branch)}`;
   const pulls = b => pages(`${prefix}/pulls?state=all&base=main&head=${encodeURIComponent(`${MERGE_POLICY.reviewer}:${b.branch}`)}`);
-  const exactPr = (pr, b) => pr.head?.sha === b.head && pr.head?.repo?.full_name === b.repository
-    && pr.base?.ref === 'main' && pr.base?.repo?.full_name === b.repository;
+  const exactPr = (pr, b, request) => pr.head?.sha === b.head && pr.head?.repo?.full_name === b.repository
+    && pr.base?.ref === 'main' && pr.base?.repo?.full_name === b.repository
+    && pr.title === request.title && pr.body === request.body;
   return {
     async destination(b) {
       const [branch, protection] = await Promise.all([api(`${prefix}/branches/main`), api(`${prefix}/branches/main/protection`)]);
       return { exact: branch.commit?.sha === b.base && branch.protected === true
         && protection.enforce_admins?.enabled === true && protection.required_status_checks?.strict === true };
     },
-    async discover(action, b) {
+    async discover(action, b, request) {
       const ref = await optional(branchPath(b));
       if (ref && ref.object?.sha !== b.head) return { exact: false, confirmed: false, conflict: 'remote-branch-drift' };
-      if (action === 'publish') return { exact: !ref || ref.object?.sha === b.head, confirmed: Boolean(ref) };
+      if (action === 'publish') return { exact: !ref || ref.object?.sha === b.head, confirmed: Boolean(ref), absent: !ref };
       if (!ref) return { exact: false, confirmed: false, conflict: 'remote-branch-missing' };
       const found = await pulls(b);
-      if (found.length > 1 || found.some(pr => !exactPr(pr, b))) return { exact: false, confirmed: false, conflict: 'pull-request-conflict' };
+      if (found.length > 1 || found.some(pr => !exactPr(pr, b, request))) return { exact: false, confirmed: false, conflict: 'pull-request-conflict' };
       const pr = found[0];
-      if (action === 'open-pr') return { exact: !pr || pr.state === 'open' && pr.draft === false, confirmed: Boolean(pr && pr.state === 'open' && !pr.draft), number: pr?.number ?? null };
+      if (action === 'open-pr') return { exact: !pr || pr.state === 'open' && pr.draft === false, confirmed: Boolean(pr && pr.state === 'open' && !pr.draft), absent: !pr, number: pr?.number ?? null };
       if (!pr || pr.state !== 'open' && !pr.merged_at) return { exact: false, confirmed: false, conflict: 'pull-request-unavailable' };
       if (action === 'merge') {
         const receipt = await legacy.receipt(pr.number);
@@ -89,6 +95,7 @@ export function createLocalProvider(token, root, fetcher = fetch) {
         }
         return { exact: receipt.headRefOid === b.head && receipt.baseRefName === 'main', confirmed: confirmed && inHistory,
           number: pr.number, mergeCommit: confirmed && inHistory ? receipt.mergeCommit.oid : null,
+          absent: receipt.merged === false && pr.state === 'open' && !receipt.autoMergeRequest && !receipt.isInMergeQueue,
           pending: Boolean(receipt.autoMergeRequest || receipt.isInMergeQueue) };
       }
       const statuses = await pages(`${prefix}/commits/${b.head}/statuses`);
@@ -97,7 +104,8 @@ export function createLocalProvider(token, root, fetcher = fetch) {
         const latest = normalized.filter(row => row.context === context).sort((a, z) => z.id - a.id)[0];
         return latest?.state === 'success' && latest.creator === MERGE_POLICY.reviewer && latest.creatorType === 'User';
       };
-      return { exact: true, confirmed: [MERGE_POLICY.local, MERGE_POLICY.review].every(success), number: pr.number };
+      return { exact: true, confirmed: [MERGE_POLICY.local, MERGE_POLICY.review].every(success),
+        absent: !normalized.some(row => [MERGE_POLICY.local, MERGE_POLICY.review].includes(row.context)), number: pr.number };
     },
     async mergeEligibility(b, local, number) {
       const snapshot = await legacy.snapshot({ number, expectedHead: b.head, expectedBase: b.base });
@@ -115,7 +123,7 @@ export function createLocalProvider(token, root, fetcher = fetch) {
         need(result.status === 0 && !result.signal && !result.error, 'Branch publication unconfirmed; rediscover retained intent');
       } else if (action === 'open-pr') {
         need(typeof request.title === 'string' && request.title.trim() && typeof request.body === 'string', 'Exact reviewed PR title and body required');
-        await api(`${prefix}/pulls`, { title: request.title, body: request.body, head: b.branch, base: 'main', draft: false });
+        await api(`${prefix}/pulls`, prPayload(request));
       } else if (action === 'attest') {
         for (const context of [MERGE_POLICY.local, MERGE_POLICY.review]) {
           need(evaluateLocalEvidence({ ...local, now: Date.now() }).eligible, 'Action scope expired during attestation; rediscover retained intent');
@@ -131,6 +139,7 @@ export async function deliverLocal(root, request, provider, acquire = acquireLoc
   const b = request.binding;
   need(b?.repository === MERGE_POLICY.repository && /^codex\/[a-z0-9][a-z0-9/-]*$/.test(b.branch) && oid(b.head) && oid(b.base) && oid(b.tree), 'Exact delivery binding required');
   need(['publish', 'open-pr', 'attest', 'merge'].includes(request.action), 'Explicit scoped action required');
+  const payload = prPayload(request); const payloadDigest = hash(payload);
   const directory = join(root, '.local/verified-delivery', hash({ repository: b.repository, branch: b.branch }));
   await mkdir(directory, { recursive: true });
   const lock = join(directory, 'lock');
@@ -145,15 +154,35 @@ export async function deliverLocal(root, request, provider, acquire = acquireLoc
     try { state = strictJson(await readFile(checkpoint, 'utf8')); }
     catch (error) { if (error.code !== 'ENOENT') throw error; }
     if (state) need(state.bindingDigest === hash(b), 'Existing branch intent has a different binding; reconcile before a new generation');
-    else state = { schemaVersion: 1, bindingDigest: hash(b), delivery: beginDelivery(), history: [] };
+    else state = { schemaVersion: 2, bindingDigest: hash(b), delivery: beginDelivery(), history: [] };
+    if (state.payloadDigest && state.payloadDigest !== payloadDigest) return { outcome: 'held', waiting: ['changed-pr-payload'], checkpoint };
     const action = state.delivery.phase === 'unknown' ? state.delivery.active : request.action;
-    const discovered = await provider.discover(action, b);
+    const discovered = await provider.discover(action, b, state.delivery.phase === 'unknown' && state.pending ? state.pending.request : request);
     state.history.push({ kind: 'discovery', at: new Date().toISOString(), action, result: discovered });
     if (state.delivery.phase === 'unknown') {
+      if (request.resolution) {
+        const resolution = await selected(request.resolution);
+        const local = await acquire(root, request);
+        const fresh = await provider.discover(action, b, state.pending?.request ?? request);
+        const destination = await provider.destination(b);
+        const now = Date.now();
+        const valid = request.action === action && local.payloadDigest === payloadDigest
+          && evaluateLocalEvidence({ ...local, now }).eligible && destination.exact === true
+          && evaluateAbsenceResolution({ pending: state.pending, resolution, authorization: local.authorization, discovered: fresh, bindingDigest: state.bindingDigest, now });
+        const next = deliveryTransition(state.delivery, { kind: 'resolve-absence', action, valid, exact: fresh.exact, absent: fresh.absent, attemptMatches: valid });
+        state.history.push({ kind: 'absence-resolution', at: new Date().toISOString(), valid, resolution, selection: request.resolution, result: fresh, originalAttemptId: state.pending?.id ?? null });
+        if (next.phase !== 'unknown') {
+          state.retryScopeDigest = state.pending.scopeDigest; state.retryOf = state.pending.id;
+          state.delivery = next; await retain(); return { outcome: 'retry-ready', checkpoint, originalAttemptId: state.pending.id };
+        }
+        await retain(); return { outcome: 'unknown', waiting: ['absence-resolution-unverified'], checkpoint };
+      }
       state.delivery = deliveryTransition(state.delivery, { kind: 'observe', action, ...discovered });
       await retain();
       return { outcome: state.delivery.phase, rediscoveredOnly: true, checkpoint, discovered };
     }
+    if (request.resolution) return { outcome: 'held', waiting: ['no-pending-attempt'], checkpoint };
+    if (state.retryScopeDigest && state.retryScopeDigest !== scopeDigest(request)) return { outcome: 'held', waiting: ['changed-original-action-request'], checkpoint };
     if (discovered.conflict || !discovered.exact || discovered.pending) { await retain(); return { outcome: 'held', waiting: [discovered.conflict ?? 'provider-state-uncertain'], checkpoint }; }
     if (discovered.confirmed) {
       const phases = { publish: 'published', 'open-pr': 'pr-open', attest: 'pr-open', merge: 'merged' };
@@ -161,6 +190,7 @@ export async function deliverLocal(root, request, provider, acquire = acquireLoc
       return { outcome: phases[action], observedOnly: true, checkpoint, discovered };
     }
     let local = await acquire(root, request);
+    need(local.payloadDigest === payloadDigest, 'Acquired evidence must describe the exact requested PR payload');
     const admission = evaluateLocalEvidence(local);
     if (!admission.eligible) { await retain(); return { outcome: 'held', waiting: admission.waiting, checkpoint }; }
     if (!(await provider.destination(b)).exact) { state.delivery = deliveryTransition(state.delivery, { kind: 'drift' }); await retain(); return { outcome: 'held', waiting: ['current-base-or-protection'], checkpoint }; }
@@ -173,6 +203,7 @@ export async function deliverLocal(root, request, provider, acquire = acquireLoc
       state.delivery = deliveryTransition(state.delivery, { kind: 'authorize-merge', valid: true });
     }
     local = await acquire(root, request);
+    need(local.payloadDigest === payloadDigest, 'Acquired evidence must describe the exact requested PR payload');
     const final = evaluateLocalEvidence(local);
     if (!final.eligible || !(await provider.destination(b)).exact) { await retain(); return { outcome: 'held', waiting: final.eligible ? ['current-base-or-protection'] : final.waiting, checkpoint }; }
     if (request.action === 'merge') {
@@ -182,13 +213,16 @@ export async function deliverLocal(root, request, provider, acquire = acquireLoc
     const next = deliveryTransition(state.delivery, { kind: 'intent', action, valid: true });
     if (next.phase !== 'unknown') { await retain(); return { outcome: 'held', waiting: ['delivery-order'], checkpoint }; }
     state.delivery = next;
-    state.history.push({ kind: 'intent', action, at: new Date().toISOString(), requestDigest: hash(request) });
+    state.payloadDigest = payloadDigest;
+    state.pending = { id: randomUUID(), action, requestDigest: hash(request), scopeDigest: scopeDigest(request), payloadDigest, payload, request, retryOf: state.retryOf ?? null };
+    state.retryScopeDigest = null; state.retryOf = null;
+    state.history.push({ kind: 'intent', action, at: new Date().toISOString(), ...state.pending });
     await retain();
     if (!evaluateLocalEvidence({ ...local, now: Date.now() }).eligible) return { outcome: 'unknown', waiting: ['authorization-expired-before-call'], checkpoint };
     try { await provider.effect(action, request, discovered, local); }
     catch (error) { state.history.push({ kind: 'effect-error', action, at: new Date().toISOString(), status: error.status ?? null, message: error.message }); }
     try {
-      const receipt = await provider.discover(action, b);
+      const receipt = await provider.discover(action, b, state.pending.request);
       state.history.push({ kind: 'readback', action, at: new Date().toISOString(), result: receipt });
       state.delivery = deliveryTransition(state.delivery, { kind: 'observe', action, ...receipt });
     } catch (error) { state.history.push({ kind: 'readback-error', action, message: error.message }); }

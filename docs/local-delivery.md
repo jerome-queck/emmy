@@ -20,7 +20,9 @@ The request contains `schemaVersion: 1`, `mode: "local"`, `binding`, `baseRef`, 
 | `action` | One of `publish`, `open-pr`, `attest`, `merge`. |
 | `title`, `body` | Exact reviewed PR text. |
 
-The review contains `head`, `base`, `tree`, `author`, `reviewer`, `verdict`, `practical`, `receiptDigest`, `contextDigest` and `acceptanceRef`. Verdict is `PASS` or `PASS+NOTES`, `practical` is true, and reviewer differs from author. The grant contains `repository`, `branch`, `head`, `base`, `tree`, `actions`, `sourceRef`, `notBefore` and `expiresAt`. Times use ISO 8601. Omitted, expired or mismatched evidence refuses an effect.
+The review contains `head`, `base`, `tree`, `author`, `reviewer`, `verdict`, `practical`, `receiptDigest`, `contextDigest`, `payloadDigest` and `acceptanceRef`. Verdict is `PASS` or `PASS+NOTES`, `practical` is true, and reviewer differs from author. The grant contains `repository`, `branch`, `head`, `base`, `tree`, `actions`, `sourceRef`, `notBefore`, `expiresAt` and the same `payloadDigest`. Times use ISO 8601. Omitted, expired or mismatched evidence refuses an effect.
+
+`payloadDigest` is SHA-256 of the existing canonical JSON encoding of `{title, body, head: binding.branch, base: "main", draft: false}`. Title and body are exact strings. Every original intent retains that payload, its digest, the full original request and request digest. PR discovery compares saved title and body as well as source and destination. Changed text cannot borrow selected review or scope. A different payload requires a new reviewed branch generation.
 
 ## Run one authorized action
 
@@ -36,7 +38,13 @@ Publication uses the exact HTTPS origin and a server-side absent-ref lease. It c
 
 ## Recover an uncertain action
 
-Intent is retained before each action under ignored `.local/verified-delivery/`, keyed by repository and branch. A process lock serializes cooperating callers. Original discoveries, errors and readbacks stay in checkpoint history. Unknown intent forces rediscovery and returns without another write, even when an invocation requests a different action. Failed reads, timeouts, denials and apparent absence never authorize blind retry. A positive exact read can confirm the original effect. Unresolved absence needs explicit owner reconciliation outside this command.
+Intent is retained before each action under ignored `.local/verified-delivery/`, keyed by repository and branch. A process lock serializes cooperating callers. Original discoveries, errors and readbacks stay in checkpoint history. Unknown intent normally forces rediscovery and returns without another effect, even when an invocation requests a different action. Failed reads, timeouts, denials and apparent absence never authorize blind retry. A positive exact read can confirm the original effect.
+
+For an explicitly approved absence resolution, keep the original action and add `resolution: {file, sha256}` to the request. The selected file contains `decision: "confirmed-absence"`, original `attemptId`, `requestDigest`, `payloadDigest`, `action`, checkpoint `bindingDigest`, ISO `observedAt` and original approval `sourceRef`. Approval must be no more than sixty seconds old and not future-dated. The selected action grant must additionally allow `resolve-absence` and name the same original `resolveAttemptId` and `resolveRequestDigest`. Ordinary source/action/payload/expiry gates still apply.
+
+The CLI reacquires exact provider absence and current destination protection. A missing branch can resolve publication. A complete empty exact-branch PR listing can resolve PR creation. Attestation needs neither target context to exist; partial statuses remain uncertain. Merge needs an exact open, unmerged PR with no queue or deferred request. Denied, partial, conflicting or uncertain reads cannot resolve absence. A selected assertion alone is insufficient.
+
+Successful resolution returns `retry-ready` and performs no provider effect. Remove `resolution` and invoke the same original action request, retaining its review, source and payload selections. A renewed scoped grant may differ. One retry is permitted per action and branch generation. The retry retains a new attempt linked to the original. A second failed attempt stays unknown and cannot be resolved into a third. Original intent, error and resolution history remain. Legacy v1 unknown records without original attempt/payload records remain rediscovery-only. Observed absence is not a global proof that a timed-out provider operation cannot finish later; explicit owner scope and honest fresh provider reads remain assumptions.
 
 A crash can leave a lock. Inspect the owning process and retained intent before manually resolving it. There is no timed stale-lock deletion. A changed binding cannot replace the retained branch generation. Preserve uncertain records while preparing another candidate.
 
