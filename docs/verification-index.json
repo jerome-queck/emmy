@@ -1,6 +1,17 @@
 {
   "commands": [
     {
+      "name": "reporting",
+      "description": "Inspect validated private automation records or publish only a producer-owned immutable record; no workload execution.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "upkeep"
+    },
+    {
       "name": "help",
       "description": "List commands and JSON contracts.",
       "options": [],
@@ -367,6 +378,7 @@
         "maintain",
         "backup",
         "restore",
+        "reporting",
         "automation",
         "daily-briefing",
         "assurance"
@@ -380,7 +392,8 @@
         "improvement-report",
         "automation-foundation",
         "daily-briefing-pilot",
-        "local-assurance"
+        "local-assurance",
+        "automation-reporting"
       ],
       "properties": [
         "restore-suspension",

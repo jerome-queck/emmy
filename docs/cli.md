@@ -6,6 +6,7 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 
 | Command | Options | Purpose | Feature |
 | --- | --- | --- | --- |
+| reporting | `--file <value>` required | Inspect validated private automation records or publish only a producer-owned immutable record; no workload execution. | upkeep |
 | help | none | List commands and JSON contracts. | orientation |
 | doctor | none | Check runtime, public references, bindings, private integrity, and restored suspension. | orientation |
 | catalog | none | Read public projects, source claims, capabilities, tools, and probes. | orientation |
