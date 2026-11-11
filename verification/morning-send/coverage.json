@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "d96994d272ba9f1fd435b1bd70eb81bd895e8c36",
+  "sourceCommit": "8b07ac2a83f502c386f1c0373c3189e74057f4af",
   "sourceFiles": {
     "src/automation-reporting.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
     "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
@@ -13,7 +13,7 @@
     "src/fleet-schema.mjs": "d9d87c7834b006fb5dd7dac1bb41b0f2075b2e20057f40c656c0974b4576ea27",
     "src/fleet-state.mjs": "4e3f1d689b3cb7df2301e4df46298c7bea221584b3e67b76d844685046439d53",
     "src/guidance-pin.mjs": "f037a3f461db221e884f9f72da45515d51e536f6f271bf70ff11a36b6cf238b7",
-    "src/metadata.mjs": "8b6c9c528a7eedec1c70ead15e72f154e952f28567937e751d07bc2604b91066",
+    "src/metadata.mjs": "a14533cfd8cc6c153fce0e7788240f9f9f9b25c3d47d6b3d521bcea860fe63a6",
     "src/morning-presentation.mjs": "36d171d854c34b3062da02e9c9ac5b095e509164e2c674bf0dd4ccae1268a343",
     "src/morning.mjs": "c01412274bccfb57e15a423b88c830a9cdb8d6486b2b264c074e7ce30b34d026",
     "src/operating-contract.mjs": "a8c513f23eeee99679d6b4e0e3d3ac0b6e91d26258abf33491e49a4f32143362",
@@ -40,5 +40,5 @@
     "nodes": 1000,
     "edges": 1000
   },
-  "reviewBasis": "Actual one-run v3 fixture, synchronous reducer and declared evidence only; earlier intake and asynchronous effects excluded. Morning-send integration: reviewed 175 mapped source files from prior sync; only an appended assurance row and appended metadata association differ. Existing reducer guards, prior plan order and modeled boundaries remain unchanged. Full exact-head gate and independent review remain pending."
+  "reviewBasis": "Actual one-run v3 fixture, synchronous reducer and declared evidence only; earlier intake and asynchronous effects excluded. Morning-send integration: reviewed 175 mapped source files from prior sync; only an appended assurance row and appended metadata association differ. Existing reducer guards, prior plan order and modeled boundaries remain unchanged. Full exact-head gate and independent review remain pending. Calendar attempt integration: appended one fixed suite and one metadata association; reviewed the synthetic Calendar driver and evidence feature additions. Existing transition guards and prior suite rows are unchanged. Full gate and independent review pending."
 }

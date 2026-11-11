@@ -20,7 +20,7 @@
     "verification/planning-policy/chart.mmd": "9d14aff29ced031fd6e851d5b0ad8871c870217b430d15551a71a2b28de5aaf6",
     "test/planning-policy.test.mjs": "fa1604fe2c9c7592d68ed073a7831618ce90959fca4b50276882838e84b08dba",
     ".agents/skills/planning-policy/SKILL.md": "806ebafa751b30de961cbc40bf18a53614089e822ecdd927eb94d69b58211951",
-    "verification/calendar-register-drive.mjs": "67c89b80bb93f36279b105041588ad62ab39574ee8f6ca107520cfc2ba51861b"
+    "verification/calendar-register-drive.mjs": "5770264be9d6f824cbdb1ab85bf0175ba1705d836bf7142e9fdedac406054ef8"
   },
   "mapping": [
     {

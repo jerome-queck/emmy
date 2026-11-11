@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "d96994d272ba9f1fd435b1bd70eb81bd895e8c36",
+  "sourceCommit": "8b07ac2a83f502c386f1c0373c3189e74057f4af",
   "sourceFiles": {
     "src/automation-reporting.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
     "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
@@ -14,7 +14,7 @@
     "src/fleet-schema.mjs": "d9d87c7834b006fb5dd7dac1bb41b0f2075b2e20057f40c656c0974b4576ea27",
     "src/fleet-state.mjs": "4e3f1d689b3cb7df2301e4df46298c7bea221584b3e67b76d844685046439d53",
     "src/guidance-pin.mjs": "f037a3f461db221e884f9f72da45515d51e536f6f271bf70ff11a36b6cf238b7",
-    "src/metadata.mjs": "8b6c9c528a7eedec1c70ead15e72f154e952f28567937e751d07bc2604b91066",
+    "src/metadata.mjs": "a14533cfd8cc6c153fce0e7788240f9f9f9b25c3d47d6b3d521bcea860fe63a6",
     "src/morning-presentation.mjs": "36d171d854c34b3062da02e9c9ac5b095e509164e2c674bf0dd4ccae1268a343",
     "src/morning.mjs": "c01412274bccfb57e15a423b88c830a9cdb8d6486b2b264c074e7ce30b34d026",
     "src/operating-contract.mjs": "a8c513f23eeee99679d6b4e0e3d3ac0b6e91d26258abf33491e49a4f32143362",
@@ -27,5 +27,6 @@
     "verification/cooperative-cloud/graph.mjs": "bec31bd15a3de87eff7aa0c4f4a79418f03ab98a1730e755a97b290988f979c1",
     "verification/cooperative-cloud/check.mjs": "7e17a6f183e6fc841500ebd1d7c32667bcbde0f471e70f95818f76e58685498d",
     ".agents/skills/cooperative-cloud/SKILL.md": "c357240d0821b1dfe6c6c5794bf708fce585765f6bd772e84145272bd071945f"
-  }
+  },
+  "reviewBasis": " Calendar attempt integration: appended one fixed suite and one metadata association; reviewed the synthetic Calendar driver and evidence feature additions. Existing transition guards and prior suite rows are unchanged. Full gate and independent review pending."
 }

@@ -757,7 +757,7 @@
       "files": [
         {
           "path": "src/assurance.mjs",
-          "sha256": "e0e681f8071f8892f31ccccbf03011ec3af91e62539e94f264ba36a50cd1b729",
+          "sha256": "fe0da52ded398b3e40e529682c9404a9b27a934f6baf9bfab3c69f10002ccea2",
           "callers": [
             "src/local-assurance.mjs",
             "verification/local-assurance/check.mjs"
@@ -1064,7 +1064,7 @@
         },
         {
           "path": "src/metadata.mjs",
-          "sha256": "8b6c9c528a7eedec1c70ead15e72f154e952f28567937e751d07bc2604b91066",
+          "sha256": "a14533cfd8cc6c153fce0e7788240f9f9f9b25c3d47d6b3d521bcea860fe63a6",
           "callers": [
             "src/briefing.mjs",
             "src/maintenance.mjs",
@@ -1229,7 +1229,7 @@
         },
         {
           "path": ".agents/skills/local-assurance/SKILL.md",
-          "sha256": "abbcba2fdea95d257405ebdcaaa5c8acf3a87dc35a544d10f2a38aafa3fa9e76",
+          "sha256": "2579b29669f8bd82c71c5d176edc4c87622898c1b429882160190182ec6f153e",
           "callers": [
             "public configuration"
           ]
@@ -1285,7 +1285,7 @@
         },
         {
           "path": ".agents/skills/verify/features/evidence.md",
-          "sha256": "c44fcf552dca434663b799a6d7e2e3e87997eb236174b08b3886bf83a976a470",
+          "sha256": "318227a4c44a9da39523beebec08b5e146a258a12a0a2043e446c0bd75e234c5",
           "callers": [
             "public configuration"
           ]
@@ -1504,7 +1504,7 @@
         },
         {
           "path": "verification/calendar-register-drive.mjs",
-          "sha256": "67c89b80bb93f36279b105041588ad62ab39574ee8f6ca107520cfc2ba51861b",
+          "sha256": "5770264be9d6f824cbdb1ab85bf0175ba1705d836bf7142e9fdedac406054ef8",
           "callers": [
             "verification input"
           ]
@@ -1560,7 +1560,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "c6719cb2faf880f098a98c18dba70205792de8d10674f5f10c8f9f782fc2700d",
+          "sha256": "af2769c469dd832de62e3c2f9e64aaee6572d2f84c1897d6f9b98c870261472b",
           "callers": [
             "verification input"
           ]
@@ -1595,7 +1595,7 @@
         },
         {
           "path": "verification/delivery/coverage.json",
-          "sha256": "1b42875c7bf9d77ccfc481f892f02113b24150fb41d5b65b34b84f3ff6495bbc",
+          "sha256": "8b6e7c71b82cee557ea8c842d6b60d4aaa0b487b294deb641381b8167b28843e",
           "callers": [
             "verification input"
           ]
@@ -1644,7 +1644,7 @@
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "8ac5bc51cf0107da25408e93c501ec9b0516bd5952619249b24445688f9800e5",
+          "sha256": "633e74bce8bc4c58dc4d63966ae1130de4972e58b66f2674f94d86179e44d46c",
           "callers": [
             "verification input"
           ]
@@ -1763,7 +1763,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "7f2e4bd7b6248216411018f37efd98edf4eb4aeeac2f302fafa1e6cb142a5c36",
+          "sha256": "cfe34a254b3d04b7d992bd57c28a06ccdab101fce5af2403c1b97fadfbeacd26",
           "callers": [
             "verification input"
           ]
@@ -1868,7 +1868,7 @@
         },
         {
           "path": "verification/planning-policy/coverage.json",
-          "sha256": "132b56b103910b2a3a302992cc94af924d47ed5635ebdb7a4e562f30132fef36",
+          "sha256": "691a050b874b96b7349ce8b5113b252607626a31a680d743b88b08970b67069c",
           "callers": [
             "verification input"
           ]
@@ -1917,7 +1917,7 @@
         },
         {
           "path": "verification/publication/coverage.json",
-          "sha256": "97debec7a2e8e8886e5d8717cd8bbdaeb2883fe0cbf7985d037911a2c73cb6e4",
+          "sha256": "1ab6ccbcbd41478311be64d87dfeec15bdf7236e0d4f14b64ccfdc282a325ab5",
           "callers": [
             "verification input"
           ]
@@ -2295,7 +2295,7 @@
         },
         {
           "path": "verification/restoration-suspension/check.mjs",
-          "sha256": "1548fa9b62419d13986e60d48e5564b4f6b7841e261a1b4884e3b48815ae1f46",
+          "sha256": "fe893291e7797271f5c3303a9ed0796cf93b0526f5921da7320c5316e57a8494",
           "callers": [
             "verification input"
           ]
@@ -2316,7 +2316,7 @@
         },
         {
           "path": "verification/restoration-suspension/coverage.json",
-          "sha256": "27c373ceffdd632a53b94ecbd74f612c3e205eace83d6eda00596d2d1ecbcbae",
+          "sha256": "8505b6be68731994fd5ba7ee9b7436ea5898635d5d4646f36323cf77db4608aa",
           "callers": [
             "verification input"
           ]
@@ -2366,7 +2366,7 @@
         },
         {
           "path": "verification/cooperative-cloud/coverage.json",
-          "sha256": "7b1364306c3848450070069ecd020ab8032ee5175167d2d0a0952fb683880f45",
+          "sha256": "5b0b61ca611f354c3f829d58adb8e8fb366473b2e00b0f9020cadb02eef4cb26",
           "callers": [
             "verification input"
           ]
@@ -2480,7 +2480,7 @@
         },
         {
           "path": "verification/fleet-health/coverage.json",
-          "sha256": "60418d5cda4ace760f2019253cadaeb50e1b47be8f881ef0602a2a689b0bbee7",
+          "sha256": "3aa9fe057e46372bb06133fe02781034aad99e94fe8d577f89c6c587ec36dbc2",
           "callers": [
             "verification input"
           ]
@@ -2541,7 +2541,7 @@
         },
         {
           "path": "verification/morning-send/coverage.json",
-          "sha256": "0d4044598f7f701df13a0ed107221ae9e81ca90df26f0dae70d4978bde6b56a0",
+          "sha256": "859881f1c0cfbe3e24e5fbd5401ead0313abeb019540a354135d5f61565e5c29",
           "callers": [
             "verification input"
           ]
@@ -2571,6 +2571,58 @@
       ],
       "scenarios": [
         "morning-run"
+      ]
+    },
+    {
+      "id": "calendar-attempt-history",
+      "stateOwner": "assessCalendarRegister declared Task attempt reconciliation",
+      "classification": "bounded actual-source reachable assessment histories",
+      "bounds": "One synthetic Task and account, one move, policy version 1, one retained attempt and fixed clocks.",
+      "gap": "Native source truth, writer, handoff retry, arbitrary histories and provider state.",
+      "files": [
+        {
+          "path": "verification/calendar-attempt/graph.mjs",
+          "sha256": "3bcfecee881ab80875c06ae4d150b56ff2c5dd8461571c42920a9bc462c5a90c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/calendar-attempt/check.mjs",
+          "sha256": "1c612b925d6f7eba993a1231e0581dec7fe60f3488c879a7da471e3d12b2491c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/calendar-attempt/coverage.json",
+          "sha256": "98d76caf38fb0a82f8c847a77bb6412b099626bb98cdbc4d6b8ea53f1fbeae10",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": ".agents/skills/calendar-attempt/SKILL.md",
+          "sha256": "8c5a8e1a96c59db1e236ae77f24b8f738512ba215294a60c55d90b4bd10dd070",
+          "callers": [
+            "public configuration"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/calendar-register.mjs",
+          "symbol": "assessCalendarRegister"
+        }
+      ],
+      "properties": [
+        "UncertainHeld",
+        "NoEffectExact",
+        "SavedExact",
+        "TerminalHeld"
+      ],
+      "scenarios": [
+        "calendar-register"
       ]
     }
   ]
