@@ -15,5 +15,6 @@ export function exportOutcome(record, { artifactLinks = record.data?.report?.art
     actualTiming: timing ? { startedAt: timing.startedAt, lastHeartbeatAt: timing.lastHeartbeatAt, endedAt: timing.endedAt, observedAt: timing.observedAt, sourceRefDigest: recordDigest(timing.sourceRef) } : null,
     artifactLinks: validateArtifactLinks(artifactLinks), assurance: 'reported', userDelivery: 'pending',
   };
+  if (report?.schemaVersion === 2) Object.assign(value, { schemaVersion: 2, invocation: { provenance: report.provenance, scheduledFor: null, occurrenceKey: null }, sourceEvidence: structuredClone(report.sourceEvidence), generation: structuredClone(report.generation) });
   assertExportSafe(value); return value;
 }

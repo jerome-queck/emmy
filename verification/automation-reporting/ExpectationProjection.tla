@@ -16,14 +16,14 @@ Capture == /\ ~captured /\ captured' = TRUE
            /\ target' \in BOOLEAN /\ owner' \in BOOLEAN /\ dependency' \in BOOLEAN
            /\ complete' \in BOOLEAN /\ fresh' \in BOOLEAN /\ changed' \in BOOLEAN
            /\ effective' \in BOOLEAN /\ runUsable' \in BOOLEAN /\ afterGrace' \in BOOLEAN
-           /\ runKind' \in {"absent", "exact-bound", "other-slot", "manual"}
+           /\ runKind' \in {"absent", "exact-bound", "other-slot", "manual", "scheduled-unbound"}
            /\ UNCHANGED <<read, state, execution, matched>>
 ReadProjection == /\ captured /\ ~read /\ read' = TRUE
   /\ LET valid == (authority \/ Mutant = "authority") /\ (slotValid \/ Mutant = "slot") /\ (target \/ Mutant = "target") /\ (owner \/ Mutant = "owner") /\ (dependency \/ Mutant = "dependency")
           usable == complete \/ Mutant = "complete"
           current == ~changed \/ Mutant = "withdrawal"
           sourceFresh == fresh \/ Mutant = "fresh"
-          candidate == runKind = "exact-bound" \/ (runKind = "other-slot" /\ Mutant = "exact") \/ (runKind = "manual" /\ Mutant = "manual")
+          candidate == runKind = "exact-bound" \/ (runKind = "other-slot" /\ Mutant = "exact") \/ (runKind = "manual" /\ Mutant = "manual") \/ (runKind = "scheduled-unbound" /\ Mutant = "unbound")
       IN /\ matched' = (candidate /\ usable /\ runUsable)
          /\ state' = (IF ~valid \/ ~usable THEN "unknown"
                        ELSE IF changed /\ effective /\ Mutant # "withdrawal" THEN "withdrawn"
@@ -38,7 +38,7 @@ TypeOK == /\ captured \in BOOLEAN /\ read \in BOOLEAN /\ target \in BOOLEAN /\ o
           /\ authority \in BOOLEAN /\ slotValid \in BOOLEAN
           /\ dependency \in BOOLEAN /\ complete \in BOOLEAN /\ fresh \in BOOLEAN
           /\ changed \in BOOLEAN /\ effective \in BOOLEAN /\ runUsable \in BOOLEAN /\ afterGrace \in BOOLEAN
-          /\ runKind \in {"absent", "exact-bound", "other-slot", "manual"}
+          /\ runKind \in {"absent", "exact-bound", "other-slot", "manual", "scheduled-unbound"}
           /\ state \in {"unread", "unknown", "withdrawn", "observed", "expected", "observation-gap"}
           /\ execution \in {"not-inferred", "completed", "failed"} /\ matched \in BOOLEAN
 AuthoritySafe == read /\ state # "unknown" => authority
@@ -51,6 +51,7 @@ WithdrawalSafe == read /\ authority /\ slotValid /\ target /\ owner /\ dependenc
 FreshSafe == read /\ state \in {"expected", "observed", "observation-gap"} => fresh
 ExactSlotSafe == read /\ matched => runKind # "other-slot"
 ManualExcluded == read /\ matched => runKind # "manual"
+UnboundExcluded == read /\ matched => runKind # "scheduled-unbound"
 NeverInferSuccess == execution # "completed"
 GraceNeverFailure == execution # "failed"
 =============================================================================

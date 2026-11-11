@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
 import { open, lstat, realpath, mkdir, opendir, link, unlink } from 'node:fs/promises';
 import { resolve, join, dirname, parse, isAbsolute } from 'node:path';
-import { validateOutcomeReport } from './automation-reporting-outcome.mjs';
+import { validateOutcomeReport, outcomeSourceTimes } from './automation-reporting-outcome.mjs';
 import { validateControlRecord, expandExpectedSlots } from './automation-reporting-expectations.mjs';
 import { assertNoCredentials, assertExportSafe } from './reporting-privacy.mjs';
 import { strictJson } from './bounded-json.mjs';
@@ -57,6 +57,8 @@ export function validateRecord(record, evaluatedAt = new Date().toISOString()) {
         if (data.report.type === 'automation-outcome') validateOutcomeReport(data.report);
         else validateImprovementReport(data.report);
         need(data.report.runId === record.key && data.report.status === data.execution && data.report.coverage === data.coverage && Date.parse(data.report.generatedAt) <= Date.parse(record.recordedAt), 'Compact report/run identity, state or clock mismatch');
+        need(data.report.schemaVersion !== 2 || data.occurrenceKey === null, 'Scheduled-unbound report cannot name an occurrence');
+        need(data.report.generation?.mode !== 'retrospective' || record.revision > 0, 'Retrospective report requires an existing run predecessor');
       }
       if (data.timing !== undefined) {
         fields(data.timing, ['startedAt', 'lastHeartbeatAt', 'endedAt', 'observedAt', 'sourceRef']);
@@ -130,6 +132,16 @@ export async function requireExistingNamespace(selectedDirectory, namespace) {
   return path;
 }
 const identity = record => canonical([record.namespace, record.automationId, record.kind, record.key]);
+function retrospectiveOK(record, previous) {
+  if (record.kind !== 'run' || !previous) return record.data?.report?.generation?.mode !== 'retrospective';
+  const report = record.data.report; const prior = previous.data.report;
+  const retrospective = value => value?.schemaVersion === 2 && value.generation.mode === 'retrospective';
+  if (!retrospective(report) && !retrospective(prior)) return true;
+  if (!retrospective(report)) return false;
+  const metadataStable = record.data.coverage === previous.data.coverage && canonical(record.data.timing ?? null) === canonical(previous.data.timing ?? null) && canonical(record.data.telemetry ?? null) === canonical(previous.data.telemetry ?? null);
+  if (retrospective(prior)) return metadataStable && canonical(report) === canonical(prior);
+  return metadataStable && prior === null && ['completed', 'failed', 'skipped'].includes(previous.data.execution) && report.generation.basedOn === record.previous && report.sourceEvidence.recordedAt === previous.recordedAt && [report.sourceEvidence.observedAt, report.sourceWindow?.end].every(time => time === null || time === undefined || Date.parse(time) <= Date.parse(previous.recordedAt));
+}
 function predecessorOK(record, previous) {
   const terminal = ['completed', 'failed', 'skipped'];
   const executionStable = record.kind !== 'run' || !previous || record.data.occurrenceKey === previous.data.occurrenceKey && (!terminal.includes(previous.data.execution) || record.data.execution === previous.data.execution);
@@ -137,7 +149,7 @@ function predecessorOK(record, previous) {
   const controlStable = !previous || (record.kind === 'registration'
     ? Date.parse(record.data.observedAt) >= Date.parse(previous.data.observedAt)
     : record.kind !== 'expectation' || record.data.registration === previous.data.registration);
-  return executionStable && receiptStable && controlStable && previous && identity(record) === identity(previous) && record.revision === previous.revision + 1 && Date.parse(record.recordedAt) >= Date.parse(previous.recordedAt);
+  return executionStable && receiptStable && controlStable && retrospectiveOK(record, previous) && previous && identity(record) === identity(previous) && record.revision === previous.revision + 1 && Date.parse(record.recordedAt) >= Date.parse(previous.recordedAt);
 }
 export function aggregate(records, { evaluatedAt = new Date().toISOString(), findings = [], complete = true, maxAgeSeconds = 86400, controlAuthority = null } = {}) {
   need(stamp(evaluatedAt) && Number.isSafeInteger(maxAgeSeconds) && maxAgeSeconds >= 0 && maxAgeSeconds <= 31536000, 'Invalid evaluation clock/maximum age');
@@ -161,7 +173,7 @@ export function aggregate(records, { evaluatedAt = new Date().toISOString(), fin
     const conflict = leaves.length !== 1;
     if (conflict) problems.push(`conflict:${identity(group[0])}`);
     for (const record of leaves) {
-      const sourceTimes = [record.recordedAt, ...(['automation', 'registration'].includes(record.kind) ? [record.data.observedAt] : []), ...(record.kind === 'run' && record.data.timing ? [record.data.timing.observedAt] : []), ...(record.kind === 'run' && record.data.report ? [record.data.report.generatedAt, ...(record.data.report.sourceWindow ? [record.data.report.sourceWindow.end] : [])] : [])];
+      const sourceTimes = [record.recordedAt, ...(['automation', 'registration'].includes(record.kind) ? [record.data.observedAt] : []), ...(record.kind === 'run' && record.data.timing ? [record.data.timing.observedAt] : []), ...(record.kind === 'run' && record.data.report ? [record.data.report.generatedAt, ...(record.data.report.sourceWindow ? [record.data.report.sourceWindow.end] : []), ...outcomeSourceTimes(record.data.report)] : [])];
       const stale = sourceTimes.some(time => Date.parse(evaluatedAt) - Date.parse(time) > maxAgeSeconds * 1000);
       if (stale) problems.push(`stale:${record.id}`);
       current.push({ ...record, conflict, valid: !invalid.has(record.id), stale });
@@ -172,11 +184,15 @@ export function aggregate(records, { evaluatedAt = new Date().toISOString(), fin
   for (const record of current.filter(record => record.kind === 'run')) {
     const occurrence = current.find(item => item.kind === 'occurrence' && item.namespace === record.namespace && item.automationId === record.automationId && item.key === record.data.occurrenceKey && usable(item));
     const report = record.data.report;
-    if (record.data.occurrenceKey !== null && !occurrence || report?.provenance === 'scheduled' && (!occurrence || Date.parse(report.scheduledFor) !== Date.parse(occurrence.data.scheduledFor)) || report?.provenance === 'manual' && record.data.occurrenceKey !== null) {
+    if (record.data.occurrenceKey !== null && !occurrence || report?.provenance === 'scheduled' && (!occurrence || Date.parse(report.scheduledFor) !== Date.parse(occurrence.data.scheduledFor)) || ['manual', 'scheduled-unbound'].includes(report?.provenance) && record.data.occurrenceKey !== null) {
       record.valid = false; problems.push(`occurrence-correlation:${record.id}`);
     }
   }
-  const runs = current.filter(record => record.kind === 'run').map(record => ({ ...record, execution: usable(record) ? record.data.execution : 'unknown', evidenceCoverage: usable(record) ? record.data.coverage : 'unavailable', reportAvailability: !usable(record) ? 'conflict-or-incomplete' : record.data.report === null ? 'missing' : record.data.report.availability ?? 'available', actualTiming: record.data.timing ?? { startedAt: null, lastHeartbeatAt: null, endedAt: null, observedAt: null, sourceRef: null }, assurance: 'reported', publication: 'pending', userDelivery: 'pending' }));
+  const runs = current.filter(record => record.kind === 'run').map(record => {
+    const report = record.data.report; const originalTimes = outcomeSourceTimes(report);
+    const evidence = report?.schemaVersion === 2 ? { invocationProvenance: 'scheduled-unbound', nominalSlot: null, sourceFreshness: !originalTimes.length ? 'unknown' : originalTimes.some(time => Date.parse(evaluatedAt) - Date.parse(time) > maxAgeSeconds * 1000) ? 'stale' : 'within-configured-age', sourceClockBasis: report.sourceEvidence.observedAt !== null ? 'reported-observation' : report.sourceEvidence.recordedAt !== null ? 'original-record' : report.sourceWindow !== null ? 'original-window' : 'unknown' } : {};
+    return { ...record, ...evidence, execution: usable(record) ? record.data.execution : 'unknown', evidenceCoverage: usable(record) ? record.data.coverage : 'unavailable', reportAvailability: !usable(record) ? 'conflict-or-incomplete' : report === null ? 'missing' : report.availability ?? 'available', actualTiming: record.data.timing ?? { startedAt: null, lastHeartbeatAt: null, endedAt: null, observedAt: null, sourceRef: null }, assurance: 'reported', publication: 'pending', userDelivery: 'pending' };
+  });
   const receipts = kind => current.filter(record => record.kind === kind).map(record => {
     const subject = byDigest.get(record.data.subject);
     const subjectKnown = subject?.kind === 'run' && subject.namespace === record.namespace && subject.automationId === record.automationId && !invalid.has(record.data.subject) && current.some(item => item.id === record.data.subject && usable(item)) && Date.parse(record.recordedAt) >= Date.parse(subject.recordedAt);
@@ -193,6 +209,8 @@ export function aggregate(records, { evaluatedAt = new Date().toISOString(), fin
     if (run.execution !== 'completed') problems.push(`execution-${run.execution}:${run.id}`);
     if (run.evidenceCoverage !== 'complete') problems.push(`coverage-${run.evidenceCoverage}:${run.id}`);
     if (run.reportAvailability !== 'available') problems.push(`report-${run.reportAvailability}:${run.id}`);
+    if (run.invocationProvenance === 'scheduled-unbound') problems.push(`scheduled-unbound:${run.id}`);
+    if (run.sourceFreshness === 'unknown') problems.push(`source-age-unknown:${run.id}`);
   }
   const occurrences = current.filter(record => record.kind === 'occurrence').map(record => {
     const candidates = runs.filter(run => run.namespace === record.namespace && run.automationId === record.automationId && run.data.occurrenceKey === record.key);
@@ -239,7 +257,7 @@ function projectControlExpectations({ byDigest, invalid, current, runs, complete
     const withdrawn = latest && !sameConfiguration && Date.parse(data.scheduledFor) >= Date.parse(latest.data.effectiveAt);
     const sourceFresh = latest && Date.parse(evaluatedAt) - Date.parse(latest.data.observedAt) <= latest.data.sourceMaxAgeSeconds * 1000;
     const applicable = usable(record) && originalValid && latest && sameConfiguration && sourceFresh;
-    const candidates = boundRuns.filter(({ run, ownOccurrence }) => run.namespace === data.targetNamespace && run.automationId === data.targetAutomationId && run.data.report?.provenance !== 'manual' && ownOccurrence && Date.parse(ownOccurrence.data.scheduledFor) === Date.parse(data.scheduledFor)).map(({ run }) => run);
+    const candidates = boundRuns.filter(({ run, ownOccurrence }) => run.namespace === data.targetNamespace && run.automationId === data.targetAutomationId && !['manual', 'scheduled-unbound'].includes(run.data.report?.provenance) && ownOccurrence && Date.parse(ownOccurrence.data.scheduledFor) === Date.parse(data.scheduledFor)).map(({ run }) => run);
     const observed = candidates.filter(usable);
     const state = !usable(record) || !originalValid || !latest ? 'unknown' : withdrawn ? 'withdrawn' : !applicable || observed.length !== candidates.length ? 'unknown' : observed.length ? 'observed' : Date.parse(evaluatedAt) > Date.parse(data.observationDueAt) ? 'observation-gap' : 'expected';
     return { ...record, state, applicability: state === 'withdrawn' ? 'superseded-configuration' : applicable ? 'registered-configuration' : 'unknown', sourceFreshness: sourceFresh ? 'within-configured-age' : 'stale-or-unavailable', runIds: observed.map(run => run.id), execution: 'not-inferred', assurance: 'reported-control', graceMeaning: 'observation-tolerance-only' };
