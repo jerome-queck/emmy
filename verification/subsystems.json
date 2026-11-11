@@ -2295,7 +2295,7 @@
         },
         {
           "path": "verification/restoration-suspension/check.mjs",
-          "sha256": "bde4b73b7582083d00b2e52ea95934b4a2a13ae425ac6510faa8dab6d95e5d30",
+          "sha256": "55bdb2d47809c3fcf7da4cb0b4d184e2162ca796ed764daf67530969ea7d0100",
           "callers": [
             "verification input"
           ]
@@ -2309,14 +2309,14 @@
         },
         {
           "path": ".agents/skills/restoration-suspension/SKILL.md",
-          "sha256": "b024d990f4744e0b5e4fecbb457b3c23324de07a97b667899327dab4c619a372",
+          "sha256": "3c6435026b6d8418c13b970cd50cf6e5eb2a293864803875ac3d5e848fb73466",
           "callers": [
             "public configuration"
           ]
         },
         {
           "path": "verification/restoration-suspension/coverage.json",
-          "sha256": "3bdb63d8d0f714f91dd81ea4ddfcee0993d042de100c79df308cbe8c2a23ab64",
+          "sha256": "5b6b1642ecdf5ee9f452b84fed95910ce1303d3c1ddfea461984f1b40cc196ee",
           "callers": [
             "verification input"
           ]

@@ -29,9 +29,9 @@
   },
   "verificationFiles": {
     "verification/restoration-suspension/graph.mjs": "ea28a2bd312a88ea79a98207df7788e78c52cf5c8831acb115c0b43fd1f4e93a",
-    "verification/restoration-suspension/check.mjs": "bde4b73b7582083d00b2e52ea95934b4a2a13ae425ac6510faa8dab6d95e5d30",
+    "verification/restoration-suspension/check.mjs": "55bdb2d47809c3fcf7da4cb0b4d184e2162ca796ed764daf67530969ea7d0100",
     "verification/restoration-suspension/replay-statechart.mjs": "6f7cfd87745215043dff8af7cf1bce0f5321077045eb6f19b86fe9ab7b09b5fd",
-    ".agents/skills/restoration-suspension/SKILL.md": "b024d990f4744e0b5e4fecbb457b3c23324de07a97b667899327dab4c619a372"
+    ".agents/skills/restoration-suspension/SKILL.md": "3c6435026b6d8418c13b970cd50cf6e5eb2a293864803875ac3d5e848fb73466"
   },
   "mapping": {
     "EpochEvidence": "restoredState epoch and category guards",
@@ -42,5 +42,5 @@
   },
   "bounds": "Two epochs, one local target, four categories, one defective category, tasks supersession chain of at most three, four timestamps, one expiry.",
   "atomicity": "One synchronous reconcileState call; observations and epoch appearance are external events; actual publication is excluded.",
-  "reviewBasis": "Accepted 693b277 and accepted 53118dc contain byte-identical work, records, responsibilities, and dispatch modules. Complete diff checked. Static import closure reviewed and pinned, including content and modules reached through actual reconciliation. Node built-ins remain trusted. Cooperative-cloud integration review: assurance appends one group with all earlier plan rows and transition guards unchanged; metadata adds declarative evidence registry only. No publication awaits, restoration semantics, delivery guard or prior graph bounds change."
+  "reviewBasis": "Accepted 693b277 and accepted 53118dc contain byte-identical work, records, responsibilities, and dispatch modules. Complete diff checked. Static import closure reviewed and pinned, including content and modules reached through actual reconciliation. Node built-ins remain trusted. Cooperative-cloud integration review: assurance appends one group with all earlier plan rows and transition guards unchanged; metadata adds declarative evidence registry only. No publication awaits, restoration semantics, delivery guard or prior graph bounds change. The explicit checker sync literal and skill now name the reviewed metadata-only source sync; restore graph, predicates, guards and dependencies remain unchanged."
 }
