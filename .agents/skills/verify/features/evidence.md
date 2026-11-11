@@ -26,6 +26,8 @@ The separately mapped `calendar-acceptance` property runs 430 finite predicates 
 
 `responsibilities.mjs` performs live inspection and pure reconciliation; `work.mjs` decides evidence/repair/trigger policy; `records.mjs` parses and retains inputs. Scenarios `self-check-repair`, `evidence-boundaries`, `live-cutoff`, `local-check`, `local-check-cleanup`, and `trigger-evolution` cover actual corruption, later recurrence, unreadable-after-green, two-criterion exact closure, false-claim correction, wrong identities/ages/coverage, backdated cloud reviews, bounded child cleanup, first and persistent injected EPERM, E002 analogue, missed/no-op/delivery gaps, retirement conflicts, native uncertainty, and merged obligations.
 
+The [responsibility-closure contract](../../responsibility-closure/SKILL.md) explores bounded record-arrival and reconciliation orderings for one retained criterion failure. The existing `self-check-repair` CLI scenario remains its empirical boundary; the graph does not prove publication or native effects.
+
 The local-check drive also changes a tracked imported dependency, hides git identity, and proves the second command stays unexecuted. Its unchanged two-command control executes both.
 
 The cleanup drive counts actual group requests for output limit, normal leader exit, timeout, and handled SIGTERM/SIGINT. Its repeat-only EPERM control calls the OS on the first request and denies only a redundant request. Positive controls prove descendant disappearance before harness teardown. The normal-exit descendant supplies a complete readiness marker and inherits the leader's output pipes. Bounded helper predicates classify independent calls and do not prove this asynchronous lifecycle.

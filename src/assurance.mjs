@@ -21,6 +21,7 @@ export const assurancePlan = Object.freeze([
   { id: 'direct-dispatch-formal', args: ['verification/direct-dispatch/check.mjs'] },
   { id: 'local-assurance-tests', args: ['--test', 'test/local-assurance.test.mjs'] },
   { id: 'local-assurance-formal', args: ['verification/local-assurance/check.mjs'] },
+  { id: 'responsibility-closure-formal', args: ['verification/responsibility-closure/check.mjs'] },
 ].map(row => Object.freeze({ ...row, args: Object.freeze(row.args) })));
 export const assurancePlanDigest = digest(canonical(assurancePlan));
 
