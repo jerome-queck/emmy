@@ -1,6 +1,6 @@
 # Local check assurance
 
-`npm run check` runs a fixed ordered plan through one local admission owner. It retains original child output and an exact receipt under ignored `.local/local-assurance/`. All fifteen earlier command groups remain. Two added groups exercise this boundary and its bounded formal contract.
+`npm run check` runs a fixed ordered plan through one local admission owner. It retains original child output and an exact receipt under ignored `.local/verification/local-assurance/`. All fifteen earlier command groups remain. Two added groups exercise this boundary and its bounded formal contract.
 
 Use Node 24 or later, locked verification dependencies and existing Java 21. If the default TLC cache is missing, the gate runs the existing publication verifier's hash-pinned acquisition before binding the checked run. It installs no new toolchain. Corrupt existing jars and missing explicit jar overrides refuse. Existing `EMMY_JAVA_BIN` and `EMMY_TLC_JAR` selections remain subject to version/hash checks. Tool preparation alone reports `tools-ready` with no source-review/model pass.
 
@@ -9,7 +9,7 @@ npm run check
 npm run check -- --base <local-ref-or-commit>
 ```
 
-The default base is `HEAD`. A supplied base reference is resolved locally before every suite. No fetch occurs. The result prints `receiptFile` and `receiptDigest`. Exit zero requires every fixed suite to finish successfully against unchanged observations. Failure or drift exits one and retains evidence. An interrupted owner may leave output without a terminal receipt; that output cannot qualify. A rerun gets a new directory and preserves earlier failures.
+The default base is `HEAD`. A supplied base reference is resolved locally before every suite. No fetch occurs. The result prints `receiptFile` and `receiptDigest`. Exit zero requires every fixed suite to finish successfully against unchanged observations. Failure or drift exits one and retains original suite diagnostics inside the existing CI upload root. An interrupted owner may leave output without a terminal receipt; that output cannot qualify. A rerun gets a new directory and preserves earlier failures.
 
 To assess one exact receipt, write a private request with `receiptFile` and the exact `receiptDigest` printed by the run, then invoke:
 

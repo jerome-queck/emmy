@@ -7,7 +7,7 @@ import { driveAssurance } from '../verification/local-assurance/drive.mjs';
 
 test('actual package and fresh CLI refuse incomplete, failed, changed and corrupted assurance evidence', async () => {
   const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-  const directory = join(root, '.local/local-assurance-drive', randomUUID());
+  const directory = join(root, '.local/verification/local-assurance-drive', randomUUID());
   await mkdir(directory, { recursive: true });
   await driveAssurance(root, directory);
 });

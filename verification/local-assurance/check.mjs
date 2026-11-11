@@ -10,7 +10,7 @@ import * as production from '../../src/assurance.mjs';
 import { assuranceGraph, graphSpec, graphConfig } from './graph.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
-const directory = join(root, '.local/local-assurance-formal', randomUUID());
+const directory = join(root, '.local/verification/local-assurance-formal', randomUUID());
 await mkdir(directory, { recursive: true });
 const report = { status: 'running', sourceReviewGate: !process.argv.includes('--development'), runs: [] };
 const mutations = [

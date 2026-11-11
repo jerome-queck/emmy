@@ -128,7 +128,7 @@ async function artifact(directory, name) {
 
 export async function runAssurance(root, { baseRef = 'HEAD' } = {}) {
   root = await realpath(root);
-  const directory = join(root, '.local/local-assurance', randomUUID());
+  const directory = join(root, '.local/verification/local-assurance', randomUUID());
   await mkdir(directory, { recursive: true });
   const events = []; const startedAt = new Date().toISOString();
   try {

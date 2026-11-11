@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { cp, mkdir, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { canonical, digest } from '../../src/content.mjs';
 
@@ -59,9 +59,11 @@ export async function driveAssurance(sourceRoot, directory) {
   assert.ok(extraHead);
   const count = await readFile(join(root, '.local/second-ran'), 'utf8');
   const failure = await check('fail', 1);
+  assert.equal(relative(root, failure.receiptFile).split(sep).slice(0, 3).join('/'), '.local/verification/local-assurance', 'Failed suite evidence stays inside existing CI upload root');
   const failed = JSON.parse(await readFile(failure.receiptFile));
   assert.equal(failed.events.filter(event => event.kind === 'finish').length, 1);
   assert.equal(failed.events.find(event => event.kind === 'finish').code, 7);
+  assert.equal(await readFile(join(failure.receiptFile, '..', 'first.stdout'), 'utf8'), 'original first output\n', 'Original failed-command diagnostics remain readable under uploaded evidence');
   assert.equal(await readFile(join(root, '.local/second-ran'), 'utf8'), count, 'Failed first suite prevents second process launch');
   await assess(failure, 3);
   const signalled = await check('signal', 1); await assess(signalled, 3);
@@ -106,7 +108,7 @@ export async function driveAssurance(sourceRoot, directory) {
   assert.equal(JSON.parse(await readFile(join(root, '.local/tools-fetch.json'))).url, coverage.tool.url);
   const toolsOnly = run(['scripts/verify-publication.mjs', '--prepare-tools'], 0, process.execPath, coldEnv);
   assert.equal(toolsOnly.status, 'tools-ready'); assert.equal(toolsOnly.sourceReviewGate, false); assert.equal(toolsOnly.baseline, undefined);
-  const report = { status: 'passed', syntheticFixedPlan: true, syntheticToolAcquisition: true, fixtureRoot: root, cases: ['npm-ingress', 'fresh-cli', 'source-drift', 'installed-dependency-drift', 'head-drift', 'exit-failure', 'signal', 'mid-run-source', 'mid-run-base', 'missing-suite', 'reordered-suite', 'failed-result', 'different-host', 'different-node', 'corrupt-output', 'wrong-receipt-hash', 'restored-original', 'failure-preserved', 'missing-tool-override', 'corrupt-existing-tool', 'cold-tool-cache', 'tools-ready-is-not-model-pass'], commands, receipts: { green, failure, signalled, drift, moved, restored, cold } };
+  const report = { status: 'passed', syntheticFixedPlan: true, syntheticToolAcquisition: true, fixtureRoot: root, cases: ['npm-ingress', 'fresh-cli', 'source-drift', 'installed-dependency-drift', 'head-drift', 'exit-failure', 'signal', 'mid-run-source', 'mid-run-base', 'missing-suite', 'reordered-suite', 'failed-result', 'different-host', 'different-node', 'corrupt-output', 'wrong-receipt-hash', 'restored-original', 'failure-preserved', 'uploaded-failure-output', 'missing-tool-override', 'corrupt-existing-tool', 'cold-tool-cache', 'tools-ready-is-not-model-pass'], commands, receipts: { green, failure, signalled, drift, moved, restored, cold } };
   await writeFile(join(directory, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
   return report;
 }
