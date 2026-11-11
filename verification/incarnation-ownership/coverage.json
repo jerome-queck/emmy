@@ -7,7 +7,7 @@
   "verificationFiles": {
     "verification/incarnation-ownership/explore.mjs": "f5318ec2d7addde8b9d08807cd465f90e41fc900d11a53f33ea40e9dd8fe5ba9",
     "verification/incarnation-ownership/graph.mjs": "03a3adad8acf3f025d6d2a8b0bd66cb06c78b5adcc4957a023f45dc6e8e90c0e",
-    "verification/incarnation-ownership/check.mjs": "e1a07b36c36dd66a979e32e3a1fec155b272e81c2353ff5ca8645c8412652f12",
+    "verification/incarnation-ownership/check.mjs": "8f9036b42722af01d71858d7d310567792d13510911b794ff0b77e5f4e20b06a",
     ".agents/skills/incarnation-ownership/SKILL.md": "0235fa877ffcb2e8871b74b9a043a9923ca1587592cbeedb6f1c8362d5b9566a"
   }
 }

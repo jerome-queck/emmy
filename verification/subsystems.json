@@ -2247,7 +2247,7 @@
         },
         {
           "path": "verification/responsibility-closure/check.mjs",
-          "sha256": "e08d31d9774afddf737256bcf44a8181eb1a8a25c4e63fe440cfe33f654a4d65",
+          "sha256": "3b0d082bcce80954d4e13652394f19a5290f1fa608cd2a27788c1dccda3b9902",
           "callers": [
             "verification input"
           ]
@@ -2261,7 +2261,7 @@
         },
         {
           "path": "verification/responsibility-closure/coverage.json",
-          "sha256": "875405293f2b2a1db7598589891202a380b2b32711a001da222e4f9ab43ab393",
+          "sha256": "b63aeca096baaa53ae092c75684f037032061b4974fbcef0119b12138b17f2f4",
           "callers": [
             "verification input"
           ]
@@ -2365,21 +2365,21 @@
         },
         {
           "path": "verification/cooperative-cloud/check.mjs",
-          "sha256": "7e17a6f183e6fc841500ebd1d7c32667bcbde0f471e70f95818f76e58685498d",
+          "sha256": "45ae5b61c1a2cdb3be660a29672f5c83341bbd1f8a430c5e16139b2c6b7cd3e3",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/cooperative-cloud/coverage.json",
-          "sha256": "b5161ccf4451ea9c83b9312475de204fdc246dc774273ecf73aedcd520e2dc4c",
+          "sha256": "9b938eb4e0caf37b39ce874dad405325e090e3e8a63624ac99b857f4c9636ebf",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": ".agents/skills/cooperative-cloud/SKILL.md",
-          "sha256": "c357240d0821b1dfe6c6c5794bf708fce585765f6bd772e84145272bd071945f",
+          "sha256": "09f1317be29619e57987f2745d5395f95ad68848e0f18bc96f3fffe1cb99f803",
           "callers": [
             "public configuration"
           ]
@@ -2423,14 +2423,14 @@
         },
         {
           "path": "verification/incarnation-ownership/check.mjs",
-          "sha256": "e1a07b36c36dd66a979e32e3a1fec155b272e81c2353ff5ca8645c8412652f12",
+          "sha256": "8f9036b42722af01d71858d7d310567792d13510911b794ff0b77e5f4e20b06a",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/incarnation-ownership/coverage.json",
-          "sha256": "4ac36fa68c3395ef4be5e1a167117d6fb446060862f6a854d90ced429bba1fbd",
+          "sha256": "d2e876e59696b274c2ec8fc81567fc0448c3f00e9e0f61333d2833f38d013a73",
           "callers": [
             "verification input"
           ]
@@ -2479,14 +2479,14 @@
         },
         {
           "path": "verification/fleet-health/check.mjs",
-          "sha256": "c316d36054f13877423b6111adf1f4d32eea2e4352f40bd383bfbe8123a19dd1",
+          "sha256": "a836d8ee831dc3f2d190a0054d525938eb0355a74f73be8942ccd0185b050cdc",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/fleet-health/coverage.json",
-          "sha256": "e1fba32139ac2eb30ecb51fbe65ed50e4450209897e289bf871b152fa4424b7b",
+          "sha256": "0268e0846c6dd66a585afe6b07c5e01d048c66823a46a9c7e3760e95dc1d0114",
           "callers": [
             "verification input"
           ]
@@ -2540,14 +2540,14 @@
         },
         {
           "path": "verification/morning-send/check.mjs",
-          "sha256": "79f5918e4f4bd4ed29c8a927d1f2d1fd5e2d3d0eaa7a058b9961c041aada0788",
+          "sha256": "3cb5674ffff909a6c1e904c48af01d10521be79fe5338b65cd5731c962e4e2da",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/morning-send/coverage.json",
-          "sha256": "dcb8a27b7cf2caee131c8f17dfd8052b89988027fa9d2b8f36097832822cc9d5",
+          "sha256": "cb411d346de612a182ce7a09ed8bbcf36b58b87d746881be157f13bd12a694eb",
           "callers": [
             "verification input"
           ]
@@ -2595,14 +2595,14 @@
         },
         {
           "path": "verification/calendar-attempt/check.mjs",
-          "sha256": "1c612b925d6f7eba993a1231e0581dec7fe60f3488c879a7da471e3d12b2491c",
+          "sha256": "dab22b445292a000940d4f67feed8fc00cd06348d1e62c5394f258fe69399eca",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/calendar-attempt/coverage.json",
-          "sha256": "78d6362266229bd2c73448fa1805b29201717d27e624fd7022af08da9c9a347e",
+          "sha256": "52ec808ab5441223c1741b6f1b751ee4bd40115d614f796a964577adaf30ec9d",
           "callers": [
             "verification input"
           ]
@@ -2647,14 +2647,14 @@
         },
         {
           "path": "verification/automation-lineage/check.mjs",
-          "sha256": "9b37c5409901becc507ed11abc6e8116a40af44683a33d8213f4de862469f4d9",
+          "sha256": "6ef42be57d2afa299cb071b41ae8a966a57c9619eb15c8dafd4c00b60c31edb0",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/automation-lineage/coverage.json",
-          "sha256": "bb24bd4b83f1d5375047f15c4392302bae1493d21d5d7763e84b945da98f98cc",
+          "sha256": "b80976b69a676dff2603f658709cc34866ba84f80d54a7d4b00f7a4ecb4c8a2e",
           "callers": [
             "verification input"
           ]

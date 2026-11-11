@@ -11,7 +11,7 @@
     "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc"
   },
   "verificationFiles": {
-    "verification/automation-lineage/check.mjs": "9b37c5409901becc507ed11abc6e8116a40af44683a33d8213f4de862469f4d9",
+    "verification/automation-lineage/check.mjs": "6ef42be57d2afa299cb071b41ae8a966a57c9619eb15c8dafd4c00b60c31edb0",
     "verification/automation-lineage/graph.mjs": "43204a10626013002d2c54b2fd6985089a193d54aa8f1901b3d2618108ee9d02",
     ".agents/skills/automation-lineage/SKILL.md": "f02e7670aa5711092620392c55de15f5d9643fd7c78be9264a4ce1d364c6077c"
   },

@@ -8,7 +8,7 @@
   },
   "verificationFiles": {
     "verification/responsibility-closure/graph.mjs": "e9ff8533904648ed209587e7a3800586bc117d3e7885e7d1517a2ae27d18decf",
-    "verification/responsibility-closure/check.mjs": "e08d31d9774afddf737256bcf44a8181eb1a8a25c4e63fe440cfe33f654a4d65",
+    "verification/responsibility-closure/check.mjs": "3b0d082bcce80954d4e13652394f19a5290f1fa608cd2a27788c1dccda3b9902",
     ".agents/skills/responsibility-closure/SKILL.md": "c7ba80787fae5e9295a1baeb02e7e134d16950558a0573c14026b252f8706216"
   },
   "mapping": {

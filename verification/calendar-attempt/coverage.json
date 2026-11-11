@@ -8,7 +8,7 @@
     "src/records.mjs": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58"
   },
   "verificationFiles": {
-    "verification/calendar-attempt/check.mjs": "1c612b925d6f7eba993a1231e0581dec7fe60f3488c879a7da471e3d12b2491c",
+    "verification/calendar-attempt/check.mjs": "dab22b445292a000940d4f67feed8fc00cd06348d1e62c5394f258fe69399eca",
     "verification/calendar-attempt/graph.mjs": "3bcfecee881ab80875c06ae4d150b56ff2c5dd8461571c42920a9bc462c5a90c",
     "verification/calendar-register-fixtures.mjs": "307c62c12a7e6e8f9cdd1fdb5715198d0f0387f925ce07df057f0cc907885783",
     ".agents/skills/calendar-attempt/SKILL.md": "8c5a8e1a96c59db1e236ae77f24b8f738512ba215294a60c55d90b4bd10dd070"

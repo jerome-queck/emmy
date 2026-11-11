@@ -24,7 +24,7 @@
   },
   "verificationFiles": {
     "verification/fleet-health/graph.mjs": "a1e7ced6ce9f7c91c0d470192ea6444b008500f891ffe6b49c85d3c3977101c8",
-    "verification/fleet-health/check.mjs": "c316d36054f13877423b6111adf1f4d32eea2e4352f40bd383bfbe8123a19dd1",
+    "verification/fleet-health/check.mjs": "a836d8ee831dc3f2d190a0054d525938eb0355a74f73be8942ccd0185b050cdc",
     ".agents/skills/fleet-health/SKILL.md": "124b0354e7be6113a91afc5f3910d9444e2e991c36d193ca71622c26ad095cf9"
   },
   "reviewBasis": " Calendar attempt integration: appended one fixed suite and one metadata association; reviewed the synthetic Calendar driver and evidence feature additions. Existing transition guards and prior suite rows are unchanged. Full gate and independent review pending. Automation lineage integration: one appended suite and evidence association; prior plan rows and reducer guards unchanged. Source and adapter remain synthetic; exact-head full gate and independent review pending. Main integration review preserves existing model domains and invariants. Generic producer bytes move to automation-producer.mjs; shared validator bodies and publisher awaits retain their semantics. New metadata, copied dependency closure, generated references and mandatory reporting commands are reviewed in the integration source audit. Source witnesses are reachable neutral commits. Main integration review preserves existing model domains and invariants. Generic producer bytes move to automation-producer.mjs; shared validator bodies and publisher awaits retain their semantics. New metadata, copied dependency closure, generated references and mandatory reporting commands are reviewed in the integration source audit. Source witnesses are reachable neutral commits."
