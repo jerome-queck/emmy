@@ -1560,7 +1560,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "965b495464e9586561acf632dea754dd05a3a9b98c7938a16faed011df130dbb",
+          "sha256": "9dd2a1362f6328bd88e6a30336e4e9a6d2e2c75d056db1a020ebd81b3aab0788",
           "callers": [
             "verification input"
           ]
@@ -1595,7 +1595,7 @@
         },
         {
           "path": "verification/delivery/coverage.json",
-          "sha256": "c0673b55f09766af4b43a63732fa1470ad60359aae8c8624c5690d7e60654a42",
+          "sha256": "a25ba3b1ea73f3798e788a18146f620cb9c8b61a45a9e2f2ebaa462f236a600e",
           "callers": [
             "verification input"
           ]
@@ -1763,7 +1763,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "e10f8d667db1632befc080f42b12e5984aee82da0ee887928eebc6ef1d66be79",
+          "sha256": "15f99d77147fd09c464c34802c0786ec3f251e4236d777841a5869566c1f09a6",
           "callers": [
             "verification input"
           ]
@@ -1917,7 +1917,7 @@
         },
         {
           "path": "verification/publication/coverage.json",
-          "sha256": "edd648d10c9804c31c1183d0f4c013e58f4df2b6cca153a99f489d3271635cd4",
+          "sha256": "11f0df80aa6e637198dbe215591262396f00e03d99814efa767bbb0bb983c123",
           "callers": [
             "verification input"
           ]
@@ -2316,7 +2316,7 @@
         },
         {
           "path": "verification/restoration-suspension/coverage.json",
-          "sha256": "7077c3de3da7bd5c660c06d12bbc2916fb58597584d7e12e96a32dd41f4f6c32",
+          "sha256": "3bdb63d8d0f714f91dd81ea4ddfcee0993d042de100c79df308cbe8c2a23ab64",
           "callers": [
             "verification input"
           ]
@@ -2366,7 +2366,7 @@
         },
         {
           "path": "verification/cooperative-cloud/coverage.json",
-          "sha256": "115f2be0b442d364eca72d18190af704e82e7947d82d96c86f8a92a378350ad9",
+          "sha256": "a672329f63328de04a81668a3dd008a1b53905786dc33fd586e6d7f55688ba76",
           "callers": [
             "verification input"
           ]

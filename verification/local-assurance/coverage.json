@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "35b97c577778bdd8fe6c290daf488536bf4104f0",
+  "sourceCommit": "2ec0dd2a755e1101b5467831693be3e9bc2e0eff",
   "sourceFiles": {
     "src/assurance.mjs": "823267ae4f479b499da5f5e952a57578a3d3d16187f6d8bb3a33a45a949f3af4",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",

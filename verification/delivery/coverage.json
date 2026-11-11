@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "35b97c577778bdd8fe6c290daf488536bf4104f0",
+  "sourceCommit": "2ec0dd2a755e1101b5467831693be3e9bc2e0eff",
   "sourceFiles": {
     "scripts/github-auto-merge.mjs": "3c89e3044e08fd70841e481da1943a8efa2dea615a3a98c27cbe7d020e7bce9d",
     "scripts/local-delivery.mjs": "b339a2c581ad2751ffe013d93652b6917439c10e4268e636dbe91fb8e14657bf",
