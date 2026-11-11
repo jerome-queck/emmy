@@ -48,10 +48,13 @@ const review = data => data.responsibilities[0].record;
 const reconcile = async (id, expected = 0, imports = null, selectedHome = home, asOf = now()) => run(['reconcile', '--id', id, '--as-of', asOf, ...(imports ? ['--import', await fixture(`import-${randomUUID()}.json`, { schemaVersion: 1, records: imports })] : [])], expected, selectedHome);
 try {
   assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review', 'assurance'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing|dispatch|calendar|cloud|fleet|token-review|assurance');
-  for (const path of ['registry', 'docs', '.agents', 'src', 'scripts', 'verification', 'test', 'procedures', '.github', '.codex', 'package.json', 'package-lock.json']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
+  for (const path of ['registry', 'docs', '.agents', 'src', 'scripts', 'verification', 'test', 'procedures', '.github', '.codex', 'AGENTS.md', 'package.json', 'package-lock.json']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
   await mkdir(join(home, 'records'), { recursive: true }); await mkdir(join(root, 'bin'));
   for (const name of ['gh', 'codex', 'curl', 'ssh']) await writeFile(join(root, 'bin', name), `#!/bin/sh\necho invoked >> '${join(home, 'executor-invoked')}'\nexit 99\n`, { mode: 0o755 });
   await writeFile(join(root, '.gitignore'), '.local/\nbin/\n');
+  const fixtureInventoryPath = join(root, 'verification/subsystems.json'); const fixtureInventory = JSON.parse(await readFile(fixtureInventoryPath, 'utf8'));
+  fixtureInventory.subsystems.flatMap(area => area.files).find(file => file.path === '.gitignore').sha256 = digest(await readFile(join(root, '.gitignore')));
+  await writeFile(fixtureInventoryPath, JSON.stringify(fixtureInventory));
   await mkdir(join(root, 'fixture-verifiers'));
   for (const [name, source] of Object.entries(fixtureScripts)) await writeFile(join(root, 'fixture-verifiers', name), source);
   git(['init', '-q']); git(['config', 'user.email', 'fixture@example.invalid']); git(['config', 'user.name', 'Synthetic fixture']); git(['remote', 'add', 'origin', 'https://example.invalid/fixture']); git(['add', '.']); git(['commit', '-qm', 'Synthetic fixture baseline']);

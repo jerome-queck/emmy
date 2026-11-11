@@ -58,7 +58,7 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
   const root = await mkdtemp(join(tmpdir(), 'emmy-subsystem-admission-'));
   const source = fileURLToPath(new URL('..', import.meta.url));
   try {
-    for (const path of ['src', 'scripts', 'verification', 'test', 'registry', 'procedures', 'docs', '.agents', '.github', '.codex', 'package.json', 'package-lock.json']) {
+    for (const path of ['src', 'scripts', 'verification', 'test', 'registry', 'procedures', 'docs', '.agents', '.github', '.codex', 'AGENTS.md', '.gitignore', 'package.json', 'package-lock.json']) {
       await cp(join(source, path), join(root, path), { recursive: true });
     }
     const check = (status, pattern) => {
@@ -68,6 +68,16 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
       if (pattern) assert.match(data.error, pattern);
     };
     check(0);
+    for (const path of ['.npmrc', '.nvmrc', '.github/CODEOWNERS', '.github/new-policy', '.codex/new-policy', '.agents/new-policy', 'docs/CODEOWNERS', 'src/new-config.ini', 'verification/new-input.txt']) {
+      const added = join(root, path); await writeFile(added, 'synthetic unreviewed configuration\n');
+      for (const mode of ['--check', '--write']) {
+        const refused = run(root, ['maintain', mode]); assert.equal(refused.status, 2, refused.stdout);
+        assert.ok(JSON.parse(refused.stdout).error.includes(`unmapped ${path}`));
+      }
+      await rm(added);
+    }
+    await writeFile(join(root, 'docs/unconfigured-prose.md'), 'Synthetic unrelated prose.\n');
+    check(0); await rm(join(root, 'docs/unconfigured-prose.md'));
     const coverage = join(root, 'verification/coverage.json'); const coverageBefore = await readFile(coverage);
     for (const path of ['docs/verification-index.json', 'docs/briefing-guidance.json']) {
       const target = join(root, path); const original = await readFile(target);

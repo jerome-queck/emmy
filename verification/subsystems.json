@@ -1070,7 +1070,7 @@
         },
         {
           "path": "src/maintenance.mjs",
-          "sha256": "6b23ced0ca78d5cdf3ec8149edf3c6d35b3119c1478d7f7c19d1bf9804892335",
+          "sha256": "461a4ad70770e258e5c58e8c2dc90c24baccdbeb9acf933e840eb75890a413f4",
           "callers": [
             "scripts/agent.mjs"
           ]
@@ -1091,7 +1091,7 @@
         },
         {
           "path": "scripts/verify-behavior.mjs",
-          "sha256": "4fccf10139c3e6ae3f511517a4a7b107419e3527b5ed6e3962e330274c7a64d5",
+          "sha256": "6fcdc1d5fc7f25f313aa6f323c712215f48f63ba177f6bc94aac72ecd6000ca0",
           "callers": [
             "executable ingress"
           ]
@@ -1134,6 +1134,20 @@
         {
           "path": ".codex/config.toml",
           "sha256": "e81550770f07e3d238f94b9fce8c0013915f243fcba6888d8b779de339ba8613",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": "AGENTS.md",
+          "sha256": "ac5aa1406dc32d304e5be553fdc0a7634249c7424bcd027eb083e7cb844764a2",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".gitignore",
+          "sha256": "858f3780796eb39f8e566d4c3922f39eee9719875850513fe750c5c3fe95de4c",
           "callers": [
             "public configuration"
           ]
@@ -1190,6 +1204,111 @@
         {
           "path": ".github/dependabot.yml",
           "sha256": "a7c09a87e843df2ffed0a27b0f30af6238f0232722c9a5680b70be5624d35c49",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/coordination-contract/SKILL.md",
+          "sha256": "7812065ec2f9cec1e5b8fef68a250c4246ef8534c2ae684060c18287e37a5a6a",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/direct-dispatch/SKILL.md",
+          "sha256": "4f8c4856c859c7571f9b9e2cc9f7f20dd7c807999e9bed5dadedd4a6f22affc5",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/local-assurance/SKILL.md",
+          "sha256": "7896792e3d9f361f5b9f360cbbc3044b696ecbc5b9dd19420f37ec6cc7d2a360",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/merge-assurance/SKILL.md",
+          "sha256": "be1eb5ff37343876c11e181be2bb0ce5ca6c33c1ae9b39366342b11c33ec7834",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/morning-collect/SKILL.md",
+          "sha256": "cb26be9998b456c6f538af9d257d1a78330d4cd23a804b86e86c38ce2bc8c499",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/planning-policy/SKILL.md",
+          "sha256": "806ebafa751b30de961cbc40bf18a53614089e822ecdd927eb94d69b58211951",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/publication-contract/SKILL.md",
+          "sha256": "862ded159098cb4fe6fbfb0a4f02b6dd4330720be669e4e6e11bfcffc4c797b6",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/verify/SKILL.md",
+          "sha256": "cbc0edd926ae5f7ad205a93bb57857d22a1a95ed5a52f2782c1d83d7f01f2593",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/verify/features/README.md",
+          "sha256": "9722c92e49bac907e7b551b381a32b7fb90415775b8fca5412567452d6bfa858",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/verify/features/cloud.md",
+          "sha256": "1d8482545d28f81a6adfce62958536ad0a24b0cdbdc521c16cb5bc55a626f32a",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/verify/features/evidence.md",
+          "sha256": "d1ba608871b00bcce80d9f3ca58fc50c74348b7bb9faeba4f31826a0141f15a8",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/verify/features/fleet.md",
+          "sha256": "43a2f52e5e676c429bc05bfa0fd9a102b41e868bfbae91be3fb3f9ebafb60377",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/verify/features/orientation.md",
+          "sha256": "ad9c0ad8f8770286d78ee16c66aa7deb2bf5edc221df383da396ec99b40c2f84",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/verify/features/routing.md",
+          "sha256": "edc722ad105f0119cce3b17245553075b77a915f96d371f1433d851cc4c795ae",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/verify/features/upkeep.md",
+          "sha256": "ddefcd591e284eda905e446ea060f4d23073c86141ad4dcc2456ec364230e3cc",
           "callers": [
             "public configuration"
           ]
@@ -1269,6 +1388,13 @@
         {
           "path": "verification/briefing-slot/BriefingSlot.tla",
           "sha256": "ce970cea18806e44fe923e9bb6771b2543f199071bbcfff1efac81aeb327580a",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-slot/README.md",
+          "sha256": "f3c69ad1331e41688bb3c48821bc6656e977bc97fe5f4b5f215081002ccc9453",
           "callers": [
             "verification input"
           ]
@@ -1639,7 +1765,7 @@
         },
         {
           "path": "verification/local-assurance/drive.mjs",
-          "sha256": "bdc3b07934cbb0d478efb03fa96e47b951a14fdac94eb7f894ebbb9fead961ba",
+          "sha256": "63645b3fdeb0cf499f2d887faa7d93131b1d1c743b023ebb7596e80dd6e4fdce",
           "callers": [
             "verification input"
           ]
@@ -1849,7 +1975,7 @@
         },
         {
           "path": "test/agent-local.test.mjs",
-          "sha256": "ea1a19278d9a97bcc51880e271c748f0dcf37a843a5e1596250fe851e50a262e",
+          "sha256": "aad9a360b02f293b938db421d8105e48a49cca7fa53e6b7966f20bb5b4e1b7d3",
           "callers": [
             "verification input"
           ]
@@ -1948,6 +2074,13 @@
         {
           "path": "test/fixtures/fleet-v1-review.json",
           "sha256": "73ed74da219b33491e77e4dab8703260a5a0fb4ec68f3709b2e0ffc07f0b5fbb",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/fixtures/foundation-release-v1.txt",
+          "sha256": "b452d94c2a4d780820cba9026950d32cf7ee24e603d1129ff0dcb124bf4d33d3",
           "callers": [
             "verification input"
           ]

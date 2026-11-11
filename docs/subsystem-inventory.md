@@ -2,6 +2,8 @@
 
 Generated from `verification/subsystems.json`. Structural admission is not semantic proof. Caller admission uses parsed static relative imports in production files; dynamic and external callers still need source review. Hand-mapped model fingerprints identify reviewed bytes, not semantic completeness. Whole-repository foundation readiness: **incomplete**.
 
+Discovery covers all files in .github, .codex, .agents, procedures, registry, verification and test (except the inventory itself); source modules and named nested configs; root npm, Node, Git, agent and common JS-tool configs; and docs JSON, ownership and agent instructions plus configured guidance. Private/local state, .git, dependencies, environment and user/global settings, examples, and other prose are outside this boundary. Other config families are not discovered and require manual review.
+
 | Subsystem | State owner | Classification | Remaining gap |
 | --- | --- | --- | --- |
 | responsibility | responsibilities.mjs reconcileState; records.mjs journal and work.mjs review | stateful; finite predicates | Reachable repair and restore lifecycle and dedicated contract missing. |
