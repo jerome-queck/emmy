@@ -272,7 +272,7 @@
     },
     {
       "id": "briefing",
-      "stateOwner": "briefing-plan.mjs and daily-briefing.mjs artifact preparation; immutable-slot.mjs publication",
+      "stateOwner": "briefing-core.mjs and briefing-plan.mjs shared policy preparation; immutable-slot.mjs retained for improvement reports",
       "classification": "stateful slots and pure assessment; partial hand-mapped model",
       "bounds": "Two symbolic writers and bounded crash/retry for slot model; not briefing delivery.",
       "gap": "Dedicated briefing lifecycle and immutable-slot formal skill missing.",
@@ -305,8 +305,10 @@
           "path": "src/briefing-core.mjs",
           "sha256": "ddb4583942b2b1328e56d6ebc63b4f2dc98c04470713fbf31d47f6233be795c9",
           "callers": [
-            "src/daily-briefing.mjs",
-            "test/foundation-release.test.mjs"
+            "scripts/agent.mjs",
+            "test/daily-briefing.test.mjs",
+            "test/foundation-release.test.mjs",
+            "verification/daily-briefing-drive.mjs"
           ]
         },
         {
@@ -379,18 +381,9 @@
           ]
         },
         {
-          "path": "src/daily-briefing.mjs",
-          "sha256": "5395f4a0e6f8731d8244adc7febbfc6b01f7fc256a1f34af92a3636af0fe7045",
-          "callers": [
-            "scripts/agent.mjs",
-            "test/daily-briefing.test.mjs"
-          ]
-        },
-        {
           "path": "src/immutable-slot.mjs",
           "sha256": "59e8ccd7c37783268e22703f63897c8c6d2b97c497ab37ff300e636a33744035",
           "callers": [
-            "src/daily-briefing.mjs",
             "src/improvement-report.mjs"
           ]
         },
@@ -933,7 +926,6 @@
             "src/automation-producer.mjs",
             "src/bounded-json.mjs",
             "src/briefing-source-normalization.mjs",
-            "src/daily-briefing.mjs",
             "src/foundation-release.mjs",
             "src/improvement-report.mjs",
             "src/morning-collection.mjs",
@@ -995,7 +987,7 @@
         },
         {
           "path": "src/metadata.mjs",
-          "sha256": "d07550e73007c13d037d6dc1c051ac7b395defc9c0ac51c80e5a310deec2941e",
+          "sha256": "9a49293a96758feed4ee2d2e0d147fab1573321812d9efc2b6e110d52feb767a",
           "callers": [
             "scripts/agent.mjs",
             "scripts/verify-behavior.mjs",
@@ -1013,7 +1005,7 @@
         },
         {
           "path": "scripts/agent.mjs",
-          "sha256": "768cbdcde2e6958cede49e99335687ed771e15111ded3845400577ea0603f371",
+          "sha256": "34f57b19b8fe2f16bd32f2d4fa1b432c11420dc3c63e7ce6f3e31c50ab710db6",
           "callers": [
             "executable ingress"
           ]
@@ -1118,7 +1110,7 @@
         },
         {
           "path": "docs/verification-index.json",
-          "sha256": "54f85f7b873b4090d7fb79b4e6bbcd6493f0791176ab1b9f42ad8d0e48e25f2a",
+          "sha256": "26a1ef525301a91530cfa0e32fbc2e3c6dcc083a0335bf53927f4fb599540b33",
           "callers": [
             "public configuration"
           ]
@@ -1195,7 +1187,7 @@
         },
         {
           "path": ".agents/skills/verify/SKILL.md",
-          "sha256": "3c3a61d1d4ec03a4a80819fe0db8c71b902d86d7134561f4ea39c85bfffa1c30",
+          "sha256": "873aa7773c1e0d55572731170b1497045a8788d882e610fac789bd03944d6239",
           "callers": [
             "public configuration"
           ]
@@ -1237,7 +1229,7 @@
         },
         {
           "path": ".agents/skills/verify/features/upkeep.md",
-          "sha256": "ed4a5f09dac61afc6c2c46699e72f8a7590ee0d6702199a3c9d9fcf52f68c53a",
+          "sha256": "59cd6c9b47373905dcaaa19c246be922f24f40d5df9747194d36f4c69f8d6161",
           "callers": [
             "public configuration"
           ]
@@ -1463,14 +1455,7 @@
         },
         {
           "path": "verification/daily-briefing-drive.mjs",
-          "sha256": "345a3f0d431bb368a646f9311a718c6db9d3c17705e22d8d1f0e8e7df2fdea49",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": "verification/daily-briefing-fixtures.mjs",
-          "sha256": "cd93bb95e17b0d14934891262998b62bd3287c7ccf00b11df90a86af61e403e1",
+          "sha256": "0cc7793b8b8527df32d2400ff7dd5bc2b049549ee1aeb3091ab4702867494b69",
           "callers": [
             "verification input"
           ]
@@ -1925,7 +1910,7 @@
         },
         {
           "path": "test/daily-briefing.test.mjs",
-          "sha256": "4566f12eede514684a7410cee88f123be7083e2c11731929a7df7aa160053f71",
+          "sha256": "2a2f95d4e02556f93a208e9360d0644d3d761f384a66f141b0b5e33b2e7b2ea8",
           "callers": [
             "verification input"
           ]
