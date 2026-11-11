@@ -1109,7 +1109,7 @@
         },
         {
           "path": "scripts/verify-formal.mjs",
-          "sha256": "c9d43d42de0a9e4b46f1173e80870818e11857387230da12dcbf74b6591598ba",
+          "sha256": "90a6eee3825c4b1d5fc37c8b48259cf85e8b115246520c77320a4db037cb5744",
           "callers": [
             "executable ingress"
           ]
@@ -1566,7 +1566,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "aecdf1a9ddf4936634c839a9c9ba669629767d9c39781b5884e19078b3b031cd",
+          "sha256": "e4a0eccf6c0b15cb346a8c5f5d1ee931e9948224ce2932e88ef4cd56f7ccf089",
           "callers": [
             "verification input"
           ]
