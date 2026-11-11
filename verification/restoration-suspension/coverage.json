@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "8b07ac2a83f502c386f1c0373c3189e74057f4af",
+  "sourceCommit": "5a2f68528214fac9c5269091871a9ce9cbc3dcc5",
   "sourceFiles": {
     "src/automation-reporting.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
     "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
@@ -29,7 +29,7 @@
   },
   "verificationFiles": {
     "verification/restoration-suspension/graph.mjs": "ea28a2bd312a88ea79a98207df7788e78c52cf5c8831acb115c0b43fd1f4e93a",
-    "verification/restoration-suspension/check.mjs": "fe893291e7797271f5c3303a9ed0796cf93b0526f5921da7320c5316e57a8494",
+    "verification/restoration-suspension/check.mjs": "17f301b40848bd26385ac06ade411440b53301c2e0bf64cf8f0e395ed685fac0",
     "verification/restoration-suspension/replay-statechart.mjs": "6f7cfd87745215043dff8af7cf1bce0f5321077045eb6f19b86fe9ab7b09b5fd",
     ".agents/skills/restoration-suspension/SKILL.md": "1bcd8e82031af083839a6dfada7ee20b396d8c3150816db84613cc08028b2959"
   },
@@ -42,5 +42,5 @@
   },
   "bounds": "Two epochs, one local target, four categories, one defective category, tasks supersession chain of at most three, four timestamps, one expiry.",
   "atomicity": "One synchronous reconcileState call; observations and epoch appearance are external events; actual publication is excluded.",
-  "reviewBasis": "Accepted 693b277 and accepted 53118dc contain byte-identical work, records, responsibilities, and dispatch modules. Complete diff checked. Static import closure reviewed and pinned, including content and modules reached through actual reconciliation. Node built-ins remain trusted. Cooperative-cloud integration review: assurance appends one group with all earlier plan rows and transition guards unchanged; metadata adds declarative evidence registry only. No publication awaits, restoration semantics, delivery guard or prior graph bounds change. The explicit checker sync literal and skill now name the reviewed metadata-only source sync; restore graph, predicates, guards and dependencies remain unchanged. Fleet history integration appends one suite and one metadata evidence association; prior fixed plan order, reducer guards and production fleet behavior are unchanged. Source review and full recheck remain required. Morning-send integration: reviewed 175 mapped source files from prior sync; only an appended assurance row and appended metadata association differ. Existing reducer guards, prior plan order and modeled boundaries remain unchanged. Full exact-head gate and independent review remain pending. Calendar attempt integration: appended one fixed suite and one metadata association; reviewed the synthetic Calendar driver and evidence feature additions. Existing transition guards and prior suite rows are unchanged. Full gate and independent review pending."
+  "reviewBasis": "Accepted 693b277 and accepted 53118dc contain byte-identical work, records, responsibilities, and dispatch modules. Complete diff checked. Static import closure reviewed and pinned, including content and modules reached through actual reconciliation. Node built-ins remain trusted. Cooperative-cloud integration review: assurance appends one group with all earlier plan rows and transition guards unchanged; metadata adds declarative evidence registry only. No publication awaits, restoration semantics, delivery guard or prior graph bounds change. The explicit checker sync literal and skill now name the reviewed metadata-only source sync; restore graph, predicates, guards and dependencies remain unchanged. Fleet history integration appends one suite and one metadata evidence association; prior fixed plan order, reducer guards and production fleet behavior are unchanged. Source review and full recheck remain required. Morning-send integration: reviewed 175 mapped source files from prior sync; only an appended assurance row and appended metadata association differ. Existing reducer guards, prior plan order and modeled boundaries remain unchanged. Full exact-head gate and independent review remain pending. Calendar attempt integration: appended one fixed suite and one metadata association; reviewed the synthetic Calendar driver and evidence feature additions. Existing transition guards and prior suite rows are unchanged. Full gate and independent review pending. Ported accepted mapped source to the reachable local source witness. Reviewed exact bytes and retained existing properties and guards. The local-assurance plan count records the actual 27 suites."
 }
