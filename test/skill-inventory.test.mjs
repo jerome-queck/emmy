@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm, unlink, symlink, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { digest } from '../src/content.mjs';
 import { refreshInventory, checkInventory } from '../scripts/skill-inventory.mjs';
 
@@ -53,6 +54,58 @@ async function fixture(t) {
   }
   return { root, source, bindings, policy, metadata, save, original, refused };
 }
+
+test('reviewed pstack root MIT notice is packaged with the identical nested grant', async () => {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const policy = JSON.parse(await readFile(join(root, 'registry/skill-sources.json')));
+  const source = policy.sources.find(source => source.id === 'pstack');
+  assert.ok(source.notices.includes('LICENSE'), 'Reviewed root LICENSE must be explicit');
+  const sha256 = '5b1faca8cef6b7433b49c812c5e9e04bb1eb73b67171d67729983e0b46b9bb78';
+  assert.equal(source.files.find(file => file.path === 'LICENSE').sha256, sha256);
+  const index = JSON.parse(await readFile(join(root, 'registry/skills.json')));
+  const directory = join(root, 'vendor/skills', index.snapshot, 'pstack');
+  const bytes = await readFile(join(directory, 'LICENSE'));
+  assert.equal(digest(bytes), sha256);
+  assert.deepEqual(bytes, await readFile(join(directory, 'skills/poteto-mode/references/licenses/LICENSE')));
+  assert.equal((await checkInventory(root)).skills, 4);
+});
+
+test('reviewed root notice addition retains exact rights and unknown-notice holds', async t => {
+  const f = await fixture(t), source = f.policy.sources[0];
+  const nested = 'skills/leaf/LICENSE';
+  const grant = await readFile(join(f.source, 'LICENSE'));
+  await writeFile(join(f.source, nested), grant);
+  await unlink(join(f.source, 'LICENSE'));
+  source.refresh = 'installed';
+  source.notices = [nested]; source.files[0].path = nested;
+  await f.save(); await refreshInventory(f.root, f.bindings);
+  const old = JSON.parse(await readFile(join(f.root, 'registry/skills.json')));
+  await writeFile(join(f.source, 'LICENSE'), grant);
+  await assert.rejects(refreshInventory(f.root, f.bindings), /Licence inventory changed/);
+  assert.equal(JSON.parse(await readFile(join(f.root, 'registry/skills.json'))).snapshot, old.snapshot);
+  source.notices.unshift('LICENSE');
+  source.files.unshift({ path: 'LICENSE', sha256: digest(grant) });
+  await f.save();
+  const approved = await refreshInventory(f.root, f.bindings);
+  assert.notEqual(approved.snapshot, old.snapshot);
+  assert.deepEqual(await readFile(join(f.root, 'vendor/skills', approved.snapshot, 'fixture/LICENSE')), grant);
+  assert.deepEqual(await readFile(join(f.root, 'vendor/skills', old.snapshot, 'fixture', nested)), grant);
+  const lastGood = await readFile(join(f.root, 'registry/skills.json'));
+  const refuse = async (path, value, pattern) => {
+    const original = await readFile(join(f.source, path)).catch(error => { if (error.code !== 'ENOENT') throw error; });
+    await writeFile(join(f.source, path), value);
+    await assert.rejects(refreshInventory(f.root, f.bindings), pattern);
+    assert.deepEqual(await readFile(join(f.root, 'registry/skills.json')), lastGood);
+    if (original) await writeFile(join(f.source, path), original);
+    else await unlink(join(f.source, path));
+  };
+  await refuse('LICENSE', 'Changed root grant', /Unreviewed bytes or licence/);
+  await refuse(nested, 'Changed old grant', /Unreviewed bytes or licence/);
+  await refuse('NOTICE', 'Unknown notice', /Licence inventory changed/);
+  await refuse('plugin.json', JSON.stringify({ ...f.metadata, license: 'Proprietary' }), /licence changed/);
+  await refuse('skills/leaf/SKILL.md', 'license: unclear', /Unclear rights/);
+  assert.equal((await checkInventory(f.root)).snapshot, approved.snapshot);
+});
 
 test('complete discovery, repeat convergence and offline consumption without installed sources', async t => {
   const f = await fixture(t);

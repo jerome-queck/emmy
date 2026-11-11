@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "policySha256": "f9541d22fdf3ef2726074ee131fc5867d2139bfd72b06f1fbc03482de791540a",
+  "policySha256": "936f411f6f278a6d8ceb4cfb7317e39f61b9943088dbe8aba7f2ef65a2c2d18a",
   "sources": [
     {
       "id": "pstack",
       "origin": "https://github.com/michael-denyer/pstack-claude",
       "package": "pstack",
-      "version": "0.9.130",
+      "version": "0.9.133",
       "revision": null,
       "metadata": ".codex-plugin/plugin.json",
       "license": "MIT",
@@ -15,6 +15,7 @@
         "Readable guidance only; no native registration or tools supplied."
       ],
       "notices": [
+        "LICENSE",
         "skills/poteto-mode/references/licenses/LICENSE",
         "skills/poteto-mode/references/licenses/LICENSE-cursor-team-kit",
         "skills/poteto-mode/references/licenses/LICENSE-thermos",
@@ -38,6 +39,10 @@
         }
       ],
       "files": [
+        {
+          "path": "LICENSE",
+          "sha256": "5b1faca8cef6b7433b49c812c5e9e04bb1eb73b67171d67729983e0b46b9bb78"
+        },
         {
           "path": "skills/poteto-mode/references/licenses/LICENSE",
           "sha256": "5b1faca8cef6b7433b49c812c5e9e04bb1eb73b67171d67729983e0b46b9bb78"
@@ -239,6 +244,11 @@
   ],
   "files": [
     {
+      "path": "pstack/LICENSE",
+      "sha256": "5b1faca8cef6b7433b49c812c5e9e04bb1eb73b67171d67729983e0b46b9bb78",
+      "bytes": 1101
+    },
+    {
       "path": "pstack/skills/poteto-mode/references/licenses/LICENSE",
       "sha256": "5b1faca8cef6b7433b49c812c5e9e04bb1eb73b67171d67729983e0b46b9bb78",
       "bytes": 1101
@@ -299,6 +309,6 @@
       "bytes": 102
     }
   ],
-  "snapshot": "59e75fd647ee6fce91eb9e8116ecbfa5018d64ba21cc44676d3e4735e8f05d00",
-  "observedAt": "2026-11-05T23:27:36.696Z"
+  "snapshot": "9de3b34e90f6335b12941e6a2fbdec75ade05af26a9ce5e04cc8f8f7135a857b",
+  "observedAt": "2026-11-09T23:20:23.729Z"
 }

@@ -25,6 +25,7 @@
         "Readable guidance only; no native registration or tools supplied."
       ],
       "notices": [
+        "LICENSE",
         "skills/poteto-mode/references/licenses/LICENSE",
         "skills/poteto-mode/references/licenses/LICENSE-cursor-team-kit",
         "skills/poteto-mode/references/licenses/LICENSE-thermos",
@@ -48,6 +49,10 @@
         }
       ],
       "files": [
+        {
+          "path": "LICENSE",
+          "sha256": "5b1faca8cef6b7433b49c812c5e9e04bb1eb73b67171d67729983e0b46b9bb78"
+        },
         {
           "path": "skills/poteto-mode/references/licenses/LICENSE",
           "sha256": "5b1faca8cef6b7433b49c812c5e9e04bb1eb73b67171d67729983e0b46b9bb78"
