@@ -52,6 +52,10 @@ module.exports.GoogleAuth = class {
     const candidate = structuredClone(input); mutate(candidate); candidate.request.history.completeThrough = new Date().toISOString(); bindRegister(candidate);
     await writeFile(snapshotFile, JSON.stringify(candidate.snapshot)); await writeFile(requestFile, JSON.stringify(candidate.request));
     const before = [digest(await readFile(snapshotFile)), digest(await readFile(requestFile))];
+    if (name === 'proposed' || name.startsWith('attempt-')) {
+      await writeFile(join(directory, `${name}.snapshot.json`), JSON.stringify(candidate.snapshot));
+      await writeFile(join(directory, `${name}.request.json`), JSON.stringify(candidate.request));
+    }
     const result = await run(['calendar-register', '--file', envelopeFile], expected);
     assert.equal(result.execution, 'none'); assertion(result);
     assert.deepEqual([digest(await readFile(snapshotFile)), digest(await readFile(requestFile))], before);
