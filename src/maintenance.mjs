@@ -37,10 +37,10 @@ async function coverageInventory(root, inventory, generated) {
     need(!['drivers','skills','replay','coverageRecords','graph','model','skillStatus'].some(key => Object.hasOwn(area,key)), `duplicate evidence binding in ${area.id}`);
     const binding = subsystemEvidence[area.id];
     need(binding && area.stateOwner && area.classification && area.bounds && area.gap && binding.drivers?.length && area.files?.length && area.ownerRefs?.length && area.scenarios?.length && Array.isArray(area.properties), `incomplete ${area.id}`);
-    need(['empirical-only', 'finite-predicates', 'reachable-reducer', 'finite-assessment', 'hand-mapped-await'].includes(binding.model), `unsupported model in ${area.id}`);
+    need(['empirical-only', 'finite-predicates', 'reachable-reducer', 'reachable-history', 'finite-assessment', 'hand-mapped-await'].includes(binding.model), `unsupported model in ${area.id}`);
     need(['maintained', 'missing', 'not-applicable'].includes(binding.skillStatus), `missing skill classification in ${area.id}`);
     need(binding.model === 'empirical-only' ? binding.skillStatus !== 'maintained' : binding.skillStatus !== 'not-applicable' && binding.replay.length && area.properties.length && binding.coverageRecords.length && (binding.skillStatus === 'missing' || binding.skills.length), `missing formal evidence in ${area.id}`);
-    need(['reachable-reducer', 'finite-assessment', 'hand-mapped-await'].includes(binding.model) ? binding.graph?.kind === binding.model : !binding.graph, `missing or unsupported graph in ${area.id}`);
+    need(['reachable-reducer', 'reachable-history', 'finite-assessment', 'hand-mapped-await'].includes(binding.model) ? binding.graph?.kind === binding.model : !binding.graph, `missing or unsupported graph in ${area.id}`);
     for (const owner of area.ownerRefs) {
       need(typeof owner.path === 'string' && !owner.path.startsWith('/') && !owner.path.split('/').includes('..'), `invalid owner in ${area.id}`);
       need(owner.kind === 'ingress' ? owner.path.startsWith('scripts/') && !Object.hasOwn(owner, 'symbol') : typeof owner.symbol === 'string' && owner.symbol.length > 0 && !Object.hasOwn(owner, 'kind'), `invalid owner in ${area.id}`);

@@ -75,10 +75,10 @@ export const subsystemEvidence = {
     "skills": [".agents/skills/responsibility-closure/SKILL.md"],
     "replay": ["verification/responsibility-closure/check.mjs"],
     "coverageRecords": ["verification/coverage.json", "verification/responsibility-closure/coverage.json"],
-    "model": "reachable-reducer",
+    "model": "reachable-history",
     "skillStatus": "maintained",
     "graph": {
-      "kind": "reachable-reducer",
+      "kind": "reachable-history",
       "path": "verification/responsibility-closure/graph.mjs",
       "record": "verification/responsibility-closure/coverage.json",
       "checker": "verification/responsibility-closure/check.mjs",

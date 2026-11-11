@@ -143,6 +143,20 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
       await writeFile(coverage, coverageBefore);
       await writeFile(metadata, metadataBefore); await writeFile(manifest, originalManifest);
     }
+    const unknownMetadata = metadataBefore.replace('"model": "reachable-history"', '"model": "unknown-history"');
+    assert.notEqual(unknownMetadata, metadataBefore);
+    await writeFile(metadata, unknownMetadata);
+    const unknownRegistry = JSON.parse(coverageBefore); unknownRegistry.files['src/metadata.mjs'] = digest(unknownMetadata);
+    const unknownBytes = JSON.stringify(unknownRegistry); await writeFile(coverage, unknownBytes);
+    await mutate(value => { const files = value.subsystems.flatMap(area => area.files); files.find(file => file.path === 'src/metadata.mjs').sha256 = digest(unknownMetadata); files.find(file => file.path === 'verification/coverage.json').sha256 = digest(unknownBytes); });
+    for (const mode of ['--check', '--write']) { const result = run(root, ['maintain', mode]); assert.equal(result.status, 2, result.stdout); assert.match(JSON.parse(result.stdout).error, /unsupported model in responsibility-closure/); }
+    await writeFile(metadata, metadataBefore); await writeFile(coverage, coverageBefore); await writeFile(manifest, originalManifest);
+    const historyPath = 'verification/responsibility-closure/graph.mjs'; const history = join(root, historyPath); const historyBytes = await readFile(history, 'utf8');
+    const decorativeHistory = historyBytes.split('\n').map(line => `// ${line}`).join('\n'); await writeFile(history, decorativeHistory);
+    const historyRecordPath = 'verification/responsibility-closure/coverage.json'; const historyRecord = join(root, historyRecordPath); const historyRecordBytes = await readFile(historyRecord, 'utf8'); const historyRecordChanged = JSON.parse(historyRecordBytes); historyRecordChanged.verificationFiles[historyPath] = digest(decorativeHistory); const changedHistoryRecord = JSON.stringify(historyRecordChanged); await writeFile(historyRecord, changedHistoryRecord);
+    await mutate(value => { const files = value.subsystems.flatMap(area => area.files); files.find(file => file.path === historyPath).sha256 = digest(decorativeHistory); files.find(file => file.path === historyRecordPath).sha256 = digest(changedHistoryRecord); });
+    for (const mode of ['--check', '--write']) { const result = run(root, ['maintain', mode]); assert.equal(result.status, 2, result.stdout); assert.match(JSON.parse(result.stdout).error, /invalid graph interface/); }
+    await writeFile(history, historyBytes); await writeFile(historyRecord, historyRecordBytes); await writeFile(manifest, originalManifest);
     const driver = join(root, 'verification/publication/drive.mjs'); const driverBytes = await readFile(driver); await rm(driver); check(2, /drive\.mjs/); await writeFile(driver, driverBytes);
     const skill = join(root, '.agents/skills/publication-contract/SKILL.md'); const skillBytes = await readFile(skill); await rm(skill); check(2, /SKILL\.md/); await writeFile(skill, skillBytes);
     await mutate(value => { value.subsystems[0].files[0].callers = ['src/catalog.mjs']; }); check(2, /stale caller/);
