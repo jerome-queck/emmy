@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "ab04a2c0c3f25b46b798e80d7094b2fac70d25a7",
-  "reviewBasis": "Isolated three-way reconciliation of exact delivery-v2 924681b and independently accepted direct b119422 over c5f8b46. Owner read every affected source delta and five overlapping docs/metadata files. Direct and delivery production bytes are retained exactly. Coordination coverage changes only merged prose hashes; delivery coverage additionally binds the twentieth direct-dispatch suite. Old gates refused intended drift. No canonical publication await or mapped property was weakened. New combined source needs its own full gate and independent exact-head verdict; old receipts/verdicts do not attest it. Coverage-admission follow-on: reviewed starting byte equality and the exact maintenance, behavioral fixture and CLI test diff. Existing coordination predicates and properties are unchanged. Structural inventory checks do not establish semantic coverage, independently executed verification or whole-foundation readiness. COV-R1/R2 follow-on reviews authoritative generated-byte comparison, unchanged non-generated source guards and the explicit configured guidance input inventory. Existing coordination properties and bounds remain unchanged; new controls are empirical.",
+  "sourceCommit": "294d40bf8c5d7c17f80f9f7aa8d35326f30f6597",
+  "reviewBasis": "Isolated three-way reconciliation of exact delivery-v2 924681b and independently accepted direct b119422 over c5f8b46. Owner read every affected source delta and five overlapping docs/metadata files. Direct and delivery production bytes are retained exactly. Coordination coverage changes only merged prose hashes; delivery coverage additionally binds the twentieth direct-dispatch suite. Old gates refused intended drift. No canonical publication await or mapped property was weakened. New combined source needs its own full gate and independent exact-head verdict; old receipts/verdicts do not attest it. Coverage-admission follow-on: reviewed starting byte equality and the exact maintenance, behavioral fixture and CLI test diff. Existing coordination predicates and properties are unchanged. Structural inventory checks do not establish semantic coverage, independently executed verification or whole-foundation readiness. COV-R1/R2 follow-on reviews authoritative generated-byte comparison, unchanged non-generated source guards and the explicit configured guidance input inventory. Existing coordination properties and bounds remain unchanged; new controls are empirical. Caller-admission follow-on reviews literal relative import matching and its CLI negative controls. Dynamic and external callers remain a manual-review boundary; coordination properties and bounds are unchanged.",
   "files": {
     ".agents/skills/coordination-contract/SKILL.md": "7812065ec2f9cec1e5b8fef68a250c4246ef8534c2ae684060c18287e37a5a6a",
     ".agents/skills/morning-collect/SKILL.md": "cb26be9998b456c6f538af9d257d1a78330d4cd23a804b86e86c38ce2bc8c499",
@@ -82,7 +82,7 @@
     "src/guidance-pin.mjs": "f037a3f461db221e884f9f72da45515d51e536f6f271bf70ff11a36b6cf238b7",
     "src/immutable-slot.mjs": "59e8ccd7c37783268e22703f63897c8c6d2b97c497ab37ff300e636a33744035",
     "src/improvement-report.mjs": "fbab0e0b543ad481ed95a31bd5b6f427103c90d2e60b69008800f91ffdfd27b9",
-    "src/maintenance.mjs": "f888466b63b746b064433ea7749047370868fbe4a3aa3916747fa82bbba35c4f",
+    "src/maintenance.mjs": "497c8fb2728a1d14e2d30c61f709782f84999c5f7eadcf5b1c6e26b4146d100e",
     "src/metadata.mjs": "04dde9842a694abc4678920359d7f0cc702ffbdc02302cac0f570ccfa9235ecf",
     "src/morning-collection.mjs": "37dae6e547e0e20494e714ecc1b20f28364989600ed751ee7fa2c817ae985287",
     "src/morning-presentation.mjs": "36d171d854c34b3062da02e9c9ac5b095e509164e2c674bf0dd4ccae1268a343",
@@ -96,7 +96,7 @@
     "src/token-review.mjs": "27e6313bbb88c8650c10aa184addf1521dee3d95effe5894e892775edfce027c",
     "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
     "test/academic-os-task-plan.test.mjs": "2111ebf0045b452b0220ca17209cf66eeec6b5179238f0f3c7aecdd092cb4269",
-    "test/agent-local.test.mjs": "49b0c1e7b6ee4a44c973f311e0978b5eb62ce35f7f5a59254156b8bb027be0cd",
+    "test/agent-local.test.mjs": "71daa20904f6af72b4903ccd99296914e507455075605fb042c6f30681779239",
     "test/automation-procedure.test.mjs": "b60afb7c63430dda95b440b16881c229302e663c57e44873e2f015f1632f179a",
     "test/briefing-cloud-caller.test.mjs": "25919b20bc39defae84f7b4cd9dd134cf5fcb8a63ac334979c4c6441f920a0f9",
     "test/briefing-policy.test.mjs": "450e59ed67c9ce8fc9ca6d3456fed486e12898eaac0f30d92ab73d37b1058a4e",

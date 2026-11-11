@@ -1701,7 +1701,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "6cfd155d764665154a4143894d28deb6b31c755d576da765ab4ff3e0bbca94be",
+          "sha256": "2920c4ec7794900957d81a19f9b3a3bbd055a0a2ef9673de4197d5c98437eacf",
           "callers": [
             "verification input"
           ]
