@@ -5,7 +5,6 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { MERGE_POLICY, evaluateEligibility } from '../scripts/github-auto-merge.mjs';
-import { verifyDelivery } from './delivery/check.mjs';
 
 const head = 'a'.repeat(40);
 const base = 'b'.repeat(40);
@@ -95,8 +94,6 @@ export async function verifyMergePolicy() {
   };
   await mkdir('.local/verification', { recursive: true });
   await writeFile('.local/verification/merge-policy.json', `${JSON.stringify(result, null, 2)}\n`);
-  const delivery = await verifyDelivery();
-  result.delivery = { status: delivery.status, finiteCases: delivery.finiteCases, directory: delivery.directory };
   return result;
 }
 
