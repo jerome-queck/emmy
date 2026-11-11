@@ -14,12 +14,9 @@
           "sha256": "32b2bdae797dcb135a55f04a417b4c01dd1cd996a65347dc2f6fd8478dbff95d",
           "callers": [
             "scripts/agent.mjs",
-            "scripts/cloud-acceptance.mjs",
             "scripts/verify-behavior.mjs",
             "scripts/verify-formal.mjs",
             "src/calendar-collection.mjs",
-            "src/cloud-migration.mjs",
-            "src/cloud.mjs",
             "src/dispatch.mjs",
             "src/fleet.mjs",
             "src/responsibilities.mjs",
@@ -36,6 +33,7 @@
             "test/morning-compact.test.mjs",
             "test/morning-v3.test.mjs",
             "test/morning.test.mjs",
+            "test/runtime-boundary.test.mjs",
             "verification/briefing-drive.mjs",
             "verification/briefing-workflow-properties.mjs",
             "verification/calendar-drive.mjs",
@@ -43,18 +41,16 @@
             "verification/calendar-properties.mjs",
             "verification/calendar-register-drive.mjs",
             "verification/calendar-register-fixtures.mjs",
-            "verification/cloud-drive.mjs",
-            "verification/cloud-migration-fixtures.mjs",
             "verification/dispatch-drive.mjs",
             "verification/fleet-drive.mjs",
             "verification/fleet-fixtures.mjs",
             "verification/fleet-properties.mjs",
             "verification/guidance-pin-fixtures.mjs",
-            "verification/incarnation-properties.mjs",
             "verification/morning-compact-fixtures.mjs",
             "verification/morning-drive.mjs",
             "verification/morning-fixtures.mjs",
             "verification/morning-properties.mjs",
+            "verification/morning-send/graph.mjs",
             "verification/morning-v3-drive.mjs",
             "verification/morning-v3-fixtures.mjs",
             "verification/properties.mjs"
@@ -68,7 +64,6 @@
             "scripts/verify-behavior.mjs",
             "src/dispatch.mjs",
             "test/fleet-semantics.test.mjs",
-            "verification/cloud-drive.mjs",
             "verification/dispatch-drive.mjs",
             "verification/fleet-drive.mjs"
           ]
@@ -77,7 +72,6 @@
           "path": "src/work.mjs",
           "sha256": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
           "callers": [
-            "src/cloud.mjs",
             "src/dispatch.mjs",
             "src/fleet.mjs",
             "src/records.mjs",
@@ -146,79 +140,6 @@
       ]
     },
     {
-      "id": "cloud",
-      "stateOwner": "cloud.mjs cloudTransition; process-incarnation.mjs ownerDecision",
-      "classification": "stateful; finite predicates",
-      "bounds": "Cooperative bounded queue and declared observations; Linux-specific incarnation cannot be inferred on macOS.",
-      "gap": "Dedicated lifecycle graph and formal contract missing.",
-      "files": [
-        {
-          "path": "src/cloud.mjs",
-          "sha256": "9e48c4f64f95ac23a8e7fb0a33e51b21fb9a2022a48e355dee06de3d76ef1a7f",
-          "callers": [
-            "scripts/agent.mjs",
-            "src/cloud-migration.mjs",
-            "src/responsibilities.mjs",
-            "verification/cooperative-cloud/check.mjs"
-          ]
-        },
-        {
-          "path": "src/cloud-schema.mjs",
-          "sha256": "2179301f012a5832b597f493f9744df8d86f60427d2bbac0664f4f6fd95853bd",
-          "callers": [
-            "src/cloud.mjs",
-            "src/records.mjs",
-            "verification/cloud-properties.mjs",
-            "verification/cooperative-cloud/check.mjs",
-            "verification/cooperative-cloud/graph.mjs"
-          ]
-        },
-        {
-          "path": "src/cloud-migration.mjs",
-          "sha256": "03677e6b0a50afa25ccadf1c65057ec3bc5e65c2e57c8803dd3b48e6e1f4a08b",
-          "callers": [
-            "scripts/cloud-acceptance.mjs",
-            "test/cloud-migration.test.mjs"
-          ]
-        },
-        {
-          "path": "src/process-incarnation.mjs",
-          "sha256": "63810f9602f223315fe8d9ccfcda11b6591cf7bb5626092a8ea308a98acfe2ff",
-          "callers": [
-            "scripts/cloud-acceptance.mjs",
-            "src/cloud-migration.mjs",
-            "src/cloud.mjs",
-            "verification/cloud-drive.mjs"
-          ]
-        },
-        {
-          "path": "scripts/cloud-acceptance.mjs",
-          "sha256": "9940ac43b1c277bfe1f9f9cebbf60568e62aee293af2817c4cb5689548e07583",
-          "callers": [
-            "executable ingress"
-          ]
-        }
-      ],
-      "ownerRefs": [
-        {
-          "path": "src/cloud.mjs",
-          "symbol": "cloudTransition"
-        },
-        {
-          "path": "src/process-incarnation.mjs",
-          "symbol": "ownerDecision"
-        }
-      ],
-      "properties": [
-        "cloud-admission",
-        "process-incarnation",
-        "legacy-baseline"
-      ],
-      "scenarios": [
-        "cloud-admission"
-      ]
-    },
-    {
       "id": "fleet",
       "stateOwner": "fleet-state.mjs fleetTransition; fleet.mjs retained operations",
       "classification": "stateful; finite predicates",
@@ -245,7 +166,8 @@
             "src/signin.mjs",
             "test/fleet-overrun.test.mjs",
             "test/fleet-semantics.test.mjs",
-            "test/fleet.test.mjs"
+            "test/fleet.test.mjs",
+            "verification/fleet-health/graph.mjs"
           ]
         },
         {
@@ -260,7 +182,9 @@
             "test/fleet.test.mjs",
             "test/morning-v3.test.mjs",
             "test/morning.test.mjs",
-            "verification/morning-fixtures.mjs"
+            "verification/fleet-health/check.mjs",
+            "verification/morning-fixtures.mjs",
+            "verification/morning-send/check.mjs"
           ]
         },
         {
@@ -557,6 +481,7 @@
             "test/calendar-handoff.test.mjs",
             "test/calendar-register.test.mjs",
             "test/planning-policy.test.mjs",
+            "verification/calendar-attempt/check.mjs",
             "verification/calendar-register-fixtures.mjs",
             "verification/calendar-timing-fixtures.mjs"
           ]
@@ -985,18 +910,18 @@
             "test/local-delivery.test.mjs",
             "verification/automation-fixtures.mjs",
             "verification/automation-properties.mjs",
-            "verification/cooperative-cloud/check.mjs",
-            "verification/cooperative-cloud/graph.mjs",
             "verification/delivery/check.mjs",
             "verification/delivery/drive.mjs",
             "verification/delivery/fixtures.mjs",
             "verification/delivery/graph.mjs",
             "verification/direct-dispatch/check.mjs",
+            "verification/fleet-health/graph.mjs",
             "verification/local-assurance/check.mjs",
             "verification/local-assurance/drive.mjs",
             "verification/local-assurance/graph.mjs",
             "verification/planning-policy/check.mjs",
-            "verification/planning-policy/fixtures.mjs"
+            "verification/planning-policy/fixtures.mjs",
+            "verification/restoration-suspension/graph.mjs"
           ]
         },
         {
@@ -1283,13 +1208,6 @@
           ]
         },
         {
-          "path": ".agents/skills/verify/features/cloud.md",
-          "sha256": "b7241522ae38f278098693d208f21a50a8244db75dd7a48ea5aaec1f413ef9da",
-          "callers": [
-            "public configuration"
-          ]
-        },
-        {
           "path": ".agents/skills/verify/features/evidence.md",
           "sha256": "318227a4c44a9da39523beebec08b5e146a258a12a0a2043e446c0bd75e234c5",
           "callers": [
@@ -1537,36 +1455,8 @@
           ]
         },
         {
-          "path": "verification/cloud-drive.mjs",
-          "sha256": "86f35cc6ccd9e5335406fd950df1f184ed0ccf75e702ec380cfd88b8affdcbca",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": "verification/cloud-migration-fixtures.mjs",
-          "sha256": "5cdb30a0a1eb48889034039388c742aefd8ee5501d757073da8eb2cfee3d4a20",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": "verification/cloud-mutations.mjs",
-          "sha256": "c948e32cff4b8dd0226c149f81013cc751b62311896c040deba6c22c4112895f",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": "verification/cloud-properties.mjs",
-          "sha256": "c2639d858364b8b9e293757c98d67afb5efe929aced3264bf5b69446d0f95541",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
           "path": "verification/coverage.json",
-          "sha256": "e60928d86e88c1646544e229b1cb77c95bc390b3c3e7a48dda8cca24452f4952",
+          "sha256": "8eca9f924021f8cf1f6b2eeb5387aceadd9e3936dc0fb3737bd948951a53adf4",
           "callers": [
             "verification input"
           ]
@@ -1601,7 +1491,7 @@
         },
         {
           "path": "verification/delivery/coverage.json",
-          "sha256": "9304fd6f611eb94fb1477c1a7dc4a9cbe2d975c0da3f44575d06631f9611994f",
+          "sha256": "ecfcdbc64688d02a9d9d41767d53403c8b012260e14df1b8996b18b9d534e26e",
           "callers": [
             "verification input"
           ]
@@ -1650,7 +1540,7 @@
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "84d3d567b9870322f4e66a359b3ed0e9a8193733221856a0b07cf38a26f0f6fd",
+          "sha256": "1dce32e13c88b4297db400806644ef84df7aaf6c29124b1e88e9cc36d7959830",
           "callers": [
             "verification input"
           ]
@@ -1740,20 +1630,6 @@
           ]
         },
         {
-          "path": "verification/incarnation-mutations.mjs",
-          "sha256": "76468d1b92ffd4d7955a4a4f9e343b1509d2672af0b0d6cf949c73bbc327bf5c",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": "verification/incarnation-properties.mjs",
-          "sha256": "c27b8cc34199f83a556b5c7d9df09a14285c46621fe1c3aeb1be5796e925eff5",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
           "path": "verification/local-assurance/chart.mmd",
           "sha256": "555d30c6f63b8be9e4cf91840f29b767b9df697b0adac2cde5d62ed4ff927b68",
           "callers": [
@@ -1769,7 +1645,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "8be92b66aecd93e8e09aab34b6e868515eeebd2c3c6a036f82000c777c534412",
+          "sha256": "81d1feb62796dd2b2a7227b108e466c0b6291a731575724a136645786af29de8",
           "callers": [
             "verification input"
           ]
@@ -1908,13 +1784,6 @@
           ]
         },
         {
-          "path": "verification/process-incarnation-fixtures.mjs",
-          "sha256": "ce6d81cfef3730bac0d57f7b482773ba1a5d691d815a7cb2f87f7608c419ed9c",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
           "path": "verification/properties.mjs",
           "sha256": "ef98d5264836569791f8e8cfc5160264e02a885c2fece1e7ae2471ec9332ba73",
           "callers": [
@@ -1923,7 +1792,7 @@
         },
         {
           "path": "verification/publication/coverage.json",
-          "sha256": "207412534cb90641c6e66e64a2517f1a6efc02f5148a8c869906d8aa0dd7ad8d",
+          "sha256": "65b54904087643faa549a9793b7d102559e27b4402497669e0e8e902bc0b30f7",
           "callers": [
             "verification input"
           ]
@@ -2050,13 +1919,6 @@
         {
           "path": "test/calendar-timing.test.mjs",
           "sha256": "58785c60de65c2081e84dd62188189e8436e65ca4e98bc370081c3e332ab7575",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": "test/cloud-migration.test.mjs",
-          "sha256": "749d80285d093088f1d15c6ec560ae7a2db31bea2bc71498c10112a7df8a693c",
           "callers": [
             "verification input"
           ]
@@ -2216,15 +2078,15 @@
           ]
         },
         {
-          "path": "test/process-incarnation.test.mjs",
-          "sha256": "3df49dab78220aa1bcc2acb93ea0b6b9a710626899d163818615d82b654e95e4",
+          "path": "test/token-review.test.mjs",
+          "sha256": "e175b8c6cce940ca337fb0a461e1a5bec9616a94812e3165a20493e95ffc7331",
           "callers": [
             "verification input"
           ]
         },
         {
-          "path": "test/token-review.test.mjs",
-          "sha256": "e175b8c6cce940ca337fb0a461e1a5bec9616a94812e3165a20493e95ffc7331",
+          "path": "test/runtime-boundary.test.mjs",
+          "sha256": "3289df255cf7c0ca58dd380c5cb675ba714acc822630bffba2b1c9eed10c76fb",
           "callers": [
             "verification input"
           ]
@@ -2261,7 +2123,7 @@
         },
         {
           "path": "verification/responsibility-closure/coverage.json",
-          "sha256": "3be96c03a68614d6da36a6d1cb8ef9e86aff71d30c0db49467a25ac89ffec554",
+          "sha256": "5ab326621f9b9b2b9f2ca83aab05ba1157b8435cd96381326e2cf9a4c0e28bb2",
           "callers": [
             "verification input"
           ]
@@ -2322,7 +2184,7 @@
         },
         {
           "path": "verification/restoration-suspension/coverage.json",
-          "sha256": "2245bc1ca892a1b33123b42e9197128bc9401595b42f87b80e6bfedd9f05fc7f",
+          "sha256": "f3c1bf818357dff4a6e1a6d29af365f037b7fdb4bcf53097d3dc14cc8d12e1b4",
           "callers": [
             "verification input"
           ]
@@ -2350,120 +2212,6 @@
       ]
     },
     {
-      "id": "cooperative-cloud",
-      "stateOwner": "cloud.mjs cloudTransition; synchronous logical-job reducer",
-      "classification": "bounded actual-source reachable reducer",
-      "bounds": "One serialized logical job, six calls, synthetic capacity and parsed inputs.",
-      "gap": "Async claim/publication, Linux incarnation, migration and provider effects remain unproved.",
-      "files": [
-        {
-          "path": "verification/cooperative-cloud/graph.mjs",
-          "sha256": "bec31bd15a3de87eff7aa0c4f4a79418f03ab98a1730e755a97b290988f979c1",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": "verification/cooperative-cloud/check.mjs",
-          "sha256": "45ae5b61c1a2cdb3be660a29672f5c83341bbd1f8a430c5e16139b2c6b7cd3e3",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": "verification/cooperative-cloud/coverage.json",
-          "sha256": "9b938eb4e0caf37b39ce874dad405325e090e3e8a63624ac99b857f4c9636ebf",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": ".agents/skills/cooperative-cloud/SKILL.md",
-          "sha256": "09f1317be29619e57987f2745d5395f95ad68848e0f18bc96f3fffe1cb99f803",
-          "callers": [
-            "public configuration"
-          ]
-        }
-      ],
-      "ownerRefs": [
-        {
-          "path": "src/cloud.mjs",
-          "symbol": "cloudTransition"
-        }
-      ],
-      "properties": [
-        "Stable",
-        "Progress",
-        "Terminal"
-      ],
-      "scenarios": [
-        "cloud-admission"
-      ]
-    },
-    {
-      "id": "incarnation-ownership",
-      "stateOwner": "process-incarnation.mjs captureProcessIncarnation and inspectOwnerIncarnation",
-      "classification": "bounded actual-source reachable asynchronous I/O histories",
-      "bounds": "One previously validated owner, synthetic PID and proc-root views with one view change, 857 bounded histories.",
-      "gap": "Linux kernel, actual acquisition, claims, migration, sidecars, resume, and provider effects remain unproved.",
-      "files": [
-        {
-          "path": "verification/incarnation-ownership/explore.mjs",
-          "sha256": "f5318ec2d7addde8b9d08807cd465f90e41fc900d11a53f33ea40e9dd8fe5ba9",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": "verification/incarnation-ownership/graph.mjs",
-          "sha256": "03a3adad8acf3f025d6d2a8b0bd66cb06c78b5adcc4957a023f45dc6e8e90c0e",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": "verification/incarnation-ownership/check.mjs",
-          "sha256": "8f9036b42722af01d71858d7d310567792d13510911b794ff0b77e5f4e20b06a",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": "verification/incarnation-ownership/coverage.json",
-          "sha256": "d2e876e59696b274c2ec8fc81567fc0448c3f00e9e0f61333d2833f38d013a73",
-          "callers": [
-            "verification input"
-          ]
-        },
-        {
-          "path": ".agents/skills/incarnation-ownership/SKILL.md",
-          "sha256": "0235fa877ffcb2e8871b74b9a043a9923ca1587592cbeedb6f1c8362d5b9566a",
-          "callers": [
-            "public configuration"
-          ]
-        }
-      ],
-      "ownerRefs": [
-        {
-          "path": "src/process-incarnation.mjs",
-          "symbol": "captureProcessIncarnation"
-        },
-        {
-          "path": "src/process-incarnation.mjs",
-          "symbol": "inspectOwnerIncarnation"
-        }
-      ],
-      "properties": [
-        "CaptureScope",
-        "InspectionScope",
-        "OwnerComparable",
-        "TargetEvidence"
-      ],
-      "scenarios": [
-        "cloud-admission"
-      ]
-    },
-    {
       "id": "fleet-health-history",
       "stateOwner": "fleet-state.mjs fleetInitial, fleetTransition and captureCondition",
       "classification": "bounded actual-source reachable reducer histories",
@@ -2486,7 +2234,7 @@
         },
         {
           "path": "verification/fleet-health/coverage.json",
-          "sha256": "eb27fbc0b608272a56fd81695120d6c41d4680c8c86c5e897680e0ff36da3bc5",
+          "sha256": "88b949907e769d208b7cf66a6dcd98d6f056502273d067e6f7d16640e534a887",
           "callers": [
             "verification input"
           ]
@@ -2547,7 +2295,7 @@
         },
         {
           "path": "verification/morning-send/coverage.json",
-          "sha256": "1fb3443c8f0e3820dbb311345fd9a48ef796455f3209a3d3861e7eeb8ac86c8f",
+          "sha256": "c76a8399014aa3801eff7855a4683ad8e0acb685a073dcd57e57ea2c9bee90b7",
           "callers": [
             "verification input"
           ]
@@ -2602,7 +2350,7 @@
         },
         {
           "path": "verification/calendar-attempt/coverage.json",
-          "sha256": "cd426dd1ee508eda4c47f9b2f532660054ffd8ff341d026015e5067ead191de8",
+          "sha256": "9d47e346f609452db2ca449e92e2788d61e9af35c47c5dd5f6daf948d87c829d",
           "callers": [
             "verification input"
           ]
