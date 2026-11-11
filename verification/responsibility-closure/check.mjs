@@ -10,7 +10,7 @@ const jar = resolve(root, '.local/tools/tla2tools-1.7.4.jar');
 const actualJar = jar;
 const hash = b => createHash('sha256').update(b).digest('hex');
 assert.equal(hash(await readFile(actualJar)), '936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88');
-const evidenceRoot = resolve(root, '..', 'evidence');
+const evidenceRoot = resolve(root, '.local/verification/responsibility-closure');
 await mkdir(evidenceRoot, { recursive:true });
 const out = await mkdtemp(join(evidenceRoot, 'run-'));
 const mutations = [
