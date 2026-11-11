@@ -3,8 +3,8 @@ import { canonical, digest } from '../src/records.mjs';
 import { morningAssessments, morningCommand, morningDelivery, morningAt, morningEntities, morningItem, morningOpen, morningReceipt, morningRoot, morningWindow } from './morning-fixtures.mjs';
 import { morningV3Open, morningV3Policy, morningV3Plan } from './morning-v3-fixtures.mjs';
 import { verifyBriefingWorkflow, briefingWorkflowCases, briefingWorkflowMutations } from './briefing-workflow-properties.mjs';
-export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 90 + briefingWorkflowCases, assumptions: 'Parsed single-controller journal, retained unauthenticated parent interpretations, explicit predecessor-inactive migration acceptance and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
-export function verifyMorningPolicy({ morning, fleet, collection, policy, plan, reporting }, check) {
+export const morningBounds = { protectedContextFlags: 15, adapters: ['gmail', 'outlook'], cases: 85 + briefingWorkflowCases, assumptions: 'Parsed historical single-controller journal, retained unauthenticated parent interpretations, explicit predecessor-inactive migration acceptance and completed fleet acquisitions. No connector/browser/native truth, external exactly-once action, delivery or omitted-source completeness is authenticated.' };
+export function verifyMorningPolicy({ morning, fleet, policy, plan, reporting }, check) {
   let cases = 0;
   const expect = (name, value, message) => { cases++; check('morning-contract', { case: name }, value, message); };
   const rejects = action => { try { action(); return false; } catch { return true; } };
@@ -117,10 +117,7 @@ export function verifyMorningPolicy({ morning, fleet, collection, policy, plan, 
   fixture.step('source', { ...acquired, messageIds: [] }); fixture.step('seal', compactAssessments()); expect('ordinary/missing-current', fixture.run.sealed.gaps.some(gap => gap.includes('not in current mail inventory')) && fixture.run.sealed.body.includes('actor unknown'), 'Previously reviewed IDs omitted from current ordinary inventory remain held without inferred actor.');
   fixture = prepare(); fixture.run.sources[1].capture.messageIds.push(...Array.from({ length: 37 }, (_, index) => `unreviewed-${index}`)); fixture.step('seal', compactAssessments());
   expect('compact/group-known-gaps', fixture.run.sealed.body.includes('School Outlook: 37 inventory entries lack full-context review') && !fixture.run.sealed.body.includes('unreviewed School Outlook message') && fixture.run.sealed.diagnostic.body.includes('unreviewed'), 'Known repeated inventory review gaps group by exact source-family count while full identity audit remains private.');
-  expect('capture/tool-error', collection.parseRawCapture(Buffer.from(JSON.stringify({ isError: true, content: [{ text: 'Stale tab.' }] }))).toolError, 'Explicit tool errors remain counted error responses, not acquisitions or invented denials.');
-  expect('capture/invalid-utf8', rejects(() => collection.parseRawCapture(Buffer.from([123,34,120,34,58,34,255,34,125]))), 'Invalid UTF8 response bytes remain uninterpretable.');
-  expect('capture/duplicate-keys', rejects(() => collection.parseRawCapture(Buffer.from('{"readOnly":false,"readOnly":true}'))), 'Duplicate contradictory raw keys cannot normalize away evidence.');
-  const unicode = JSON.stringify({ text: '你好😀' }); expect('capture/utf8-count', collection.parseRawCapture(Buffer.from(unicode)).bytes === Buffer.byteLength(unicode), 'Portable serialized UTF8 accounting matches retained Unicode JSON bytes.');
+
   const v3Open = command => morning.morningTransition(fleet.fleetInitial(morningRoot), command, morningRoot, morningAt);
   expect('v3/predecessor', rejects(() => v3Open({ ...morningV3Open, migration: { ...morningV3Open.migration, predecessorStateDigest: digest('different-history') } })), 'Migration binds the exact retained predecessor state.');
   expect('v3/inactive', rejects(() => v3Open({ ...morningV3Open, migration: { ...morningV3Open.migration, predecessorInactive: false } })), 'Only accepted inactive predecessor authority admits the new writer.');
@@ -152,10 +149,6 @@ export function verifyMorningPolicy({ morning, fleet, collection, policy, plan, 
   const originalSource = source.capture; const staleSource = { ...originalSource, providerObservation: old }; source.capture = null;
   expect('collector/freshness', rejects(() => fixture.step('source', staleSource)), 'Fresh wrapper receipt cannot refresh old collector observation.');
   source.capture = originalSource;
-  const packetCommand = { ...source.capture, acquisition: { provenance: 'ordinary-authorized' }, providerObservation: observation };
-  const raw = Buffer.from('{"synthetic":true}'); const rawDigest = digest(raw);
-  const capturePacket = { schemaVersion: 1, kind: 'morning-collection-v1', runId: fixture.run.id, sourceId: packetCommand.sourceId, ownerRef: fixture.run.ownerRef, provenance: 'ordinary-authorized', jobKey: packetCommand.jobKey, scope: packetCommand.receipt.scope, outcome: 'complete', captures: [{ observedAt: morningAt, capturedAt: morningAt, outcome: 'returned', bytes: raw.length, artifactBytes: raw.length, sha256: rawDigest }], coverage: packetCommand.receipt.coverage, paginationComplete: packetCommand.paginationComplete, cached: packetCommand.cached, messageIds: packetCommand.messageIds, resourceIds: packetCommand.resourceIds, window: packetCommand.window };
-  expect('collector/packet', rejects(() => collection.validateCollection(capturePacket, packetCommand, fixture.run, new Map([[rawDigest, raw]]))), 'Command cannot invent an observation absent from its retained packet.');
   cases += verifyBriefingWorkflow({ policy, plan, reporting }, check);
   return { cases };
 }
@@ -166,16 +159,12 @@ export const morningMutations = [
   mutant('collector-version', "command.providerObservation === undefined || run.policyVersion === 3 && ['calendar', 'calendar-inventory'].includes(source.role)", "command.providerObservation === undefined || ['calendar', 'calendar-inventory'].includes(source.role)", 'collector/version'),
   mutant('collector-binding', 'same(inputSource.collectorObservation, observation?.collectorObservation)', 'true', 'collector/binding'),
   mutant('collector-freshness', "if (command.providerObservation !== undefined) fresh({ ...command.receipt, observedAt: sourceClock(command) }, run, at);", '', 'collector/freshness'),
-  { id: 'morning-collector-packet', source: 'src/morning-collection.mjs', property: 'morning-contract', edits: [['canonical(providerObservation) === canonical(command.providerObservation)', 'true']], counterexample: 'collector/packet' },
 
   ...briefingWorkflowMutations,
   mutant('v3-predecessor-bypass', 'command.migration.predecessorStateDigest === digest(state.morningRuns)', 'true', 'v3/predecessor'),
   mutant('v3-inactive-bypass', 'migration.predecessorInactive === true', 'true', 'v3/inactive'),
   mutant('v3-future-acceptance', 'Date.parse(command.migration.acceptedAt) <= Date.parse(at)', 'true', 'v3/future-acceptance'),
   mutant('v3-forged-compiler', 'same(preparePolicyBriefing(input), result)', 'true', 'v3/compiler-body'),
-  { id: 'capture-ignore-tool-error', source: 'src/morning-collection.mjs', property: 'morning-contract', edits: [['response?.isError === true', 'false']], counterexample: 'capture/tool-error' },
-  { id: 'capture-replace-invalid-utf8', source: 'src/morning-collection.mjs', property: 'morning-contract', edits: [["export function parseRawCapture(raw) { const response = strictJson(new TextDecoder('utf-8', { fatal: true })", "export function parseRawCapture(raw) { const response = strictJson(new TextDecoder('utf-8', { fatal: false })"]], counterexample: 'capture/invalid-utf8' },
-  { id: 'capture-duplicate-keys', source: 'src/morning-collection.mjs', property: 'morning-contract', edits: [['const response = strictJson(', 'const response = JSON.parse(']], counterexample: 'capture/duplicate-keys' },
 
   { id: 'compact-gap-count', source: 'src/morning-presentation.mjs', property: 'morning-contract', edits: [['${ids.size} inventory entries lack full-context review', '${ids.size + 1} inventory entries lack full-context review']], counterexample: 'compact/group-known-gaps' },
 

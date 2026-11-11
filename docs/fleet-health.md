@@ -65,15 +65,11 @@ Run `node scripts/verify-behavior.mjs --focus fleet`, the focused unit controls,
 
 After publication, verify installed source and launcher bytes, then acquire `briefing` through the actual installed route and inspect the loaded skill text. Parent next performs a safe real fresh native/app/schedule round trip, invokes this release, inspects pending alerts, sends meaningful findings once, and retains separate send/readback acknowledgment. Fixtures, loaded guidance, parent acceptance, actual delivery, and later ordinary-turn adoption are separate claims.
 
-## One morning run and audited revisions
+## Historical morning records
 
-The [morning procedure](morning-workflow.md) extends the same fleet journal with `morning` commands. `src/morning.mjs` owns explicit run, reviewed-item, delivery, mail-intent and same-message-edit states. Acquisition jobs still use the existing fleet queue. Every source, complete inventory, context artifact, exact assessment output and delivered-body readback remains attributable parent evidence. Native I/O and schedules stay parent-owned. Status exposes unfinished and uncertain morning work as needing attention.
+Historical morning interpretation preserves original policy versions, migration predecessor digests, source/assessment clocks, uncertainty, exact native identities, delivered-body readbacks and same-message outcomes. The current CLI refuses all `morning` actions before publication. Use the ordinary fleet `status` operation for read-only inspection. Current collection and migration admission are retired; pure briefing compilation/acquisition remain separate.
 
-`policy-revise` appends a version/digest, exact entity scopes, windows and owner source. It preserves original captures, timestamps and stale/failure episodes. A policy-only eligibility change is distinct from fresh recovery. Later explicit tighter limits win; new unaudited entities keep the root default. `group-send-intent`, `group-send-ack` and `group-send-resolve` retain one atomic set of pending alert IDs and one exact send/body/readback. A historical single-alert send cannot be reused or expanded into a group. No owner/process-recovery rule is relaxed.
-
-Delivery targets retain exact scope and authority before an intent. Readbacks require that destination and an acquisition inside the exact attempt interval. Outcome summaries pin reviewed-item states; stale bodies cannot complete current cleanup. Historical classification versions retain stable descriptors and replay dispatch; current new morning writes use version two.
-
-Use explicit morning `refresh` generations to continue late same-day cleanup. Selected-ID full-thread receipts bind new fleet tickets, original timestamps and current before state. Their completeness does not refresh global inbox/calendar/Task inventory. New plans/facts require verified edits on the original delivered message. Unknown effects hold dependent work and verified moves cannot reopen. The [batch procedure](morning-workflow.md#continue-the-same-delivered-run-in-bounded-batches) defines the exact steps and bounds.
+Fleet policy revision and grouped-alert operations remain supported. Historical morning recovery follows [the history contract](morning-workflow.md); incomplete pure publications require the exact retained installation on a copy.
 
 ## Explicit history archival
 
@@ -119,7 +115,7 @@ Stable archived job and run identities are looked up in verified ancestors, outs
 
 The 64-job, 32-run, 1 MiB state, freshness, read budgets and authority limits stay unchanged. Archive before another operation would exceed a bound. If unresolved work itself fills a bound, archival refuses and the parent must resolve that work within existing authority. Immutable disk usage and replay cost continue to grow with retained history; this operation bounds current state, not total storage or long-term replay time. No native continuation is proven by fixtures.
 
-Compact morning presentation is opt-in at seal (`presentation: "compact-v1"`) and inherited by summary. Exact human body and full private diagnostic body have separate digests; send/edit/readback bind the human body. Legacy missing-selector bodies replay unchanged. The file-only [collector skill](../.agents/skills/morning-collect/SKILL.md) retains supplied raw responses before serialization accounting. Ordinary source intake retains existing owner/run/account scope and append history, without queue admission or compliance claims; admitted intake retains the original completed-job requirement. Header inventories alone do not authorize cleanup.
+The current fleet CLI refuses every `morning` action before publication. Historical policy-v1/v2/v3 records, migration acceptance, source clocks, uncertain intents, native identities and same-message outcomes remain readable through the unchanged replay reducer. Use `fleet` with `operation: "status"` to inspect them. No current producer or collection-envelope command remains.
 
 Blocked known-ended read-only failure reconciliation permits an unknown byte total with an explicit known lower bound. Attributable final proof, same ticket and no contradictory native-effect fields are required. Measured bytes remain null; conservative reservation is separately labeled, and budget compliance remains unverified. Success, mutation uncertainty and actual denial guards are unchanged. Original failed attempts and source timestamps persist.
 

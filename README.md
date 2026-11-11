@@ -8,7 +8,7 @@ The [generic automation foundation](docs/automation-foundation.md) builds staged
 
 Use the [common operating procedure](docs/operating-procedure.md) for the staged source release, exact consumer bindings, fixed report reads, and briefing-only pilot hold. The shared compiler and acquisition modules build directly from one Git commit. Existing installations remain separately accepted consumers.
 
-The [shared daily briefing compiler](docs/deterministic-briefing.md) uses one pure local/portable policy entry. The former v1 artifact-slot compiler is retired from new source; retained artifacts and installations stay unchanged. The [v3 journal contract](docs/briefing-migration.md) retains private policy and exact intent/outcome recovery. The uninstalled cloud effect adapter and file exchange are retired; supported native reads and output remain agent-owned. No installed release or automation changes.
+The [shared daily briefing compiler](docs/deterministic-briefing.md) uses one pure local/portable policy entry. The former v1 artifact-slot compiler is retired from new source; retained artifacts and installations stay unchanged. The [v3 journal contract](docs/briefing-migration.md) retains historical policy and exact intent/outcome recovery; current morning writes refuse. The uninstalled cloud effect adapter and file exchange are retired; supported native reads and output remain agent-owned. No installed release or automation changes.
 
 Emmy is Jerome's ChatGPT Dot. This repository gives one chief of staff durable responsibility context, current evidence checks, retained failures and repairs, and bounded next proposals.
 
@@ -41,7 +41,7 @@ The [improvement procedure](docs/daily-improvement.md) covers daily maintenance,
 
 [`fleet --file <private-envelope.json>`](docs/fleet-health.md) retains executable scoped health, corrections, alert episodes, and bounded parent-owned read tickets in the same responsibility journal. Parent performs actual app/native/schedule reads and separate alert send/readback. [`signin`](.agents/skills/sign-in/SKILL.md) chooses a secure recovery handoff without accepting secrets. Browser and connector recovery remain separate.
 
-[One morning run](docs/morning-workflow.md) adds fresh fleet-backed source acquisition, conservative versioned mail judgments, exact delivery-before-cleanup and same-message outcome edits to that journal. Actual mail, Slack and schedules remain parent-owned.
+The current fleet CLI refuses every `morning` action before publication. Historical policy-v1/v2/v3 records, migration acceptance, source clocks, uncertain intents, native identities and same-message outcomes remain readable through the unchanged replay reducer. Use `fleet` with `operation: "status"` to inspect them. No current producer or collection-envelope command remains.
 
 [`calendar --file <private-envelope.json>`](docs/calendar.md) checks declared current intent, exact saved fields, complete inventory, allocations, and retained attempts without native execution or journal writes. Its result cannot authenticate a save or stop an external queue.
 
