@@ -31,7 +31,45 @@
             "src/fleet.mjs",
             "src/responsibilities.mjs",
             "src/work.mjs",
-            "scripts/agent.mjs"
+            "scripts/agent.mjs",
+            "scripts/cloud-acceptance.mjs",
+            "scripts/verify-behavior.mjs",
+            "scripts/verify-formal.mjs",
+            "verification/briefing-drive.mjs",
+            "verification/briefing-workflow-properties.mjs",
+            "verification/calendar-drive.mjs",
+            "verification/calendar-fixtures.mjs",
+            "verification/calendar-properties.mjs",
+            "verification/calendar-register-drive.mjs",
+            "verification/calendar-register-fixtures.mjs",
+            "verification/cloud-drive.mjs",
+            "verification/cloud-migration-fixtures.mjs",
+            "verification/dispatch-drive.mjs",
+            "verification/fixtures.mjs",
+            "verification/fleet-drive.mjs",
+            "verification/fleet-fixtures.mjs",
+            "verification/fleet-properties.mjs",
+            "verification/guidance-pin-fixtures.mjs",
+            "verification/incarnation-properties.mjs",
+            "verification/morning-compact-fixtures.mjs",
+            "verification/morning-drive.mjs",
+            "verification/morning-fixtures.mjs",
+            "verification/morning-properties.mjs",
+            "verification/morning-v3-drive.mjs",
+            "verification/morning-v3-fixtures.mjs",
+            "verification/properties.mjs",
+            "test/briefing-cloud-caller.test.mjs",
+            "test/briefing-policy.test.mjs",
+            "test/briefing-source-normalization.test.mjs",
+            "test/calendar-collection.test.mjs",
+            "test/calendar-handoff.test.mjs",
+            "test/fixtures/briefing-policy.mjs",
+            "test/fleet-history.test.mjs",
+            "test/fleet-semantics.test.mjs",
+            "test/guidance-pin.test.mjs",
+            "test/morning-compact.test.mjs",
+            "test/morning-v3.test.mjs",
+            "test/morning.test.mjs"
           ]
         },
         {
@@ -266,7 +304,8 @@
             "src/records.mjs",
             "src/signin.mjs",
             "test/fleet-overrun.test.mjs",
-            "test/fleet-semantics.test.mjs"
+            "test/fleet-semantics.test.mjs",
+            "test/fleet.test.mjs"
           ]
         },
         {
@@ -280,7 +319,8 @@
             "test/fleet-overrun.test.mjs",
             "test/fleet-semantics.test.mjs",
             "test/fleet.test.mjs",
-            "test/morning-v3.test.mjs"
+            "test/morning-v3.test.mjs",
+            "test/morning.test.mjs"
           ]
         },
         {
@@ -478,7 +518,9 @@
             "src/morning.mjs",
             "verification/briefing-workflow-properties.mjs",
             "test/briefing-cloud-caller.test.mjs",
-            "test/briefing-policy.test.mjs"
+            "test/briefing-policy.test.mjs",
+            "test/briefing-source-normalization.test.mjs",
+            "test/foundation-release.test.mjs"
           ]
         },
         {
@@ -535,7 +577,8 @@
           "path": "scripts/briefing-cloud-exchange.mjs",
           "sha256": "ece4c710643cb2c1f4d32610324f1a346669ef67cfeaee7c8a833af878458703",
           "callers": [
-            "executable ingress"
+            "executable ingress",
+            "test/briefing-source-normalization.test.mjs"
           ]
         },
         {
@@ -933,7 +976,8 @@
           "path": "scripts/check.mjs",
           "sha256": "f8b710af8abcafa21d3090a9739b820f04b01b98e9dfdfb8b49ca1b4877b204c",
           "callers": [
-            "executable ingress"
+            "executable ingress",
+            "verification/merge-policy.mjs"
           ]
         }
       ],
@@ -985,14 +1029,22 @@
           "path": "scripts/github-auto-merge.mjs",
           "sha256": "3c89e3044e08fd70841e481da1943a8efa2dea615a3a98c27cbe7d020e7bce9d",
           "callers": [
-            "executable ingress"
+            "executable ingress",
+            "scripts/local-delivery.mjs",
+            "verification/delivery/check.mjs",
+            "verification/delivery/fixtures.mjs",
+            "verification/merge-policy.mjs",
+            "test/github-auto-merge.test.mjs",
+            "test/local-delivery.test.mjs"
           ]
         },
         {
           "path": "scripts/local-delivery.mjs",
           "sha256": "b339a2c581ad2751ffe013d93652b6917439c10e4268e636dbe91fb8e14657bf",
           "callers": [
-            "executable ingress"
+            "executable ingress",
+            "scripts/github-auto-merge.mjs",
+            "test/local-delivery.test.mjs"
           ]
         }
       ],
@@ -1049,7 +1101,8 @@
           "path": "scripts/foundation-release.mjs",
           "sha256": "8d4740442cd3fbbf6e0d5454568bef52ea1596e9207ae528a65f5c8e2fec692c",
           "callers": [
-            "executable ingress"
+            "executable ingress",
+            "test/foundation-release.test.mjs"
           ]
         }
       ],
@@ -1104,7 +1157,8 @@
           "path": "scripts/improvement-report.mjs",
           "sha256": "7a84179a8b5d955fa7cdb1d4408b0fe29ac8421984ca073ae57b39ee17952f12",
           "callers": [
-            "executable ingress"
+            "executable ingress",
+            "test/improvement-report.test.mjs"
           ]
         }
       ],
@@ -1151,7 +1205,42 @@
             "src/briefing-acquisition.mjs",
             "src/briefing-cloud-caller.mjs",
             "src/briefing-cloud-exchange.mjs",
-            "src/briefing-plan.mjs"
+            "src/briefing-plan.mjs",
+            "src/briefing-policy.mjs",
+            "src/briefing-source-normalization.mjs",
+            "src/briefing.mjs",
+            "src/calendar-handoff.mjs",
+            "src/calendar-policy.mjs",
+            "src/calendar-register.mjs",
+            "src/calendar-timing.mjs",
+            "src/calendar.mjs",
+            "src/fleet-state.mjs",
+            "src/foundation-release.mjs",
+            "src/guidance-pin.mjs",
+            "src/local-assurance.mjs",
+            "src/maintenance.mjs",
+            "src/morning-collection.mjs",
+            "src/morning.mjs",
+            "src/planning-policy.mjs",
+            "src/records.mjs",
+            "scripts/foundation-release.mjs",
+            "scripts/local-delivery.mjs",
+            "verification/automation-fixtures.mjs",
+            "verification/automation-properties.mjs",
+            "verification/delivery/check.mjs",
+            "verification/delivery/drive.mjs",
+            "verification/delivery/fixtures.mjs",
+            "verification/delivery/graph.mjs",
+            "verification/direct-dispatch/check.mjs",
+            "verification/local-assurance/check.mjs",
+            "verification/local-assurance/drive.mjs",
+            "verification/local-assurance/graph.mjs",
+            "verification/planning-policy/check.mjs",
+            "verification/planning-policy/fixtures.mjs",
+            "test/agent-local.test.mjs",
+            "test/automation-procedure.test.mjs",
+            "test/foundation-release.test.mjs",
+            "test/local-delivery.test.mjs"
           ]
         },
         {
@@ -1165,7 +1254,9 @@
             "src/briefing-source-normalization.mjs",
             "src/daily-briefing.mjs",
             "src/foundation-release.mjs",
-            "src/improvement-report.mjs"
+            "src/improvement-report.mjs",
+            "src/morning-collection.mjs",
+            "src/token-review.mjs"
           ]
         },
         {
@@ -1179,7 +1270,12 @@
             "src/fleet.mjs",
             "src/foundation-release.mjs",
             "src/guidance-pin.mjs",
-            "src/local-assurance.mjs"
+            "src/local-assurance.mjs",
+            "src/signin.mjs",
+            "scripts/agent.mjs",
+            "scripts/collect-morning.mjs",
+            "scripts/local-delivery.mjs",
+            "test/fleet.test.mjs"
           ]
         }
       ],
@@ -1234,7 +1330,7 @@
         },
         {
           "path": "src/maintenance.mjs",
-          "sha256": "f888466b63b746b064433ea7749047370868fbe4a3aa3916747fa82bbba35c4f",
+          "sha256": "497c8fb2728a1d14e2d30c61f709782f84999c5f7eadcf5b1c6e26b4146d100e",
           "callers": [
             "scripts/agent.mjs"
           ]
@@ -2025,7 +2121,7 @@
         },
         {
           "path": "test/agent-local.test.mjs",
-          "sha256": "49b0c1e7b6ee4a44c973f311e0978b5eb62ce35f7f5a59254156b8bb027be0cd",
+          "sha256": "71daa20904f6af72b4903ccd99296914e507455075605fb042c6f30681779239",
           "callers": [
             "verification input"
           ]

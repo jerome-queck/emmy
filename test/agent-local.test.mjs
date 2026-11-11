@@ -118,6 +118,10 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
     await mutate(value => { value.subsystems[0].skills = ['.agents/skills/no-skill/SKILL.md']; }); check(2, /no-skill/);
     await mutate(value => { value.subsystems[0].skills = []; }); check(2, /missing formal evidence/);
     await mutate(value => { value.subsystems[0].files[0].callers = ['src/catalog.mjs']; }); check(2, /stale caller/);
+    await mutate(value => { const entry = value.subsystems.flatMap(area => area.files).find(file => file.path === 'src/content.mjs'); entry.callers = entry.callers.filter(caller => caller !== 'src/assurance.mjs'); });
+    check(2, /unmapped caller src\/assurance\.mjs for src\/content\.mjs/);
+    await mutate(value => { const entry = value.subsystems.flatMap(area => area.files).find(file => file.path === 'scripts/github-auto-merge.mjs'); entry.callers = entry.callers.filter(caller => caller !== 'scripts/local-delivery.mjs'); });
+    check(2, /unmapped caller scripts\/local-delivery\.mjs for scripts\/github-auto-merge\.mjs/);
     await mutate(value => { const area = value.subsystems.find(row => row.id === 'local-assurance'); area.graph.path = 'verification/local-assurance/chart.mmd'; }); check(2, /unsupported graph/);
     const unsupportedWrite = run(root, ['maintain', '--write']); assert.equal(unsupportedWrite.status, 2, unsupportedWrite.stdout);
     assert.match(JSON.parse(unsupportedWrite.stdout).error, /unsupported graph/);

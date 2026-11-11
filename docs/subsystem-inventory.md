@@ -1,6 +1,6 @@
 # Subsystem inventory
 
-Generated from `verification/subsystems.json`. Structural admission is not semantic proof. Whole-repository foundation readiness: **incomplete**.
+Generated from `verification/subsystems.json`. Structural admission is not semantic proof. Caller admission checks literal relative imports in production files; dynamic and external callers still need source review. Whole-repository foundation readiness: **incomplete**.
 
 | Subsystem | State owner | Classification | Remaining gap |
 | --- | --- | --- | --- |
