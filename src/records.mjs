@@ -45,6 +45,7 @@ export async function readBindings(home) {
     if (project.path !== undefined) requireValue(isAbsolute(project.path), 'Project path must be absolute');
     for (const name of ['hostId', 'nativeProjectId', 'cloudEnvironmentId', 'repository']) if (project[name] !== undefined) text(project[name], name);
     if (project.dispatcher !== undefined) dispatcherBinding(project.dispatcher);
+    if (project.directRoot !== undefined) directRootBinding(project.directRoot);
   }
   return value;
 }
@@ -97,6 +98,30 @@ function dispatcherBinding(value) {
   choice(value.childAccessIntent, ['full-access-inherit'], 'dispatcher.childAccessIntent');
 }
 
+function principal(value) {
+  object(value, 'root principal');
+  choice(value.kind, ['native-thread', 'chatgpt-control', 'coordination-agent'], 'root principal kind');
+  text(value.id, 'root principal ID');
+}
+
+function directRootBinding(value) {
+  object(value, 'direct root'); principal(value.principal);
+  for (const field of ['hostId', 'selectionRef']) text(value[field], `root.${field}`);
+  authority(value.authorityRef, 'root.authorityRef');
+  if (value.remoteAuthorityRef !== undefined) authority(value.remoteAuthorityRef, 'root.remoteAuthorityRef');
+  choice(value.childAccessIntent, ['supported-policy'], 'root.childAccessIntent');
+  object(value.childPolicy, 'root.childPolicy');
+  choice(value.childPolicy.sandboxMode, ['read-only', 'workspace-write', 'danger-full-access'], 'root child sandbox');
+  choice(value.childPolicy.approvalPolicy, ['untrusted', 'on-failure', 'on-request', 'never'], 'root child approval');
+}
+
+export function dispatchIdentity(value) {
+  if (!value) return value;
+  return value.mode === 'direct-root'
+    ? { mode: value.mode, correlationKey: value.correlationKey, root: value.root, skill: value.skill }
+    : { correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill };
+}
+
 function nativeReadback(value) {
   object(value, 'native readback'); text(value.threadId, 'readback.threadId');
   for (const field of ['hostId', 'nativeProjectId']) if (value[field] !== null) text(value[field], `readback.${field}`);
@@ -114,7 +139,14 @@ function nativeReadback(value) {
 }
 
 function dispatchDefinition(value, objectiveId) {
-  object(value, 'dispatch'); text(value.correlationKey, 'dispatch.correlationKey'); dispatcherBinding(value.dispatcher);
+  object(value, 'dispatch'); text(value.correlationKey, 'dispatch.correlationKey');
+  if (value.mode === 'direct-root') {
+    requireValue(value.dispatcher === undefined, 'Direct root cannot contain a legacy dispatcher');
+    directRootBinding(value.root);
+  } else {
+    requireValue(value.mode === undefined && value.root === undefined, 'Unknown or mixed dispatch mode');
+    dispatcherBinding(value.dispatcher);
+  }
   object(value.skill, 'dispatch.skill'); requireValue(isAbsolute(value.skill.path ?? ''), 'dispatch.skill.path must be absolute'); hash(value.skill.sha256, 'dispatch.skill.sha256');
   for (const field of ['requestedSettings', 'coordinatorRequestedSettings']) {
     const settings = value[field];
@@ -150,6 +182,25 @@ function dispatchObservation(value, input) {
   text(value.correlationKey, 'dispatch.correlationKey'); choice(value.phase, ['absent', 'attempted', 'pending', 'uncertain', 'ready'], 'dispatch.phase');
   if (value.dispatcher !== undefined) nativeReadback(value.dispatcher);
   if (value.child !== undefined) nativeReadback(value.child);
+  if (value.root !== undefined) {
+    object(value.root, 'root readback'); principal(value.root.principal);
+    text(value.root.hostId, 'root readback host'); text(value.root.sourceRef, 'root readback source');
+    timestamp(value.root.observedAt, 'root readback time');
+    if (value.root.recordedSettings !== undefined && value.root.recordedSettings !== null) {
+      const settings = value.root.recordedSettings;
+      object(settings, 'root recorded settings');
+      for (const field of ['model', 'effort', 'serviceTier', 'sourceRef']) text(settings[field], `root settings.${field}`);
+      choice(settings.effort, dispatchEfforts, 'root settings effort');
+      timestamp(settings.observedAt, 'root settings time');
+    }
+  }
+  if (value.creation !== undefined) {
+    const creation = value.creation; object(creation, 'direct creation'); principal(creation.principal);
+    hash(creation.attemptKey, 'creation attempt'); hash(creation.requestDigest, 'creation request');
+    text(creation.childThreadId, 'creation child'); text(creation.sourceRef, 'creation source');
+    timestamp(creation.observedAt, 'creation time');
+    if (creation.nativeCallerThreadId !== undefined && creation.nativeCallerThreadId !== null) text(creation.nativeCallerThreadId, 'actual native caller');
+  }
   if (value.destinationSkill !== undefined) {
     object(value.destinationSkill, 'destinationSkill');
     for (const field of ['hostId', 'sourceRef']) text(value.destinationSkill[field], `destinationSkill.${field}`);
@@ -425,8 +476,7 @@ export function validateReferences(records) {
     const parent = known.get(ref);
     requireValue(parent.type === 'definition' && parent.id === record.id, 'Definition parent belongs to another responsibility');
     if (parent.dispatch) {
-      const stable = value => value && { correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill };
-      requireValue(canonical(stable(parent.dispatch)) === canonical(stable(record.dispatch)), 'An objective cannot silently replace its dispatch binding or correlation');
+      requireValue(canonical(dispatchIdentity(parent.dispatch)) === canonical(dispatchIdentity(record.dispatch)), 'An objective cannot silently replace its dispatch binding or correlation');
       for (const field of ['requestedSettings', 'coordinatorRequestedSettings']) if (canonical(parent.dispatch[field] ?? null) !== canonical(record.dispatch[field] ?? null)) requireValue(Boolean(record.dispatch[field]?.scopedOverrideRef), 'A changed model request requires its explicit scoped override source');
     }
   }

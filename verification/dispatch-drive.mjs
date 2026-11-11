@@ -304,11 +304,110 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   const nonGit = await resolve('name:Synthetic non Git', 3); assert.equal(nonGit.nativeProject.projectId, 'non-git-native'); assert.ok(nonGit.reasons.includes('repository-source-needed'));
   const finalStore = await readStore(privateHome); assert.equal(finalStore.records.some(record => record.hash === attemptHash), true);
   assert.equal((await cli(['dispatch', '--project', target.projectId, '--as-of', now()])).jobs.length, 45);
+  const directRoot = { principal: { kind: 'coordination-agent', id: 'synthetic-actual-root' }, hostId: target.hostId, selectionRef: 'Synthetic direct owner source', authorityRef: { reference: 'Synthetic exact direct creation authorization', action: 'dispatch-native-child-direct', resource: target.projectId, destination: target.nativeProjectId }, childAccessIntent: 'supported-policy', childPolicy: { sandboxMode: 'workspace-write', approvalPolicy: 'on-request' } };
+  const directDefinition = structuredClone(definition);
+  directDefinition.id = 'direct-native-job'; directDefinition.dispatch = { ...directDefinition.dispatch, mode: 'direct-root', root: directRoot, correlationKey: 'synthetic-direct-objective' }; delete directDefinition.dispatch.dispatcher;
+  const directBinding = structuredClone(selectedBindings);
+  delete directBinding.projects[target.projectId].dispatcher;
+  delete directBinding.projects[initialTarget.projectId].dispatcher;
+  directBinding.projects[target.projectId].directRoot = directRoot;
+  await writeFile(bindingsPath, JSON.stringify(directBinding));
+  const directJob = await adopt(directDefinition);
+  const directReadback = () => ({ principal: directRoot.principal, hostId: directRoot.hostId, observedAt: now(), sourceRef: 'Synthetic observed direct root and current model/tier', recordedSettings: { model: 'gpt-6.1-sol', effort: 'medium', serviceTier: 'default', observedAt: now(), sourceRef: 'Synthetic actual root settings' } });
+  const directObservation = async (phase, prior = null, extra = {}) => {
+    const value = await observation(directJob, phase, prior, { root: directReadback(), ...extra }); delete value.dispatch.dispatcher; return value;
+  };
+  const directAdvice = expected => advise(expected, [], privateHome, directJob.id);
+  let directState = await retain(await directObservation('absent'));
+  const directCreate = await directAdvice(0);
+  assert.equal(directCreate.next, 'create-direct'); assert.equal(directCreate.dispatcher, undefined);
+  assert.equal(directCreate.effectiveChildAccess, 'unverified'); assert.deepEqual(directCreate.requestedChildPolicy, directRoot.childPolicy);
+  assert.deepEqual([...directCreate.nativeCreateRequest.prompt.matchAll(/^# (.+)$/gm)].map(match => match[1]), ['Goal', 'Verification', 'Subgoals', 'Boundaries', 'Output', 'Delegation']);
+  assert.deepEqual(Object.keys(directCreate.nativeCreateRequest).sort(), ['model', 'prompt', 'target', 'thinking', 'title']);
+  const directRecovery = await cli(['dispatch', '--project', target.projectId, '--as-of', now()]);
+  assert.deepEqual(directRecovery.directRoot, directRoot); assert.equal(directRecovery.dispatcher, undefined);
+  directState = await retain(await directObservation('attempted', directState, { attemptKey: directCreate.attemptKey, requestDigest: digest(directCreate.nativeCreateRequest) }));
+  assert.equal((await directAdvice(3)).next, 'rediscover');
+  directState = await retain(await directObservation('pending', directState, { clientThreadId: 'synthetic-direct-pending' }));
+  assert.equal((await directAdvice(3)).clientThreadId, 'synthetic-direct-pending');
+  directState = await retain(await directObservation('uncertain', directState));
+  directState = await retain(await directObservation('absent', directState));
+  assert.ok((await directAdvice(3)).reasons.includes('prior-launch-no-effect-readback-needed'));
+  directState = await retain(await directObservation('absent', directState, { resolution: 'confirmed-no-effect' }));
+  const directRetry = await directAdvice(0); assert.equal(directRetry.next, 'create-direct');
+  const directAttempt = await retain(await directObservation('attempted', directState, { attemptKey: directRetry.attemptKey, requestDigest: digest(directRetry.nativeCreateRequest) }));
+  const directChild = { ...readback('synthetic-direct-child', { correlationKey: directJob.dispatch.correlationKey }), creatorThreadId: 'synthetic-native-tool-caller' };
+  Object.assign(directChild.recordedSettings, directRoot.childPolicy);
+  const creation = { principal: directRoot.principal, attemptKey: directAttempt.dispatch.attemptKey, requestDigest: directAttempt.dispatch.requestDigest, childThreadId: directChild.threadId, observedAt: now(), sourceRef: 'Synthetic original native invocation plus returned child', nativeCallerThreadId: directChild.creatorThreadId };
+  directState = await retain(await directObservation('ready', directAttempt, { child: { ...directChild, nativeProjectId: null }, creation }));
+  const missingMembership = await directAdvice(3); assert.equal(missingMembership.readyThreadId, directChild.threadId); assert.equal(missingMembership.next, 'inspect-existing-child');
+  directState = await retain(await directObservation('ready', directState, { child: directChild, creation }));
+  assert.equal((await directAdvice(0)).next, 'read-or-wait');
+  const wrongCreation = { ...creation, requestDigest: digest('foreign request') };
+  directState = await retain(await directObservation('ready', directState, { child: directChild, creation: wrongCreation }));
+  assert.ok((await directAdvice(3)).reasons.includes('direct-creation-provenance-needed'));
+  directState = await retain(await directObservation('ready', directState, { child: directChild, creation }));
+  assert.equal((await directAdvice(0)).readyThreadId, directChild.threadId);
+  const changedRoute = structuredClone(directDefinition); changedRoute.parents = [directJob.hash]; changedRoute.dispatch.root.principal.id = 'replacement-root';
+  const refusedRoute = await cli(['responsibility', '--file', await file(changedRoute)], 2); assert.match(refusedRoute.error?.message ?? JSON.stringify(refusedRoute), /dispatch binding|correlation/);
+  const mixedRoute = structuredClone(directDefinition); mixedRoute.id = 'mixed-direct-route'; mixedRoute.dispatch.dispatcher = dispatcher;
+  await cli(['responsibility', '--file', await file(mixedRoute)], 2);
+  const directArchive = join(home, 'direct-dispatch-backup'); const directRestored = join(home, 'direct-dispatch-restored');
+  await cli(['backup', '--to', directArchive]); await cli(['restore', '--from', directArchive, '--into', directRestored]);
+  assert.ok((await advise(3, [], directRestored, directJob.id)).reasons.includes('restored-home-suspended'));
+  const requestChains = [];
+  for (const order of ['earlier-first', 'later-first']) for (const variant of ['identical', 'conflicting', 'later-clock']) {
+    const conflict = variant === 'conflicting'; const clockConflict = variant === 'later-clock';
+    const requestDefinition = structuredClone(directDefinition);
+    requestDefinition.id = `request-chain-${order}-${variant}`;
+    requestDefinition.dispatch.correlationKey = `synthetic-${requestDefinition.id}`;
+    const requestJob = await adopt(requestDefinition);
+    const makeAttempt = async prior => {
+      const value = await observation(requestJob, 'attempted', prior, { root: directReadback() }); delete value.dispatch.dispatcher; return value;
+    };
+    const predict = async value => {
+      const files = {};
+      for (const [index, ref] of value.evidenceRefs.entries()) files[`evidence-${index}.bin`] = await readFile(ref.path);
+      const { parseObservation, recordPayload } = await import('../src/records.mjs');
+      return recordPayload(parseObservation(value), files);
+    };
+    const firstBody = await makeAttempt(null);
+    const firstObserver = firstBody.observer; let predictedFirst;
+    for (let nonce = 0; nonce < 256; nonce++) {
+      firstBody.observer = `${firstObserver} first acquisition ${nonce}`; predictedFirst = await predict(firstBody);
+      if (predictedFirst.hash[0] >= '4' && predictedFirst.hash[0] <= 'b') break;
+    }
+    assert.ok(predictedFirst.hash[0] >= '4' && predictedFirst.hash[0] <= 'b', 'Bounded synthetic hash order setup');
+    const first = await retain(firstBody); assert.equal(first.hash, predictedFirst.hash);
+    assert.equal((await retain(firstBody)).hash, first.hash, 'Exact repeated original import is idempotent');
+    const laterBody = await makeAttempt(first);
+    laterBody.dispatch.attemptKey = first.dispatch.attemptKey;
+    laterBody.dispatch.requestDigest = conflict ? digest(`Different original request ${requestJob.id}`) : first.dispatch.requestDigest;
+    const laterObserver = laterBody.observer; let predictedLater;
+    for (let nonce = 0; nonce < 256; nonce++) {
+      laterBody.observer = `${laterObserver} second acquisition ${nonce}`; predictedLater = await predict(laterBody);
+      if ((first.hash < predictedLater.hash) === (order === 'earlier-first')) break;
+    }
+    assert.equal(first.hash < predictedLater.hash, order === 'earlier-first', 'Exercise both actual readStore hash orders');
+    const later = await retain(laterBody); assert.equal(later.hash, predictedLater.hash);
+    const requestChild = { ...directChild, threadId: `synthetic-${requestJob.id}`, correlationKey: requestJob.dispatch.correlationKey, observedAt: now(), recordedSettings: { ...directChild.recordedSettings, effort: 'high', observedAt: now() } };
+    const requestCreation = { ...creation, attemptKey: first.dispatch.attemptKey, requestDigest: first.dispatch.requestDigest, childThreadId: requestChild.threadId, observedAt: clockConflict ? new Date(Math.floor((Date.parse(first.observedAt) + Date.parse(later.observedAt)) / 2)).toISOString() : now() };
+    const ready = await observation(requestJob, 'ready', later, { root: directReadback(), child: requestChild, creation: requestCreation }); delete ready.dispatch.dispatcher;
+    await retain(ready);
+    const requestAdvice = await advise(conflict || clockConflict ? 3 : 0, [], privateHome, requestJob.id);
+    assert.equal(requestAdvice.readyThreadId, requestChild.threadId);
+    assert.equal(requestAdvice.next, conflict || clockConflict ? 'inspect-existing-child' : 'read-or-wait');
+    assert.equal(requestAdvice.reasons.includes('launch-attempt-request-conflict'), conflict);
+    assert.equal(requestAdvice.reasons.includes('direct-creation-not-current'), clockConflict);
+    requestChains.push({ order, variant, conflict, clockConflict, attemptKey: first.dispatch.attemptKey, firstHash: first.hash, laterHash: later.hash, firstRequest: first.dispatch.requestDigest, laterRequest: later.dispatch.requestDigest, firstObservedAt: first.observedAt, laterObservedAt: later.observedAt, creationObservedAt: requestCreation.observedAt, readyThreadId: requestAdvice.readyThreadId, next: requestAdvice.next, reasons: requestAdvice.reasons });
+  }
+  report.requestChains = requestChains;
+  await writeFile(bindingsPath, JSON.stringify(selectedBindings));
   await cli(['maintain', '--write']);
   for (const path of ['docs/cli.md', 'docs/catalog.md', 'docs/briefing-guidance.json', 'docs/verification-index.json']) {
     const publicBytes = await readFile(join(root, path), 'utf8');
     for (const secret of [dispatcher.threadId, dispatcher.selectionRef, definition.dispatch.correlationKey, child.threadId]) assert.equal(publicBytes.includes(secret), false, `Private dispatch state absent from ${path}`);
   }
-  report.dispatch = { privateHome, retainedAttemptHash: attemptHash, readyThreadId: child.threadId, bindingDigest: digest(await readFile(bindingsPath)), archiveManifestHash: archived.manifest.hash, restoredEpoch: restored.epoch, sourceAssurance: 'synthetic reported native evidence', providerExecution: 'unverified', effectiveChildAccess: 'unverified' };
+  report.dispatch = { privateHome, retainedAttemptHash: attemptHash, readyThreadId: child.threadId, directReadyThreadId: directChild.threadId, directAttemptHash: directAttempt.hash, bindingDigest: digest(await readFile(bindingsPath)), archiveManifestHash: archived.manifest.hash, restoredEpoch: restored.epoch, sourceAssurance: 'synthetic reported native evidence', providerExecution: 'unverified', effectiveChildAccess: 'unverified' };
   scenario('native-dispatch', 'Fresh-process private bootstrap recovery, exact supported request and skill, read-only decisions, attempted/pending/uncertain/no-effect/ready controls, duplicate imports, native membership/settings/policy refusal, standing scope, same-objective continuation, distinct objective reuse refusal and suspended archive restore. No native executor ran.');
 }
