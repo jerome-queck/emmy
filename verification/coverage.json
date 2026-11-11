@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "3c09b4fa98b53139b88c6210a40ac7e20a405c2a",
-  "reviewBasis": "Isolated three-way reconciliation of exact delivery-v2 924681b and independently accepted direct b119422 over c5f8b46. Owner read every affected source delta and five overlapping docs/metadata files. Direct and delivery production bytes are retained exactly. Coordination coverage changes only merged prose hashes; delivery coverage additionally binds the twentieth direct-dispatch suite. Old gates refused intended drift. No canonical publication await or mapped property was weakened. New combined source needs its own full gate and independent exact-head verdict; old receipts/verdicts do not attest it.",
+  "sourceCommit": "246245416f5eedf1d6fa8b0fccb7ec1dbd8adf39",
+  "reviewBasis": "Isolated three-way reconciliation of exact delivery-v2 924681b and independently accepted direct b119422 over c5f8b46. Owner read every affected source delta and five overlapping docs/metadata files. Direct and delivery production bytes are retained exactly. Coordination coverage changes only merged prose hashes; delivery coverage additionally binds the twentieth direct-dispatch suite. Old gates refused intended drift. No canonical publication await or mapped property was weakened. New combined source needs its own full gate and independent exact-head verdict; old receipts/verdicts do not attest it. Coverage-admission follow-on: reviewed starting byte equality and the exact maintenance, behavioral fixture and CLI test diff. Existing coordination predicates and properties are unchanged. Structural inventory checks do not establish semantic coverage, independently executed verification or whole-foundation readiness.",
   "files": {
     ".agents/skills/coordination-contract/SKILL.md": "7812065ec2f9cec1e5b8fef68a250c4246ef8534c2ae684060c18287e37a5a6a",
     ".agents/skills/morning-collect/SKILL.md": "cb26be9998b456c6f538af9d257d1a78330d4cd23a804b86e86c38ce2bc8c499",
@@ -44,7 +44,7 @@
     "scripts/collect-morning.mjs": "861b14011777a382c9a35a4bc3f6c21de1ec9b0f3e395168eb740819226b2f86",
     "scripts/foundation-release.mjs": "8d4740442cd3fbbf6e0d5454568bef52ea1596e9207ae528a65f5c8e2fec692c",
     "scripts/improvement-report.mjs": "7a84179a8b5d955fa7cdb1d4408b0fe29ac8421984ca073ae57b39ee17952f12",
-    "scripts/verify-behavior.mjs": "be49654632e6953f92da7365b2755470d3dc787d0452071e6a3ca3678cb832d0",
+    "scripts/verify-behavior.mjs": "8eaaad84fe4afd0cddbfc60fbc4a07feb59b6e19bba47ba561ae8ca2c642b7ed",
     "scripts/verify-formal.mjs": "c9d43d42de0a9e4b46f1173e80870818e11857387230da12dcbf74b6591598ba",
     "src/academic-os-task-plan.mjs": "9e997cf82ba3bc408fb3b0c01c14f76794a507f706da67856231fccc55ab35a9",
     "src/automation-plan.mjs": "4a9a94eea37330dfe7521a98448b5e6c63a92dcb7c296517e58a112adeeb9f59",
@@ -82,7 +82,7 @@
     "src/guidance-pin.mjs": "f037a3f461db221e884f9f72da45515d51e536f6f271bf70ff11a36b6cf238b7",
     "src/immutable-slot.mjs": "59e8ccd7c37783268e22703f63897c8c6d2b97c497ab37ff300e636a33744035",
     "src/improvement-report.mjs": "fbab0e0b543ad481ed95a31bd5b6f427103c90d2e60b69008800f91ffdfd27b9",
-    "src/maintenance.mjs": "d41afce0605a3c3f60bd26b3326fbd523c3f52d64fffa53b269c53803eb82751",
+    "src/maintenance.mjs": "a000b7a6c44ddaa2c70e833d79e7748fbe746a2c7caec01ded7da92d95c2bf22",
     "src/metadata.mjs": "04dde9842a694abc4678920359d7f0cc702ffbdc02302cac0f570ccfa9235ecf",
     "src/morning-collection.mjs": "37dae6e547e0e20494e714ecc1b20f28364989600ed751ee7fa2c817ae985287",
     "src/morning-presentation.mjs": "36d171d854c34b3062da02e9c9ac5b095e509164e2c674bf0dd4ccae1268a343",
@@ -96,7 +96,7 @@
     "src/token-review.mjs": "27e6313bbb88c8650c10aa184addf1521dee3d95effe5894e892775edfce027c",
     "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
     "test/academic-os-task-plan.test.mjs": "2111ebf0045b452b0220ca17209cf66eeec6b5179238f0f3c7aecdd092cb4269",
-    "test/agent-local.test.mjs": "15994fac88628550a8afcaefa5aa5cf084961dfcd8a353703365737e479b6119",
+    "test/agent-local.test.mjs": "b861442f31fe38b5e37a8cb88bac5a0843cdb658561b170a2ddf4d452c214d92",
     "test/automation-procedure.test.mjs": "b60afb7c63430dda95b440b16881c229302e663c57e44873e2f015f1632f179a",
     "test/briefing-cloud-caller.test.mjs": "25919b20bc39defae84f7b4cd9dd134cf5fcb8a63ac334979c4c6441f920a0f9",
     "test/briefing-policy.test.mjs": "450e59ed67c9ce8fc9ca6d3456fed486e12898eaac0f30d92ab73d37b1058a4e",
@@ -749,11 +749,13 @@
     {
       "source": "src/maintenance.mjs",
       "functions": [
+        "coverageInventory",
         "generatedFiles",
         "maintain"
       ],
       "scenarios": [
-        "derived-boundaries"
+        "derived-boundaries",
+        "maintain CLI subsystem admission controls"
       ]
     },
     {
@@ -1043,6 +1045,7 @@
     "Supplied token accounting and compact improvement report guard/publication/read are separately unit/CLI-driven behavioral boundaries. No new finite property or canonical publication theorem covers them. Measured labels, inventories, usage, outcomes, scheduled origin and source windows remain supplied declarations; no provider truth, savings, recurrence, native exclusion, automatic orphan recovery or delivery is proved."
   ],
   "limits": [
-    "Version-two shared planning policy has its own area graph/skill; original82register predicates and23mutants are preserved. Receipt/retention/native timing and provider truth remain empirical or external."
+    "Version-two shared planning policy has its own area graph/skill; original82register predicates and23mutants are preserved. Receipt/retention/native timing and provider truth remain empirical or external.",
+    "Subsystem admission is structural; the retained metadata and hashes do not authenticate source-to-model completeness, execution or review independence."
   ]
 }
