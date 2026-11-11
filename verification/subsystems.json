@@ -1456,7 +1456,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "8eca9f924021f8cf1f6b2eeb5387aceadd9e3936dc0fb3737bd948951a53adf4",
+          "sha256": "529be0cc879a57637fff2e2f688632bf021937aca2dbf3e388d68d2309fe37ec",
           "callers": [
             "verification input"
           ]
@@ -1974,7 +1974,7 @@
         },
         {
           "path": "test/fleet-semantics.test.mjs",
-          "sha256": "4d31d8ed7e3e9ae5fbbe6e51b437b8762922b4ee6a38b363e2ff8dd0e0513c00",
+          "sha256": "957113f912276b2687cf44d6a4bc075c9419634f592029fcecb229b8210a1400",
           "callers": [
             "verification input"
           ]

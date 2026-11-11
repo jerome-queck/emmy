@@ -106,7 +106,7 @@
     "test/fixtures/foundation-release-v1.txt": "b452d94c2a4d780820cba9026950d32cf7ee24e603d1129ff0dcb124bf4d33d3",
     "test/fleet-history.test.mjs": "378006c2e2511c7bb8971bba56bbfd02a73ab210a4a2d7246d7d3fb7578f31c8",
     "test/fleet-overrun.test.mjs": "61deb53a4947da8da2ffab1ff47eb14af91120a66bcfea3cad8582122f884bc8",
-    "test/fleet-semantics.test.mjs": "4d31d8ed7e3e9ae5fbbe6e51b437b8762922b4ee6a38b363e2ff8dd0e0513c00",
+    "test/fleet-semantics.test.mjs": "957113f912276b2687cf44d6a4bc075c9419634f592029fcecb229b8210a1400",
     "test/fleet.test.mjs": "2a3bd0ca424abe26f9b57c9ce8f3a640ff72b38fd62955b4a0ddf5cebd557858",
     "test/foundation-release.test.mjs": "4a5cd19d1c107e2ad37d85a38f8e1555282cfa2a106397d7f6aadffdddc91a6b",
     "test/guidance-pin.test.mjs": "d4ce04c46c250a62a410b15f33428d41e08ada29a6025acff343caa7e4bab21c",
