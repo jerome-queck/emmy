@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { canonical, digest, readStore } from '../src/records.mjs';
-import { executeBriefingEffect, acquireBriefingSource, acquireBriefingPlanSource } from '../src/briefing-cloud-caller.mjs';
+import { acquireBriefingSource, acquireBriefingPlanSource } from '../src/briefing-acquisition.mjs';
 import { assessBriefingReporting } from '../src/briefing-reporting.mjs';
 import { morningEntities, morningItem, morningAssessments } from './morning-fixtures.mjs';
 import { morningV3Policy } from './morning-v3-fixtures.mjs';
@@ -17,7 +17,7 @@ export async function driveMorningV3({ home, bindings, target, run, report, coll
   const file = async (label, value) => { const path = join(selected, `${ordinal++}-${label}.json`); await writeFile(path, canonical(value)); return path; };
   const evidence = async (sourceRef, value) => { const path = await file('evidence', value); return { path, sha256: digest(await readFile(path)), sourceRef }; };
   const owner = await evidence('synthetic-v3-owner', { scope: 'Synthetic v3 local driver. No native authority.' });
-  const definition = { id: 'fixture-morning-v3', parents: [], goal: 'Exercise the real briefing caller and same journal.', context: 'Synthetic supported adapters only.', workClass: 'coordination', action: 'monitor', resource: target.projectId, destination: 'fixture-parent', target, authorityRef: { reference: owner.sourceRef, action: 'monitor', resource: target.projectId, destination: 'fixture-parent' }, criteria: [{ id: 'receipts', evidence: 'reported-check', description: 'Synthetic exact readback.' }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'fixture-morning-v3', method: 'Drive actual fresh CLI and portable caller.', intendedEffect: 'No remote effects.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' } };
+  const definition = { id: 'fixture-morning-v3', parents: [], goal: 'Exercise the retained morning journal and acquisition.', context: 'Synthetic supported adapters only.', workClass: 'coordination', action: 'monitor', resource: target.projectId, destination: 'fixture-parent', target, authorityRef: { reference: owner.sourceRef, action: 'monitor', resource: target.projectId, destination: 'fixture-parent' }, criteria: [{ id: 'receipts', evidence: 'reported-check', description: 'Synthetic exact readback.' }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'fixture-morning-v3', method: 'Drive actual fresh CLI journal transitions.', intendedEffect: 'No remote effects.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' } };
   await run(['responsibility', '--file', await file('definition', definition)], 0, selected);
   const envelope = (command, refs) => ({ schemaVersion: 1, responsibilityId: definition.id, expectedHead: view.headHash, action: { operation: 'morning', command: { runId: day, ...command } }, evidence: refs });
   const fleet = async (input, expected = 3) => { const result = await run(['fleet', '--file', await file('fleet', input)], expected, selected); if (result.headHash) view = result; return result; };
@@ -147,13 +147,18 @@ export async function driveMorningV3({ home, bindings, target, run, report, coll
     report.morningCollector = { synthetic: true, records: replayed.records.length, originalObservation: calendarObservation, sameJournalSeal: true, effects: 0, providerTruth: 'unverified' };
     return;
   }
-  let sends = 0; let moves = 0; let edits = 0; const rawReceipts = [];
-  const adapters = { now, fleet, retainRaw: async (raw, metadata) => { const relativePath = `${ordinal++}-tool-raw.bin`; const path = join(selected, relativePath); await writeFile(path, raw); const receipt = { sourceRef: path, sha256: digest(await readFile(path)), byteCount: raw.length, metadata }; rawReceipts.push({ relativePath, sha256: receipt.sha256, byteCount: receipt.byteCount, metadata }); return receipt; }, chatgpt: { send: async parameters => { sends++; assert.equal(parameters.room, policy.delivery.scope.resource); throw new Error('Synthetic lost response after accepted send'); }, edit: async () => { edits++; return { raw: '{"accepted":true}', value: { accepted: true } }; } }, gmail: { move: async () => { moves++; return { raw: '{"accepted":true}', value: { accepted: true } }; } }, outlookUI: { move: async () => { moves++; return { raw: '{"accepted":true}', value: { accepted: true } }; } } };
-  const effect = async input => executeBriefingEffect({ schemaVersion: 1, envelope: input, pilotAuthority: { accepted: true, sourceRef: owner.sourceRef, environment: 'dot-cloud' } }, adapters);
+  const rawReceipts = [];
+  const adapters = { now, retainRaw: async (raw, metadata) => { const relativePath = `${ordinal++}-tool-raw.bin`; const path = join(selected, relativePath); await writeFile(path, raw); const receipt = { sourceRef: path, sha256: digest(await readFile(path)), byteCount: raw.length, metadata }; rawReceipts.push({ relativePath, sha256: receipt.sha256, byteCount: receipt.byteCount, metadata }); return receipt; } };
+  const retainIntent = async input => {
+    assert.equal((await fleet(input)).outcome, 'morning-retained');
+    const head = view.headHash;
+    const repeated = await fleet(input);
+    assert.equal(repeated.headHash, head, 'A repeated journal command retains the same uncertain intent');
+  };
   const body = view.state.morningRuns[0].sealed.body; const bodyRef = await evidence('v3-send-body', body); await writeFile(bodyRef.path, body); bodyRef.sha256 = digest(body);
   const sendFields = { step: 'send-intent', sendRef: 'synthetic-v3-send', bodyDigest: digest(body) }; const sendEnvelope = envelope(sendFields, [bodyRef]);
-  assert.equal((await effect(sendEnvelope)).status, 'uncertain');
-  assert.equal((await effect(sendEnvelope)).status, 'rediscover-only'); assert.equal(sends, 1);
+  await retainIntent(sendEnvelope);
+  assert.equal(view.state.morningRuns[0].delivery.status, 'uncertain');
   const ack = { sendRef: sendFields.sendRef, bodyDigest: sendFields.bodyDigest, deliveredBodyDigest: sendFields.bodyDigest, readbackRef: 'synthetic-v3-send-readback', nativeId: 'synthetic-v3-message', scope: policy.delivery.scope, acquiredAt: now() };
   const ackRef = await evidence(ack.readbackRef, { ...ack, body }); await command('send-ack', ack, [ackRef]);
   for (const item of reviews) {
@@ -161,18 +166,18 @@ export async function driveMorningV3({ home, bindings, target, run, report, coll
     const destination = item.adapter === 'gmail' ? null : { folder: 'DeletedItems', folderId: 'synthetic-deleted-items' };
     const action = item.adapter === 'gmail' ? 'archive' : 'trash';
     const intent = envelope({ step: 'action-intent', adapter: item.adapter, nativeId: item.before.nativeId, before: item.before, receipt: before.receipt, destination, action }, [before.ref]);
-    assert.equal((await effect(intent)).status, 'accepted-unverified');
-    assert.equal((await effect(intent)).status, 'rediscover-only');
+    await retainIntent(intent);
     const pending = view.state.morningRuns[0].items.find(row => row.adapter === item.adapter).attempts.at(-1);
     const after = { ...item.before, ...(item.adapter === 'gmail' ? { labels: item.before.labels.filter(label => label !== 'INBOX') } : destination) };
     const afterRef = await receipt(item.adapter, { after });
     await command('action-result', { adapter: item.adapter, nativeId: item.before.nativeId, intentDigest: pending.intentDigest, outcome: 'verified', after, receipt: afterRef.receipt }, [afterRef.ref]);
   }
-  assert.equal(moves, 2);
+  assert.equal(view.state.morningRuns[0].items.filter(item => item.attempts.at(-1)?.status === 'verified').length, 2);
   await command('summary'); const summary = view.state.morningRuns[0].summary;
   const summaryRef = await evidence('v3-summary-body', summary.body); await writeFile(summaryRef.path, summary.body); summaryRef.sha256 = digest(summary.body);
   const editFields = { step: 'edit-intent', editRef: 'synthetic-v3-edit', bodyDigest: summary.bodyDigest, nativeId: ack.nativeId }; const editEnvelope = envelope(editFields, [summaryRef]);
-  assert.equal((await effect(editEnvelope)).status, 'accepted-unverified'); assert.equal((await effect(editEnvelope)).status, 'rediscover-only'); assert.equal(edits, 1);
+  await retainIntent(editEnvelope);
+  assert.equal(view.state.morningRuns[0].summary.delivery.status, 'uncertain');
   const editAck = { ...editFields, readbackRef: 'synthetic-v3-edit-readback', deliveredBodyDigest: summary.bodyDigest, scope: policy.delivery.scope, acquiredAt: now() }; delete editAck.step;
   const edited = await evidence(editAck.readbackRef, { nativeId: ack.nativeId, sendRef: editFields.editRef, body: summary.body, scope: policy.delivery.scope, acquiredAt: editAck.acquiredAt }); await command('edit-ack', editAck, [edited]);
   assert.equal(view.morning[0].status, 'complete'); assert.equal(view.state.morningRuns[0].delivery.nativeId, ack.nativeId);
@@ -194,5 +199,5 @@ export async function driveMorningV3({ home, bindings, target, run, report, coll
   await assert.rejects(acquireBriefingSource(reportRequest, reportAdapters), /Null, replayed/);
   assert.equal(reportReads, 1, 'Actual completed fleet claim cannot admit a second report read');
   const replayed = await readStore(selected); assert.equal(replayed.records.length > 30, true);
-  report.morningV3 = { synthetic: true, records: replayed.records.length, bodyDigest: prepared.bodyDigest, rawReceipts, sends, moves, edits, reportReads, actualFleetAdmission: true, nativeToolsInvoked: false, actualDelivery: 'not-tested' };
+  report.morningV3 = { synthetic: true, records: replayed.records.length, bodyDigest: prepared.bodyDigest, rawReceipts, effects: 0, syntheticJournalOutcomes: true, retiredTransport: true, reportReads, actualFleetAdmission: true, nativeToolsInvoked: false, actualDelivery: 'not-tested' };
 }

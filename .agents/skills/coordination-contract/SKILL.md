@@ -137,7 +137,7 @@ Ceiling regressions additionally cover maximum admission plus one, safe integer 
 
 The additive morning domain covers explicit inactive-predecessor migration, pinned private policy, ChatGPT destination, deterministic compiler equality, original inventory/clock binding, duplicate-copy extraction, code/link privacy, completed-Task projections, pending checks, and prior-facts fallback. Version-one and version-two replay retain their prior semantics. Read `verification/morning-properties.mjs` for the executed count and `verification/briefing-workflow-properties.mjs` for its declared twenty-five-case policy domain and twelve paired source mutations. Generated references do not advance source review.
 
-Canonical publication steps and graph edges remain unchanged. New policy, reporting, and caller functions retain declared interpretations, not provider truth. Actual raw bytes, exact delivery readbacks, source admission, and production caller sequencing remain behavioral boundaries. A finite pass does not authorize migration acceptance or a live pilot.
+Canonical publication steps and graph edges remain unchanged. Policy, reporting and acquisition functions retain declared interpretations, not provider truth. Behavioral controls cover raw-byte retention, declared exact delivery readbacks, source admission and journal-transition sequencing. The retired tool-effect adapter and its edit-availability branch have no current behavioral coverage. A finite pass does not authorize migration acceptance or a live pilot.
 
 ### Calendar observation retention
 
@@ -152,3 +152,7 @@ Artifact ingestion additionally checks terminal-only non-null reports, original 
 ### Direct root dispatch
 
 Historical `dispatch-recovery` domains and mutants retain their original promises. Explicit fresh direct-root mode additionally uses [the direct dispatch contract](../direct-dispatch/SKILL.md), a code-derived finite graph over actual assessor/parser calls with copied-source mutants. Immutable identity now has one production owner shared by journal validation and advice. Different control principals never become invented native creator threads. This intentional route extension adds no publication writer or native execution claim. Maintain both mappings after dispatch or parser changes.
+
+### Held transport retirement
+
+The uninstalled injected effect adapter and file capture exchange are removed. The CLI and portable compiler, direct acquisition and existing morning journal retain their contracts. Acquisition tests import its actual owner directly; journal driving supplies synthetic reported outcomes without invoking tool adapters. No finite predicate, mutation, canonical publication await or replay rule is retired. The removed executor's synthetic tool-call promises are intentionally withdrawn. Unsupported old executable invocations produce no descriptor or output files.

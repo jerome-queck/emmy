@@ -1,14 +1,6 @@
-# Cloud briefing read exchange
+# Briefing source normalization
 
-This held pilot has a callable file boundary. It does not invoke agent-runtime tools from Node. A cloud agent owns each authorized connector or browser read. No live reads or effects are authorized by this implementation.
-
-1. Create a private request file with `request` and `cursor`. `request` uses schemaVersion 1, role gmail/outlook/calendar/tasks, exact account, environment dot-cloud, actual surface, maxReads 1–100 and maxBytes 1–4194304. Include the intended resource inventory and full day window as request fields. Outlook requires browser. Tasks accepts browser or connector. Gmail and Calendar require connector.
-2. Run `node scripts/briefing-cloud-exchange.mjs request request.json`. Preserve its complete descriptor. It binds every request field and the exact cursor with requestDigest. Resolve the cloud runtime's actual supported read operation before calling it. This descriptor is data for the agent, not a tool invocation or authority grant.
-3. When separately authorized, invoke that read in the cloud agent runtime. Preserve the entire serialized tool result as UTF-8 in an ordinary private file, before parsing or extracting anything. Retain all content/error blocks. This is serialized tool-result accounting, not HTTP wire-byte accounting. Never copy a preview, selected JSON block or truncated transcript as a complete result.
-4. Record the external byte count and SHA-256, exact descriptor, raw file path and projection in a capture manifest. Use schemaVersion 1, the original request, and a `captures` array in exact page order. Each capture has `readRequest`, `path`, `byteCount`, `sha256` and `projection`. A subsequent page descriptor uses the exact returned cursor. No unseen page establishes terminal coverage.
-5. Run `node scripts/briefing-cloud-exchange.mjs acquire manifest.json private-retention-directory verified-policy.json`. The verified policy is required for mail. Verify its external hash before this command parses it. Importable callers can use `acquireCapturedBriefingSource(manifest, {directory, policy, now})` instead. This uses the production `acquireBriefingPlanSource`, persists exact raw bytes and receipts before projection, reopens them, replays projection and returns `{acquisition, source}`. Source and acquisition files remain private. No canonical journal or effect API is called.
-
-The local tool catalog documents Google Calendar `search_events` with explicit `calendar_id`, `time_min`, `time_max`, `timezone_str`, `max_results` and `next_page_token`, followed by `read_event` with exact calendar/event IDs for missing details. The cloud agent must resolve its own available tool names and schemas. Search each inventoried calendar, retain every page and obtain exact calendar timezone evidence. A window query alone does not prove complete calendar inventory. For Tasks, use the authorized cloud browser's actual observed list IDs, native IDs, statuses and do-dates. A browser observation must remain labelled browser. A connected Mac's browser supplies no cloud observation. If the required operation or complete bytes are unavailable, stop this source with an explicit gap. This code provides no connector or browser access.
+`briefing-acquisition.mjs` retains supplied raw tool bytes, then `briefing-source-normalization.mjs` checks projections and source clocks for the pure compiler. Supported native tools remain agent-owned. These helpers are not an installed NEW briefing caller.
 
 ## Exact field projection
 
@@ -18,7 +10,7 @@ Provider results usually lack inventory, coverage, observation clocks or owner o
 
 Observation declarations are reported evidence. The caller checks byte identity and compiler constraints; it cannot authenticate source truth or completeness. Retain the actual inventory/read/context evidence supporting those declarations. Never infer original observation time from this replay's clock, invent complete coverage, replace unknown booleans with false, or equate missing context with safe review. Unknown Task dismissal/move overlays become null and are suppressed with an explicit gap. A missing native status refuses. Partial coverage and original gaps survive terminal pagination.
 
-A tool wrapper must contain one supported complete JSON payload or structuredContent. Tool error results, ambiguous content blocks, wrong request/cursor, extra captures, oversized files, changed raw/observation bytes and divergent projections refuse. Files are checked as bounded ordinary files before reading. This is a cooperating private filesystem boundary, not protection against hostile concurrent filesystem replacement. A partial failed acquisition retains its raw/accounting evidence; it does not become a compiled complete source.
+A tool wrapper must contain one supported complete JSON payload or structuredContent. Tool error results, ambiguous content blocks, wrong cursor, changed retained raw or observation bytes and divergent projections refuse. A partial failed acquisition retains its raw/accounting evidence; it does not become a compiled complete source.
 
 ## Date-only Calendar events
 
@@ -28,9 +20,9 @@ The current Singapore-day compiler accepts date-only events only with `timeZone:
 
 ## Acceptance and limits
 
-`node --test test/briefing-source-normalization.test.mjs` drives the file exchange, real acquisition caller and fresh real prepare CLI. Sanitized fixtures use documented Google field names and explicit synthetic observation sidecars. They cover date-only exclusive ends, invalid dates/zones, browser Task provenance, unknown overlays, partial coverage, request mismatch, extra captures, raw and sidecar tampering, and missing fields. They establish local adapter logic. Real cloud tool invocation, full provider inventory, source semantics, durable cloud storage and live provider truth remain separate acceptance checks.
+`node --test test/briefing-source-normalization.test.mjs` exercises production acquisition and normalization with synthetic raw-byte sinks, followed by the fresh prepare CLI. It covers original clocks, unknown fields, Calendar identity, pagination, raw errors and sidecar correlation. It does not prove native tool binding, provider truth or NEW adoption.
 
-Materialize any new package into a fresh private directory after checking its external hash and exact member hashes before import. Keep frozen pure 1.0.1, companion 1.0.0, private policy and historical transfer receipts unchanged. Parent-reported cloud execution of the older bundle is historical synthetic evidence, not validation of this new exchange. No activation, delivery, migration or schedule change follows from a passing exchange.
+The old file capture exchange and effect adapter are retired. Its standalone script is removed; unsupported invocations create no descriptor or output files. Historical captures and immutable installed packages remain recovery evidence on copies. No new schedule or migration is implied.
 
 ## Flat Calendar search responses
 
@@ -43,7 +35,7 @@ The projection contains `contract`, exact base64 `observationBytes`, and indepen
 - `provenance`. Actual `environment: "dot-cloud"`, `surface: "connector"`, runtime tool name in `tool`, and retained read evidence reference in `sourceRef`.
 - `nextCursor`. Explicit actual next-page cursor or independently evidenced terminal `null`. It must equal the raw `next_page_token`. Explicit raw null must match sidecar null under the local terminal contract; nonempty strings continue, and empty strings or other types refuse. An omitted raw token is accepted only with sidecar `nextCursor: null`, `source.complete: false`, and `source.paginationComplete: false`; normalization preserves a pagination-unknown gap and cannot advance the cursor or establish end-of-feed. Tool metadata documents continuation inputs but supplies no output schema, so this preserves the existing reported flat contract without proving provider EOF semantics.
 
-Request `requestedCalendarId` must equal the sidecar ID. Request `window` and `resourceIds` must equal sidecar metadata. The caller retains the full request beside raw bytes before projection. Source provenance is an attributed sidecar declaration, not provider-authenticated truth. Keep requested-calendar and calendar-list acquisition evidence separate from event fields. Missing sidecar clocks or unknown coverage require partial/unavailable evidence; never substitute execution or replay time.
+Request `requestedCalendarId` must equal the sidecar ID. Request `window` and `resourceIds` must equal sidecar metadata. Acquisition retains the supplied source request beside raw bytes before projection. Source provenance is an attributed sidecar declaration, not provider-authenticated truth. Keep requested-calendar and calendar-list acquisition evidence separate from event fields. Missing sidecar clocks or unknown coverage require partial/unavailable evidence; never substitute execution or replay time.
 
 Offset-bearing strings are converted to canonical UTC instants. Original strings and all original response blocks remain in retained raw bytes. Offset-free or date-only strings refuse this contract. All-day type, native Task link, iCal UID and source IANA timezone remain unknown. `allDay`, `taskId`, `timeZone`, and `iCalUID` are null; the compiler renders `Timing type unknown` with the explicit interval and coverage gaps. Midnight does not establish all-day type. Event ID does not establish native Task identity. An unobserved all-day example remains unsupported by this flat contract. The existing explicit date-only contract remains separate.
 
@@ -54,7 +46,7 @@ The shared raw parser rejects provider `isError: true` and nonempty top-level `e
 
 ## Calendar collector observation
 
-Calendar source metadata may include exactly `collectorObservation: {basis, startedAt, endedAt}`. Retain the real cloud collector clock immediately before the provider read and immediately after its complete serialized result. Record these original bounds in the independently hashed sidecar. The file exchange's own `startedAt`/`capturedAt` measure later file ingestion. They never supply or refresh the collector observation.
+Calendar source metadata may include exactly `collectorObservation: {basis, startedAt, endedAt}`. Retain the real cloud collector clock immediately before the provider read and immediately after its complete serialized result. Record these original bounds in the independently hashed sidecar. Acquisition `startedAt` and `capturedAt` measure its supplied read, which may replay a retained file. These ingestion clocks never supply or refresh the original collector observation.
 
 `basis: "current-read-start"` requires provider `observedAt` and `capturedAt` both explicitly null. Freshness uses the original collector `startedAt`, with the existing five-minute threshold. The compiler always reports provider snapshot clocks unknown and collector observation only. Recent collection establishes no provider snapshot freshness. Items and selected-calendar pagination can remain usable, while unknown fields and inventory keep evidence coverage partial.
 
@@ -62,7 +54,7 @@ Calendar source metadata may include exactly `collectorObservation: {basis, star
 
 Both bases require canonical UTC millisecond timestamps and `startedAt <= endedAt <=` the ingestion capture clock and assessment `asOf`. Missing, malformed, future or inverted bounds, extra observation fields, unsupported bases and mixed page bases refuse. Every page must retain the same explicit basis. Aggregation keeps earliest collector start and latest collector end, original provider clocks or explicit nulls, exact raw cursor lineage and all partial coverage/gaps. Replay preserves those clocks and ages the same evidence. No replay-time fallback exists.
 
-A selected resource inventory does not establish full-account inventory. Retain actual inventory evidence and explicit missing/unknown coverage gaps. Unknown all-day type, Task linkage and timezone retain their existing null values and human-visible gaps. Hashes bind declarations and bytes; they do not authenticate provider or collector truth. This contract is covered by actual caller, exchange, prepare CLI and portable synthetic controls, outside existing finite/TLC source-truth promises.
+A selected resource inventory does not establish full-account inventory. Retain actual inventory evidence and explicit missing/unknown coverage gaps. Unknown all-day type, Task linkage and timezone retain their existing null values and human-visible gaps. Hashes bind declarations and bytes; they do not authenticate provider or collector truth. Direct acquisition, prepare CLI and portable synthetic controls cover this contract, outside existing finite/TLC source-truth promises.
 
 ## Retain observation in the journal
 

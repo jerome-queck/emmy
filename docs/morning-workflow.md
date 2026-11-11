@@ -58,4 +58,4 @@ The parent separately verifies one real one-off, duplicate-safe rerun, degraded-
 
 ## Held version-three policy path
 
-The [briefing migration contracts](briefing-migration.md) add an exact accepted transfer to a private v3 policy in this same journal. Existing v2 records retain replay semantics. Current deployment and the single parent-supervised ChatGPT pilot remain held. The portable caller has no default cloud adapters. It retains stable invocation metadata and raw bytes, uses the existing fleet CLI for intents, and requires exact independent native readback before success. No second effect owner is introduced.
+The [briefing migration contracts](briefing-migration.md) add an exact accepted transfer to a private v3 policy in this same journal. Existing v2 records retain replay semantics. The uninstalled cloud transport is retired. Raw acquisition and stable invocation metadata remain separate portable helpers. The journal records intents and reported exact-ID readbacks without invoking native effects.
