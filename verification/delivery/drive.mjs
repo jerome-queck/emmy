@@ -122,10 +122,28 @@ globalThis.fetch=async(url,options={})=>{
     denied.authorization = await selection('retry-wrong-attempt-grant.json', { ...retryGrant, resolveAttemptId: 'wrong' });
     assert.equal((await deliver(denied, 1)).outcome, 'unknown'); report.cases.push('absence-wrong-attempt-authority-held');
     denied.authorization = await selection('retry-grant.json', retryGrant);
+    const originalReviewSelection = denied.review;
+    const replacementReview = JSON.parse(await readFile(denied.review.file)); replacementReview.acceptanceRef += ' changed selected evidence';
+    const changedReview = { ...denied, review: await selection('changed-resolution-review.json', replacementReview) };
+    const aliasReceipt = join(dirname(denied.assurance.receiptFile), 'alias-receipt.json'); await writeFile(aliasReceipt, await readFile(denied.assurance.receiptFile));
+    for (const [name, changed] of [
+      ['review', changedReview],
+      ['assurance-selection', { ...denied, assurance: { ...denied.assurance, receiptFile: aliasReceipt } }],
+      ['arbitrary-field', { ...denied, extraUnreviewedField: true }],
+      ['base-reference', { ...denied, baseRef: 'HEAD' }],
+      ['action', { ...denied, action: 'open-pr' }],
+      ['payload', { ...denied, body: `${denied.body} changed` }],
+    ]) {
+      await deliver(changed, 1); const held = JSON.parse(await readFile(unknown.checkpoint));
+      assert.equal(held.delivery.phase, 'unknown'); assert.deepEqual(held.delivery.retryUsed, []); assert.deepEqual(held.pending, pending);
+      assert.deepEqual((await state()).writes, ['publish']); report.cases.push(`absence-changed-${name}-held-before-resolution`);
+    }
+    assert.deepEqual(denied.review, originalReviewSelection);
     for (const flag of ['denyRead', 'uncertainRead']) {
       const current = await state(); current[flag] = true; await writeFile(stateFile, JSON.stringify(current)); await deliver(denied, 1);
       current[flag] = false; await writeFile(stateFile, JSON.stringify(current)); report.cases.push(`absence-${flag}-held`);
     }
+    denied.resolution = await selection('resolve-fresh-approved.json', { ...resolution, observedAt: new Date().toISOString() });
     assert.equal((await deliver(denied)).outcome, 'retry-ready'); assert.deepEqual((await state()).writes, ['publish']);
     delete denied.resolution; const enabled = await state(); enabled.deny = false; await writeFile(stateFile, JSON.stringify(enabled));
     assert.equal((await deliver(denied)).outcome, 'published'); assert.equal((await deliver(denied)).outcome, 'published');

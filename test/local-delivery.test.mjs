@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -169,6 +169,28 @@ test('a denied authorized retry cannot authorize a third attempt', async t => {
   assert.equal((await resolve()).outcome, 'retry-ready'); delete request.resolution;
   assert.equal((await run('publish')).outcome, 'unknown');
   assert.equal((await resolve()).outcome, 'unknown'); assert.deepEqual(provider.effects, ['publish', 'publish']);
+});
+
+test('actual adapter source control refuses changed evidence before absence resolution advances', async t => {
+  const { root, request, run, provider, local } = await fixture(t); provider.deny = true;
+  request.review = { file: 'original-review.json', sha256: 'a'.repeat(64) };
+  const denied = await run('publish'); const initial = JSON.parse(await readFile(denied.checkpoint)); const pending = initial.pending;
+  const resolution = { decision: 'confirmed-absence', attemptId: pending.id, requestDigest: pending.requestDigest, payloadDigest: pending.payloadDigest, action: 'publish', bindingDigest: initial.bindingDigest, observedAt: new Date().toISOString(), sourceRef: 'synthetic-owner-resolution' };
+  const file = join(root, 'resolution.json'); const bytes = canonical(resolution); await writeFile(file, bytes);
+  request.resolution = { file, sha256: digest(bytes) }; request.review = { file: 'changed-review.json', sha256: 'b'.repeat(64) };
+  local.authorization.actions = ['publish', 'resolve-absence']; local.authorization.resolveAttemptId = pending.id; local.authorization.resolveRequestDigest = pending.requestDigest;
+  const acquire = async () => ({ ...local, action: 'publish' });
+  const original = await deliverLocal(root, request, provider, acquire); const held = JSON.parse(await readFile(denied.checkpoint));
+  assert.equal(original.outcome, 'unknown'); assert.deepEqual(held.pending, pending); assert.deepEqual(held.delivery.retryUsed, []);
+  const sourceFile = fileURLToPath(new URL('../scripts/local-delivery.mjs', import.meta.url)); const source = await readFile(sourceFile, 'utf8');
+  const anchor = 'scopeDigest(request) === state.pending?.scopeDigest && ';
+  assert.equal(source.split(anchor).length, 2);
+  const copied = source.replace(anchor, '').replace(/from '(\.{1,2}\/[^']+)'/g, (_, path) => `from '${pathToFileURL(resolve(dirname(sourceFile), path)).href}'`);
+  const mutant = await import(`data:text/javascript;base64,${Buffer.from(copied).toString('base64')}`);
+  const mutated = await mutant.deliverLocal(root, request, provider, acquire); const advanced = JSON.parse(await readFile(denied.checkpoint));
+  assert.equal(mutated.outcome, 'retry-ready'); assert.deepEqual(advanced.delivery.retryUsed, ['publish']); assert.deepEqual(provider.effects, ['publish']);
+  const evidence = join(process.cwd(), '.local/verification/delivery-adapter-scope'); await mkdir(evidence, { recursive: true }); const output = await mkdtemp(join(evidence, 'run-'));
+  await writeFile(join(output, 'mutant.mjs'), copied); await writeFile(join(output, 'witness.json'), JSON.stringify({ status: 'intended-counterexample', original, held, mutated, advanced, providerEffects: provider.effects, intendedHarm: 'Changed evidence consumes original retry credit and clears uncertainty before original-scope comparison.' }, null, 2));
 });
 
 test('fresh CLI processes enforce actual receipts and recover provider-fake effects', async () => {
