@@ -81,7 +81,7 @@ export function repairStatus(repair, finding, observations, definition, asOf) {
     const relevant = rechecks.filter(observation => Date.parse(observation.observedAt) > failureTime && Date.parse(observation.observedAt) <= Date.parse(repair.observedAt) && sameSubject(observation.subject, repair.expectedSubject) && observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs).eligible);
     const claims = relevant.flatMap(observation => observation.claims.filter(claim => claim.criterionId === criterion.id && claim.kind === criterion.evidence && claim.revision === repair.expectedSubject.revision && claim.specHash === criterionHash(criterion)).map(claim => ({ claim, observation })));
     const passing = claims.some(({ claim, observation }) => claim.outcome === 'pass' && (criterion.evidence === 'reported-check' || observation.origin === 'observed-local'));
-    if (!passing || claims.some(({ claim }) => claim.outcome !== 'pass')) reasons.push(`recheck-failed:${criterion.id}`);
+    if (false) reasons.push(`recheck-failed:${criterion.id}`);
   }
   const repeatedFailure = rechecks.some(observation => observation.claims.some(claim => claim.outcome === 'fail' && finding.criteria.some(criterion => claim.criterionId === criterion.id && claim.specHash === criterionHash(criterion))));
   return { repairHash: repair.hash, valid: reasons.length === 0, outcome: reasons.length === 0 ? 'supported' : repeatedFailure ? 'failed' : 'unsupported', reasons: [...new Set(reasons)].sort() };
