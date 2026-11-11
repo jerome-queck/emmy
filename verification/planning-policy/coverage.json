@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "7344f30c69d798e004b4f6e1c77e0b6d9aca3072",
+  "sourceCommit": "9b4b174b9bd414885fb6429c4c0c144228fd0dce",
   "sourceFiles": {
     "src/planning-policy.mjs": "ec3c8bd2a3d9d03e0cc75a77af2d014381b28c24d81ee9ee108d5ab89aecadcc",
-    "src/calendar-policy.mjs": "13c3dcd6e78754e2ffdbaa9a81aac508f71b11e6c16bd5efafdf9a8ad0408d52",
+    "src/calendar-policy.mjs": "2b40d5d2cf26efa2307741df89b60d87bcf0589aab612dff08362f7db598d1f9",
     "src/calendar-register.mjs": "1a750c0bcfb4c05ebe559fdf7882cb4fc7f263a50ff1fe831680be2afbb4f15e",
     "src/calendar-handoff.mjs": "a2b8c10702c6982cf994d7b6da56cfac0356919a90cb7f781d11f3a403975d23",
     "src/academic-os-task-plan.mjs": "9e997cf82ba3bc408fb3b0c01c14f76794a507f706da67856231fccc55ab35a9",
@@ -18,9 +18,9 @@
     "verification/planning-policy/fixtures.mjs": "5ae2ef8291af59ef0572c295862dff5254ded37e2053d96d1bb49adc59fd3231",
     "verification/planning-policy/view.mjs": "85b6a9f37a6e9be75258643f15456d2d6905e6fa9413cc269ad84f2932a2d67d",
     "verification/planning-policy/chart.mmd": "9d14aff29ced031fd6e851d5b0ad8871c870217b430d15551a71a2b28de5aaf6",
-    "test/planning-policy.test.mjs": "3c6255db6341032cf98ed709c96a32bd8a9bfad9540a8f4bf02f046972960e73",
-    ".agents/skills/planning-policy/SKILL.md": "1fe7974f70d9ee7bf4bb483cc4666b0ba37b22d7eff8efd63121cd4f0db92202",
-    "verification/calendar-register-drive.mjs": "c95791e3081599668fa122d052925a3d2f486b4bdfd23d0c9579f3f9d8cd0dbd"
+    "test/planning-policy.test.mjs": "fa1604fe2c9c7592d68ed073a7831618ce90959fca4b50276882838e84b08dba",
+    ".agents/skills/planning-policy/SKILL.md": "806ebafa751b30de961cbc40bf18a53614089e822ecdd927eb94d69b58211951",
+    "verification/calendar-register-drive.mjs": "67c89b80bb93f36279b105041588ad62ab39574ee8f6ca107520cfc2ba51861b"
   },
   "mapping": [
     {
@@ -132,5 +132,5 @@
     "No provider truth, global immutable rule store, authorization authenticity, async/concurrent safety, durable writes, gateway/module publication, installation or native adoption",
     "Historicalv1remains explicitly callable without v2assurance"
   ],
-  "reviewBasis": "Read entire original semantic policy and both callers, source ownership/retention flows, new evaluator/domain/graph/checker, unchanged semantic guards and all slice diffs. Reviewed-source pins follow actual copied-source mutations and /statechart paths. Current source changes only formatting/refusal labels after final dev graph; strict full gate reruns actual source."
+  "reviewBasis": "Read entire original semantic policy and both callers, source ownership/retention flows, new evaluator/domain/graph/checker, unchanged semantic guards and all slice diffs. Reviewed-source pins follow actual copied-source mutations and /statechart paths. Current source changes only formatting/refusal labels after final dev graph; strict full gate reruns actual source. Retention repair: reviewed complete delta from eab50f0. Shared v2 resolution now includes semanticPolicyDigest; native/API original associations remain exact. Added actual native source-reassociation regression/CLI refusal; graph semantics/bounds/mutations unchanged, retained original failing real-code probe. Source pins follow new source commit. Original v1wire unchanged."
 }
