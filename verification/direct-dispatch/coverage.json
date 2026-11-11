@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "ddc03ef72adb37c5b89b7fefa2c890ec79611ce9",
+  "sourceCommit": "ea96a4016b344eb20db21b6f239c33ab1ac944ae",
   "sourceFiles": {
     "src/dispatch.mjs": "9156804f77c06577d02ebd7f142c627db2474fcb6fa14e826b08cac799a08383",
     "src/records.mjs": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58",
@@ -8,7 +8,7 @@
     "src/responsibilities.mjs": "07914317b5b8d310f2e347cdda0392f18c6a791cf26101124a5d651cb43a8674",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
     "src/assurance.mjs": "5861cf2154b957e614745cf863f76ddf07558f363fb281116476df120d4c9f7b",
-    "src/metadata.mjs": "04dde9842a694abc4678920359d7f0cc702ffbdc02302cac0f570ccfa9235ecf",
+    "src/metadata.mjs": "8a2f810dc9adbc809e0a4bfaed468008643e81cfa0f1df49338be6717b811244",
     "scripts/agent.mjs": "314099e863b0153da4415ac68f38a6f340dc112b1d9f7c5d5453760d21f2d7d5",
     "verification/dispatch-drive.mjs": "bc43637428fcbfe78acd42bac4bd039e3d8663217c64b13f6a28163b5f99fca5"
   },
@@ -78,5 +78,5 @@
     "finite named snapshot domain",
     "one synchronous assessment per graph transition"
   ],
-  "reviewBasis": "Reviewed complete direct-mode source delta, parser and immutable identity callers, graph facts and actual CLI. Intentional direct authority/provenance contract addition preserves historical promises. All108finitecases,14actual-source mutants, restored baseline, and16strict installed-statechart invocations passed. Existing assurance graph reran with20suites and7mutants; original coordination8710predicates/281mutants unchanged. Parent independent exact-head native review remains required. Revision v2 reviewed from1db92dcf5ef873868abf8979eb596f2b7f3745b7 to ddc03ef72adb37c5b89b7fefa2c890ec79611ce9. R1 is an actual product bug: conflicting original request digests sharing an attempt key formerly selected by input/hash order. All retained attempted originals now contribute to one conflict hold; direct request and clock checks cover every matching ancestor. Both permutations and both actual CLI stored hash orders replayed, including identical/idempotent imports and creation between repeated clocks. R2 is stale publication navigation metadata: all mapped current function ranges corrected after await/reference review, with strict top-level start/end guards. Canonical awaits, dependency edges, publication/merge graphs and original coordination8710predicates281mutants unchanged. Current selected router remains operational; direct mode optional explicitly selected source capability, no installation or permission grant. Original direct creator provenance retained. Parent exact revised independent review/integration acceptance remains pending."
+  "reviewBasis": "Reviewed complete direct-mode source delta, parser and immutable identity callers, graph facts and actual CLI. Intentional direct authority/provenance contract addition preserves historical promises. All108finitecases,14actual-source mutants, restored baseline, and16strict installed-statechart invocations passed. Existing assurance graph reran with20suites and7mutants; original coordination8710predicates/281mutants unchanged. Parent independent exact-head native review remains required. Revision v2 reviewed from1db92dcf5ef873868abf8979eb596f2b7f3745b7 to ddc03ef72adb37c5b89b7fefa2c890ec79611ce9. R1 is an actual product bug: conflicting original request digests sharing an attempt key formerly selected by input/hash order. All retained attempted originals now contribute to one conflict hold; direct request and clock checks cover every matching ancestor. Both permutations and both actual CLI stored hash orders replayed, including identical/idempotent imports and creation between repeated clocks. R2 is stale publication navigation metadata: all mapped current function ranges corrected after await/reference review, with strict top-level start/end guards. Canonical awaits, dependency edges, publication/merge graphs and original coordination8710predicates281mutants unchanged. Current selected router remains operational; direct mode optional explicitly selected source capability, no installation or permission grant. Original direct creator provenance retained. Parent exact revised independent review/integration acceptance remains pending. Reviewer correction follow-on: metadata adds declarative evidence registration only; previously mapped source properties, model steps, bounds and assumptions remain unchanged."
 }
