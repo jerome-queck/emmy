@@ -1644,7 +1644,7 @@
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "d0355815829198218bc4d33280a06f1e0ed2e3b97596bd506a290cb4e8c1b6f8",
+          "sha256": "5ff501035ad9aedda2d39fe50e5eb64e12859519c6abce9467af0f3e16ab760b",
           "callers": [
             "verification input"
           ]
