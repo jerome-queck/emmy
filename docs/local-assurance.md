@@ -1,6 +1,6 @@
 # Local check assurance
 
-`npm run check` runs a fixed ordered plan through one local admission owner. It retains original child output and an exact receipt under ignored `.local/verification/local-assurance/`. All fifteen earlier command groups remain. Two groups exercise this boundary and its bounded formal contract. Two further groups exercise the shared planning policy and its own bounded formal contract, retaining all original seventeen groups.
+`npm run check` runs a fixed ordered plan through one local admission owner. It retains original child output and an exact receipt under ignored `.local/verification/local-assurance/`. All fifteen earlier command groups remain. Two groups exercise this boundary and its bounded formal contract. Two further groups exercise the shared planning policy and its own bounded formal contract, retaining all original seventeen groups. The direct-dispatch formal group adds a twentieth check without changing existing suite commands or reducer guards.
 
 Use Node 24 or later, locked verification dependencies and existing Java 21. If the default TLC cache is missing, the gate runs the existing publication verifier's hash-pinned acquisition before binding the checked run. It installs no new toolchain. Corrupt existing jars and missing explicit jar overrides refuse. Existing `EMMY_JAVA_BIN` and `EMMY_TLC_JAR` selections remain subject to version/hash checks. Tool preparation alone reports `tools-ready` with no source-review/model pass.
 

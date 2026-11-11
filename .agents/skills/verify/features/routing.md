@@ -30,7 +30,7 @@ Dispatch acceptance also needs the created native thread's explicit saved projec
 
 ## Private dispatcher recovery
 
-Follow [the private schema and procedure](../../../../docs/native-dispatch.md). `dispatch --project <project-key> --as-of <UTC>` recovers the selected dispatcher and known objectives. `--id` reads one objective, while `--context-needed` permits same-objective continuation advice only within retained authority. A new objective uses a new definition and fresh native child. Exact private bindings stay in the existing archived home.
+Follow [the private schema and procedure](../../../../docs/native-dispatch.md). `dispatch --project <project-key> --as-of <UTC>` recovers explicit direct-root and historical dispatcher selections and known objectives. `--id` reads one objective, while `--context-needed` permits same-objective continuation advice only within retained authority. A new objective uses a new definition and fresh native child. Exact private bindings stay in the existing archived home.
 
 `native-dispatch` drives source-digest checks, exact supported create fields, attempt/pending/uncertain recovery, explicit no-effect resolution, ready child/cursor recovery, membership and recorded-setting refusals, standing scope reuse, distinct-objective child reuse refusal, unchanged journal reads and suspended restore. The finite `dispatch-recovery` property adds a bounded production-function domain and paired source mutations. Neither verifies provider execution, inherited effective access, actual native creation or an automatic hook. Keep setup invocation, installed guidance, and later ordinary-human adoption separate.
 
@@ -53,3 +53,7 @@ Ordinary coding sessions and substantive helpers use Sol Medium. Heavy reasoning
 Standard/non-fast is the default for coding sessions, coordinators and helpers. Fast or Ultrafast requires explicit owner approval for that exact task, role and tier. An unanswered request is not approval; continue Standard without waiting. Never inherit an accelerated tier from a parent, saved session or broader preference. Model/effort permission does not grant speed permission. Use supported native/config controls only, verify recorded settings separately, and report an unavailable tier control or readback.
 
 The native-dispatch driver also covers generic escalation refusal, wrong objective/role/model/effort permissions, and an exact one-time permission for both child and coordinator. Five paired production mutations prove the exceptional-choice gate and each scope comparison can fail. These checks do not authenticate permission sources.
+
+## Direct root route
+
+Fresh direct objectives explicitly snapshot `mode: direct-root` and exact root selection. Historical records stay callable without rewriting or normalization. Run the [direct dispatch formal skill](../../direct-dispatch/SKILL.md). The CLI driver also exercises direct creation advice without any dispatcher selection, actual import/restart recovery, pending/uncertain/no-effect, exact invocation provenance, same-child membership repair, immutable-route refusal and restored holds. All native captures are synthetic. No real native call or permission inheritance is established.
