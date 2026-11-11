@@ -1091,7 +1091,7 @@
         },
         {
           "path": "scripts/verify-behavior.mjs",
-          "sha256": "6fcdc1d5fc7f25f313aa6f323c712215f48f63ba177f6bc94aac72ecd6000ca0",
+          "sha256": "459445e4303fb51495ac63840d36f0a4119c2b4ca74ed1743ff62842a9eb2500",
           "callers": [
             "executable ingress"
           ]
@@ -1373,7 +1373,7 @@
         },
         {
           "path": "verification/briefing-drive.mjs",
-          "sha256": "341c7f8846cc9bb07f6a7189420855862e05d9b2c54e0589dc6f3277d8c2396b",
+          "sha256": "01666a53390870f5a7a4ffb24dd376bf2e989332187910b2b46ebe4dd6641279",
           "callers": [
             "verification input"
           ]
@@ -1464,7 +1464,7 @@
         },
         {
           "path": "verification/calendar-drive.mjs",
-          "sha256": "5b5e9340c13cfd9de05546b54ef1abc9035417f65c7f6cb4462b013db1ab4410",
+          "sha256": "54123e69977e520e42eef2ffb3dbff6bc3462cd7e987288be890ed6ac67c6ed2",
           "callers": [
             "verification input"
           ]
@@ -1555,7 +1555,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "5cddef45bd007420cfa2a20251edecc808e427fe50a243a67b66b26278a71a75",
+          "sha256": "7dd139d8dea1408ce2d941d416c78a34ff140c9707839122340996c6b991366a",
           "callers": [
             "verification input"
           ]
