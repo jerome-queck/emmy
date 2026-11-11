@@ -1059,7 +1059,7 @@
         },
         {
           "path": "src/metadata.mjs",
-          "sha256": "ab1e78b57fe8ddd34664cc20a9a26cec16d677d1f2eeac9d66a8b15655401374",
+          "sha256": "c15915cd6a11883fe1355452613831482e51c94f3a9a4d3157dfcc38cbcb7e78",
           "callers": [
             "src/briefing.mjs",
             "src/maintenance.mjs",
@@ -1555,7 +1555,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "faed0511874639cfbed9e2a0895f0dde63f2898086535ac44b1013035ae91a76",
+          "sha256": "5cddef45bd007420cfa2a20251edecc808e427fe50a243a67b66b26278a71a75",
           "callers": [
             "verification input"
           ]
@@ -1590,7 +1590,7 @@
         },
         {
           "path": "verification/delivery/coverage.json",
-          "sha256": "6186b171466abb3a3b8f4edc13832d003493a1ba6a9d3308d7b8fe8d38f25833",
+          "sha256": "82a852a7d01bc41f0c0acfae8305e2f5091703a30966f5e44540c621f39b3873",
           "callers": [
             "verification input"
           ]
@@ -1639,7 +1639,7 @@
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "392442186388d419c873f93ae6dc600e97cd13c6dddba736434d32613efa82a7",
+          "sha256": "d0355815829198218bc4d33280a06f1e0ed2e3b97596bd506a290cb4e8c1b6f8",
           "callers": [
             "verification input"
           ]
@@ -1758,7 +1758,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "4c540cbd1e5586ab4f600b665e89accd25473bc7dd61522d067c46cfac55fe4a",
+          "sha256": "76f4b8aaeab178dd6786fddcc6df27f4a1c0914be959d5e965621b44dc49ff72",
           "callers": [
             "verification input"
           ]
@@ -1912,7 +1912,7 @@
         },
         {
           "path": "verification/publication/coverage.json",
-          "sha256": "361a6bfb5b3bce8fdbee6ef180b8f979f3a9e9820004d53bbaabc74e01b1508a",
+          "sha256": "f85be730f69a12eaf9c05eb81dfffb818e16488bd12bca6a2faa84bf17d712aa",
           "callers": [
             "verification input"
           ]
@@ -2290,7 +2290,7 @@
         },
         {
           "path": "verification/restoration-suspension/check.mjs",
-          "sha256": "80fb05e1e9e8b1b66844b55c5ff871d316ae534658e338b7b715128955283b0e",
+          "sha256": "bde4b73b7582083d00b2e52ea95934b4a2a13ae425ac6510faa8dab6d95e5d30",
           "callers": [
             "verification input"
           ]
@@ -2304,14 +2304,14 @@
         },
         {
           "path": ".agents/skills/restoration-suspension/SKILL.md",
-          "sha256": "3ea3509d248f7e07267a9edee5983ee733c4e6e2b9d64009edb1cae3d08ce61d",
+          "sha256": "b024d990f4744e0b5e4fecbb457b3c23324de07a97b667899327dab4c619a372",
           "callers": [
             "public configuration"
           ]
         },
         {
           "path": "verification/restoration-suspension/coverage.json",
-          "sha256": "cf7c949a7cf4f5761e8e36a3f2439b3704db01a101ec8b1fe22588c435db4c3b",
+          "sha256": "9d7b2954c68681f4afc666ec657bcf7ebd740f58e5f4618601c36820409d5e23",
           "callers": [
             "verification input"
           ]
