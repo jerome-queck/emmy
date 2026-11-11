@@ -1,18 +1,132 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm, unlink, cp } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, unlink, cp, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
 import { refreshInventory } from '../scripts/skill-inventory.mjs';
-import { refreshPrivateSkills, preparePrivateCandidate, verifyPrivateCandidate, preparePrivateSelection, preparePrivateSelectorUpdate, completePrivateSelection, checkPrivateSelection, preparePrivateRun } from '../scripts/private-skill-refresh.mjs';
-import { buildFoundation } from '../src/foundation-release.mjs';
+import { refreshPrivateSkills, preparePrivateCandidate, verifyPrivateCandidate, preparePrivateSelection, preparePrivateSelectorUpdate, completePrivateSelection, checkPrivateSelection, preparePrivateRun, prepareInstalledPrivateRun } from '../scripts/private-skill-refresh.mjs';
+import { resolveInstalledSources } from '../scripts/installed-skill-source.mjs';
+import { readFoundation, deriveSkillFoundation, buildFoundation } from '../src/foundation-release.mjs';
 import { canonical, digest } from '../src/content.mjs';
 
+async function installedFixture(t) {
+  const f = await stagedFixture(t);
+  const repo = join(f.root, 'repo');
+  const policyPath = join(repo, 'registry/skill-sources.json');
+  const policy = JSON.parse(await readFile(policyPath));
+  Object.assign(policy.sources[0], { refresh: 'installed', pluginId: 'fixture@market', marketplace: 'market' });
+  await writeFile(policyPath, JSON.stringify(policy));
+  const codexHome = join(f.root, 'codex');
+  const source = join(codexHome, 'plugins/cache/market/fixture/2');
+  await cp(f.staged.candidate.bindings.fixture, source, { recursive: true });
+  await refreshInventory(repo, { fixture: source });
+  execFileSync('git', ['-C', repo, 'add', 'registry', 'vendor']);
+  execFileSync('git', ['-C', repo, '-c', 'user.name=fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'dynamic scope fixture']);
+  const revision = execFileSync('git', ['-C', repo, 'rev-parse', 'HEAD']).toString().trim();
+  const bytes = `${canonical(buildFoundation(repo, revision))}\n`, path = join(f.root, 'runner.json');
+  await writeFile(path, bytes);
+  const row = { pluginId: 'fixture@market', name: 'fixture', marketplaceName: 'market', version: '2', installed: true, enabled: true, marketplaceSource: { sourceType: 'git', source: 'https://github.com/example/fixture.git' } };
+  const listing = { installed: [row], available: [] }, listingPath = join(f.root, 'listing.json');
+  const codexExecutable = join(f.root, 'codex-fixture');
+  await writeFile(codexExecutable, `#!/usr/bin/env node\nprocess.stdout.write(require('node:fs').readFileSync(${JSON.stringify(listingPath)},'utf8'));\n`, { mode: 0o700 });
+  const save = () => writeFile(listingPath, JSON.stringify(listing));
+  await save();
+  return { ...f, source, policy, listing, row, save, runner: { path, sha256: digest(bytes), revision, codexHome, codexExecutable, approvalRef: 'synthetic-standing-installed-scope' } };
+}
+
+async function simulatedPromotion(f, prepared, tag) {
+  const capture = { ...structuredClone(f.captures.candidate), rawPath: prepared.candidate.path, file: { ...structuredClone(f.captures.candidate.file), id: `capsule-${tag}`, size: String(prepared.candidate.bytes) } };
+  await verifyPrivateCandidate(prepared.candidateAttempt, { fileId: capture.file.id, requestSha256: prepared.requestSha256 }, capture, f.now);
+  const attempt = join(f.root, `selection-${tag}`);
+  const pending = await preparePrivateSelection(f.config, { ...f.captures, candidate: capture }, prepared.candidateAttempt, attempt, f.now);
+  const history = { ...structuredClone(capture), rawPath: pending.historyUpload.file_uri, file: { ...capture.file, id: `history-${tag}`, size: String(pending.bytes) } };
+  await preparePrivateSelectorUpdate(attempt, { fileId: history.file.id }, history, f.now);
+  f.captures = { selector: { ...history, file: { ...history.file, id: f.config.selector.fileId } }, history, candidate: capture };
+  const result = await completePrivateSelection(attempt, f.captures, f.now);
+  f.config = result.binding;
+  return result;
+}
+
+test('automatic installed text/version refresh, offline promotion after removal, and unchanged clocks converge', async t => {
+  const f = await installedFixture(t);
+  await writeFile(join(f.source, 'skills/leaf/reference.md'), 'Ordinary updated text without policy approval');
+  const prepared = await prepareInstalledPrivateRun(f.config, f.captures, f.runner, join(f.root, 'installed-first'), f.now);
+  assert.equal(prepared.status, 'awaiting-upload');
+  const release = await readFoundation(prepared.candidate.path, prepared.candidate.sha256);
+  assert.equal(release.format, 'emmy-foundation-v3');
+  assert.equal(release.derivation.baseSha256, f.runner.sha256);
+  const replacement = join(f.runner.codexHome, 'plugins/cache/market/fixture/3');
+  await cp(f.source, replacement, { recursive: true });
+  await rm(f.source, { recursive: true });
+  const firstResult = await simulatedPromotion(f, prepared, 'first');
+  const repo = join(f.root, 'repo');
+  execFileSync('git', ['-C', repo, '-c', 'user.name=fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-qm', 'new code provenance fixture']);
+  const upgradedRevision = execFileSync('git', ['-C', repo, 'rev-parse', 'HEAD']).toString().trim();
+  const upgradedBase = `${canonical(buildFoundation(repo, upgradedRevision))}\n`;
+  await writeFile(f.runner.path, upgradedBase);
+  f.runner.sha256 = digest(upgradedBase); f.runner.revision = upgradedRevision;
+  await cp(replacement, f.source, { recursive: true });
+  const codeOnly = await prepareInstalledPrivateRun(f.config, f.captures, f.runner, join(f.root, 'code-upgrade'), f.now);
+  const codeRelease = await readFoundation(codeOnly.candidate.path, codeOnly.candidate.sha256);
+  const codeIndex = JSON.parse(Buffer.from(codeRelease.files.find(file => file.path === 'registry/skills.json').base64, 'base64'));
+  assert.equal(codeIndex.observedAt, firstResult.consumer.sourceObservedAt);
+  assert.equal(codeOnly.candidate.snapshot, prepared.candidate.snapshot);
+  await rm(f.source, { recursive: true });
+  await writeFile(join(replacement, 'plugin.json'), JSON.stringify({ ...f.metadata, version: '3' }));
+  f.row.version = '3'; await f.save();
+  const second = await prepareInstalledPrivateRun(f.config, f.captures, f.runner, join(f.root, 'installed-second'), f.now);
+  assert.notEqual(second.candidate.snapshot, prepared.candidate.snapshot);
+  const result = await simulatedPromotion(f, second, 'second');
+  const unchanged = await prepareInstalledPrivateRun(f.config, f.captures, f.runner, join(f.root, 'installed-third'), f.now);
+  assert.equal(unchanged.operation, 'unchanged');
+  assert.equal(unchanged.sourceObservedAt, result.consumer.sourceObservedAt);
+  assert.equal(unchanged.remoteWrite, false);
+  assert.equal(unchanged.selectionChanged, false);
+  assert.deepEqual(await readFile(f.rawPath), f.raw);
+});
+
+for (const [name, mutation, pattern] of [
+  ['dot version', f => { f.row.version = '.'; }, /inconsistent/],
+  ['parent version', f => { f.row.version = '..'; }, /inconsistent/],
+  ['disabled', f => { f.row.enabled = false; }, /Disabled/],
+  ['duplicate identity', f => { f.listing.installed.push({ ...f.row }); }, /Ambiguous/],
+  ['wrong marketplace source', f => { f.row.marketplaceSource.source = 'https://github.com/other/repo.git'; }, /inconsistent/],
+  ['advertised version has no installed cache', f => { f.row.version = '99'; }, /ENOENT/],
+  ['manifest and list disagree', f => writeFile(join(f.source, 'plugin.json'), JSON.stringify({ ...f.metadata, version: '99' })), /manifest/],
+]) test(`installed resolver refuses ${name}`, async t => {
+  const f = await installedFixture(t); await mutation(f);
+  await assert.rejects(resolveInstalledSources(f.policy, f.listing, f.runner.codexHome), pattern);
+});
+
+for (const [name, text, pattern] of [
+  ['reference dependency', '[New][ref]\n\n[ref]: missing.md', /Undeclared dependency/],
+  ['HTML dependency', '<img src="missing.png">', /Undeclared dependency/],
+  ['restriction', 'All rights reserved. No redistribution.', /Unclear rights/],
+  ['frontmatter licence', '---\nlicense: Proprietary\n---\nOrdinary text', /Unclear rights/],
+  ['SPDX licence', '<!-- SPDX-License-Identifier: GPL-3.0-only -->', /Unclear rights/],
+  ['capability declaration', '---\ntools: [remote-writer]\n---', /capability scope/],
+]) test(`automatic selected text holds ${name} before candidate publication`, async t => {
+  const f = await installedFixture(t), before = await readFile(join(f.config.home, 'current.json'));
+  await writeFile(join(f.source, 'skills/leaf/SKILL.md'), text);
+  await assert.rejects(prepareInstalledPrivateRun(f.config, f.captures, f.runner, join(f.root, 'held'), f.now), pattern);
+  assert.deepEqual(await readFile(join(f.config.home, 'current.json')), before);
+  await assert.rejects(readFile(join(f.root, 'held/derived-runtime.json')), /ENOENT/);
+});
+
+test('derived release refuses executable replacement and undeclared files', async t => {
+  const f = await installedFixture(t);
+  const prepared = await prepareInstalledPrivateRun(f.config, f.captures, f.runner, join(f.root, 'derived'), f.now);
+  const release = await readFoundation(prepared.candidate.path, prepared.candidate.sha256);
+  const index = Buffer.from(release.files.find(file => file.path === 'registry/skills.json').base64, 'base64');
+  assert.throws(() => deriveSkillFoundation(release.derivation.base, index, [['scripts/agent.mjs', Buffer.from('changed')]]), /base file changed/);
+  assert.throws(() => deriveSkillFoundation(release.derivation.base, index, [['scripts/new.mjs', Buffer.from('changed')]]), /Unapproved/);
+});
+
 async function fixture(t) {
-  const root = await mkdtemp(join(tmpdir(), 'emmy-private-skills-'));
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'emmy-private-skills-')));
   t.after(() => rm(root, { recursive: true, force: true }));
   const repo = join(root, 'repo'), source = join(root, 'source');
   for (const path of [repo, join(repo, 'registry'), join(repo, 'src'), join(repo, 'scripts'), join(source, 'skills/leaf')]) await mkdir(path, { recursive: true });

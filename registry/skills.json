@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "policySha256": "e3e08fdc9fae84d31b1fc9a57521bfbd0a58ccf89070f4ed9d0913e92a4a9286",
+  "policySha256": "f9541d22fdf3ef2726074ee131fc5867d2139bfd72b06f1fbc03482de791540a",
   "sources": [
     {
       "id": "pstack",
@@ -23,15 +23,18 @@
       "skills": [
         {
           "path": "skills/principle-laziness-protocol/SKILL.md",
-          "dependencies": []
+          "dependencies": [],
+          "name": "principle-laziness-protocol"
         },
         {
           "path": "skills/principle-model-the-domain/SKILL.md",
-          "dependencies": []
+          "dependencies": [],
+          "name": "principle-model-the-domain"
         },
         {
           "path": "skills/principle-prove-it-works/SKILL.md",
-          "dependencies": []
+          "dependencies": [],
+          "name": "principle-prove-it-works"
         }
       ],
       "files": [
@@ -64,6 +67,9 @@
           "sha256": "d5ad4e2fe1fe0fe5fd7f96ef117ed435a55a536bb1f2ce353c105c31239c0635"
         }
       ],
+      "refresh": "installed",
+      "pluginId": "pstack@pstack-claude",
+      "marketplace": "pstack-claude",
       "discovered": [
         "skills/architect/SKILL.md",
         "skills/arena/SKILL.md",
@@ -158,7 +164,8 @@
             "skills/engineering/codebase-design/DEEPENING.md",
             "skills/engineering/codebase-design/DESIGN-IT-TWICE.md",
             "skills/engineering/codebase-design/agents/openai.yaml"
-          ]
+          ],
+          "name": "codebase-design"
         }
       ],
       "files": [
@@ -183,6 +190,9 @@
           "sha256": "edebc9e4fcfe102114012575eaa9600b9b5fd08c311664f389c36e7bc717740f"
         }
       ],
+      "refresh": "installed",
+      "pluginId": "mattpocock-skills@mattpocock",
+      "marketplace": "mattpocock",
       "discovered": [
         "skills/engineering/ask-matt/SKILL.md",
         "skills/engineering/code-review/SKILL.md",
@@ -289,6 +299,6 @@
       "bytes": 102
     }
   ],
-  "snapshot": "1886f66355de16267bfd12b21b32ae0f20e86edd281537d80404b7b2846afb67",
-  "observedAt": "2026-11-05T19:38:22.165Z"
+  "snapshot": "59e75fd647ee6fce91eb9e8116ecbfa5018d64ba21cc44676d3e4735e8f05d00",
+  "observedAt": "2026-11-05T23:27:36.696Z"
 }

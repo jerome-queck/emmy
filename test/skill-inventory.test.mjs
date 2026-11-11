@@ -1,10 +1,34 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm, unlink, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, unlink, symlink, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { digest } from '../src/content.mjs';
 import { refreshInventory, checkInventory } from '../scripts/skill-inventory.mjs';
+
+for (const [name, text, pattern] of [
+  ['renamed identity', '---\nname: wrong-skill\n---\nAllowed text', /identity changed/],
+  ['rights declaration', 'license: Proprietary', /Unclear rights/],
+  ['SPDX declaration', 'SPDX-License-Identifier: GPL-3.0-only', /Unclear rights/],
+  ['capability declaration', 'tools: [writer]', /capability scope/],
+  ['dependency declaration', '[Missing][ref]\n\n[ref]: missing.md', /Undeclared dependency/],
+]) test(`offline dynamic snapshot refuses rehashed ${name}`, async t => {
+  const f = await fixture(t);
+  f.policy.sources[0].refresh = 'installed';
+  f.policy.sources[0].skills[0].name = 'leaf';
+  await f.save(); await refreshInventory(f.root, f.bindings);
+  const index = JSON.parse(await readFile(join(f.root, 'registry/skills.json')));
+  const path = 'fixture/skills/leaf/SKILL.md';
+  const file = index.files.find(file => file.path === path);
+  file.sha256 = digest(text); file.bytes = Buffer.byteLength(text);
+  index.sources[0].files.find(file => file.path === 'skills/leaf/SKILL.md').sha256 = file.sha256;
+  const { snapshot: old, observedAt, ...body } = index;
+  index.snapshot = digest(body);
+  await cp(join(f.root, 'vendor/skills', old), join(f.root, 'vendor/skills', index.snapshot), { recursive: true });
+  await writeFile(join(f.root, 'vendor/skills', index.snapshot, path), text);
+  await writeFile(join(f.root, 'registry/skills.json'), JSON.stringify(index));
+  await assert.rejects(checkInventory(f.root), pattern);
+});
 
 async function fixture(t) {
   const root = await mkdtemp(join(tmpdir(), 'emmy-skills-'));

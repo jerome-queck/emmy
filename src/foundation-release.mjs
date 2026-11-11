@@ -27,7 +27,7 @@ function closure(files, entry) {
   visit(entry); return [...found].sort();
 }
 function validate(release) {
-  need(['emmy-foundation-v1', 'emmy-foundation-v2'].includes(release?.format) && typeof release.revision === 'string' && /^[a-f0-9]{40}$/.test(release.revision) && release.minimumNode === 24 && release.effectsAuthorized === false && (release.format === 'emmy-foundation-v1' && release.distribution === undefined || ['runtime', 'portable'].includes(release.distribution)), 'Unsupported source release');
+  need(['emmy-foundation-v1', 'emmy-foundation-v2', 'emmy-foundation-v3'].includes(release?.format) && typeof release.revision === 'string' && /^[a-f0-9]{40}$/.test(release.revision) && release.minimumNode === 24 && release.effectsAuthorized === false && (release.format === 'emmy-foundation-v1' && release.distribution === undefined || ['runtime', 'portable'].includes(release.distribution)), 'Unsupported source release');
   need(Array.isArray(release.files) && release.files.length > 0 && release.files.length <= 1000, 'Bounded source inventory required');
   let previous = '';
   for (const file of release.files) {
@@ -39,7 +39,29 @@ function validate(release) {
   need(canonical(release.entries) === canonical(release.format === 'emmy-foundation-v1' ? legacyEntries : entries), 'Release entry points differ');
   for (const [kind, entry] of Object.entries(release.entries)) need(canonical(closure(release.files, entry)) === canonical(release.portable[kind]), `Portable closure differs ${kind}`);
   need(release.files.some(file => file.path === 'src/operating-contract.mjs'), 'Operating contract required');
+  if (release.format === 'emmy-foundation-v3') {
+    const derivation = release.derivation;
+    need(derivation?.kind === 'installed-skill-inventory' && derivation.base?.format === 'emmy-foundation-v2' && derivation.base.distribution === 'runtime' && /^[a-f0-9]{64}$/.test(derivation.snapshot), 'Explicit nonrecursive skill derivation required');
+    const base = validate(derivation.base);
+    need(derivation.baseSha256 === digest(`${canonical(base)}\n`), 'Derived base hash differs');
+    need(release.distribution === 'runtime' && release.revision === base.revision && canonical(release.entries) === canonical(base.entries) && canonical(release.portable) === canonical(base.portable), 'Derived code provenance differs');
+    const indexFile = release.files.find(file => file.path === 'registry/skills.json');
+    need(indexFile, 'Derived inventory required');
+    const index = strictJson(Buffer.from(indexFile.base64, 'base64').toString('utf8'));
+    need(index.snapshot === derivation.snapshot && Array.isArray(index.files), 'Derived snapshot differs');
+    const additions = new Set(index.files.map(file => `vendor/skills/${derivation.snapshot}/${file.path}`));
+    for (const file of base.files) if (file.path !== 'registry/skills.json') need(canonical(release.files.find(item => item.path === file.path)) === canonical(file), `Derived base file changed ${file.path}`);
+    for (const file of release.files) if (!base.files.some(item => item.path === file.path)) need(additions.has(file.path), `Unapproved derived file ${file.path}`);
+  } else need(release.derivation === undefined, 'Unexpected derivation');
   return release;
+}
+export function deriveSkillFoundation(base, indexBytes, skillFiles) {
+  need(base.format === 'emmy-foundation-v2' && base.distribution === 'runtime', 'Fixed runtime base required');
+  validate(base);
+  const index = strictJson(indexBytes.toString('utf8'));
+  const files = new Map(base.files.map(file => [file.path, file]));
+  for (const [path, bytes] of [['registry/skills.json', indexBytes], ...skillFiles]) files.set(path, { path, mode: '100644', bytes: bytes.length, sha256: digest(bytes), base64: bytes.toString('base64') });
+  return validate({ ...base, format: 'emmy-foundation-v3', derivation: { kind: 'installed-skill-inventory', base, baseSha256: digest(`${canonical(base)}\n`), snapshot: index.snapshot }, files: [...files.values()].sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0) });
 }
 export function buildFoundation(root, revision, { portableOnly = false } = {}) {
   need(/^[a-f0-9]{40}$/.test(revision), 'Explicit full source commit required');

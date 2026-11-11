@@ -2,12 +2,16 @@
 import { readFile, writeFile, mkdir, rename, rm, mkdtemp, lstat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { checkInventory, refreshInventory } from './skill-inventory.mjs';
-import { readFoundation, materializeFoundation } from '../src/foundation-release.mjs';
+import { readFoundation, materializeFoundation, deriveSkillFoundation } from '../src/foundation-release.mjs';
+import { resolveInstalledSources } from './installed-skill-source.mjs';
 import { digest, canonical } from '../src/content.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const json = value => `${JSON.stringify(value, null, 2)}\n`;
+const execute = promisify(execFile);
 function privateMetadata(value, id, owner, parent) {
   need(value?.id === id && (parent ? value.shared === false : value.mime_type === 'application/vnd.google-apps.folder' && [false, null].includes(value.shared)), 'Private exact identity required');
   need(Array.isArray(value.permissions) && value.permissions.length === 1 && value.permissions[0].type === 'user' && value.permissions[0].role === 'owner' && value.permissions[0].emailAddress === owner, 'Owner-only permission readback required');
@@ -19,8 +23,10 @@ async function inventory(release, bindings, snapshot, runtime) {
   const before = await checkInventory(runtime);
   need(before.snapshot === snapshot, 'Reviewed snapshot differs');
   const original = await readFile(join(runtime, 'registry/skills.json'));
-  const refreshed = await refreshInventory(runtime, bindings);
-  need(refreshed.snapshot === snapshot && (await readFile(join(runtime, 'registry/skills.json'))).equals(original), 'Inventory changed; source review required');
+  if (release.format !== 'emmy-foundation-v3') {
+    const refreshed = await refreshInventory(runtime, bindings);
+    need(refreshed.snapshot === snapshot && (await readFile(join(runtime, 'registry/skills.json'))).equals(original), 'Inventory changed; source review required');
+  }
   const reads = [];
   const index = JSON.parse(original);
   for (const file of index.files) {
@@ -157,6 +163,62 @@ export async function preparePrivateRun(config, captures, staged, attempt, now =
   return { ...prepared, route: 'reviewed-candidate-first', candidateAttempt, remoteWrite: false, selectionChanged: false };
 }
 
+export async function prepareInstalledPrivateRun(config, captures, runner, attempt, now = new Date()) {
+  await noSelectionWriter(config);
+  need(canonical(JSON.parse(await readFile(join(config.home, 'current.json')))) === canonical(config), 'Current accepted binding differs');
+  const accepted = await acceptedRelease(config, captures, now);
+  const base = await readFoundation(runner.path, runner.sha256);
+  need(base.format === 'emmy-foundation-v2' && base.distribution === 'runtime' && base.revision === runner.revision && runner.approvalRef?.length > 0, 'Reviewed fixed runner required');
+  need(digest(`${canonical(base)}\n`) === runner.sha256, 'Canonical fixed runner required');
+  await mkdir(attempt, { mode: 0o700 });
+  const runtime = join(attempt, 'collected-runtime');
+  await materializeFoundation(base, runtime, 'runtime');
+  await checkInventory(runtime);
+  const policy = JSON.parse(await readFile(join(runtime, 'registry/skill-sources.json')));
+  const collect = async name => {
+    const { stdout } = await execute(runner.codexExecutable, ['plugin', 'list', '--json'], { timeout: 120000, maxBuffer: 4 * 1024 * 1024 });
+    await writeFile(join(attempt, name), stdout, { flag: 'wx', mode: 0o600 });
+    return resolveInstalledSources(policy, JSON.parse(stdout), runner.codexHome);
+  };
+  const before = await collect('installed-before.json');
+  const refreshed = await refreshInventory(runtime, before.bindings);
+  const after = await collect('installed-after.json');
+  need(before.identity === after.identity, 'Installed source changed during collection');
+  const rechecked = await refreshInventory(runtime, after.bindings);
+  need(rechecked.snapshot === refreshed.snapshot, 'Installed bytes changed during collection');
+  await materializeFoundation(accepted, join(attempt, 'accepted-runtime'), 'runtime');
+  const previous = await checkInventory(join(attempt, 'accepted-runtime'));
+  need(previous.snapshot === config.accepted.snapshot, 'Accepted immutable inventory differs');
+  let indexBytes = await readFile(join(runtime, 'registry/skills.json'));
+  const index = JSON.parse(indexBytes);
+  const priorIndex = JSON.parse(await readFile(join(attempt, 'accepted-runtime/registry/skills.json')));
+  if (previous.snapshot === index.snapshot) {
+    index.observedAt = priorIndex.observedAt;
+    indexBytes = Buffer.from(json(index));
+  }
+  const changes = index.files.filter(file => priorIndex.files.find(prior => prior.path === file.path)?.sha256 !== file.sha256).map(({ path, sha256 }) => ({ path, previousSha256: priorIndex.files.find(prior => prior.path === path)?.sha256 ?? null, sha256 }));
+  await writeFile(join(attempt, 'collection.json'), json({ observedAt: now.toISOString(), installed: after.evidence, snapshot: index.snapshot, previousSnapshot: previous.snapshot, sources: index.sources.map(({ id, version, revision }) => ({ id, version, revision })), changes, remoteWrite: false }), { flag: 'wx', mode: 0o600 });
+  if (previous.snapshot === index.snapshot && accepted.derivation?.baseSha256 === runner.sha256) {
+    const result = { status: 'complete', operation: 'unchanged', snapshot: index.snapshot, sourceObservedAt: previous.observedAt, remoteWrite: false, selectionChanged: false, registration: 'unverified' };
+    await writeFile(join(attempt, 'result.json'), json(result), { flag: 'wx', mode: 0o600 });
+    return result;
+  }
+  const skillFiles = await Promise.all(index.files.map(async file => {
+    const path = `vendor/skills/${index.snapshot}/${file.path}`;
+    return [path, await readFile(join(runtime, path))];
+  }));
+  const release = deriveSkillFoundation(base, indexBytes, skillFiles);
+  const path = join(attempt, 'derived-runtime.json');
+  const bytes = json(release);
+  await writeFile(path, bytes, { flag: 'wx', mode: 0o600 });
+  const candidate = { path, sha256: digest(bytes), bytes: Buffer.byteLength(bytes), revision: base.revision, snapshot: index.snapshot, bindings: after.bindings, approvalRef: runner.approvalRef };
+  const old = config.accepted;
+  const predecessor = { schemaVersion: 1, revision: old.revision, snapshot: old.snapshot, capsulePath: captures.candidate.rawPath, bindings: config.bindings, cloud: { fileId: old.fileId, parentId: config.parentId, owner: config.owner, sha256: old.sha256, bytes: old.bytes }, consumer: { fileId: old.fileId, sha256: old.sha256, revision: old.revision, snapshot: old.snapshot } };
+  const candidateAttempt = join(attempt, 'candidate');
+  const result = await preparePrivateCandidate(predecessor, captures.candidate, candidate, candidateAttempt, now);
+  return { ...result, candidateAttempt, route: 'installed-source', remoteWrite: false, selectionChanged: false };
+}
+
 export async function preparePrivateSelection(config, captures, candidateAttempt, attempt, now = new Date()) {
   await mkdir(attempt, { mode: 0o700 });
   await mkdir(join(config.home, 'writer.lock'));
@@ -245,7 +307,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     const args = process.argv.slice(2);
     let result;
-    if (args[0] === 'prepare-run' && args.length === 5) {
+    if (args[0] === 'prepare-installed' && args.length === 5) {
+      result = await prepareInstalledPrivateRun(JSON.parse(await readFile(args[1], 'utf8')), JSON.parse(await readFile(args[2], 'utf8')), JSON.parse(await readFile(args[3], 'utf8')), args[4]);
+    } else if (args[0] === 'prepare-run' && args.length === 5) {
       result = await preparePrivateRun(JSON.parse(await readFile(args[1], 'utf8')), JSON.parse(await readFile(args[2], 'utf8')), args[3] === '-' ? null : JSON.parse(await readFile(args[3], 'utf8')), args[4]);
     } else if (args[0] === 'check-selection' && args.length === 4) {
       result = await checkPrivateSelection(JSON.parse(await readFile(args[1], 'utf8')), JSON.parse(await readFile(args[2], 'utf8')), args[3]);

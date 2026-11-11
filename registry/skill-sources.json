@@ -33,15 +33,18 @@
       "skills": [
         {
           "path": "skills/principle-laziness-protocol/SKILL.md",
-          "dependencies": []
+          "dependencies": [],
+          "name": "principle-laziness-protocol"
         },
         {
           "path": "skills/principle-model-the-domain/SKILL.md",
-          "dependencies": []
+          "dependencies": [],
+          "name": "principle-model-the-domain"
         },
         {
           "path": "skills/principle-prove-it-works/SKILL.md",
-          "dependencies": []
+          "dependencies": [],
+          "name": "principle-prove-it-works"
         }
       ],
       "files": [
@@ -73,7 +76,10 @@
           "path": "skills/principle-prove-it-works/SKILL.md",
           "sha256": "d5ad4e2fe1fe0fe5fd7f96ef117ed435a55a536bb1f2ce353c105c31239c0635"
         }
-      ]
+      ],
+      "refresh": "installed",
+      "pluginId": "pstack@pstack-claude",
+      "marketplace": "pstack-claude"
     },
     {
       "id": "mattpocock",
@@ -98,7 +104,8 @@
             "skills/engineering/codebase-design/DEEPENING.md",
             "skills/engineering/codebase-design/DESIGN-IT-TWICE.md",
             "skills/engineering/codebase-design/agents/openai.yaml"
-          ]
+          ],
+          "name": "codebase-design"
         }
       ],
       "files": [
@@ -122,7 +129,10 @@
           "path": "skills/engineering/codebase-design/agents/openai.yaml",
           "sha256": "edebc9e4fcfe102114012575eaa9600b9b5fd08c311664f389c36e7bc717740f"
         }
-      ]
+      ],
+      "refresh": "installed",
+      "pluginId": "mattpocock-skills@mattpocock",
+      "marketplace": "mattpocock"
     }
   ]
 }

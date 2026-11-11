@@ -4,12 +4,12 @@ Run `npm run skills:check` to validate the selected files without installed sour
 
 ## Refresh a local inventory
 
-1. Create an ignored `.local/skill-inventory/bindings.json` object mapping `pstack` and `mattpocock` to their installed package roots. Supply explicit versions, never a directory chosen by newest name. Do not commit machine paths.
+1. Create an ignored `.local/skill-inventory/bindings.json` object mapping `pstack` and `mattpocock` to their installed package roots. For the scheduled route, use supported installed-plugin discovery described below. Never choose a directory by newest name. Do not commit machine paths.
 2. Run `npm run skills:refresh -- .local/skill-inventory/bindings.json`.
 3. Inspect the command result and `.local/skill-inventory/last-attempt.json`. Review changes to `registry/skills.json` and `vendor/skills/` before committing.
 4. Run `npm run check` and obtain independent review before any separately authorized publication.
 
-Refresh reads metadata and completely enumerates the bound skills trees. It copies only exact reviewed ordinary files. New files within selected skill directories and changed licence inventories require review. It reads twice to detect changes during acquisition. SHA-256 pins hold changed content, versions, notices and missing dependencies for review. To accept a change, inspect the original source and rights, update the allowlist explicitly, then rerun. A new directory or discovered skill is inventory only. It never inherits approval.
+Refresh reads metadata and completely enumerates each bound skills tree twice. The approved boundary fixes source identities, four selected skills, file paths, dependencies, and notice hashes. Sources marked `refresh: installed` capture their current version, revision evidence and ordinary selected text automatically. Historical `version`, `revision` and selected-text hashes in the policy are baseline attribution, not routine approval gates. Notice hashes remain gates. Unselected discovery is inventory only. New selected files, dependencies, removed skills, changed notices or unclear rights hold before index publication. Sources without that marker retain legacy exact-version/content checking.
 
 A missing bound source or selected entry is an incomplete update, not an automatic deletion. To remove a selected skill, review a complete source observation and edit the allowlist, including dependencies no longer needed. The next snapshot omits those files. Older snapshots stay available for already pinned tasks. Keep historical snapshots in Git history and prune unselected working-tree snapshots during reviewed upkeep to respect the existing release size limits.
 
@@ -25,11 +25,13 @@ The existing [runtime release](operating-procedure.md) already includes the full
 
 These files are explicit guidance. They do not register a skill with Codex Cloud or ChatGPT Work. No native catalog or cloud retrieval is proven by the local consumer drive. A future cloud task must obtain that exact approved revision, run the check, and retain its own actual reads. Runtime installation or catalog registration needs separate acceptance.
 
-## Proposed automatic refresh
+## Refresh from installed plugins
 
-No schedule is enabled by this change. Add a read-only local refresh check to the existing daily improvement routine after separate adoption, and after intentional plugin updates. A 24-hour check cadence and visible stale warning after 48 hours are sufficient for this inventory. Keep changed content or rights held for human source review and ordinary Git delivery. Review source notices weekly during existing upkeep.
+The [private runner](private-skill-refresh.md) uses `codex plugin list --json`, its `installed` rows, exact enabled plugin/marketplace identity and configured Git origin. It requires the row version and the ordinary installed cache manifest to agree. The marketplace source path is not the installed payload. It uses only the exact cache version named by the record, never the largest directory. Unsupported, disabled, duplicate, missing or inconsistent records hold. A marketplace-advertised version without a matching installed cache is insufficient.
 
-Existing Sunday 01:17 UTC GitHub checks already run `npm run check`, which now validates committed skill files. Hosted checks cannot inspect Studio's installed packages. They need no write token and must not publish local sources. No daemon, new credential, new platform or new recurring task is proposed.
+Selected Markdown inline links, reference definitions and HTML `src` or `href` targets must stay in the approved closure. Unresolved explicit reference links hold. The content check also holds explicit proprietary, noncommercial, all-rights-reserved, no-redistribution and non-MIT frontmatter or SPDX declarations, plus structured dependencies/tools/hooks declarations. This is a conservative declared-pattern check, not legal interpretation or a universal proof that arbitrary prose has no restrictions. Unclear rights reported by the caller still hold. Updated guidance remains data. No scripts, hooks, imports, new tools or native registrations are loaded from it.
+
+Ordinary version and selected-text updates need no new human approval within this existing scope. Source identity, file/dependency scope or rights changes need separate review. The existing private daily job is configured separately; these source files neither create a job nor prove a natural run or cloud adoption.
 
 ## Verification limits
 

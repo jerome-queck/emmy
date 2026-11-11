@@ -1,8 +1,8 @@
 # Third-party skill notices
 
-Emmy's root [MIT licence](LICENSE) covers Emmy's own work. Copied upstream files retain their own MIT terms and provenance. They are unmodified readable guidance, not installed plugins.
+Emmy's root [MIT licence](LICENSE) covers Emmy's own work. Copied upstream files retain their own MIT terms and provenance. They are readable upstream guidance, not installed plugins. Versions and revisions below describe the baseline copy; the selected inventory records refreshed attribution.
 
-The generated [inventory](registry/skills.json) selects one immutable directory under `vendor/skills/<snapshot>/`. Each source's `notices` array gives exact retained notice paths within that source. The [reviewed allowlist](registry/skill-sources.json) pins every copied file and notice by SHA-256.
+The generated [inventory](registry/skills.json) selects one immutable directory under `vendor/skills/<snapshot>/`. Each source's `notices` array gives exact retained notice paths within that source. The [reviewed allowlist](registry/skill-sources.json) pins approved paths and notice hashes. Baseline selected-text hashes remain attribution; installed refresh records each new selected-text hash in the immutable inventory.
 
 - Pstack 0.9.130 includes three independent principles. All selected skill and notice bytes are identical to the retained 0.9.128 and 0.9.129 snapshots. Its retained `skills/poteto-mode/references/licenses/LICENSE` credits Lauren Tan and Michael Denyer. The accompanying `NOTICE.md`, `LICENSE-cursor-team-kit` and `LICENSE-thermos` remain together with their original links. The two additional MIT licences credit Cursor. Those notices describe the larger upstream distribution; only the inventory's selected subset is copied here.
 - Matt Pocock 1.3.2 includes codebase-design and its two linked references. Its retained root `LICENSE` credits Matt Pocock. Install metadata identifies revision `4ae2317ddb22b046e26455e4f9c9b3aaaf62212d`.
