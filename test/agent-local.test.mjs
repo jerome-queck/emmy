@@ -149,7 +149,7 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
     const unknownRegistry = JSON.parse(coverageBefore); unknownRegistry.files['src/metadata.mjs'] = digest(unknownMetadata);
     const unknownBytes = JSON.stringify(unknownRegistry); await writeFile(coverage, unknownBytes);
     await mutate(value => { const files = value.subsystems.flatMap(area => area.files); files.find(file => file.path === 'src/metadata.mjs').sha256 = digest(unknownMetadata); files.find(file => file.path === 'verification/coverage.json').sha256 = digest(unknownBytes); });
-    for (const mode of ['--check', '--write']) { const result = run(root, ['maintain', mode]); assert.equal(result.status, 2, result.stdout); assert.match(JSON.parse(result.stdout).error, /unsupported model in responsibility-closure/); }
+    for (const mode of ['--check', '--write']) { const result = spawnSync(process.execPath, [join(root, 'scripts/agent.mjs'), 'maintain', mode, '--root', root], { encoding: 'utf8' }); assert.equal(result.status, 2, result.stdout); assert.match(JSON.parse(result.stdout).error, /unsupported model in responsibility-closure/); }
     await writeFile(metadata, metadataBefore); await writeFile(coverage, coverageBefore); await writeFile(manifest, originalManifest);
     const historyPath = 'verification/responsibility-closure/graph.mjs'; const history = join(root, historyPath); const historyBytes = await readFile(history, 'utf8');
     const decorativeHistory = historyBytes.split('\n').map(line => `// ${line}`).join('\n'); await writeFile(history, decorativeHistory);
