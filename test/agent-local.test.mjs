@@ -136,6 +136,10 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
     const driver = join(root, 'verification/publication/drive.mjs'); const driverBytes = await readFile(driver); await rm(driver); check(2, /drive\.mjs/); await writeFile(driver, driverBytes);
     const skill = join(root, '.agents/skills/publication-contract/SKILL.md'); const skillBytes = await readFile(skill); await rm(skill); check(2, /SKILL\.md/); await writeFile(skill, skillBytes);
     await mutate(value => { value.subsystems[0].files[0].callers = ['src/catalog.mjs']; }); check(2, /stale caller/);
+    const ownerPath = join(root, 'src/responsibilities.mjs'); const ownerBytes = await readFile(ownerPath, 'utf8');
+    const commentedOwner = `${ownerBytes}\n// commentOnlyOwner\n`; await writeFile(ownerPath, commentedOwner);
+    await mutate(value => { value.subsystems[0].ownerRefs[0].symbol = 'commentOnlyOwner'; value.subsystems.flatMap(area => area.files).find(file => file.path === 'src/responsibilities.mjs').sha256 = digest(commentedOwner); });
+    check(2, /missing exported owner commentOnlyOwner/); await writeFile(ownerPath, ownerBytes);
     await mutate(value => { const entry = value.subsystems.flatMap(area => area.files).find(file => file.path === 'src/content.mjs'); entry.callers = entry.callers.filter(caller => caller !== 'src/assurance.mjs'); });
     check(2, /unmapped caller src\/assurance\.mjs for src\/content\.mjs/);
     await mutate(value => { const entry = value.subsystems.flatMap(area => area.files).find(file => file.path === 'scripts/github-auto-merge.mjs'); entry.callers = entry.callers.filter(caller => caller !== 'scripts/local-delivery.mjs'); });

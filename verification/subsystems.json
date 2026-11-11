@@ -1070,7 +1070,7 @@
         },
         {
           "path": "src/maintenance.mjs",
-          "sha256": "cdb355bf191bb0aae6f3aed42d37fb448b15fea53c35adfc0014be762f8a7630",
+          "sha256": "d927d9ef56f7c651942cbc34b196bfacfeeb2fa60dfaca17039259fcf246d682",
           "callers": [
             "scripts/agent.mjs"
           ]
@@ -1219,11 +1219,11 @@
       "ownerRefs": [
         {
           "path": "scripts/verify-formal.mjs",
-          "symbol": "properties"
+          "kind": "ingress"
         },
         {
           "path": "scripts/verify-behavior.mjs",
-          "symbol": "scenario"
+          "kind": "ingress"
         }
       ],
       "properties": [],
@@ -1849,7 +1849,7 @@
         },
         {
           "path": "test/agent-local.test.mjs",
-          "sha256": "313344c056dc74777edb012fe17922054d9e9adec3e4c8d96b6510acaea13de7",
+          "sha256": "0e47c65746786c599d063962c76a037e361713c6c451677788969aef46a607cc",
           "callers": [
             "verification input"
           ]

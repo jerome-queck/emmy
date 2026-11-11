@@ -5,18 +5,18 @@ import { briefingGuidance, commands, subsystemEvidence, verification } from './m
 import { digest } from './content.mjs';
 
 // Parse and link only; never evaluate the inventoried modules.
-function moduleInterfaces(root, files, graphs) {
+function moduleInterfaces(root, files, exportModules) {
   const script = `import { readFile } from 'node:fs/promises';
 import { SourceTextModule, SyntheticModule } from 'node:vm';
 let input=''; for await (const chunk of process.stdin) input+=chunk;
-const {root,files,graphs}=JSON.parse(input); const result={};
+const {root,files,exportModules}=JSON.parse(input); const result={};
 for (const file of files) { const source=await readFile(root+'/'+file,'utf8'); let m=new SourceTextModule(source); const imports=m.dependencySpecifiers;
-  if (graphs.includes(file)) { const names=[]; for (;;) { try { await m.link(async()=>new SyntheticModule(names,()=>{})); break; }
+  if (exportModules.includes(file)) { const names=[]; for (;;) { try { await m.link(async()=>new SyntheticModule(names,()=>{})); break; }
     catch (error) { const missing=error.message.match(/does not provide an export named '([^']+)'/); if (!missing || names.includes(missing[1]) || names.length>=256) throw error; names.push(missing[1]); m=new SourceTextModule(source); } }
     result[file]={imports,exports:Object.getOwnPropertyNames(m.namespace)}; }
   else result[file]={imports}; }
 process.stdout.write(JSON.stringify(result));`;
-  const child = spawnSync(process.execPath, ['--experimental-vm-modules', '--no-warnings', '--input-type=module', '-e', script], { input: JSON.stringify({ root, files, graphs }), encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
+  const child = spawnSync(process.execPath, ['--experimental-vm-modules', '--no-warnings', '--input-type=module', '-e', script], { input: JSON.stringify({ root, files, exportModules }), encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
   if (child.status !== 0 || child.error || child.signal) throw new Error(`Subsystem inventory: module parsing failed: ${child.error?.message ?? child.stderr}`);
   return JSON.parse(child.stdout);
 }
@@ -24,7 +24,7 @@ process.stdout.write(JSON.stringify(result));`;
 async function coverageInventory(root, inventory, generated) {
   const need = (value, message) => { if (!value) throw new Error(`Subsystem inventory: ${message}`); };
   need(inventory.schemaVersion === 1 && inventory.foundationReady === false && Array.isArray(inventory.subsystems), 'invalid schema or readiness');
-  const paths = new Set(); const ids = new Set(); const entries = new Map();
+  const paths = new Set(); const ids = new Set(); const entries = new Map(); const owners = [];
   const records = new Map();
   for (const binding of Object.values(subsystemEvidence)) for (const path of binding.coverageRecords) {
     if (!records.has(path)) records.set(path, JSON.parse(await readFile(join(root, path), 'utf8')));
@@ -42,8 +42,9 @@ async function coverageInventory(root, inventory, generated) {
     need(binding.model === 'empirical-only' ? binding.skillStatus !== 'maintained' : binding.skillStatus !== 'not-applicable' && binding.replay.length && area.properties.length && binding.coverageRecords.length && (binding.skillStatus === 'missing' || binding.skills.length), `missing formal evidence in ${area.id}`);
     need(['reachable-reducer', 'finite-assessment', 'hand-mapped-await'].includes(binding.model) ? binding.graph?.kind === binding.model : !binding.graph, `missing or unsupported graph in ${area.id}`);
     for (const owner of area.ownerRefs) {
-      need(typeof owner.path === 'string' && !owner.path.startsWith('/') && !owner.path.split('/').includes('..') && typeof owner.symbol === 'string' && owner.symbol.length > 0, `invalid owner in ${area.id}`);
-      need((await readFile(join(root, owner.path), 'utf8')).includes(owner.symbol), `missing owner ${owner.symbol}`);
+      need(typeof owner.path === 'string' && !owner.path.startsWith('/') && !owner.path.split('/').includes('..'), `invalid owner in ${area.id}`);
+      need(owner.kind === 'ingress' ? owner.path.startsWith('scripts/') && !Object.hasOwn(owner, 'symbol') : typeof owner.symbol === 'string' && owner.symbol.length > 0 && !Object.hasOwn(owner, 'kind'), `invalid owner in ${area.id}`);
+      await readFile(join(root, owner.path)); owners.push(owner);
     }
     for (const path of [...binding.drivers, ...binding.skills, ...binding.replay, ...binding.coverageRecords]) {
       need(typeof path === 'string' && !path.startsWith('/') && !path.split('/').includes('..'), `unsafe reference in ${area.id}`);
@@ -90,9 +91,12 @@ async function coverageInventory(root, inventory, generated) {
   for (const entry of entries.values()) if (/^(src|scripts)\/.*\.mjs$/.test(entry.path)) for (const caller of entry.callers) if (caller !== 'executable ingress') callers.add(caller);
   const graphs = Object.values(subsystemEvidence).map(x => x.graph).filter(graph => graph && graph.kind !== 'hand-mapped-await');
   for (const graph of graphs) { callers.add(graph.path); callers.add(graph.checker); }
-  const interfaces = moduleInterfaces(root, [...callers], graphs.map(graph => graph.path));
+  for (const owner of owners) { need(entries.has(owner.path), `unmapped owner ${owner.path}`); if (owner.kind !== 'ingress') callers.add(owner.path); }
+  const exportModules = [...new Set([...graphs.map(graph => graph.path), ...owners.filter(owner => owner.kind !== 'ingress').map(owner => owner.path)])];
+  const interfaces = moduleInterfaces(root, [...callers], exportModules);
   const targets = caller => interfaces[caller].imports.filter(specifier => specifier.startsWith('.')).map(specifier => relative(root, resolve(root, dirname(caller), specifier)).split(sep).join('/'));
   for (const graph of graphs) need(targets(graph.checker).includes(graph.path) && graph.exports.every(name => interfaces[graph.path].exports.includes(name)), `invalid graph interface ${graph.path}`);
+  for (const owner of owners.filter(owner => owner.kind !== 'ingress')) need(interfaces[owner.path].exports.includes(owner.symbol), `missing exported owner ${owner.symbol}`);
   for (const entry of entries.values()) if (/^(src|scripts)\/.*\.mjs$/.test(entry.path)) for (const caller of entry.callers) if (caller !== 'executable ingress') need(targets(caller).includes(entry.path), `stale caller ${caller} for ${entry.path}`);
   for (const caller of [...callers].filter(path => /^(src|scripts)\/.*\.mjs$/.test(path))) for (const target of targets(caller)) if (/^(src|scripts)\//.test(target) && entries.has(target)) need(entries.get(target).callers.includes(caller), `unmapped caller ${caller} for ${target}`);
   return inventory;
