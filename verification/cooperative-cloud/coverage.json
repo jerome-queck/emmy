@@ -1,0 +1,31 @@
+{
+  "sourceCommit": "1f91cd2da3910ca2daee1b7c3b537732dead3dac",
+  "sourceFiles": {
+    "src/automation-reporting.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
+    "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
+    "src/briefing-observation.mjs": "1482eddda3ed1f8aa1778e18d49b9ead4000b3d868d9dbba6084205a0a5f5d01",
+    "src/briefing-plan.mjs": "4c89d562a714b5cd314e952c8a7cf5c263fbbb4085a855cae386bee11bf77225",
+    "src/briefing-policy.mjs": "4f810fe256874753c5ad5e7957fd1f69536c8573b2f02a044431d2de2701b02c",
+    "src/briefing-reporting.mjs": "3bee7e7e912efa31ecda166099ee37f1d21ec00508157981c353584a8dc43e15",
+    "src/briefing.mjs": "355717f83aa3c582d8c3a37352f8366cf94a8a4b3b2e5c0ec878fe1dd2676d62",
+    "src/cloud-schema.mjs": "2179301f012a5832b597f493f9744df8d86f60427d2bbac0664f4f6fd95853bd",
+    "src/cloud.mjs": "9e48c4f64f95ac23a8e7fb0a33e51b21fb9a2022a48e355dee06de3d76ef1a7f",
+    "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
+    "src/fleet-schema.mjs": "d9d87c7834b006fb5dd7dac1bb41b0f2075b2e20057f40c656c0974b4576ea27",
+    "src/fleet-state.mjs": "4e3f1d689b3cb7df2301e4df46298c7bea221584b3e67b76d844685046439d53",
+    "src/guidance-pin.mjs": "f037a3f461db221e884f9f72da45515d51e536f6f271bf70ff11a36b6cf238b7",
+    "src/metadata.mjs": "bf8f0c5d0eecd15bef46a2cbd0871c1f9af98843685f0b3b07938394e2f60713",
+    "src/morning-presentation.mjs": "36d171d854c34b3062da02e9c9ac5b095e509164e2c674bf0dd4ccae1268a343",
+    "src/morning.mjs": "c01412274bccfb57e15a423b88c830a9cdb8d6486b2b264c074e7ce30b34d026",
+    "src/operating-contract.mjs": "a8c513f23eeee99679d6b4e0e3d3ac0b6e91d26258abf33491e49a4f32143362",
+    "src/process-incarnation.mjs": "63810f9602f223315fe8d9ccfcda11b6591cf7bb5626092a8ea308a98acfe2ff",
+    "src/records.mjs": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58",
+    "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
+    "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1"
+  },
+  "verificationFiles": {
+    "verification/cooperative-cloud/graph.mjs": "bec31bd15a3de87eff7aa0c4f4a79418f03ab98a1730e755a97b290988f979c1",
+    "verification/cooperative-cloud/check.mjs": "7e17a6f183e6fc841500ebd1d7c32667bcbde0f471e70f95818f76e58685498d",
+    ".agents/skills/cooperative-cloud/SKILL.md": "c357240d0821b1dfe6c6c5794bf708fce585765f6bd772e84145272bd071945f"
+  }
+}

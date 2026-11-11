@@ -70,6 +70,15 @@ export const verification = {
 
 // Reviewed association of subsystem evidence; file inventory remains in verification/subsystems.json.
 export const subsystemEvidence = {
+  "cooperative-cloud": {
+    "drivers": ["verification/cloud-drive.mjs"],
+    "skills": [".agents/skills/cooperative-cloud/SKILL.md"],
+    "replay": ["verification/cooperative-cloud/check.mjs"],
+    "coverageRecords": ["verification/coverage.json", "verification/cooperative-cloud/coverage.json"],
+    "model": "reachable-reducer",
+    "skillStatus": "maintained",
+    "graph": { "kind": "reachable-reducer", "path": "verification/cooperative-cloud/graph.mjs", "record": "verification/cooperative-cloud/coverage.json", "checker": "verification/cooperative-cloud/check.mjs", "exports": ["graph", "spec"] }
+  },
   "responsibility-closure": {
     "drivers": ["scripts/verify-behavior.mjs"],
     "skills": [".agents/skills/responsibility-closure/SKILL.md"],
