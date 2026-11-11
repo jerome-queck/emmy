@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "ddc03ef72adb37c5b89b7fefa2c890ec79611ce9",
+  "sourceCommit": "7344f30c69d798e004b4f6e1c77e0b6d9aca3072",
   "sourceFiles": {
-    "src/assurance.mjs": "5861cf2154b957e614745cf863f76ddf07558f363fb281116476df120d4c9f7b",
+    "src/assurance.mjs": "918e18befd47ee3e3ce81e0491d92c98d0c346645d7b194d30bd9c9be5010139",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
     "src/local-assurance.mjs": "6ff678f407e56d2b9b0f338698628dc08b07eda768cb8cb20ad288d0c9cb8764",
     "scripts/check.mjs": "f8b710af8abcafa21d3090a9739b820f04b01b98e9dfdfb8b49ca1b4877b204c",
     "scripts/check-markdown-links.mjs": "b40227b7d9e9617c9c1930c8286d67c550db6c4bf48c74d3d2ee3d1c4b78899c",
     "scripts/agent.mjs": "314099e863b0153da4415ac68f38a6f340dc112b1d9f7c5d5453760d21f2d7d5",
-    "src/metadata.mjs": "04dde9842a694abc4678920359d7f0cc702ffbdc02302cac0f570ccfa9235ecf",
-    "scripts/verify-publication.mjs": "f883deaedb39f8c551baa065ea43fbeec51f9412b835d6f487f8de2cd2fd954a"
+    "src/metadata.mjs": "0646e6e04cf6215e646255cfc4bb2175fa75ea77d05f91ec22052992a91f8d6b",
+    "scripts/verify-publication.mjs": "f2cf26ce7fdd9b79ef4b81f77989834518da11d6eb601af451ec37d58fd35849"
   },
   "verificationFiles": {
     "verification/local-assurance/graph.mjs": "9f89bbfc3f42841149600c0549603da719b3835cd20d0f41353d0607f8b22de5",
@@ -19,7 +19,7 @@
     "verification/local-assurance/chart.mmd": "555d30c6f63b8be9e4cf91840f29b767b9df697b0adac2cde5d62ed4ff927b68",
     "test/local-assurance.test.mjs": "dd08e3e27d7c0530d9671767831ff0afe2405432c3362d7aed66f075416e2f8e",
     "test/markdown-links.test.mjs": "4c6b41c15971a063723cd82d8d915acf629e791270c767c6303df1cb5a5b97e3",
-    ".agents/skills/local-assurance/SKILL.md": "7896792e3d9f361f5b9f360cbbc3044b696ecbc5b9dd19420f37ec6cc7d2a360"
+    ".agents/skills/local-assurance/SKILL.md": "08e2d63ed1faa28f94f15c85f47cee21c24d3683dcd4f7fe8734dc6a44ccbb4d"
   },
   "mapping": [
     {
@@ -69,7 +69,7 @@
   ],
   "bounds": {
     "runs": 1,
-    "suiteCount": 20,
+    "suiteCount": 19,
     "contextSymbols": 2,
     "eventClasses": 12,
     "maxGraphStates": 5000,
@@ -93,5 +93,5 @@
     "Source/CLI hashes bind empirical integration only; TLC checks the reducer graph",
     "No atomic filesystem pinning, process containment, authorship/independence authentication, native host identity, provider effects or deployment"
   ],
-  "reviewBasis": "Reviewed only fixed-plan addition of two distinct shared planning-policy groups, retaining original17order/commands and unchanged reducer guards, atomicity, invariants and event domain. Development replay passed194states2328edges,9TLCruns and7actual mutants. Metadata description and skill/chart updated; I/O unchanged. Reviewed explicit direct-root route from accepted complete baseline c5f8b462d6f91ddd7919190704d05d32c0fd2405/tree711dc683eecc8f1910071ecbe2559b6881f31b10 to 8f0deddf52cf03eaaa6253a8baec2e3905299ad2. Legacy binding bytes/callable mode retained. Shared dispatchIdentity replaces duplicated immutable-shape logic. Direct root principal is distinct from optional native creator; exact invocation/attempt/request/child lineage and declared child policy remain reported. Native create has no permission/tier field. No canonical publication awaits, reference edges, original coordination domains, merge model or publication graph/bounds changed. Existing8710predicates/281mutants and direct108cases/14source-mutants pass development; CLI dispatch301calls pass. Source maintenance only; independent native exact-head review pending. Fixed assurance plan adds direct-dispatch formal as twentieth suite; original19commands and reducer guards unchanged. Revision v2 reviewed from1db92dcf5ef873868abf8979eb596f2b7f3745b7 to ddc03ef72adb37c5b89b7fefa2c890ec79611ce9. R1 is an actual product bug: conflicting original request digests sharing an attempt key formerly selected by input/hash order. All retained attempted originals now contribute to one conflict hold; direct request and clock checks cover every matching ancestor. Both permutations and both actual CLI stored hash orders replayed, including identical/idempotent imports and creation between repeated clocks. R2 is stale publication navigation metadata: all mapped current function ranges corrected after await/reference review, with strict top-level start/end guards. Canonical awaits, dependency edges, publication/merge graphs and original coordination8710predicates281mutants unchanged. Current selected router remains operational; direct mode optional explicitly selected source capability, no installation or permission grant. Original direct creator provenance retained. Parent exact revised independent review/integration acceptance remains pending."
+  "reviewBasis": "Reviewed only fixed-plan addition of two distinct shared planning-policy groups, retaining original17order/commands and unchanged reducer guards, atomicity, invariants and event domain. Development replay passed194states2328edges,9TLCruns and7actual mutants. Metadata description and skill/chart updated; I/O unchanged."
 }

@@ -27,7 +27,7 @@ export const mutations = [
   { id: 'dispatch-borrow-child-model-policy', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["spec.coordinatorRequestedSettings ?? ordinarySettings", "spec.coordinatorRequestedSettings ?? requested"]] },
   { id: 'dispatch-ignore-coordinator-override-source', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["!coordinatorRequested.scopedOverrideRef", "false"]] },
   { id: 'dispatch-ignore-coordinator-policy-scope', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["coordinatorRequested.scope?.objectiveId !== id || coordinatorRequested.scope?.role !== 'coordinator'", "false"]] },
-  { id: 'dispatch-freeze-coordinator-policy-as-identity', property: 'dispatch-recovery', source: 'src/records.mjs', edits: [["correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill", "correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill, coordinatorRequestedSettings: value.coordinatorRequestedSettings"]] },
+  { id: 'dispatch-freeze-coordinator-policy-as-identity', property: 'dispatch-recovery', source: 'src/dispatch.mjs', edits: [["correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill", "correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill, coordinatorRequestedSettings: value.coordinatorRequestedSettings"]] },
   ...fleetMutations,
   ...incarnationMutations,
   ...cloudMutations,

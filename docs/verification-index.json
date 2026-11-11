@@ -48,7 +48,7 @@
     },
     {
       "name": "dispatch",
-      "description": "Resolve saved destinations, recover explicit direct-root or historical bindings, and return read-only native dispatch advice.",
+      "description": "Resolve an explicit saved destination from fresh discovery, recover private bindings, and return read-only native dispatch advice.",
       "options": [
         {
           "name": "id"

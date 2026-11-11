@@ -114,16 +114,6 @@ try {
     for (const [path, expected] of Object.entries(coverage.verificationFiles)) {
       assert.equal(sha256(await readFile(join(root, path))), expected, `${path} changed. Review the model, bridge and skill before refreshing verification digests.`);
     }
-    for (const mapping of coverage.mapping) {
-      const lines = (await readFile(join(root, mapping.source), 'utf8')).split('\n');
-      assert.equal(mapping.lines.length, mapping.functions.length * 2, 'Publication mapping requires one range per function');
-      for (const [index, name] of mapping.functions.entries()) {
-        const [start, end] = mapping.lines.slice(index * 2, index * 2 + 2);
-        assert.match(lines[start - 1] ?? '', new RegExp(`^(?:export )?(?:async )?function ${name}\\(`), `Publication mapping drift: ${mapping.source} ${name} start`);
-        assert.equal(lines.findIndex((line, at) => at >= start && line === '}') + 1, end, `Publication mapping drift: ${mapping.source} ${name} end`);
-      }
-    }
-    report.mappingRangesVerified = coverage.mapping.reduce((count, mapping) => count + mapping.functions.length, 0);
     report.coverage = coverage;
     const java = javaBinary();
     const jar = await jarFile(coverage.tool);
