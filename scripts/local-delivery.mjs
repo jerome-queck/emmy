@@ -166,7 +166,7 @@ export async function deliverLocal(root, request, provider, acquire = acquireLoc
         const fresh = await provider.discover(action, b, state.pending?.request ?? request);
         const destination = await provider.destination(b);
         const now = Date.now();
-        const valid = request.action === action && local.payloadDigest === payloadDigest
+        const valid = request.action === action && scopeDigest(request) === state.pending?.scopeDigest && local.payloadDigest === payloadDigest
           && evaluateLocalEvidence({ ...local, now }).eligible && destination.exact === true
           && evaluateAbsenceResolution({ pending: state.pending, resolution, authorization: local.authorization, discovered: fresh, bindingDigest: state.bindingDigest, now });
         const next = deliveryTransition(state.delivery, { kind: 'resolve-absence', action, valid, exact: fresh.exact, absent: fresh.absent, attemptMatches: valid });
