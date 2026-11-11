@@ -99,10 +99,3 @@ Existing native notes remain untouched. Clearing notes requires its own authoriz
 The checker cannot authenticate reported owner instructions, account identity, native supplements, complete history or visual review. It cannot stop an external executor. Native products remain authoritative. The legacy [`calendar` assessor](calendar.md) retains its version-one saved-state acceptance contract and replay behavior.
 
 Provider Event timestamps with explicit offsets denote absolute instants. A valid IANA endpoint timezone can differ from the returned timestamp offset, such as UTC timestamps beside `Asia/Singapore` recurrence metadata. Preserve that metadata without treating the valid representation as an unreadable commitment. Proposal wall-clock checks and all-day Calendar-zone interpretation remain separate.
-
-
-## Shared versioned planning rules
-
-[Planning policy](planning-policy.md) adds semantic policy schema version two with an attributable bounded rule bundle. Existing source groups, prerequisites, labels, protected meals, terminal intent and owner-moved work retain their checks. The shared evaluator now owns native rounded-booking arithmetic, including version-one equivalence. V2 prepared operations retain exact selected rule versions and computed bundle digest separately from the existing external policy association. Changed selections block original-attempt reuse, handoff preflight and final acceptance.
-
-Use the retained synthetic [v2 fixtures](../verification/planning-policy/fixtures.mjs), `node --test test/planning-policy.test.mjs` and the Calendar CLI focus. The separate [planning formal skill](../.agents/skills/planning-policy/SKILL.md) records the bounded code-derived model. This extends neither native execution nor provider truth.

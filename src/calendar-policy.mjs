@@ -1,5 +1,4 @@
 import { canonical, digest } from './content.mjs';
-import { assessPlanningPolicy, assessRoundedBooking } from './planning-policy.mjs';
 
 const same = (a, b) => canonical(a) === canonical(b);
 const hash = value => digest(canonical(value));
@@ -19,11 +18,11 @@ export const sourceLabel = (title, label) => typeof title === 'string' && typeof
 export function assessCalendarPolicy(policy, baseline, scope, selectors, evaluatedAt) {
   const findings = [];
   const add = (code, target = null) => { if (!findings.some(row => row.code === code && same(row.target, target))) findings.push({ code, target }); };
-  const dependencies = new Map(); const operations = new Map();
-  if (!policy || !baseline) { add('calendar-policy-required'); return { findings, dependencies, operations }; }
+  const dependencies = new Map();
+  if (!policy || !baseline) { add('calendar-policy-required'); return { findings, dependencies }; }
   if (!same(policy, baseline)) add('calendar-policy-baseline-mismatch');
-  const valid = fields(policy, ['schemaVersion', 'scope', 'assignments', 'occurrences', 'bindings', 'ownerRules', ...(policy.schemaVersion === 2 ? ['planning'] : [])]) && [1, 2].includes(policy.schemaVersion) && same(policy.scope, scope) && ['assignments', 'occurrences', 'bindings', 'ownerRules'].every(key => list(policy[key]));
-  if (!valid) { add('calendar-policy-invalid'); return { findings, dependencies, operations }; }
+  const valid = fields(policy, ['schemaVersion', 'scope', 'assignments', 'occurrences', 'bindings', 'ownerRules']) && policy.schemaVersion === 1 && same(policy.scope, scope) && ['assignments', 'occurrences', 'bindings', 'ownerRules'].every(key => list(policy[key]));
+  if (!valid) { add('calendar-policy-invalid'); return { findings, dependencies }; }
   const assignments = new Map(); const occurrences = new Map();
   for (const row of policy.assignments) {
     if (!fields(row, ['id', 'reference', 'orderedUnits', 'observedAt', 'evidenceRef']) || !text(row.id) || !text(row.reference) || !list(row.orderedUnits) || !row.orderedUnits.every(text) || !unique(row.orderedUnits) || !evidence(row, evaluatedAt) || assignments.has(row.id)) { add('assignment-policy-invalid'); continue; }
@@ -71,20 +70,6 @@ export function assessCalendarPolicy(policy, baseline, scope, selectors, evaluat
   if (!unique(policy.ownerRules.map(row => row.id))) add('owner-rule-invalid');
   for (const selector of selectors) {
     const source = selector.source;
-    const scheduled = ['start', 'end', 'durationMinutes', 'timeZone'].some(key => key in selector.changes) || selector.identity.containerKind === 'calendar' && 'date' in selector.changes;
-    const actual = source?.actualDurationMinutes;
-    let booking = null; let resolution = null; let bookingFindings = [];
-    if (policy.schemaVersion === 1) {
-      const legacy = assessRoundedBooking({ minimumMinutes: 30, incrementMinutes: 30 }, { actualDurationMinutes: actual, scheduledDurationMinutes: selector.changes.durationMinutes });
-      if (selector.native && scheduled && selector.validTiming) bookingFindings = legacy.findings.filter(code => code !== 'source-duration-mismatch' || source);
-      if (selector.native && scheduled && source && !selector.validTiming && selector.changes.durationMinutes !== legacy.scheduledDurationMinutes) bookingFindings.push('source-duration-mismatch');
-      booking = legacy;
-    } else {
-      const assessment = assessPlanningPolicy(policy.planning, { ...scope, source: source?.reference, occurrenceId: source?.occurrenceId, operationId: selector.id, operation: selector.operationKind ?? (selector.create ? 'create' : selector.changes.completed === true ? 'complete' : 'change'), evaluatedAt, maxEvidenceAgeMs: selector.maxEvidenceAgeMs, window: scheduled ? { start: selector.changes.start, end: selector.changes.end } : { start: evaluatedAt, end: new Date(Date.parse(evaluatedAt) + 1).toISOString() }, timingFieldsAbsent: !scheduled && !('date' in selector.changes), timing: scheduled ? { kind: 'booking', actualDurationMinutes: actual, scheduledDurationMinutes: selector.changes.durationMinutes } : selector.timing });
-      booking = assessment.booking; resolution = { ...assessment.resolution, semanticPolicyDigest: hash(policy) }; bookingFindings = assessment.findings;
-    }
-    operations.set(selector.id, { findings: bookingFindings, booking, resolution });
-    if (policy.schemaVersion === 2) for (const code of bookingFindings) add(code, selector.id);
     const occurrence = occurrences.get(source?.occurrenceId);
     if (!occurrence || source.assignmentId !== occurrence.assignmentId) { add('source-occurrence-required', selector.id); continue; }
     const assignment = assignments.get(occurrence.assignmentId);
@@ -119,5 +104,5 @@ export function assessCalendarPolicy(policy, baseline, scope, selectors, evaluat
       if (Object.entries(rule.changes).some(([key, value]) => Object.hasOwn(selector.changes, key) && !fieldEqual(key, selector.changes[key], value))) add('owner-policy-protected', selector.id);
     }
   }
-  return { findings, dependencies, operations };
+  return { findings, dependencies };
 }
