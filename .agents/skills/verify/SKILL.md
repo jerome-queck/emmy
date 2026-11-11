@@ -108,3 +108,10 @@ Run `node --test test/foundation-release.test.mjs test/morning-observation.test.
 The generic foundation adds `automation --file` and `test/automation-procedure.test.mjs`. The `automation-foundation` scenario drives plan/report/read over exact synthetic non-briefing inputs with no native actions. `automation-plan.mjs` is a separate pure portable entry; canonical outcome semantics remain in one generic reporting owner. Read [the contract](../../../docs/automation-foundation.md).
 
 Generic artifact regression controls rehash malformed records before exact CLI reads, publication assessment and predecessor ingestion. Invalid timing, telemetry, nonterminal reports and coerced source revisions refuse; valid optional null measurements and historical terminal report:null remain accepted.
+
+
+## Shared planning policy
+
+Run `node --test test/planning-policy.test.mjs` and the Calendar focus after changing either planning caller. Policy v2 adds bounded attributable rules and a retained `planningResolution`; historical v1 remains explicit. Both callers consume the shared evaluator. Native rounding is extracted with complete source-minute equivalence. API intent/prepared v2 requires exact nonapplicability evidence while provider `task-plan/1` and its external policy association remain unchanged.
+
+The CLI drive includes native v2 plan/preflight/receipt/final acceptance, changed-policy refusal, both routes' unsupported/conflict controls, and all API operation kinds with retained result packets and missing-timing refusal. Existing source, meal, terminal and owner-move controls still run. Inspect original inputs/results after teardown. Follow the [planning-policy formal skill](../planning-policy/SKILL.md) and read every TLC result with `/statechart`. Its own bounded graph is separate from existing register enumeration and empirical receipt/retention claims.

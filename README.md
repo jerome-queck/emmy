@@ -1,6 +1,6 @@
 # Emmy
 
-The [architecture roadmap](docs/architecture-evolution.md) records unfinished shared policy, exact-ID gateway and module convergence. [Local assurance](docs/local-assurance.md) binds `npm run check` to source, base and environment observations with retained output and fresh receipt assessment.
+The [architecture roadmap](docs/architecture-evolution.md) records the bounded shared-policy slice and unfinished exact-ID gateway and module convergence. [Local assurance](docs/local-assurance.md) binds `npm run check` to source, base and environment observations with retained output and fresh receipt assessment.
 
 The [generic automation foundation](docs/automation-foundation.md) builds staged creation plans from versioned procedures and exact configuration files, prepares the existing canonical outcome format, and reads fixed artifacts without history scans. Native products own saving and operation.
 
@@ -42,7 +42,7 @@ The [improvement procedure](docs/daily-improvement.md) covers daily maintenance,
 
 [`calendar --file <private-envelope.json>`](docs/calendar.md) checks declared current intent, exact saved fields, complete inventory, allocations, and retained attempts without native execution or journal writes. Its result cannot authenticate a save or stop an external queue.
 
-[`calendar-register --file <private-envelope.json>`](docs/calendar-register.md) refreshes immutable Calendar occurrence and native Task snapshots through existing Academic OS read credentials, or checks deterministic free intervals and exact-ID proposals. Missing native Task timing remains unknown. Meals stay protected even when Free. Actual attempt duration stays separate from rounded scheduled blocks. The [typed handoff](docs/calendar-handoff.md) binds cloud plans, exact local preflights and independent final readbacks without a writer. The [integration findings](docs/research/calendar-tasks-integration.md) distinguish verified read-only collector installation/capture from native timing, writes and later handoff adoption.
+[`calendar-register --file <private-envelope.json>`](docs/calendar-register.md) refreshes immutable Calendar occurrence and native Task snapshots through existing Academic OS read credentials, or checks deterministic free intervals and exact-ID proposals. Missing native Task timing remains unknown. Meals stay protected even when Free. Actual attempt duration stays separate from rounded scheduled blocks. The [shared planning policy](docs/planning-policy.md) resolves bounded versioned rules through both native and API callers. The [typed handoff](docs/calendar-handoff.md) binds cloud plans, exact local preflights and independent final readbacks without a writer. The [integration findings](docs/research/calendar-tasks-integration.md) distinguish verified read-only collector installation/capture from native timing, writes and later handoff adoption.
 
 An explicit [local guidance pin](docs/guidance-pin.md) can select an exact approved installed release. Its distinct `pinned` source validates manifest, source, launcher and bundle hashes before use. Deactivation restores the remote default; an invalid active pin blocks fallback. Pin configuration changes no canonical cache or native bootstrap.
 

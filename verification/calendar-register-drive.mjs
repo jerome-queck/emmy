@@ -5,6 +5,7 @@ import { digest } from '../src/records.mjs';
 import { bindRegister, refreshRegisterEvidence, registerFixture, registerHash } from './calendar-register-fixtures.mjs';
 import { academicOsPlanFixture } from './academic-os-plan-fixtures.mjs';
 import { timingRegisterFixture, syntheticTimingPacket, syntheticTimingReceipt } from './calendar-timing-fixtures.mjs';
+import { planningBundle, versionedApi } from './planning-policy/fixtures.mjs';
 import { calendarPolicyCases, calendarPolicyPositives } from './calendar-policy-fixtures.mjs';
 
 export async function driveCalendarRegister({ home, run, scenario, report }) {
@@ -60,6 +61,15 @@ module.exports.GoogleAuth = class {
   const baseline = await assess('proposed', 0, () => {}, result => {
     assert.equal(result.status, 'proposed'); assert.equal(result.proposals[0].sourceTiming.actualDurationMinutes, 40);
     assert.equal(result.proposals[0].changes.durationMinutes, 60); assert.equal(result.availability.freeIntervals.length, 3);
+  });
+  for (const [name, mutate, code] of [
+    ['versioned-policy-ready', () => {}, null],
+    ['versioned-unsupported', bundle => { bundle.rules[0].predicate = 'future-predicate'; }, 'planning-predicate-unsupported'],
+    ['versioned-unresolved-scope', bundle => { bundle.rules[0].scope = null; }, 'planning-scope-unresolved'],
+    ['versioned-hard-conflict', bundle => { const other = structuredClone(bundle.rules[0]); other.id = 'conflicting-booking'; other.parameters.minimumMinutes = 90; bundle.rules.push(other); }, 'planning-hard-conflict'],
+  ]) await assess(name, code ? 3 : 0, candidate => { candidate.request.policy.schemaVersion = 2; candidate.request.policy.planning = planningBundle(candidate.evaluatedAt); mutate(candidate.request.policy.planning); candidate.snapshot.policy = structuredClone(candidate.request.policy); }, result => {
+    if (code) assert.ok(result.findings.some(row => row.code === code));
+    else { assert.equal(result.status, 'proposed'); assert.equal(result.proposals[0].prepared.planningResolution.selected[0].revision, 1); }
   });
   for (const [name, mutate, code] of calendarPolicyCases) await assess(name, 3, mutate, result => { assert.ok(result.findings.some(row => row.code === code), name); assert.equal(result.counts.proposed, 0); });
   for (const [name, mutate] of calendarPolicyPositives) await assess(name, 0, mutate, result => assert.equal(result.status, 'proposed', name));
@@ -169,13 +179,21 @@ module.exports.GoogleAuth = class {
   const day = handoffInput.request.operations[0].changes.date;
   for (const [name, candidate, expectedStart] of [
     ['standalone-bangkok', clockInput(`${day}T11:00:00+08:00`, `${day}T12:00:00+08:00`, `${day}T08:00:00+08:00`, `${day}T18:00:00+08:00`), { date: day, time: '10:00' }],
+    ['versioned-policy', clockInput(`${day}T11:00:00+08:00`, `${day}T12:00:00+08:00`, `${day}T08:00:00+08:00`, `${day}T18:00:00+08:00`), { date: day, time: '10:00' }],
     ['standalone-rollover', clockInput('2027-01-01T00:30:00+08:00', '2027-01-01T01:30:00+08:00', '2026-12-31T22:00:00+08:00', '2027-01-01T03:00:00+08:00'), { date: '2026-12-31', time: '23:30' }],
   ]) {
+    if (name === 'versioned-policy') { candidate.request.policy.schemaVersion = 2; candidate.request.policy.planning = planningBundle(candidate.evaluatedAt); candidate.snapshot.policy = structuredClone(candidate.request.policy); bindRegister(candidate); }
     const timing = syntheticTimingPacket(candidate, null, 'standalone-tasks-editor');
     const planned = await handoff(`timing-${name}-plan`, { ...header, stage: 'plan', executor: 'dot-cloud', timing }, 0, candidate);
     candidate.evaluatedAt = new Date().toISOString(); refreshRegisterEvidence(candidate); candidate.request.visualReview.observedAt = candidate.evaluatedAt;
     const checked = await handoff(`timing-${name}-preflight`, { ...header, stage: 'preflight', executor: 'local-executor', plan: planned.plan, operationDigest: planned.plan.operations[0].operationDigest }, 0, candidate);
     assert.deepEqual(checked.preflight.timing.editorInput.start, expectedStart);
+    if (name === 'versioned-policy') {
+      assert.ok(planned.plan.operations[0].prepared.planningResolution.selected.length);
+      const changed = structuredClone(candidate); changed.request.policy.planning.rules[0].revision++; changed.snapshot.policy = structuredClone(changed.request.policy);
+      const refused = await handoff('versioned-policy-changed-preflight', { ...header, stage: 'preflight', executor: 'local-executor', plan: planned.plan, operationDigest: planned.plan.operations[0].operationDigest }, 3, changed);
+      assert.ok(refused.findings.includes('policy-or-context-changed'));
+    }
     if (name === 'standalone-rollover') assert.deepEqual(checked.preflight.timing.editorInput.end, { date: '2027-01-01', time: '00:30' });
     assert.equal(checked.preflight.timing.canonical.interval.start, candidate.request.operations[0].changes.start);
     const again = await handoff(`timing-${name}-repeat`, { ...header, stage: 'preflight', executor: 'local-executor', plan: planned.plan, operationDigest: planned.plan.operations[0].operationDigest }, 0, candidate);
@@ -203,6 +221,20 @@ module.exports.GoogleAuth = class {
     await writeFile(join(directory, `academic-os-${name}.output.json`), JSON.stringify(output));
     return output;
   };
+  for (const name of ['create', 'change', 'complete']) {
+    const fixture = versionedApi(name, new Date().toISOString());
+    const output = await api(`versioned-${name}`, { schemaVersion: 1, stage: 'prepare', intent: fixture.intent, observation: fixture.observation });
+    assert.equal(output.status, 'api-plan-ready-reported'); assert.equal(output.prepared.apiPlan.policyVersion, fixture.intent.policyDigest);
+    assert.ok(output.prepared.planningResolution.selected.length);
+    const attemptedAt = new Date().toISOString();
+    const receipt = { attemptedAt, observedAt: attemptedAt, evidenceRef: 'synthetic-versioned-api-response', report: { schemaVersion: 1, operationId: fixture.intent.operationId, outcome: 'applied', taskId: fixture.intent.identity.taskId ?? 'created-exact-id', registerFresh: true } };
+    const saved = await api(`versioned-${name}-receipt`, { schemaVersion: 1, stage: 'receipt', prepared: output.prepared, receipt });
+    assert.equal(saved.status, 'api-applied-reported'); assert.deepEqual(saved.prepared.planningResolution, output.prepared.planningResolution);
+    delete fixture.intent.timing;
+    assert.ok((await api(`versioned-${name}-missing-timing`, { schemaVersion: 1, stage: 'prepare', intent: fixture.intent, observation: fixture.observation }, 3)).findings.includes('planning-timing-unresolved'));
+    fixture.intent.policy.planning.rules[0].predicate = 'unsupported-api-rule'; fixture.observation.policy = structuredClone(fixture.intent.policy);
+    assert.ok((await api(`versioned-${name}-unsupported`, { schemaVersion: 1, stage: 'prepare', intent: fixture.intent, observation: fixture.observation }, 3)).findings.includes('planning-predicate-unsupported'));
+  }
   let apiPrepared;
   for (const name of ['create', 'change']) {
     const fixture = academicOsPlanFixture(name); fixture.intent.operation.title = 'MH3210 Handout 100';

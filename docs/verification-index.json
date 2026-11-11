@@ -130,7 +130,7 @@
     },
     {
       "name": "calendar-register",
-      "description": "Collect read-only Calendar/Tasks snapshots, assess exact-ID proposals, validate handoffs, or prepare Academic OS API plans and inspect reports without applying them.",
+      "description": "Collect read-only Calendar/Tasks snapshots, assess exact-ID proposals, validate shared versioned planning rules and handoffs, or prepare Academic OS API plans and inspect reports without applying them.",
       "options": [
         {
           "name": "file",

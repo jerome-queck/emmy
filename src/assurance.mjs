@@ -16,6 +16,8 @@ export const assurancePlan = Object.freeze([
   { id: 'merge-formal', args: ['verification/merge-policy.mjs'] },
   { id: 'publication-formal', args: ['scripts/verify-publication.mjs'] },
   { id: 'briefing-slot-formal', args: ['scripts/verify-briefing-slot.mjs'] },
+  { id: 'planning-policy-tests', args: ['--test', 'test/planning-policy.test.mjs'] },
+  { id: 'planning-policy-formal', args: ['verification/planning-policy/check.mjs'] },
   { id: 'local-assurance-tests', args: ['--test', 'test/local-assurance.test.mjs'] },
   { id: 'local-assurance-formal', args: ['verification/local-assurance/check.mjs'] },
 ].map(row => Object.freeze({ ...row, args: Object.freeze(row.args) })));

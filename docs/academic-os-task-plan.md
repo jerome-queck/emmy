@@ -24,7 +24,7 @@ The request has `schemaVersion: 1`, `stage: "prepare"`, `intent` and `observatio
 
 | Intent field | Required value |
 | --- | --- |
-| `schemaVersion`, `operationId` | Version `1` and the original stable operation ID. |
+| `schemaVersion`, `operationId` | Intent version `1` for historical semantics or `2` for shared versioned planning, plus the original stable operation ID. |
 | `issuedAt`, `maxEvidenceAgeMs` | Original UTC decision time and positive freshness ceiling, at most one day. |
 | `target` | Exact `{kind,key,title}` from the official read. Kind is `module` or `research-project`. |
 | `identity` | Declared `environment`, `accountId`, `listId`, plus exact `taskId` for an existing Task or stable `sourceOccurrenceId` for creation. Never derive identity from a title. |
@@ -66,3 +66,10 @@ Exit `0` means a prepared API packet or API-only reported application. Exit `3` 
 Run `node --test test/academic-os-task-plan.test.mjs` and `node scripts/verify-behavior.mjs --focus calendar`. These check literal wire plans, both target kinds, all supported operations, original identities/tokens/baselines, freshness, prohibited fields and uncertain outcomes. The driver retains the original inputs and outputs after teardown and performs no native writes.
 
 The separate private compatibility probe uses the exact supplied Academic OS parser and guarded tool wrapper with a synthetic executor. Its unused timing/date/checksum dependencies are throwing sentinels. That probe tests the undated wire subset and argument guards, not provider execution, serialization by a deployed MCP server or native timing. No private counterpart source is copied into this repository.
+
+
+## Shared planning intent version two
+
+Version-two intents require semantic policy version two and exact evidenced timing nonapplicability in `intent.timing`. See [planning policy](planning-policy.md#rounded-booking-and-unresolved-evidence). Missing duration is unresolved. The undated API wire cannot validate supplied booking numbers.
+
+Prepared packet version two retains `planningResolution`. Result assessment checks the exact original selection at preparation and reported attempt time. `task-plan/1`, its wire schema version one and `policyVersion: intent.policyDigest` stay unchanged. Computed bundle digest never replaces the original external association. Version-one packet replay preserves its original semantics and shape; it grants no version-two policy claim.

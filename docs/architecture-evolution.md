@@ -21,13 +21,13 @@ This reassessment compares callable owners with the [shared planning objective](
 | Hosted merge | GitHub adapter, eligibility, workflow | Retain exact head/base, required checks, review attestation and branch requirements. |
 | Release and guidance | foundation release, guidance pin, operating contract | Preserve committed-file closure and versioned consumers. Published, installed, loaded and adopted remain separate. |
 
-## Shared planning policy remains unfinished
+## Shared planning policy first slice
 
 Native register assessment and the Academic OS adapter already call `assessCalendarPolicy`. Its schema-version-one supplement owns assignments, occurrences, ordered groups, exact bindings, scoped owner field protections and terminal intent. It is narrower than the documented general rule bundle.
 
-The next slice should resolve immutable rule IDs/revisions, attributable sources, effective windows, operation/account/source scope and exact supersession. Applicable unsupported predicates, unresolved scope and conflicting hard constraints must block dependent application. Preferences and estimates cannot override hard constraints. Retain selected versions and the policy digest through preparation and readback.
+The bounded [shared planning policy](planning-policy.md) now resolves immutable rule IDs/revisions, attributable sources, effective windows, operation/account/source scope and exact supersession. Both existing callers consume the rounded-booking predicate. Applicable unsupported predicates, unresolved scope/timing and conflicting hard definitions refuse dependent application. Preferences and estimates cannot override hard constraints. Exact selected versions and a separate computed policy digest remain in prepared packets and readback.
 
-Consume the first predicate through both existing callers. Move native rounded-booking validation into the shared evaluator with equivalence and refusal controls. API operations without timing require evidenced nonapplicability or unresolved timing. Preserve coherent source groups, prerequisites, concise source titles, absent descriptions, protected meals, completion, dismissals, exclusions and owner-moved work. Campaign preferences remain scoped. Invent no filler or universal weekly rule.
+Native rounded validation now lives in the shared evaluator, with exhaustive historical arithmetic equivalence and refusal controls. Version-two API operations without timing require exact evidenced nonapplicability or unresolved timing. Historical version-one semantics remain explicitly selectable and make no new-policy claim. Preserve coherent source groups, prerequisites, concise source titles, absent descriptions, protected meals, completion, dismissals, exclusions and owner-moved work. Campaign preferences remain scoped. Invent no filler or universal weekly rule.
 
 ## Exact-ID gateway and module convergence remain separate work
 
@@ -42,7 +42,7 @@ Earlier contracts fix planning to Dot-cloud and local execution to a cloud-appro
 ## Verifiable migration order
 
 1. Establish local assurance through the existing aggregate ingress. Preserve prior checks and obtain fresh independent review before integration.
-2. Implement bounded shared policy resolution and migrate native/API callers together. Preserve historical semantics explicitly. Add empirical journeys and an area-named formal skill with real-source mutants.
+2. Extend the integrated bounded shared policy slice only from evidenced new predicates. Native/API callers already consume the first predicate together. Preserve historical semantics explicitly. Add empirical journeys and an area-named formal skill with real-source mutants.
 3. Coordinate a separately owned Academic OS gateway slice. Verify exact counterpart compatibility, then separately accept provider application and uncertain-result reconciliation.
 4. Complete provider-to-module and direct-UI convergence in Academic OS. Drive offline, pagination, invalid-YAML and generation-drift controls before separately changing installed refresh cadence.
 5. Migrate coordinator/executor identities and ordinary task ingress to Studio-primary intent. Verify each machine independently; retain exact saved project/host/settings and launch uncertainty.

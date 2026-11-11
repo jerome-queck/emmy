@@ -52,3 +52,8 @@ The root uses `stage: "accept"` with `executor: "dot-cloud"`. Reacquire the enti
 Timing acceptance additionally requires a fresh Calendar-side SGT readback after the last report. Compare each endpoint's date and clock, including rollover, and the duration. Require the observed native Task identity or an attributable fresh exact Task-to-projection mapping. A stable projection ID without that mapping keeps identity acceptance pending even when timing matches.
 
 `accepted-reported` means this supplied evidence satisfies the contract. It does not authenticate provider state, complete owner history, the policy implementation, preflight execution or native authorship. All outputs have `execution: "none"`. Retain original packets, preflight results, attempts, local reports and final assessment privately. The executable synthetic examples are in [the unit suite](../test/calendar-handoff.test.mjs) and [real CLI driver](../verification/calendar-register-drive.mjs).
+
+
+## Shared rule selection
+
+For semantic policy version two, each original prepared operation retains `planningResolution`. Preflight and final acceptance compare the current computed bundle digest, exact selected rule versions and decisions with that original selection. Changed policy bytes also remain bound by the existing context digest. Original attempts retain their first selection; they cannot be re-associated with replacement rules. Historical version-one prepared fields and external `policyDigest` semantics remain unchanged. See [shared planning policy](planning-policy.md).
