@@ -453,5 +453,14 @@ export const subsystemEvidence = {
     "model": "reachable-reducer",
     "skillStatus": "maintained",
     "graph": { "kind": "reachable-reducer", "path": "verification/fleet-health/graph.mjs", "record": "verification/fleet-health/coverage.json", "checker": "verification/fleet-health/check.mjs", "exports": ["graph", "spec"] }
+  },
+  "morning-send-history": {
+    "drivers": ["verification/morning-v3-drive.mjs"],
+    "skills": [".agents/skills/morning-send/SKILL.md"],
+    "replay": ["verification/morning-send/check.mjs"],
+    "coverageRecords": ["verification/coverage.json", "verification/morning-send/coverage.json"],
+    "model": "reachable-reducer",
+    "skillStatus": "maintained",
+    "graph": { "kind": "reachable-reducer", "path": "verification/morning-send/graph.mjs", "record": "verification/morning-send/coverage.json", "checker": "verification/morning-send/check.mjs", "exports": ["graph", "spec"] }
   }
 };
