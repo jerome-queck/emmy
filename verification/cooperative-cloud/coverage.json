@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "612d672c1b3f2081350ed27e9b0b868e76c6b35a",
+  "sourceCommit": "56658de1eb3c179e50f27d9a0ca53dceac9358e1",
   "sourceFiles": {
     "src/automation-reporting.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
     "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
@@ -14,7 +14,7 @@
     "src/fleet-schema.mjs": "d9d87c7834b006fb5dd7dac1bb41b0f2075b2e20057f40c656c0974b4576ea27",
     "src/fleet-state.mjs": "4e3f1d689b3cb7df2301e4df46298c7bea221584b3e67b76d844685046439d53",
     "src/guidance-pin.mjs": "f037a3f461db221e884f9f72da45515d51e536f6f271bf70ff11a36b6cf238b7",
-    "src/metadata.mjs": "13fba596cb110a627b4b0c081ddf7f16f1e2a4980383f2767cd0fa33fa24db3d",
+    "src/metadata.mjs": "a296dc8454bd20d6e74aee6ae9105e87e1280f6160885bd0a46e536ded15cb68",
     "src/morning-presentation.mjs": "36d171d854c34b3062da02e9c9ac5b095e509164e2c674bf0dd4ccae1268a343",
     "src/morning.mjs": "c01412274bccfb57e15a423b88c830a9cdb8d6486b2b264c074e7ce30b34d026",
     "src/operating-contract.mjs": "a8c513f23eeee99679d6b4e0e3d3ac0b6e91d26258abf33491e49a4f32143362",

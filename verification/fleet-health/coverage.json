@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "73bfcd1ad7d451fdcdc6875bfd1f2b0680710fca",
+  "sourceCommit": "56658de1eb3c179e50f27d9a0ca53dceac9358e1",
   "sourceFiles": {
     "src/automation-reporting.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
     "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
@@ -23,8 +23,8 @@
     "verification/fleet-fixtures.mjs": "4257eeaa42d60df8d226ea7ffd9b48ab83099799d54c8883379392cdfcee1d4b"
   },
   "verificationFiles": {
-    "verification/fleet-health/graph.mjs": "26a1482faed4dbd47a5e3a8d1a461eb7706c98d5aba272812a89b8a83f5316f3",
-    "verification/fleet-health/check.mjs": "6be4019d30dc00a40825c6e2fbc3c28602a2de4e23dc2e32d59414b9b2166d5a",
+    "verification/fleet-health/graph.mjs": "7d98831675153dbdd3c8e77439814a2589bf406dd5314608d6bcd0200e3005cd",
+    "verification/fleet-health/check.mjs": "5f1fa94013b5d8f48721ac051b883917c4c32933212e38e4d9dddacbd93b6584",
     ".agents/skills/fleet-health/SKILL.md": "15452498ccb6cdf72cdeeb25654fdbcc3139f8f81141a0edf06b7eb1eb6845a7"
   }
 }

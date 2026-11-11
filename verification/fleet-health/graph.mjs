@@ -42,7 +42,7 @@ function rules(before, after, action, at) {
     if (old.expected.id === 'protected' && row.condition === 'healthy') {
       const monitor = entity(after, 'monitor');
       const receipt = row.capture?.receipt;
-      result.ConservativeHealth &&= monitor.condition === 'healthy' && !!receipt && receipt.coverage.complete && receipt.coverage.gaps.length === 0 && row.capture.protectedContent === true && Date.parse(at) - Date.parse(receipt.observedAt) <= 300000;
+      result.ConservativeHealth &&= monitor.condition === 'healthy' && !!receipt && receipt.coverage.complete && receipt.coverage.gaps.length === 0 && row.capture.protectedContent === true && Date.parse(receipt.observedAt) <= Date.parse(receipt.capturedAt) && Date.parse(receipt.capturedAt) <= Date.parse(at) && Date.parse(at) - Date.parse(receipt.observedAt) >= 0 && Date.parse(at) - Date.parse(receipt.observedAt) <= 300000;
     }
     const newAlerts = after.alerts.filter(a => !before.alerts.some(b => a.id === b.id) && a.scope === old.expected.id);
     if (old.recoveryPending && supplied && row.condition === 'healthy') {

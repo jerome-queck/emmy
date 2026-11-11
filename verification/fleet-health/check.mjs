@@ -14,6 +14,7 @@ const report = {status:'running', scratch, runs:[]};
 const mutations = [
  ['fingerprint', '{ condition: current.condition, issueKey: current.issueKey, actionIdentity: current.actionIdentity }', '{ condition: current.condition, issueKey: current.issueKey, actionIdentity: current.actionIdentity, nextAction: current.nextAction }', 'StableEpisode'],
  ['monitor', 'if (bad(monitored.condition))', 'if (false)', 'ConservativeHealth'],
+ ['future', 'Date.parse(receipt.capturedAt) > Date.parse(at) || ageMs < 0 || Date.parse(receipt.observedAt) > Date.parse(receipt.capturedAt)', 'false', 'ConservativeHealth'],
  ['fresh', 'entity.recoveryPending && freshIds.includes(entity.expected.id)', 'entity.recoveryPending', 'FreshRecovery'],
  ['scope', "insist(canonical(row.expected.scope) === canonical(capture.receipt.scope), 'Capture crosses exact source, account or environment scope');", '', 'Admission'],
  ['episode', 'entity.episode++; entity.alertId = addAlert(state, entity.expected.id, current.condition', "entity.episode += state.alerts.some(a => a.id === entity.alertId && a.condition === 'recovered') ? 0 : 1; entity.alertId = addAlert(state, entity.expected.id, current.condition", 'Recurrence']

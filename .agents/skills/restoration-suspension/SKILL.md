@@ -5,7 +5,7 @@ description: Check bounded reachable histories of restored-home evidence, curren
 
 # Restoration suspension
 
-Run `node verification/restoration-suspension/check.mjs` with Node 24+, Java 21, and the existing pinned `.local/tools/tla2tools-1.7.4.jar`. Results and copied-source mutations are retained under `.local/verification/restoration-suspension/`. No product files are mutated. The command refuses changed the mapped static production import closure, including `src/content.mjs`, against source commit `612d672c1b3f2081350ed27e9b0b868e76c6b35a`. `--development` bypasses this source gate and cannot support acceptance.
+Run `node verification/restoration-suspension/check.mjs` with Node 24+, Java 21, and the existing pinned `.local/tools/tla2tools-1.7.4.jar`. Results and copied-source mutations are retained under `.local/verification/restoration-suspension/`. No product files are mutated. The command refuses changed the mapped static production import closure, including `src/content.mjs`, against source commit `56658de1eb3c179e50f27d9a0ca53dceac9358e1`. `--development` bypasses this source gate and cannot support acceptance.
 
 Read each result with the installed `pstack:statechart` skill. Inspect the counterexample and its `replay.json`: a syntax error, source pin refusal, unrelated exception, or missing actual copied-function replay is not a property counterexample. The command checks baseline, real-source guards broken in isolated copies, and restored baseline.
 
