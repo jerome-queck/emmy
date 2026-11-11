@@ -1448,7 +1448,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "ca6a6113e4769ab9d60ce61a5e1a754f8b216a5430f5263afea05075c746fd27",
+          "sha256": "28b9cb7d9f922dced8120fc02e3ec46bc4ace9a52ec1e58d41e4304f5d197e0a",
           "callers": [
             "verification input"
           ]
@@ -1525,7 +1525,7 @@
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "1dce32e13c88b4297db400806644ef84df7aaf6c29124b1e88e9cc36d7959830",
+          "sha256": "bc5a13cdc51fed2d43aded3472198945ad3e59a64eafa8bc307f00894f87aedc",
           "callers": [
             "verification input"
           ]
@@ -1630,7 +1630,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "81d1feb62796dd2b2a7227b108e466c0b6291a731575724a136645786af29de8",
+          "sha256": "1939b69508d6d613441ab78f1b04533535e3f90432aa8a4be21849cf4fc88487",
           "callers": [
             "verification input"
           ]
@@ -1777,7 +1777,7 @@
         },
         {
           "path": "verification/publication/coverage.json",
-          "sha256": "65b54904087643faa549a9793b7d102559e27b4402497669e0e8e902bc0b30f7",
+          "sha256": "262a12aa010a466d72ab37c5d0d56349c2f8d3b2200a895149d3b9f66ca96008",
           "callers": [
             "verification input"
           ]
@@ -2169,7 +2169,7 @@
         },
         {
           "path": "verification/restoration-suspension/coverage.json",
-          "sha256": "63d6bcd160c17fe2832308b16b570e514b7584ef04e5f01376a503ce0600b834",
+          "sha256": "078cdd728c2415738420d5d835183b61a48811f4e493d501060f6f27bdf18a8c",
           "callers": [
             "verification input"
           ]
@@ -2219,7 +2219,7 @@
         },
         {
           "path": "verification/fleet-health/coverage.json",
-          "sha256": "88b949907e769d208b7cf66a6dcd98d6f056502273d067e6f7d16640e534a887",
+          "sha256": "f814d8cd661780318ea6bcdae0b514c03b6d5b82eda078ab3c1b091e9e718d31",
           "callers": [
             "verification input"
           ]
@@ -2280,7 +2280,7 @@
         },
         {
           "path": "verification/morning-send/coverage.json",
-          "sha256": "c76a8399014aa3801eff7855a4683ad8e0acb685a073dcd57e57ea2c9bee90b7",
+          "sha256": "02bb0e2d7f34d18ad9ce2f8ef1296bcb47bc923e1f44b76beb5e0c986e0afa46",
           "callers": [
             "verification input"
           ]
