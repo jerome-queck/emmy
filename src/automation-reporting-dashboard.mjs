@@ -77,7 +77,12 @@ function render(snapshot) {
     more.textContent = 'Showing ' + Math.min(value.length, 50) + ' of ' + page.total + (page.nextCursor ? '. More records available. CLI next cursor: ' + page.nextCursor : '.');
     card.append(more);
    }
-  } else { fields(card, Object.entries(value)); evidence(card, value); }
+  } else {
+   fields(card, key === 'automationHealth'
+    ? [['Scope', value.scope], ...Object.entries(value.observations), ['Latest selection', value.latestSelection]]
+    : Object.entries(value));
+   evidence(card, value);
+  }
   container.append(card);
  }
 }
