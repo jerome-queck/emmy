@@ -209,6 +209,14 @@ module.exports.GoogleAuth = class {
     candidate.evaluatedAt = new Date(Date.parse(observedAt) + 1).toISOString(); refreshRegisterEvidence(candidate); candidate.request.visualReview.observedAt = candidate.evaluatedAt;
     candidate.request.attempts[0].resolution = { kind: 'saved', snapshotDigest: candidate.request.snapshotDigest, evidenceRef: `synthetic-${name}-fresh-root-window` };
     assert.equal((await handoff(`timing-${name}-accept`, { ...header, stage: 'accept', executor: 'dot-cloud', plan: planned.plan, preflights: [checked.preflight], receipts: [receipt] }, 0, candidate)).status, 'accepted-reported');
+    if (name === 'versioned-policy') {
+      const changed = structuredClone(candidate); changed.request.sources[0].reference = 'synthetic-replacement-source'; changed.request.policy.assignments[0].reference = 'synthetic-replacement-source'; changed.snapshot.policy = structuredClone(changed.request.policy); bindRegister(changed); changed.request.attempts[0].resolution.snapshotDigest = changed.request.snapshotDigest;
+      const files = { snapshotFile: join(directory, 'versioned-source-change.snapshot.json'), requestFile: join(directory, 'versioned-source-change.request.json') };
+      await writeFile(files.snapshotFile, JSON.stringify(changed.snapshot)); await writeFile(files.requestFile, JSON.stringify(changed.request));
+      const envelope = join(directory, 'versioned-source-change.envelope.json'); await writeFile(envelope, JSON.stringify({ schemaVersion: 1, action: 'assess', ...files }));
+      const refused = await run(['calendar-register', '--file', envelope], 3); assert.ok(refused.findings.some(row => row.code === 'planning-rule-selection-changed')); assert.equal(refused.proposals[0].status, 'blocked');
+      await writeFile(join(directory, 'versioned-source-change.result.json'), JSON.stringify(refused));
+    }
   }
   const apiEnvelope = join(directory, 'academic-os.envelope.json');
   const apiRequest = join(directory, 'academic-os.request.json');

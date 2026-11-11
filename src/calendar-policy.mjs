@@ -81,7 +81,7 @@ export function assessCalendarPolicy(policy, baseline, scope, selectors, evaluat
       booking = legacy;
     } else {
       const assessment = assessPlanningPolicy(policy.planning, { ...scope, source: source?.reference, occurrenceId: source?.occurrenceId, operationId: selector.id, operation: selector.operationKind ?? (selector.create ? 'create' : selector.changes.completed === true ? 'complete' : 'change'), evaluatedAt, maxEvidenceAgeMs: selector.maxEvidenceAgeMs, window: scheduled ? { start: selector.changes.start, end: selector.changes.end } : { start: evaluatedAt, end: new Date(Date.parse(evaluatedAt) + 1).toISOString() }, timingFieldsAbsent: !scheduled && !('date' in selector.changes), timing: scheduled ? { kind: 'booking', actualDurationMinutes: actual, scheduledDurationMinutes: selector.changes.durationMinutes } : selector.timing });
-      booking = assessment.booking; resolution = assessment.resolution; bookingFindings = assessment.findings;
+      booking = assessment.booking; resolution = { ...assessment.resolution, semanticPolicyDigest: hash(policy) }; bookingFindings = assessment.findings;
     }
     operations.set(selector.id, { findings: bookingFindings, booking, resolution });
     if (policy.schemaVersion === 2) for (const code of bookingFindings) add(code, selector.id);

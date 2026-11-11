@@ -41,9 +41,9 @@ API intent version two requires semantic policy version two. Its `timing` must d
 
 ## Retention and compatibility
 
-V2 native prepared operations and API prepared packets retain `planningResolution`, including a computed bundle `policyDigest`, exact selected rule versions/digests and decisions. This computed digest is separate from the existing opaque external `policyDigest`. The latter and `task-plan/1` wire `policyVersion` retain their original meanings. API provider payload fields are unchanged.
+V2 native prepared operations and API prepared packets retain `planningResolution`, including a computed bundle `policyDigest`, the complete `semanticPolicyDigest`, exact selected rule versions/digests and decisions. This computed digest is separate from the existing opaque external `policyDigest`. The latter and `task-plan/1` wire `policyVersion` retain their original meanings. API provider payload fields are unchanged.
 
-Native handoff preflight and final acceptance compare current selection with original prepared selection. Original attempts keep their original resolution and operation digest. Changed selection blocks dependent application; it cannot rebind an old attempt. API result assessment validates original selection at original preparation time, then checks applicability again at the reported attempt time. Original uncertainty and same-operation reconciliation remain unchanged.
+Native handoff preflight and final acceptance compare current selection with original prepared selection. Original attempts keep their original resolution and operation digest. Changed selection or semantic source-policy association blocks dependent application; it cannot rebind an old attempt. API result assessment validates original selection at original preparation time, then checks applicability again at the reported attempt time. Original uncertainty and same-operation reconciliation remain unchanged.
 
 These pure checks cannot durably retain records, authenticate provider truth or stop an external caller from rehashing fabricated packets. They grant no writer, schedule, deployment, gateway serialization or native timing acceptance.
 

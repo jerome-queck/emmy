@@ -4,7 +4,7 @@ import { assessPlanningPolicy, assessRoundedBooking } from '../src/planning-poli
 import { assessCalendarRegister } from '../src/calendar-register.mjs';
 import { prepareAcademicOsTaskPlan, assessAcademicOsTaskResult } from '../src/academic-os-task-plan.mjs';
 import { planningBundle, planningContext, nonTiming, nextRule, versionedNative, versionedApi, hash, at } from '../verification/planning-policy/fixtures.mjs';
-import { bindRegister } from '../verification/calendar-register-fixtures.mjs';
+import { bindRegister, registerAttempt, refreshRegisterEvidence } from '../verification/calendar-register-fixtures.mjs';
 import { calendarPolicyCases, calendarPolicyPositives } from '../verification/calendar-policy-fixtures.mjs';
 import { academicOsPlanFixture } from '../verification/academic-os-plan-fixtures.mjs';
 
@@ -96,4 +96,19 @@ test('v2 API receipt refuses a rule window that expired before the reported atte
   const receipt = { attemptedAt: later, observedAt: later, evidenceRef: 'synthetic-expired-rule-response', report: { schemaVersion: 1, operationId: fixture.intent.operationId, outcome: 'applied', taskId: 'task-one', registerFresh: true } };
   const result = assessAcademicOsTaskResult(prepared, receipt, { evaluatedAt: later });
   assert.equal(result.status, 'reconcile-original-operation'); assert.ok(result.findings.includes('planning-policy-at-attempt-changed')); assert.deepEqual(result.prepared, prepared);
+});
+
+
+test('native original attempts cannot acquire a replacement semantic source-policy association', () => {
+  const input = versionedNative(); const original = native(input).proposals[0];
+  assert.equal(original.prepared.planningResolution.semanticPolicyDigest, hash(input.request.policy));
+  input.request.attempts.push(registerAttempt(input, original));
+  input.request.taskSchedules[0].intervals = [{ start: original.changes.start, end: original.changes.end }];
+  refreshRegisterEvidence(input); input.request.attempts[0].resolution = { kind: 'saved', snapshotDigest: input.request.snapshotDigest, evidenceRef: 'synthetic-same-native-saved-readback' };
+  assert.equal(native(input).proposals[0].status, 'already-saved');
+  input.request.sources[0].reference = 'different-source-file'; input.request.policy.assignments[0].reference = 'different-source-file'; input.snapshot.policy = structuredClone(input.request.policy); bindRegister(input);
+  input.request.attempts[0].resolution.snapshotDigest = input.request.snapshotDigest;
+  const result = native(input);
+  assert.equal(result.proposals[0].status, 'blocked'); assert.ok(result.findings.some(row => row.code === 'planning-rule-selection-changed'));
+  assert.equal(input.request.attempts[0].prepared.planningResolution.semanticPolicyDigest, original.prepared.planningResolution.semanticPolicyDigest);
 });
