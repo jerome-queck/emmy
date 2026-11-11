@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "8358824beda068659759f82b1e308ada6a4a38cf",
+  "sourceFiles": {
+    "src/automation-reporting.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
+    "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
+    "src/automation-procedure.mjs": "c52e2228ef4c241598f95892b18268f174e42b64afca5b4124731c36a651e35b",
+    "src/briefing-reporting.mjs": "3bee7e7e912efa31ecda166099ee37f1d21ec00508157981c353584a8dc43e15"
+  },
+  "verificationFiles": {
+    "verification/automation-lineage/check.mjs": "6ddda0b467ea2fd8c73b43698478ebb2771d286de7cef047756459b7e0ee24ce",
+    "verification/automation-lineage/graph.mjs": "43204a10626013002d2c54b2fd6985089a193d54aa8f1901b3d2618108ee9d02",
+    ".agents/skills/automation-lineage/SKILL.md": "f02e7670aa5711092620392c55de15f5d9643fd7c78be9264a4ce1d364c6077c"
+  },
+  "bounds": {
+    "namespaces": 1,
+    "automations": 1,
+    "invocations": 1,
+    "depth": 4,
+    "nodes": 40,
+    "edges": 39,
+    "priorRuns": 3
+  },
+  "mapping": {
+    "InitialExact": "Bound initial occurrence and revision zero",
+    "ChainExact": "Complete ordered supplied predecessor revisions and digests",
+    "OccurrenceTerminal": "Same invocation retains bound occurrence and terminal execution",
+    "NullTerminal": "Bound early terminal null cannot receive a later report"
+  },
+  "limits": "Synthetic synchronous producer only; no discovery of wholly omitted history, persistence, provider, native effects or publication."
+}

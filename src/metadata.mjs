@@ -471,5 +471,14 @@ export const subsystemEvidence = {
     "model": "reachable-history",
     "skillStatus": "maintained",
     "graph": { "kind": "reachable-history", "path": "verification/calendar-attempt/graph.mjs", "record": "verification/calendar-attempt/coverage.json", "checker": "verification/calendar-attempt/check.mjs", "exports": ["graph", "spec"] }
+  },
+  "automation-lineage-history": {
+    "drivers": ["verification/daily-briefing-drive.mjs"],
+    "skills": [".agents/skills/automation-lineage/SKILL.md"],
+    "replay": ["verification/automation-lineage/check.mjs"],
+    "coverageRecords": ["verification/coverage.json", "verification/automation-lineage/coverage.json"],
+    "model": "reachable-history",
+    "skillStatus": "maintained",
+    "graph": { "kind": "reachable-history", "path": "verification/automation-lineage/graph.mjs", "record": "verification/automation-lineage/coverage.json", "checker": "verification/automation-lineage/check.mjs", "exports": ["graph", "spec"] }
   }
 };
