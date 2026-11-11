@@ -1,7 +1,7 @@
 {
   "sourceCommit": "8358824beda068659759f82b1e308ada6a4a38cf",
   "sourceFiles": {
-    "src/automation-reporting.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
+    "src/automation-producer.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
     "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
     "src/automation-procedure.mjs": "c52e2228ef4c241598f95892b18268f174e42b64afca5b4124731c36a651e35b",
     "src/briefing-reporting.mjs": "3bee7e7e912efa31ecda166099ee37f1d21ec00508157981c353584a8dc43e15"

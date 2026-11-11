@@ -1,6 +1,6 @@
 import { briefingChecksV1 as checks } from './operating-contract.mjs';
-import { assessAutomationReporting } from './automation-reporting.mjs';
-export { reportingCanonical } from './automation-reporting.mjs';
+import { assessAutomationReporting } from './automation-producer.mjs';
+export { reportingCanonical } from './automation-producer.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);

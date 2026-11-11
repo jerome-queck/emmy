@@ -646,7 +646,7 @@
     },
     {
       "id": "automation",
-      "stateOwner": "automation-plan.mjs planAutomation; automation-reporting.mjs artifact contract",
+      "stateOwner": "automation-plan.mjs planAutomation; automation-producer.mjs artifact contract",
       "classification": "stateful publication boundary and pure planning; finite predicates",
       "bounds": "Finite declared procedure cases; no native execution authority.",
       "gap": "Dedicated automation lifecycle graph and formal contract missing.",
@@ -668,7 +668,7 @@
           ]
         },
         {
-          "path": "src/automation-reporting.mjs",
+          "path": "src/automation-producer.mjs",
           "sha256": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
           "callers": [
             "src/automation-procedure.mjs",
@@ -700,7 +700,7 @@
           "symbol": "planAutomation"
         },
         {
-          "path": "src/automation-reporting.mjs",
+          "path": "src/automation-producer.mjs",
           "symbol": "assessAutomationReporting"
         }
       ],
@@ -1004,7 +1004,7 @@
           "callers": [
             "src/academic-os-task-plan.mjs",
             "src/automation-procedure.mjs",
-            "src/automation-reporting.mjs",
+            "src/automation-producer.mjs",
             "src/bounded-json.mjs",
             "src/briefing-source-normalization.mjs",
             "src/daily-briefing.mjs",
@@ -2664,7 +2664,7 @@
       ],
       "ownerRefs": [
         {
-          "path": "src/automation-reporting.mjs",
+          "path": "src/automation-producer.mjs",
           "symbol": "assessAutomationReporting"
         }
       ],

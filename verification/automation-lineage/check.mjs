@@ -4,7 +4,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { cp, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import * as original from '../../src/automation-reporting.mjs';
+import * as original from '../../src/automation-producer.mjs';
 import { graph, spec, cfg, step } from './graph.mjs';
 
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -64,10 +64,10 @@ try {
     report.runs.push({ name, expected, nodes: g.states.length, edges: g.edges.length, argv, tmpdir: dir });
   }
   await run('baseline', original, null);
-  const source = await readFile('src/automation-reporting.mjs', 'utf8');
+  const source = await readFile('src/automation-producer.mjs', 'utf8');
   for (const [name, rule, edits] of mutants) {
     const dir = join(scratch, `source-${name}`); await cp('src', dir, { recursive: true });
-    const file = join(dir, 'automation-reporting.mjs'); let changed = source;
+    const file = join(dir, 'automation-producer.mjs'); let changed = source;
     for (const [from, to] of edits) { assert.equal(changed.split(from).length, 2, name); changed = changed.replace(from, to); }
     await writeFile(file, changed); await run(name, await import(pathToFileURL(file)), rule);
   }

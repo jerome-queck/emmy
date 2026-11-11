@@ -5,7 +5,7 @@ import { boundedFile } from './bounded-json.mjs';
 import { strictJson } from './strict-json.mjs';
 import { digest } from './content.mjs';
 import { operatingContract } from './operating-contract.mjs';
-import { assessAutomationReporting, validateAutomationArtifact } from './automation-reporting.mjs';
+import { assessAutomationReporting, validateAutomationArtifact } from './automation-producer.mjs';
 
 const need = (ok, message) => { if (!ok) throw new Error(message); };
 const object = value => value && typeof value === 'object' && !Array.isArray(value);

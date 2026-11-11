@@ -49,7 +49,7 @@
     "src/academic-os-task-plan.mjs": "9e997cf82ba3bc408fb3b0c01c14f76794a507f706da67856231fccc55ab35a9",
     "src/automation-plan.mjs": "4a9a94eea37330dfe7521a98448b5e6c63a92dcb7c296517e58a112adeeb9f59",
     "src/automation-procedure.mjs": "c52e2228ef4c241598f95892b18268f174e42b64afca5b4124731c36a651e35b",
-    "src/automation-reporting.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
+    "src/automation-producer.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
     "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
     "src/briefing-acquisition.mjs": "0fa631189ec2b7a2a656b5f0e172adf6cf3342c85bd3b47fa5a046b9e54cbe47",
     "src/briefing-cloud-caller.mjs": "635a524c41c8784de042768a9c51d66fb6ce671e2a090c318d1145cdbd996867",
@@ -632,35 +632,35 @@
     },
     {
       "function": "validateAutomationArtifact",
-      "source": "src/automation-reporting.mjs",
+      "source": "src/automation-producer.mjs",
       "properties": [
         "automation-contract"
       ]
     },
     {
       "function": "assessAutomationReporting",
-      "source": "src/automation-reporting.mjs",
+      "source": "src/automation-producer.mjs",
       "properties": [
         "automation-contract"
       ]
     },
     {
       "function": "validateRecord",
-      "source": "src/automation-reporting.mjs",
+      "source": "src/automation-producer.mjs",
       "properties": [
         "automation-contract"
       ]
     },
     {
       "function": "timingEvidence",
-      "source": "src/automation-reporting.mjs",
+      "source": "src/automation-producer.mjs",
       "properties": [
         "automation-contract"
       ]
     },
     {
       "function": "measuredTelemetry",
-      "source": "src/automation-reporting.mjs",
+      "source": "src/automation-producer.mjs",
       "properties": [
         "automation-contract"
       ]

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { digest } from '../src/content.mjs';
 import { planAutomation, automationProcedure } from '../src/automation-procedure.mjs';
-import { assessAutomationReporting, reportingCanonical, validateAutomationArtifact } from '../src/automation-reporting.mjs';
+import { assessAutomationReporting, reportingCanonical, validateAutomationArtifact } from '../src/automation-producer.mjs';
 import { assessBriefingReporting } from '../src/briefing-reporting.mjs';
 import { automationProcedureFixture as procedure, automationConfigurationFixture, automationOutcomeFixture } from '../verification/automation-fixtures.mjs';
 const at = '2026-11-03T01:00:00.000Z';

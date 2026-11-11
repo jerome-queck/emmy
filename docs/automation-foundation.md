@@ -26,7 +26,7 @@ The output always remains staged, effects unauthorized, native creation unperfor
 
 Use action `report` with the same procedure/configuration references and an `input` matching the existing producer contract. Include the two `reportEvidenceRefs` emitted by the plan. Namespace and automation ID must match configuration. Supply the original invocation identity, origin, clocks, execution, coverage, availability and exact predecessor chain explicitly. An absent scheduled binding stays scheduled-unbound. A running result has no terminal report.
 
-`automation-reporting.mjs` owns producer and publication validation for every automation kind. It emits the existing canonical run and occurrence envelopes, byte-for-byte compatible with briefing reporting. The briefing adapter owns only its expected check assessment. No second outcome format or publication writer is introduced.
+`automation-producer.mjs` owns producer and publication validation for every automation kind. It emits the existing canonical run and occurrence envelopes, byte-for-byte compatible with briefing reporting. The briefing adapter owns only its expected check assessment. No second outcome format or publication writer is introduced.
 
 Report preparation returns exact artifact bytes, semantic IDs, byte hashes and the intended destination. Publication and delivery remain unverified. Native upload attempts and independent exact-ID readbacks use the existing publication contract; uncertain attempts require rediscovery.
 

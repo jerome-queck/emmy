@@ -52,7 +52,7 @@ export const automationMutations = [
   mutation('negative-budget', 'Number.isSafeInteger(value) && value >= 0', 'Number.isSafeInteger(value)', 'budget/reads/-1'),
   mutation('duplicate-stage', 'new Set(procedure.steps.map(step => step.id)).size === procedure.steps.length', 'true', 'duplicate-stage'),
   mutation('lost-parameters', "digest({ contract: 'automation-procedure-v1', procedure, configuration })", "digest({ contract: 'automation-procedure-v1', procedure, configuration: { ...configuration, parameters: {} } })", 'change/parameter'),
-  { id: 'automation-nonterminal-report', source: 'src/automation-reporting.mjs', property: 'automation-contract', edits: [["need(terminal.includes(data.execution), 'Non-null report requires terminal execution');", '']], counterexample: 'report/nonterminal/running' },
-  { id: 'automation-artifact-timing', source: 'src/automation-reporting.mjs', property: 'automation-contract', edits: [["if (Object.hasOwn(data, 'timing')) timingEvidence(data.timing, record.recordedAt);", '']], counterexample: 'report/future-timing' },
-  { id: 'automation-artifact-telemetry', source: 'src/automation-reporting.mjs', property: 'automation-contract', edits: [["if (Object.hasOwn(data, 'telemetry')) measuredTelemetry(data.telemetry);", '']], counterexample: 'report/negative-telemetry' }
+  { id: 'automation-nonterminal-report', source: 'src/automation-producer.mjs', property: 'automation-contract', edits: [["need(terminal.includes(data.execution), 'Non-null report requires terminal execution');", '']], counterexample: 'report/nonterminal/running' },
+  { id: 'automation-artifact-timing', source: 'src/automation-producer.mjs', property: 'automation-contract', edits: [["if (Object.hasOwn(data, 'timing')) timingEvidence(data.timing, record.recordedAt);", '']], counterexample: 'report/future-timing' },
+  { id: 'automation-artifact-telemetry', source: 'src/automation-producer.mjs', property: 'automation-contract', edits: [["if (Object.hasOwn(data, 'telemetry')) measuredTelemetry(data.telemetry);", '']], counterexample: 'report/negative-telemetry' }
 ];
