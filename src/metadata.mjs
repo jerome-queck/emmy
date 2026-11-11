@@ -67,3 +67,336 @@ export const verification = {
     { id: 'restore-suspension', source: 'src/work.mjs', functions: ['restoredState', 'currentObservations'], statement: 'Restored homes require current fresh exact target, authority, task and schedule observations in their new epoch; cloud targets remain reported and local targets require inspection.' }
   ]
 };
+
+// Reviewed association of subsystem evidence; file inventory remains in verification/subsystems.json.
+export const subsystemEvidence = {
+  "responsibility": {
+    "drivers": [
+      "scripts/verify-behavior.mjs",
+      "verification/properties.mjs"
+    ],
+    "skills": [
+      ".agents/skills/coordination-contract/SKILL.md"
+    ],
+    "replay": [
+      "verification/mutations.mjs",
+      "scripts/verify-formal.mjs"
+    ],
+    "coverageRecords": [
+      "verification/coverage.json"
+    ],
+    "model": "finite-predicates",
+    "skillStatus": "maintained"
+  },
+  "dispatch": {
+    "drivers": [
+      "verification/dispatch-drive.mjs"
+    ],
+    "skills": [
+      ".agents/skills/direct-dispatch/SKILL.md"
+    ],
+    "replay": [
+      "verification/direct-dispatch/check.mjs"
+    ],
+    "coverageRecords": [
+      "verification/direct-dispatch/coverage.json"
+    ],
+    "model": "finite-assessment",
+    "skillStatus": "maintained",
+    "graph": {
+      "kind": "finite-assessment",
+      "path": "verification/direct-dispatch/graph.mjs",
+      "record": "verification/direct-dispatch/coverage.json",
+      "checker": "verification/direct-dispatch/check.mjs",
+      "exports": [
+        "dispatchGraph",
+        "dispatchSpec",
+        "dispatchConfig"
+      ]
+    }
+  },
+  "cloud": {
+    "drivers": [
+      "verification/cloud-drive.mjs"
+    ],
+    "skills": [
+      ".agents/skills/coordination-contract/SKILL.md"
+    ],
+    "replay": [
+      "verification/cloud-mutations.mjs",
+      "verification/incarnation-mutations.mjs",
+      "scripts/verify-formal.mjs"
+    ],
+    "coverageRecords": [
+      "verification/coverage.json"
+    ],
+    "model": "finite-predicates",
+    "skillStatus": "maintained"
+  },
+  "fleet": {
+    "drivers": [
+      "verification/fleet-drive.mjs"
+    ],
+    "skills": [
+      ".agents/skills/coordination-contract/SKILL.md"
+    ],
+    "replay": [
+      "verification/fleet-mutations.mjs",
+      "scripts/verify-formal.mjs"
+    ],
+    "coverageRecords": [
+      "verification/coverage.json"
+    ],
+    "model": "finite-predicates",
+    "skillStatus": "maintained"
+  },
+  "morning": {
+    "drivers": [
+      "verification/morning-drive.mjs",
+      "verification/morning-v3-drive.mjs"
+    ],
+    "skills": [
+      ".agents/skills/coordination-contract/SKILL.md",
+      ".agents/skills/morning-collect/SKILL.md"
+    ],
+    "replay": [
+      "verification/morning-properties.mjs",
+      "scripts/verify-formal.mjs"
+    ],
+    "coverageRecords": [
+      "verification/coverage.json"
+    ],
+    "model": "finite-predicates",
+    "skillStatus": "maintained"
+  },
+  "briefing": {
+    "drivers": [
+      "verification/daily-briefing-drive.mjs",
+      "verification/briefing-drive.mjs"
+    ],
+    "skills": [
+      ".agents/skills/coordination-contract/SKILL.md"
+    ],
+    "replay": [
+      "verification/briefing-slot/drive.mjs",
+      "scripts/verify-briefing-slot.mjs"
+    ],
+    "coverageRecords": [
+      "verification/briefing-slot/coverage.json",
+      "verification/coverage.json"
+    ],
+    "model": "hand-mapped-await",
+    "skillStatus": "missing",
+    "graph": {
+      "kind": "hand-mapped-await",
+      "path": "verification/briefing-slot/BriefingSlot.tla",
+      "record": "verification/briefing-slot/coverage.json",
+      "checker": "scripts/verify-briefing-slot.mjs"
+    }
+  },
+  "calendar": {
+    "drivers": [
+      "verification/calendar-drive.mjs",
+      "verification/calendar-register-drive.mjs"
+    ],
+    "skills": [
+      ".agents/skills/coordination-contract/SKILL.md"
+    ],
+    "replay": [
+      "verification/calendar-mutations.mjs",
+      "scripts/verify-formal.mjs"
+    ],
+    "coverageRecords": [
+      "verification/coverage.json"
+    ],
+    "model": "finite-predicates",
+    "skillStatus": "maintained"
+  },
+  "planning-policy": {
+    "drivers": [
+      "verification/calendar-register-drive.mjs",
+      "test/planning-policy.test.mjs"
+    ],
+    "skills": [
+      ".agents/skills/planning-policy/SKILL.md"
+    ],
+    "replay": [
+      "verification/planning-policy/check.mjs"
+    ],
+    "coverageRecords": [
+      "verification/planning-policy/coverage.json"
+    ],
+    "model": "finite-assessment",
+    "skillStatus": "maintained",
+    "graph": {
+      "kind": "finite-assessment",
+      "path": "verification/planning-policy/graph.mjs",
+      "record": "verification/planning-policy/coverage.json",
+      "checker": "verification/planning-policy/check.mjs",
+      "exports": [
+        "planningGraph",
+        "planningSpec",
+        "planningConfig"
+      ]
+    }
+  },
+  "automation": {
+    "drivers": [
+      "test/automation-procedure.test.mjs",
+      "scripts/verify-behavior.mjs"
+    ],
+    "skills": [
+      ".agents/skills/coordination-contract/SKILL.md"
+    ],
+    "replay": [
+      "verification/automation-properties.mjs",
+      "scripts/verify-formal.mjs"
+    ],
+    "coverageRecords": [
+      "verification/coverage.json"
+    ],
+    "model": "finite-predicates",
+    "skillStatus": "maintained"
+  },
+  "publication": {
+    "drivers": [
+      "verification/publication/drive.mjs"
+    ],
+    "skills": [
+      ".agents/skills/publication-contract/SKILL.md"
+    ],
+    "replay": [
+      "scripts/verify-publication.mjs"
+    ],
+    "coverageRecords": [
+      "verification/publication/coverage.json"
+    ],
+    "model": "hand-mapped-await",
+    "skillStatus": "maintained",
+    "graph": {
+      "kind": "hand-mapped-await",
+      "path": "verification/publication/RecordPublication.tla",
+      "record": "verification/publication/coverage.json",
+      "checker": "scripts/verify-publication.mjs"
+    }
+  },
+  "local-assurance": {
+    "drivers": [
+      "verification/local-assurance/drive.mjs"
+    ],
+    "skills": [
+      ".agents/skills/local-assurance/SKILL.md"
+    ],
+    "replay": [
+      "verification/local-assurance/check.mjs"
+    ],
+    "coverageRecords": [
+      "verification/local-assurance/coverage.json"
+    ],
+    "model": "reachable-reducer",
+    "skillStatus": "maintained",
+    "graph": {
+      "kind": "reachable-reducer",
+      "path": "verification/local-assurance/graph.mjs",
+      "record": "verification/local-assurance/coverage.json",
+      "checker": "verification/local-assurance/check.mjs",
+      "exports": [
+        "assuranceGraph",
+        "graphSpec",
+        "graphConfig"
+      ]
+    }
+  },
+  "local-delivery": {
+    "drivers": [
+      "verification/delivery/drive.mjs"
+    ],
+    "skills": [
+      ".agents/skills/merge-assurance/SKILL.md"
+    ],
+    "replay": [
+      "verification/delivery/check.mjs"
+    ],
+    "coverageRecords": [
+      "verification/delivery/coverage.json"
+    ],
+    "model": "reachable-reducer",
+    "skillStatus": "maintained",
+    "graph": {
+      "kind": "reachable-reducer",
+      "path": "verification/delivery/graph.mjs",
+      "record": "verification/delivery/coverage.json",
+      "checker": "verification/delivery/check.mjs",
+      "exports": [
+        "deliveryGraph",
+        "deliverySpec",
+        "deliveryConfig"
+      ]
+    }
+  },
+  "guidance-release": {
+    "drivers": [
+      "test/foundation-release.test.mjs",
+      "test/guidance-pin.test.mjs"
+    ],
+    "skills": [],
+    "replay": [],
+    "coverageRecords": [
+      "verification/coverage.json"
+    ],
+    "model": "empirical-only",
+    "skillStatus": "missing"
+  },
+  "improvement": {
+    "drivers": [
+      "verification/improvement-drive.mjs",
+      "test/token-review.test.mjs"
+    ],
+    "skills": [],
+    "replay": [],
+    "coverageRecords": [
+      "verification/coverage.json"
+    ],
+    "model": "empirical-only",
+    "skillStatus": "missing"
+  },
+  "shared-utilities": {
+    "drivers": [
+      "test/automation-procedure.test.mjs",
+      "scripts/verify-behavior.mjs"
+    ],
+    "skills": [],
+    "replay": [],
+    "coverageRecords": [
+      "verification/coverage.json"
+    ],
+    "model": "empirical-only",
+    "skillStatus": "not-applicable"
+  },
+  "orientation-and-checks": {
+    "drivers": [
+      "test/agent-local.test.mjs",
+      "scripts/verify-behavior.mjs"
+    ],
+    "skills": [],
+    "replay": [],
+    "coverageRecords": [
+      "verification/coverage.json"
+    ],
+    "model": "empirical-only",
+    "skillStatus": "not-applicable"
+  },
+  "verification-tooling": {
+    "drivers": [
+      "scripts/verify-formal.mjs",
+      "scripts/verify-behavior.mjs"
+    ],
+    "skills": [],
+    "replay": [],
+    "coverageRecords": [
+      "verification/coverage.json"
+    ],
+    "model": "empirical-only",
+    "skillStatus": "not-applicable"
+  }
+};

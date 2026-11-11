@@ -599,7 +599,8 @@ try {
       const destination = join(root, 'bin', `restore-interrupt-${boundary.replaceAll(':', '-')}`); const args = ['restore', '--from', archive, '--into', destination]; await interruptAt(args, boundary); const recoveredRestore = await run(args, boundary === 'restore:published' ? 2 : 0); if (boundary !== 'restore:published') assert.equal(recoveredRestore.suspended, true); else assert.match(recoveredRestore.error, /already exists/); await readStore(destination);
     }
     assert.equal(report.interruptions.length, 10); scenario('publication-interruption', 'Actual SIGSTOP checkpoints followed by SIGKILL at three record, three archive, three restore boundaries and forward-dependent import prefix; replay converges or explicitly refuses existing restored destination. No all-instruction crash-durability claim.');
-    const catalogBefore = await readFile(join(root, 'registry/catalog.json')); const formalPath = join(root, 'verification/coverage.json'); await mkdir(dirname(formalPath), { recursive: true }); await writeFile(formalPath, '{"sourceCommit":"do-not-advance"}\n'); const formalBefore = await readFile(formalPath);
+    const catalogBefore = await readFile(join(root, 'registry/catalog.json')); const formalPath = join(root, 'verification/coverage.json'); await mkdir(dirname(formalPath), { recursive: true });
+    const formalFixture = JSON.parse(await readFile(formalPath, 'utf8')); formalFixture.sourceCommit = 'do-not-advance'; await writeFile(formalPath, JSON.stringify(formalFixture)); const formalBefore = await readFile(formalPath);
     const inventoryPath = join(root, 'verification/subsystems.json'); const syntheticInventory = JSON.parse(await readFile(inventoryPath, 'utf8'));
     for (const area of syntheticInventory.subsystems) for (const file of area.files) if (file.path === 'verification/coverage.json') file.sha256 = digest(formalBefore);
     await writeFile(inventoryPath, JSON.stringify(syntheticInventory));

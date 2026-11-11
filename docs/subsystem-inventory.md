@@ -1,6 +1,6 @@
 # Subsystem inventory
 
-Generated from `verification/subsystems.json`. Structural admission is not semantic proof. Caller admission checks literal relative imports in production files; dynamic and external callers still need source review. Whole-repository foundation readiness: **incomplete**.
+Generated from `verification/subsystems.json`. Structural admission is not semantic proof. Caller admission uses parsed static relative imports in production files; dynamic and external callers still need source review. Whole-repository foundation readiness: **incomplete**.
 
 | Subsystem | State owner | Classification | Remaining gap |
 | --- | --- | --- | --- |
@@ -15,7 +15,7 @@ Generated from `verification/subsystems.json`. Structural admission is not seman
 | automation | automation-plan.mjs planAutomation; automation-reporting.mjs artifact contract | stateful publication boundary and pure planning; finite predicates | Dedicated automation lifecycle graph and formal contract missing. |
 | publication | records.mjs publishRecord and importOrder | stateful filesystem; hand-mapped awaits | Model does not cover all record semantics or external filesystem actors. |
 | local-assurance | assurance.mjs assuranceTransition; local-assurance.mjs receipt and subprocesses | stateful reducer and empirical filesystem boundary | Receipt authenticity and hostile-process containment are not established. |
-| local-delivery | github-auto-merge.mjs deliveryTransition; local-delivery.mjs provider adapter | stateful reducer and empirical provider boundary | Lower-stack and live provider authorization and execution remain separate. |
+| local-delivery | github-auto-merge.mjs deliveryTransition; local-delivery.mjs provider adapter | stateful reducer and empirical provider boundary | Lower-stack and live provider authorization and execution remain separate. The merge ingress lazily imports the delivery adapter; this dynamic edge is outside static caller admission. |
 | guidance-release | foundation-release.mjs packaged closure; guidance-pin.mjs local selection | stateful file boundaries and pure helpers; empirical only | Release/acquisition and guidance lifecycle models missing. |
 | improvement | improvement-report.mjs immutable reports; token-review.mjs supplied assessment | stateful file boundary and pure assessment; empirical only | Report lifecycle coverage and external telemetry remain incomplete. |
 | shared-utilities | content.mjs canonical digest; strict-json.mjs and bounded-json.mjs input parsing | pure helpers and bounded file reads; empirical only | Explicit helper boundary review and broader failure cases pending. |

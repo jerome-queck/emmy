@@ -6,17 +6,6 @@
       "id": "responsibility",
       "stateOwner": "responsibilities.mjs reconcileState; records.mjs journal and work.mjs review",
       "classification": "stateful; finite predicates",
-      "drivers": [
-        "scripts/verify-behavior.mjs",
-        "verification/properties.mjs"
-      ],
-      "skills": [
-        ".agents/skills/coordination-contract/SKILL.md"
-      ],
-      "replay": [
-        "verification/mutations.mjs",
-        "scripts/verify-formal.mjs"
-      ],
       "bounds": "Finite supplied histories; honest local evidence and scoped clocks.",
       "gap": "Reachable repair and restore lifecycle and dedicated contract missing.",
       "files": [
@@ -45,7 +34,6 @@
             "verification/cloud-drive.mjs",
             "verification/cloud-migration-fixtures.mjs",
             "verification/dispatch-drive.mjs",
-            "verification/fixtures.mjs",
             "verification/fleet-drive.mjs",
             "verification/fleet-fixtures.mjs",
             "verification/fleet-properties.mjs",
@@ -81,7 +69,6 @@
             "scripts/verify-behavior.mjs",
             "verification/cloud-drive.mjs",
             "verification/dispatch-drive.mjs",
-            "verification/fixtures.mjs",
             "verification/fleet-drive.mjs",
             "test/fleet-semantics.test.mjs"
           ]
@@ -120,37 +107,19 @@
         "repair-closure",
         "restore-suspension"
       ],
-      "coverageRecords": [
-        "verification/coverage.json"
-      ],
       "scenarios": [
         "persistent-context",
         "self-check-repair",
         "archive-recovery",
         "restored-current-context"
-      ],
-      "model": "finite-predicates",
-      "skillStatus": "maintained"
+      ]
     },
     {
       "id": "dispatch",
       "stateOwner": "dispatch.mjs dispatchDecision; records.mjs immutable lineage",
       "classification": "stateful advice; finite assessment",
-      "drivers": [
-        "verification/dispatch-drive.mjs"
-      ],
-      "skills": [
-        ".agents/skills/direct-dispatch/SKILL.md"
-      ],
-      "replay": [
-        "verification/direct-dispatch/check.mjs"
-      ],
       "bounds": "Finite supplied histories, one synchronous assessment per case; no native create.",
       "gap": "Native authority, execution and complete history remain external.",
-      "graph": {
-        "kind": "finite-assessment",
-        "path": "verification/direct-dispatch/graph.mjs"
-      },
       "files": [
         {
           "path": "src/dispatch.mjs",
@@ -172,30 +141,14 @@
         "RouteHeld",
         "ExactAttemptRequest"
       ],
-      "coverageRecords": [
-        "verification/direct-dispatch/coverage.json"
-      ],
       "scenarios": [
         "native-dispatch"
-      ],
-      "model": "finite-assessment",
-      "skillStatus": "maintained"
+      ]
     },
     {
       "id": "cloud",
       "stateOwner": "cloud.mjs cloudTransition; process-incarnation.mjs ownerDecision",
       "classification": "stateful; finite predicates",
-      "drivers": [
-        "verification/cloud-drive.mjs"
-      ],
-      "skills": [
-        ".agents/skills/coordination-contract/SKILL.md"
-      ],
-      "replay": [
-        "verification/cloud-mutations.mjs",
-        "verification/incarnation-mutations.mjs",
-        "scripts/verify-formal.mjs"
-      ],
       "bounds": "Cooperative bounded queue and declared observations; Linux-specific incarnation cannot be inferred on macOS.",
       "gap": "Dedicated lifecycle graph and formal contract missing.",
       "files": [
@@ -232,8 +185,7 @@
             "src/cloud-migration.mjs",
             "src/cloud.mjs",
             "scripts/cloud-acceptance.mjs",
-            "verification/cloud-drive.mjs",
-            "test/process-incarnation.test.mjs"
+            "verification/cloud-drive.mjs"
           ]
         },
         {
@@ -259,29 +211,14 @@
         "process-incarnation",
         "legacy-baseline"
       ],
-      "coverageRecords": [
-        "verification/coverage.json"
-      ],
       "scenarios": [
         "cloud-admission"
-      ],
-      "model": "finite-predicates",
-      "skillStatus": "maintained"
+      ]
     },
     {
       "id": "fleet",
       "stateOwner": "fleet-state.mjs fleetTransition; fleet.mjs retained operations",
       "classification": "stateful; finite predicates",
-      "drivers": [
-        "verification/fleet-drive.mjs"
-      ],
-      "skills": [
-        ".agents/skills/coordination-contract/SKILL.md"
-      ],
-      "replay": [
-        "verification/fleet-mutations.mjs",
-        "scripts/verify-formal.mjs"
-      ],
       "bounds": "Finite events and declared health facts; native sources remain external.",
       "gap": "Dedicated lifecycle graph and formal contract missing.",
       "files": [
@@ -341,32 +278,15 @@
       "properties": [
         "fleet-contract"
       ],
-      "coverageRecords": [
-        "verification/coverage.json"
-      ],
       "scenarios": [
         "fleet-health",
         "signin-recovery"
-      ],
-      "model": "finite-predicates",
-      "skillStatus": "maintained"
+      ]
     },
     {
       "id": "morning",
       "stateOwner": "morning.mjs morningTransition; morning-collection.mjs acquisition",
       "classification": "stateful; finite predicates",
-      "drivers": [
-        "verification/morning-drive.mjs",
-        "verification/morning-v3-drive.mjs"
-      ],
-      "skills": [
-        ".agents/skills/coordination-contract/SKILL.md",
-        ".agents/skills/morning-collect/SKILL.md"
-      ],
-      "replay": [
-        "verification/morning-properties.mjs",
-        "scripts/verify-formal.mjs"
-      ],
       "bounds": "Finite source and delivery cases; declared provider receipts do not authenticate effects.",
       "gap": "Collection-to-delivery lifecycle contract missing.",
       "files": [
@@ -419,36 +339,16 @@
       "properties": [
         "morning-contract"
       ],
-      "coverageRecords": [
-        "verification/coverage.json"
-      ],
       "scenarios": [
         "morning-run"
-      ],
-      "model": "finite-predicates",
-      "skillStatus": "maintained"
+      ]
     },
     {
       "id": "briefing",
       "stateOwner": "briefing-plan.mjs and daily-briefing.mjs artifact preparation; immutable-slot.mjs publication",
       "classification": "stateful slots and pure assessment; partial hand-mapped model",
-      "drivers": [
-        "verification/daily-briefing-drive.mjs",
-        "verification/briefing-drive.mjs"
-      ],
-      "skills": [
-        ".agents/skills/coordination-contract/SKILL.md"
-      ],
-      "replay": [
-        "verification/briefing-slot/drive.mjs",
-        "scripts/verify-briefing-slot.mjs"
-      ],
       "bounds": "Two symbolic writers and bounded crash/retry for slot model; not briefing delivery.",
       "gap": "Dedicated briefing lifecycle and immutable-slot formal skill missing.",
-      "graph": {
-        "kind": "hand-mapped-await",
-        "path": "verification/briefing-slot/BriefingSlot.tla"
-      },
       "files": [
         {
           "path": "src/briefing-acquisition.mjs",
@@ -471,8 +371,7 @@
           "path": "src/briefing-cloud-exchange.mjs",
           "sha256": "cc8a0d121889e037ddf504088080b24381c9e56378bb8b026b3d857218ea1779",
           "callers": [
-            "scripts/briefing-cloud-exchange.mjs",
-            "test/briefing-source-normalization.test.mjs"
+            "scripts/briefing-cloud-exchange.mjs"
           ]
         },
         {
@@ -516,11 +415,7 @@
             "src/briefing-plan.mjs",
             "src/fleet.mjs",
             "src/morning.mjs",
-            "verification/briefing-workflow-properties.mjs",
-            "test/briefing-cloud-caller.test.mjs",
-            "test/briefing-policy.test.mjs",
-            "test/briefing-source-normalization.test.mjs",
-            "test/foundation-release.test.mjs"
+            "test/briefing-policy.test.mjs"
           ]
         },
         {
@@ -552,7 +447,6 @@
             "src/morning.mjs",
             "scripts/agent.mjs",
             "verification/morning-compact-fixtures.mjs",
-            "test/daily-briefing.test.mjs",
             "test/guidance-pin.test.mjs",
             "test/morning-compact.test.mjs"
           ]
@@ -577,8 +471,7 @@
           "path": "scripts/briefing-cloud-exchange.mjs",
           "sha256": "ece4c710643cb2c1f4d32610324f1a346669ef67cfeaee7c8a833af878458703",
           "callers": [
-            "executable ingress",
-            "test/briefing-source-normalization.test.mjs"
+            "executable ingress"
           ]
         },
         {
@@ -607,34 +500,17 @@
         "ConflictRetained",
         "ObservedImmutable"
       ],
-      "coverageRecords": [
-        "verification/briefing-slot/coverage.json",
-        "verification/coverage.json"
-      ],
       "scenarios": [
         "daily-briefing-pilot",
         "briefing-guidance",
         "briefing-draft",
         "briefing-boundaries"
-      ],
-      "model": "hand-mapped-await",
-      "skillStatus": "missing"
+      ]
     },
     {
       "id": "calendar",
       "stateOwner": "calendar.mjs assessCalendar; calendar-register.mjs assessCalendarRegister",
       "classification": "stateful external boundary; finite predicates",
-      "drivers": [
-        "verification/calendar-drive.mjs",
-        "verification/calendar-register-drive.mjs"
-      ],
-      "skills": [
-        ".agents/skills/coordination-contract/SKILL.md"
-      ],
-      "replay": [
-        "verification/calendar-mutations.mjs",
-        "scripts/verify-formal.mjs"
-      ],
       "bounds": "Declared snapshots and finite cases; native saved-item truth remains external.",
       "gap": "Saved-item lifecycle graph and area contract missing.",
       "files": [
@@ -715,36 +591,17 @@
         "calendar-acceptance",
         "calendar-register"
       ],
-      "coverageRecords": [
-        "verification/coverage.json"
-      ],
       "scenarios": [
         "calendar-acceptance",
         "calendar-register"
-      ],
-      "model": "finite-predicates",
-      "skillStatus": "maintained"
+      ]
     },
     {
       "id": "planning-policy",
       "stateOwner": "planning-policy.mjs assessPlanningPolicy and assessRoundedBooking",
       "classification": "pure scoped rule assessment; finite case graph",
-      "drivers": [
-        "verification/calendar-register-drive.mjs",
-        "test/planning-policy.test.mjs"
-      ],
-      "skills": [
-        ".agents/skills/planning-policy/SKILL.md"
-      ],
-      "replay": [
-        "verification/planning-policy/check.mjs"
-      ],
       "bounds": "Finite supplied contexts, synchronous assessment, trusted inputs; not calendar lifecycle.",
       "gap": "Native acceptance and broader calendar lifecycle remain separate.",
-      "graph": {
-        "kind": "finite-assessment",
-        "path": "verification/planning-policy/graph.mjs"
-      },
       "files": [
         {
           "path": "src/planning-policy.mjs",
@@ -780,30 +637,14 @@
         "RoundedExact",
         "ScopedSelection"
       ],
-      "coverageRecords": [
-        "verification/planning-policy/coverage.json"
-      ],
       "scenarios": [
         "calendar-register and planning-policy unit cases"
-      ],
-      "model": "finite-assessment",
-      "skillStatus": "maintained"
+      ]
     },
     {
       "id": "automation",
       "stateOwner": "automation-plan.mjs planAutomation; automation-reporting.mjs artifact contract",
       "classification": "stateful publication boundary and pure planning; finite predicates",
-      "drivers": [
-        "test/automation-procedure.test.mjs",
-        "scripts/verify-behavior.mjs"
-      ],
-      "skills": [
-        ".agents/skills/coordination-contract/SKILL.md"
-      ],
-      "replay": [
-        "verification/automation-properties.mjs",
-        "scripts/verify-formal.mjs"
-      ],
       "bounds": "Finite declared procedure cases; no native execution authority.",
       "gap": "Dedicated automation lifecycle graph and formal contract missing.",
       "files": [
@@ -862,34 +703,16 @@
       "properties": [
         "automation-contract"
       ],
-      "coverageRecords": [
-        "verification/coverage.json"
-      ],
       "scenarios": [
         "automation-foundation"
-      ],
-      "model": "finite-predicates",
-      "skillStatus": "maintained"
+      ]
     },
     {
       "id": "publication",
       "stateOwner": "records.mjs publishRecord and importOrder",
       "classification": "stateful filesystem; hand-mapped awaits",
-      "drivers": [
-        "verification/publication/drive.mjs"
-      ],
-      "skills": [
-        ".agents/skills/publication-contract/SKILL.md"
-      ],
-      "replay": [
-        "scripts/verify-publication.mjs"
-      ],
       "bounds": "Bounded writers and dependency edge; atomic same-filesystem rename and cooperating ordinary files assumed.",
       "gap": "Model does not cover all record semantics or external filesystem actors.",
-      "graph": {
-        "kind": "hand-mapped-await",
-        "path": "verification/publication/RecordPublication.tla"
-      },
       "files": [
         {
           "path": "verification/publication/RecordPublication.tla",
@@ -918,46 +741,23 @@
         "RetryConvergesOnReturn",
         "AcceptedManifestComplete"
       ],
-      "coverageRecords": [
-        "verification/publication/coverage.json"
-      ],
       "scenarios": [
         "publication-interruption"
-      ],
-      "model": "hand-mapped-await",
-      "skillStatus": "maintained"
+      ]
     },
     {
       "id": "local-assurance",
       "stateOwner": "assurance.mjs assuranceTransition; local-assurance.mjs receipt and subprocesses",
       "classification": "stateful reducer and empirical filesystem boundary",
-      "drivers": [
-        "verification/local-assurance/drive.mjs"
-      ],
-      "skills": [
-        ".agents/skills/local-assurance/SKILL.md"
-      ],
-      "replay": [
-        "verification/local-assurance/check.mjs"
-      ],
       "bounds": "One reducer call per graph edge; bounded suite plan, trusted verifier and ordinary filesystem.",
       "gap": "Receipt authenticity and hostile-process containment are not established.",
-      "graph": {
-        "kind": "reachable-reducer",
-        "path": "verification/local-assurance/graph.mjs"
-      },
       "files": [
         {
           "path": "src/assurance.mjs",
           "sha256": "5861cf2154b957e614745cf863f76ddf07558f363fb281116476df120d4c9f7b",
           "callers": [
             "src/local-assurance.mjs",
-            "scripts/agent.mjs",
-            "scripts/check.mjs",
-            "scripts/local-delivery.mjs",
-            "verification/delivery/check.mjs",
-            "verification/local-assurance/check.mjs",
-            "verification/planning-policy/check.mjs"
+            "verification/local-assurance/check.mjs"
           ]
         },
         {
@@ -976,8 +776,7 @@
           "path": "scripts/check.mjs",
           "sha256": "f8b710af8abcafa21d3090a9739b820f04b01b98e9dfdfb8b49ca1b4877b204c",
           "callers": [
-            "executable ingress",
-            "verification/merge-policy.mjs"
+            "executable ingress"
           ]
         }
       ],
@@ -996,34 +795,16 @@
         "PassedClean",
         "RefusalTerminal"
       ],
-      "coverageRecords": [
-        "verification/local-assurance/coverage.json"
-      ],
       "scenarios": [
         "local-assurance"
-      ],
-      "model": "reachable-reducer",
-      "skillStatus": "maintained"
+      ]
     },
     {
       "id": "local-delivery",
       "stateOwner": "github-auto-merge.mjs deliveryTransition; local-delivery.mjs provider adapter",
       "classification": "stateful reducer and empirical provider boundary",
-      "drivers": [
-        "verification/delivery/drive.mjs"
-      ],
-      "skills": [
-        ".agents/skills/merge-assurance/SKILL.md"
-      ],
-      "replay": [
-        "verification/delivery/check.mjs"
-      ],
       "bounds": "One synchronous reducer call per edge, bounded attempts and declared provider facts.",
-      "gap": "Lower-stack and live provider authorization and execution remain separate.",
-      "graph": {
-        "kind": "reachable-reducer",
-        "path": "verification/delivery/graph.mjs"
-      },
+      "gap": "Lower-stack and live provider authorization and execution remain separate. The merge ingress lazily imports the delivery adapter; this dynamic edge is outside static caller admission.",
       "files": [
         {
           "path": "scripts/github-auto-merge.mjs",
@@ -1043,7 +824,6 @@
           "sha256": "b339a2c581ad2751ffe013d93652b6917439c10e4268e636dbe91fb8e14657bf",
           "callers": [
             "executable ingress",
-            "scripts/github-auto-merge.mjs",
             "test/local-delivery.test.mjs"
           ]
         }
@@ -1060,25 +840,14 @@
         "MergeReadback",
         "NoDuplicate"
       ],
-      "coverageRecords": [
-        "verification/delivery/coverage.json"
-      ],
       "scenarios": [
         "delivery actual adapter and reducer controls"
-      ],
-      "model": "reachable-reducer",
-      "skillStatus": "maintained"
+      ]
     },
     {
       "id": "guidance-release",
       "stateOwner": "foundation-release.mjs packaged closure; guidance-pin.mjs local selection",
       "classification": "stateful file boundaries and pure helpers; empirical only",
-      "drivers": [
-        "test/foundation-release.test.mjs",
-        "test/guidance-pin.test.mjs"
-      ],
-      "skills": [],
-      "replay": [],
       "bounds": "Exact input and local filesystem controls; hashes do not prove adoption.",
       "gap": "Release/acquisition and guidance lifecycle models missing.",
       "files": [
@@ -1101,8 +870,7 @@
           "path": "scripts/foundation-release.mjs",
           "sha256": "8d4740442cd3fbbf6e0d5454568bef52ea1596e9207ae528a65f5c8e2fec692c",
           "callers": [
-            "executable ingress",
-            "test/foundation-release.test.mjs"
+            "executable ingress"
           ]
         }
       ],
@@ -1117,23 +885,14 @@
         }
       ],
       "properties": [],
-      "coverageRecords": [],
       "scenarios": [
         "briefing-boundaries and foundation-release unit cases"
-      ],
-      "model": "empirical-only",
-      "skillStatus": "missing"
+      ]
     },
     {
       "id": "improvement",
       "stateOwner": "improvement-report.mjs immutable reports; token-review.mjs supplied assessment",
       "classification": "stateful file boundary and pure assessment; empirical only",
-      "drivers": [
-        "verification/improvement-drive.mjs",
-        "test/token-review.test.mjs"
-      ],
-      "skills": [],
-      "replay": [],
       "bounds": "Declared captures and immutable local artifacts; no native delivery claim.",
       "gap": "Report lifecycle coverage and external telemetry remain incomplete.",
       "files": [
@@ -1157,8 +916,7 @@
           "path": "scripts/improvement-report.mjs",
           "sha256": "7a84179a8b5d955fa7cdb1d4408b0fe29ac8421984ca073ae57b39ee17952f12",
           "callers": [
-            "executable ingress",
-            "test/improvement-report.test.mjs"
+            "executable ingress"
           ]
         }
       ],
@@ -1173,24 +931,15 @@
         }
       ],
       "properties": [],
-      "coverageRecords": [],
       "scenarios": [
         "token-review",
         "improvement-report"
-      ],
-      "model": "empirical-only",
-      "skillStatus": "missing"
+      ]
     },
     {
       "id": "shared-utilities",
       "stateOwner": "content.mjs canonical digest; strict-json.mjs and bounded-json.mjs input parsing",
       "classification": "pure helpers and bounded file reads; empirical only",
-      "drivers": [
-        "test/automation-procedure.test.mjs",
-        "scripts/verify-behavior.mjs"
-      ],
-      "skills": [],
-      "replay": [],
       "bounds": "Tests exercise selected callers; collision resistance and parser runtime assumed.",
       "gap": "Explicit helper boundary review and broader failure cases pending.",
       "files": [
@@ -1290,23 +1039,14 @@
         }
       ],
       "properties": [],
-      "coverageRecords": [],
       "scenarios": [
         "automation-foundation and CLI boundary cases"
-      ],
-      "model": "empirical-only",
-      "skillStatus": "not-applicable"
+      ]
     },
     {
       "id": "orientation-and-checks",
       "stateOwner": "metadata.mjs command map and guidance input selection; maintenance.mjs reads configured guidance and generates references; catalog.mjs public catalog",
       "classification": "metadata and check tooling; empirical only",
-      "drivers": [
-        "test/agent-local.test.mjs",
-        "scripts/verify-behavior.mjs"
-      ],
-      "skills": [],
-      "replay": [],
       "bounds": "Local file and CLI checks; metadata does not authenticate execution or semantic completeness.",
       "gap": "Subsystem mappings and all missing lifecycle contracts require independent review.",
       "files": [
@@ -1319,7 +1059,7 @@
         },
         {
           "path": "src/metadata.mjs",
-          "sha256": "04dde9842a694abc4678920359d7f0cc702ffbdc02302cac0f570ccfa9235ecf",
+          "sha256": "8a2f810dc9adbc809e0a4bfaed468008643e81cfa0f1df49338be6717b811244",
           "callers": [
             "src/briefing.mjs",
             "src/maintenance.mjs",
@@ -1330,7 +1070,7 @@
         },
         {
           "path": "src/maintenance.mjs",
-          "sha256": "497c8fb2728a1d14e2d30c61f709782f84999c5f7eadcf5b1c6e26b4146d100e",
+          "sha256": "cdb355bf191bb0aae6f3aed42d37fb448b15fea53c35adfc0014be762f8a7630",
           "callers": [
             "scripts/agent.mjs"
           ]
@@ -1351,7 +1091,7 @@
         },
         {
           "path": "scripts/verify-behavior.mjs",
-          "sha256": "8eaaad84fe4afd0cddbfc60fbc4a07feb59b6e19bba47ba561ae8ca2c642b7ed",
+          "sha256": "4fccf10139c3e6ae3f511517a4a7b107419e3527b5ed6e3962e330274c7a64d5",
           "callers": [
             "executable ingress"
           ]
@@ -1466,23 +1206,14 @@
         }
       ],
       "properties": [],
-      "coverageRecords": [],
       "scenarios": [
         "orientation and maintain CLI admission controls"
-      ],
-      "model": "empirical-only",
-      "skillStatus": "not-applicable"
+      ]
     },
     {
       "id": "verification-tooling",
       "stateOwner": "scripts/verify-formal.mjs and scripts/verify-behavior.mjs execute maintained properties and journeys",
       "classification": "verification inputs and tests; source-backed scope varies by area",
-      "drivers": [
-        "scripts/verify-formal.mjs",
-        "scripts/verify-behavior.mjs"
-      ],
-      "skills": [],
-      "replay": [],
       "bounds": "Fixtures and scripts are evidence inputs, not independently executed by inclusion in this inventory.",
       "gap": "Individual model assumptions and test adequacy require area-by-area review.",
       "ownerRefs": [
@@ -1496,12 +1227,9 @@
         }
       ],
       "properties": [],
-      "coverageRecords": [],
       "scenarios": [
         "Existing aggregate formal and behavioral suites"
       ],
-      "model": "empirical-only",
-      "skillStatus": "not-applicable",
       "files": [
         {
           "path": "verification/academic-os-plan-fixtures.mjs",
@@ -2121,7 +1849,7 @@
         },
         {
           "path": "test/agent-local.test.mjs",
-          "sha256": "71daa20904f6af72b4903ccd99296914e507455075605fb042c6f30681779239",
+          "sha256": "ef6b34f6d7330a75591922a095083f87f372b66385abb19b8255f0c1ff508278",
           "callers": [
             "verification input"
           ]
