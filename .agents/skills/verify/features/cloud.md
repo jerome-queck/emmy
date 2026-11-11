@@ -19,6 +19,8 @@ The finite `cloud-admission` property checks 106 production predicates and twelv
 No result establishes parent cloud use, provider quota/global enforcement, native browser execution, automatic adoption, notification delivery, arbitrary external exactly-once effects, whole-provider restart or power-loss survival. Pending escalation output is not a delivered Dot message. Actual parent use, installed bytes, loaded guidance and later ordinary-turn adoption need separate readbacks.
 
 Kernel incarnation and legacy migration coverage use `test/process-incarnation.test.mjs`, `test/cloud-migration.test.mjs`, `verification/incarnation-properties.mjs` and sixteen paired identity/legacy source mutants plus the PID1 denial positive-control mutant. The original 106 cloud cases and twelve mutants remain. Legacy analogues are explicitly synthetic. The driver preserves original analog bytes, refuses default legacy resume, establishes a new no-work baseline only on supported Linux, then requires a later observed-different invocation. Actual parent cloud originals and acceptance remain separate.
+
+The [incarnation ownership skill](../../incarnation-ownership/SKILL.md) adds bounded actual asynchronous I/O histories and source-mutant replays. Its Linux inputs are synthetic; actual Linux collection and migration remain separate.
 # Reachable reducer contract
 
 The [cooperative-cloud skill](../../cooperative-cloud/SKILL.md) explores bounded actual reducer histories for stable identity, retained progress and terminal state. This supplements the existing finite and CLI checks; wrapper claims, incarnation and migration remain separate.
