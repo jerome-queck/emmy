@@ -1429,7 +1429,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "7c5efaecc52bee819f8dbd6b306db53d90807f784980955adcb626ebe163a7fd",
+          "sha256": "337359dbdc06bc6f8e6342d4408ad5b680de55068f0e5738d2b9459c8579658d",
           "callers": [
             "verification input"
           ]
@@ -1513,7 +1513,7 @@
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "cf1ef5f2b8c7d267c713e997571ba35ae58f976213ba28a0d8267822e7d6d1c2",
+          "sha256": "117c3a7d5f763aed28d07d6d124426ef9807ac6bf972bf4399a4ef9e3489569c",
           "callers": [
             "verification input"
           ]
@@ -1632,7 +1632,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "40d222427334101e8a1564bc196233d0537b7aa44f2d7ecbe3155abbab8ec70f",
+          "sha256": "9a0962edf4b54a3f9b65a988055531a32536b289f90771c9c19493b1feb2813a",
           "callers": [
             "verification input"
           ]
@@ -1786,7 +1786,7 @@
         },
         {
           "path": "verification/publication/coverage.json",
-          "sha256": "5cde32d2897ddb216265749217a17d8ee738b8475d04cfe1d53f818d7e6eca5a",
+          "sha256": "bcadc1fa349873d64d932bdfa03c7c242b5b19ade7fb95eb31dc120b79143ba3",
           "callers": [
             "verification input"
           ]
