@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "8f0deddf52cf03eaaa6253a8baec2e3905299ad2",
+  "sourceCommit": "ddc03ef72adb37c5b89b7fefa2c890ec79611ce9",
   "sourceFiles": {
-    "src/dispatch.mjs": "04d3051d5f9069f42c660b5bcc7a526b1eaf49f288305860bf21316526f43e55",
+    "src/dispatch.mjs": "9156804f77c06577d02ebd7f142c627db2474fcb6fa14e826b08cac799a08383",
     "src/records.mjs": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58",
     "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
     "src/responsibilities.mjs": "07914317b5b8d310f2e347cdda0392f18c6a791cf26101124a5d651cb43a8674",
@@ -10,15 +10,15 @@
     "src/assurance.mjs": "5861cf2154b957e614745cf863f76ddf07558f363fb281116476df120d4c9f7b",
     "src/metadata.mjs": "04dde9842a694abc4678920359d7f0cc702ffbdc02302cac0f570ccfa9235ecf",
     "scripts/agent.mjs": "314099e863b0153da4415ac68f38a6f340dc112b1d9f7c5d5453760d21f2d7d5",
-    "verification/dispatch-drive.mjs": "e607700f83bb9b0a7c950128c5a384f5e2da34a86b3fdcfd634fd284f2ccf28b"
+    "verification/dispatch-drive.mjs": "bc43637428fcbfe78acd42bac4bd039e3d8663217c64b13f6a28163b5f99fca5"
   },
   "verificationFiles": {
-    "verification/direct-dispatch/domain.mjs": "fd4796727a646ee6535d2bbae43f99b221268112e351b802700fd159d9cf9a30",
-    "verification/direct-dispatch/graph.mjs": "5e5bc1c4e60738de869c5f0d6d422166cefe97b2a0c0ce2628fc7e40bca2383c",
-    "verification/direct-dispatch/check.mjs": "943c7c296d712032f3590edd4c705051308ab2edfff0d5be54422e0260e8a184",
+    "verification/direct-dispatch/domain.mjs": "a6653e0c6152b8a95cdffef8471205b975ab765ec7a3a4d37f4cff610f3fbd78",
+    "verification/direct-dispatch/graph.mjs": "a23d9f0d232531866ad29ad1f7dad8b06ec5b37393033e30ce7a6cea836e7703",
+    "verification/direct-dispatch/check.mjs": "3d802ed66f07df4be04cfdfb11f46903682a688139c51cb1ff799a2fc65253e9",
     "verification/direct-dispatch/view.mjs": "5cf9b6c3faa8462c376420cc4590f0e6e4276f3b4a24f2af5ad5565df0b6a917",
-    "verification/direct-dispatch/chart.mmd": "62254da616b9a58076b8a08b036c468f7bad148ebafa1dd9e96b181739074184",
-    ".agents/skills/direct-dispatch/SKILL.md": "882569f542d4f67ffa0a5d94d96f4b2f9b707fdc0d7b9f0aeb22ae822f886d27"
+    "verification/direct-dispatch/chart.mmd": "6912b39c6f70cb542c30fba4c3e5295c2c57a5e0adb2955900d04cc4c1d03874",
+    ".agents/skills/direct-dispatch/SKILL.md": "4f8c4856c859c7571f9b9e2cc9f7f20dd7c807999e9bed5dadedd4a6f22affc5"
   },
   "mapping": [
     {
@@ -55,21 +55,28 @@
       "functions": [
         "dispatchDecision"
       ]
+    },
+    {
+      "property": "ExactAttemptRequest",
+      "functions": [
+        "dispatchDecision"
+      ],
+      "harm": "Conflicting original requests cannot be resolved by input/hash order or a later ready/no-effect outcome."
     }
   ],
   "bounds": {
-    "cases": 108,
+    "cases": 124,
     "phases": 5,
     "availability": 4,
     "coverage": 2,
-    "graphStates": 217,
-    "graphEdges": 324,
-    "mutations": 14
+    "graphStates": 249,
+    "graphEdges": 372,
+    "mutations": 17
   },
   "assumptions": [
     "honest byte-verified native captures",
     "finite named snapshot domain",
     "one synchronous assessment per graph transition"
   ],
-  "reviewBasis": "Reviewed complete direct-mode source delta, parser and immutable identity callers, graph facts and actual CLI. Intentional direct authority/provenance contract addition preserves historical promises. All108finitecases,14actual-source mutants, restored baseline, and16strict installed-statechart invocations passed. Existing assurance graph reran with20suites and7mutants; original coordination8710predicates/281mutants unchanged. Parent independent exact-head native review remains required."
+  "reviewBasis": "Reviewed complete direct-mode source delta, parser and immutable identity callers, graph facts and actual CLI. Intentional direct authority/provenance contract addition preserves historical promises. All108finitecases,14actual-source mutants, restored baseline, and16strict installed-statechart invocations passed. Existing assurance graph reran with20suites and7mutants; original coordination8710predicates/281mutants unchanged. Parent independent exact-head native review remains required. Revision v2 reviewed from1db92dcf5ef873868abf8979eb596f2b7f3745b7 to ddc03ef72adb37c5b89b7fefa2c890ec79611ce9. R1 is an actual product bug: conflicting original request digests sharing an attempt key formerly selected by input/hash order. All retained attempted originals now contribute to one conflict hold; direct request and clock checks cover every matching ancestor. Both permutations and both actual CLI stored hash orders replayed, including identical/idempotent imports and creation between repeated clocks. R2 is stale publication navigation metadata: all mapped current function ranges corrected after await/reference review, with strict top-level start/end guards. Canonical awaits, dependency edges, publication/merge graphs and original coordination8710predicates281mutants unchanged. Current selected router remains operational; direct mode optional explicitly selected source capability, no installation or permission grant. Original direct creator provenance retained. Parent exact revised independent review/integration acceptance remains pending."
 }
