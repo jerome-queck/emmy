@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { realpath } from 'node:fs/promises';
-import { automationReporting, aggregate, validateRecord, recordDigest } from './automation-reporting.mjs';
+import { automationReporting, aggregate, validateRecord, recordDigest, requireExistingNamespace } from './automation-reporting.mjs';
 import { validateOutcomeReport } from './automation-reporting-outcome.mjs';
 import { exportOutcome } from './automation-reporting-export.mjs';
 import { assertExportSafe } from './reporting-privacy.mjs';
@@ -84,11 +84,12 @@ export async function transportAutomationReporting({ sourceDirectory, directory,
   const sourcePath = await realpath(resolve(sourceDirectory));
   const targetPath = await realpath(resolve(directory));
   need(sourcePath !== targetPath, 'Source fallback and synced target must differ');
+  await requireExistingNamespace(directory, namespace);
   const source = await readHistory(sourceDirectory, namespace, evaluatedAt);
   const projection = sanitizeRecords(source, { namespace, evaluatedAt });
   const target = await readHistory(directory, namespace, evaluatedAt);
   const targetView = validateHistory([...target, ...projection.records], evaluatedAt);
   const results = [];
-  if (!dryRun) for (const record of projection.records) results.push(await automationReporting({ action: 'publish-own-record', directory, namespace, record }, { evaluatedAt }));
+  if (!dryRun) for (const record of projection.records) results.push(await automationReporting({ action: 'publish-own-record', directory, namespace, record, synced: true }, { evaluatedAt }));
   return { schemaVersion: 1, status: dryRun ? 'dry-run' : 'local-synced-store-readback-verified', writes: !dryRun && results.some(result => result.status === 'published'), records: projection.records.length, mapping: projection.mapping, skipped: projection.skipped, normalizations: projection.normalizations, conflicts: { sourceCurrentRecords: projection.conflictedCurrentRecords, projectedTargetCurrentRecords: targetView.records.filter(record => record.conflict).length }, publication: 'pending-remote-verification', userDelivery: 'pending', evidencePolicy: 'Each projected run binds its exact original source record digest; raw evidence references remain in the local fallback.', receiptPolicy: 'Original exact-subject publication and delivery receipts skipped; create target receipts after actual remote readback.', results };
 }

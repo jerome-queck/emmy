@@ -2,6 +2,7 @@
 import { constants } from 'node:fs';
 import { lstat, open, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, parse, resolve } from 'node:path';
+import { assertNoCredentials } from '../src/reporting-privacy.mjs';
 import { exportOutcome } from '../src/automation-reporting-export.mjs';
 import { boundedJson } from '../src/bounded-json.mjs';
 import { automationReporting, improvementRecords, canonical } from '../src/automation-reporting.mjs';
@@ -29,6 +30,7 @@ Use import-improvement --dry-run to validate without writing.
 export-outcome requires --id <current-run-digest> and --to <absolute-private-file>.
 Export writes sanitized compact JSON locally; publication remains pending.
 serve opens a read-only dashboard on 127.0.0.1 with an ephemeral port by default.
+--synced requires an existing verified namespace and sanitized export-safe record; never provisions a folder.
 JSON stdout. Exit 0 success, 2 invalid request, 3 findings.\n`;
 
 async function writeOutcome(path, bytes) {
@@ -74,13 +76,17 @@ try {
     const parsed = {};
     while (args.length) {
       const flag = args.shift();
+      if (flag === '--synced') {
+        if (!['import-improvement', 'publish-own-record', 'validate', 'dry-run'].includes(action) || parsed.synced) throw new Error('--synced requires record publication or validation and cannot repeat');
+        parsed.synced = true; continue;
+      }
       if (flag === '--dry-run') {
         if (action !== 'import-improvement' || parsed.dryRun) throw new Error('--dry-run requires import-improvement and cannot repeat');
         parsed.dryRun = true;
         continue;
       }
       const key = options.get(flag);
-      if (!key || Object.hasOwn(parsed, key)) throw new Error(`Unknown or repeated option ${flag}`);
+      if (!key || Object.hasOwn(parsed, key)) throw new Error('Unknown or repeated option');
       const value = args.shift();
       if (value === undefined || value.startsWith('--')) throw new Error(`Missing value for ${flag}`);
       parsed[key] = value;
@@ -121,14 +127,14 @@ try {
       process.stdout.write(JSON.stringify({ ok: true, data: { status, subject: parsed.id, publication: 'pending', userDelivery: 'pending' } }) + '\n');
     } else if (action === 'import-improvement') {
       if (!parsed.namespace || !parsed.automationId || !parsed.file) throw new Error('import-improvement requires --namespace, --automation-id and --file');
-      if (Object.keys(parsed).some(key => !['directory', 'namespace', 'automationId', 'file', 'evaluatedAt', 'dryRun'].includes(key))) throw new Error('Unsupported import-improvement option');
-      const { directory, namespace, automationId, file, evaluatedAt, dryRun } = parsed;
+      if (Object.keys(parsed).some(key => !['directory', 'namespace', 'automationId', 'file', 'evaluatedAt', 'dryRun', 'synced'].includes(key))) throw new Error('Unsupported import-improvement option');
+      const { directory, namespace, automationId, file, evaluatedAt, dryRun, synced } = parsed;
       const records = improvementRecords(await boundedJson(file, 16384), { namespace, automationId });
       const results = [];
-      for (const record of records) results.push(await automationReporting({ action: 'validate', directory, namespace, record }, { evaluatedAt }));
+      for (const record of records) results.push(await automationReporting({ action: 'validate', directory, namespace, record, synced }, { evaluatedAt }));
       if (!dryRun) {
         results.length = 0;
-        for (const record of records) results.push(await automationReporting({ action: 'publish-own-record', directory, namespace, record }, { evaluatedAt }));
+        for (const record of records) results.push(await automationReporting({ action: 'publish-own-record', directory, namespace, record, synced }, { evaluatedAt }));
       }
       const status = dryRun ? 'dry-run' : results.every(result => result.status === 'identical') ? 'identical' : 'published';
       process.stdout.write(JSON.stringify({ ok: true, data: { status, records: results, writes: !dryRun } }) + '\n');
@@ -141,6 +147,8 @@ try {
     }
   }
 } catch (error) {
-  process.stdout.write(JSON.stringify({ ok: false, error: error.message }) + '\n');
+  let message = error.code ? 'Local file operation failed' : error instanceof SyntaxError ? 'Invalid JSON syntax' : typeof error.message === 'string' ? error.message : 'Reporting request refused';
+  try { assertNoCredentials(message); } catch { message = 'Reporting request refused'; }
+  process.stdout.write(JSON.stringify({ ok: false, error: message }) + '\n');
   process.exitCode = 2;
 }

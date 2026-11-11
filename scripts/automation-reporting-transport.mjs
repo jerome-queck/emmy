@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { assertNoCredentials } from '../src/reporting-privacy.mjs';
 import { transportAutomationReporting } from '../src/automation-reporting-transport.mjs';
 
 try {
@@ -29,6 +30,8 @@ try {
     process.stdout.write(JSON.stringify({ ok: true, data: { ...data, mapping: mapped.items, mappingPage: mapped.page, resultCounts, normalizations: { manualNominalSlotOmittedSourceRetained: normalized.items }, normalizationPage: normalized.page } }) + '\n');
   }
 } catch (error) {
-  process.stdout.write(JSON.stringify({ ok: false, error: error.message }) + '\n');
+  let message = error.code ? 'Local file operation failed' : error instanceof SyntaxError ? 'Invalid JSON syntax' : typeof error.message === 'string' ? error.message : 'Transport request refused';
+  try { assertNoCredentials(message); } catch { message = 'Transport request refused'; }
+  process.stdout.write(JSON.stringify({ ok: false, error: message }) + '\n');
   process.exitCode = 2;
 }

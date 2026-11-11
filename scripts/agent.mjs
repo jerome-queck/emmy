@@ -14,6 +14,7 @@ import { calendar } from '../src/calendar.mjs';
 import { calendarRegister } from '../src/calendar-register-io.mjs';
 import { fleet } from '../src/fleet.mjs';
 import { tokenReview } from '../src/token-review.mjs';
+import { assertNoCredentials } from '../src/reporting-privacy.mjs';
 import { boundedJson } from '../src/bounded-json.mjs';
 import { automationReporting } from '../src/automation-reporting.mjs';
 import { signin } from '../src/signin.mjs';
@@ -22,12 +23,12 @@ const args = process.argv.slice(2);
 const commandName = args.shift() ?? 'help';
 try {
   const command = commands.find(value => value.name === commandName);
-  if (!command) throw new Error(`Unknown command ${commandName}`);
+  if (!command) throw new Error('Unknown command');
   const allowed = new Map([...command.options, { name: 'root' }, { name: 'home' }, { name: 'json', flag: true }].map(value => [value.name, value]));
   const options = {};
   while (args.length) {
     const name = args.shift();
-    if (!name.startsWith('--') || !allowed.has(name.slice(2))) throw new Error(`Unknown option ${name}`);
+    if (!name.startsWith('--') || !allowed.has(name.slice(2))) throw new Error('Unknown option');
     const key = name.slice(2);
     if (Object.hasOwn(options, key)) throw new Error(`Duplicate option ${name}`);
     if (allowed.get(key).flag) options[key] = true;
@@ -101,6 +102,8 @@ try {
   process.stdout.write(`${JSON.stringify({ ok: true, command: command.name, data })}\n`);
   process.exitCode = exitCode;
 } catch (error) {
-  process.stdout.write(`${JSON.stringify({ ok: false, command: commandName, error: error.message })}\n`);
+  let message = error.code ? 'Local file operation failed' : error instanceof SyntaxError ? 'Invalid JSON syntax' : typeof error.message === 'string' ? error.message : 'Request refused';
+  try { assertNoCredentials(message); } catch { message = 'Request refused'; }
+  process.stdout.write(`${JSON.stringify({ ok: false, command: commands.some(command => command.name === commandName) ? commandName : 'unknown', error: message })}\n`);
   process.exitCode = 2;
 }

@@ -3,7 +3,7 @@ import { constants } from 'node:fs';
 import { open, lstat, realpath, mkdir, opendir, link, unlink } from 'node:fs/promises';
 import { resolve, join, dirname, parse, isAbsolute } from 'node:path';
 import { validateOutcomeReport } from './automation-reporting-outcome.mjs';
-import { assertNoCredentials } from './reporting-privacy.mjs';
+import { assertNoCredentials, assertExportSafe } from './reporting-privacy.mjs';
 import { strictJson } from './bounded-json.mjs';
 import { validateImprovementReport } from './improvement-report.mjs';
 
@@ -111,6 +111,19 @@ async function directory(path) {
   need(await realpath(selected) === selected, 'Symlinked reporting directory unsupported');
   return selected;
 }
+export async function requireExistingNamespace(selectedDirectory, namespace) {
+  need(id(namespace), 'Explicit namespace required');
+  const selected = await directory(selectedDirectory); const path = join(selected, namespace);
+  const info = await lstat(path);
+  need(info.isDirectory() && !info.isSymbolicLink() && await realpath(path) === path, 'Verified target namespace unavailable');
+  let found = false; let count = 0;
+  for await (const entry of await opendir(selected)) {
+    need(++count <= 200, 'Namespace inventory exceeds bound');
+    if (entry.name === namespace) found = true;
+  }
+  need(found, 'Verified target namespace exact name unavailable');
+  return path;
+}
 const identity = record => canonical([record.namespace, record.automationId, record.kind, record.key]);
 function predecessorOK(record, previous) {
   const terminal = ['completed', 'failed', 'skipped'];
@@ -180,11 +193,21 @@ export function aggregate(records, { evaluatedAt = new Date().toISOString(), fin
     return { ...record, state, runIds: observed.map(run => run.id), execution: 'not-inferred' };
   });
   const automations = current.filter(record => record.kind === 'automation');
+  if (!automations.length) problems.push('empty-inventory');
+  for (const automation of automations) {
+    const observed = runs.filter(run => run.namespace === automation.namespace && run.automationId === automation.automationId);
+    automation.observedRunCount = observed.length;
+    automation.observationState = !usable(automation) ? 'unknown' : !automation.data.enabled ? 'disabled' : !observed.length ? 'observation-needed' : observed.some(run => !usable(run)) ? 'unknown' : 'reported-outcomes';
+    const latest = observed.reduce((time, run) => Math.max(time, Date.parse(run.recordedAt)), -Infinity);
+    automation.latestRecordedRunIds = observed.filter(run => Date.parse(run.recordedAt) === latest).map(run => run.id);
+    if (['unknown', 'observation-needed'].includes(automation.observationState)) problems.push(`automation-${automation.observationState}:${automation.id}`);
+  }
+  const automationHealth = { scope: automations.length ? 'registered-only' : 'unknown-empty-inventory', observations: automations.reduce((counts, automation) => { const key = automation.observationState; counts[key] = (counts[key] ?? 0) + 1; return counts; }, {}), latestSelection: 'newest-recorded-evidence-not-proof-of-latest-native-invocation' };
   for (const record of current.filter(record => record.kind !== 'automation')) if (!automations.some(automation => usable(automation) && automation.namespace === record.namespace && automation.automationId === record.automationId)) problems.push(`missing-automation:${record.namespace}/${record.automationId}`);
   const issues = current.filter(record => record.kind === 'issue');
   for (const issue of issues) if (issue.data.state !== 'resolved') problems.push(`issue-${issue.data.state}:${issue.id}`);
   if (!complete) problems.push('incomplete-scan');
-  return { schemaVersion: 1, status: problems.length ? 'needs-attention' : 'ready', evaluatedAt, assurance: 'validated-recorded-claims', findings: [...new Set(problems)].sort(), scan: { complete, records: byDigest.size }, pendingPublicationQueue: runs.filter(run => run.publication !== 'verified').map(run => ({ subject: run.id, namespace: run.namespace, state: run.publication, action: 'reporting-only-parent-owned' })), inventoryCoverage: { knownAutomations: automations.length, scope: 'registered-only', unregisteredAutomations: 'unknown', nativeDiscovery: 'parent-owned' }, automations, occurrences, runs, publications, deliveries, issues, records: current, limits: ['Records do not authenticate execution, schedule firing, publication or user delivery.', 'Concurrent readers may precede later writes. This is a bounded scan, not an atomic snapshot.', 'Local publication only. Native publication, private transport and notification remain external gates.'] };
+  return { schemaVersion: 1, status: problems.length ? 'needs-attention' : 'ready', automationHealth, evaluatedAt, assurance: 'validated-recorded-claims', findings: [...new Set(problems)].sort(), scan: { complete, records: byDigest.size }, pendingPublicationQueue: runs.filter(run => run.publication !== 'verified').map(run => ({ subject: run.id, namespace: run.namespace, state: run.publication, action: 'reporting-only-parent-owned' })), inventoryCoverage: { knownAutomations: automations.length, scope: 'registered-only', unregisteredAutomations: 'unknown', nativeDiscovery: 'parent-owned' }, automations, occurrences, runs, publications, deliveries, issues, records: current, limits: ['Records do not authenticate execution, schedule firing, publication or user delivery.', 'Concurrent readers may precede later writes. This is a bounded scan, not an atomic snapshot.', 'Local publication only. Native publication, private transport and notification remain external gates.'] };
 }
 async function scan(selected, evaluatedAt) {
   const records = []; const findings = []; let count = 0; let complete = true;
@@ -192,7 +215,7 @@ async function scan(selected, evaluatedAt) {
   outer: for await (const entry of namespaces) {
     if (++namespaceCount > 200) { complete = false; break; }
     if (entry.name.startsWith('.pending-')) continue;
-    if (!id(entry.name) || !entry.isDirectory() || entry.isSymbolicLink()) { findings.push(`unexpected-root-entry:${entry.name.slice(0, 120)}`); complete = false; continue; }
+    if (!id(entry.name) || !entry.isDirectory() || entry.isSymbolicLink()) { findings.push(`unexpected-root-entry-sha256:${recordDigest(entry.name)}`); complete = false; continue; }
     const namespace = join(selected, entry.name);
     need((await lstat(namespace)).isDirectory(), 'Namespace must be ordinary directory');
     for await (const file of await opendir(namespace)) {
@@ -204,14 +227,15 @@ async function scan(selected, evaluatedAt) {
         const record = validateRecord(strictJson(await ordinary(join(namespace, file.name))), evaluatedAt);
         need(record.namespace === entry.name && recordDigest(record) === file.name.slice(0, -5), 'Namespace or digest mismatch');
         records.push(record);
-      } catch { findings.push(`invalid-record:${entry.name}/${file.name.slice(0, 120)}`); complete = false; }
+      } catch { findings.push(`invalid-record-location-sha256:${recordDigest([entry.name, file.name])}`); complete = false; }
     }
   }
   return { records, findings, complete };
 }
-async function publish(selected, record, evaluatedAt) {
+async function publish(selected, record, evaluatedAt, existingOnly = false) {
   const namespace = join(selected, record.namespace);
-  try { await mkdir(namespace, { mode: 0o700 }); } catch (error) { if (error.code !== 'EEXIST') throw error; }
+  if (existingOnly) await requireExistingNamespace(selected, record.namespace);
+  else try { await mkdir(namespace, { mode: 0o700 }); } catch (error) { if (error.code !== 'EEXIST') throw error; }
   need((await lstat(namespace)).isDirectory() && await realpath(namespace) === namespace, 'Namespace must be ordinary directory');
   if (record.previous !== null) {
     const previous = validateRecord(strictJson(await ordinary(join(namespace, `${record.previous}.json`))), evaluatedAt);
@@ -237,7 +261,7 @@ function summaryView(result, request) {
   const shown = findings.slice(0, limit);
   const tally = (values, field) => values.reduce((counts, item) => { const key = item[field]; counts[key] = (counts[key] ?? 0) + 1; return counts; }, {});
   return {
-    schemaVersion: result.schemaVersion, status: result.status, evaluatedAt: result.evaluatedAt, assurance: result.assurance,
+    schemaVersion: result.schemaVersion, status: result.status, evaluatedAt: result.evaluatedAt, assurance: result.assurance, automationHealth: result.automationHealth,
     counts: Object.fromEntries(['automations', 'occurrences', 'runs', 'publications', 'deliveries', 'issues'].map(key => [key, result[key].length])),
     execution: tally(result.runs, 'execution'), evidenceCoverage: tally(result.runs, 'evidenceCoverage'), reportAvailability: tally(result.runs, 'reportAvailability'),
     publication: tally(result.runs, 'publication'), userDelivery: tally(result.runs, 'userDelivery'),
@@ -258,13 +282,16 @@ function detailView(result, request) {
 }
 export async function automationReporting(request, { evaluatedAt = new Date().toISOString() } = {}) {
   need(object(request) && actions.includes(request.action), 'Unknown reporting action');
-  fields(request, ['action', 'directory'], ['namespace', 'record', 'id', 'automationId', 'query', 'cursor', 'limit', 'maxAgeSeconds', 'findingCursor']);
+  fields(request, ['action', 'directory'], ['namespace', 'record', 'id', 'automationId', 'query', 'cursor', 'limit', 'maxAgeSeconds', 'findingCursor', 'synced']);
   need(stamp(evaluatedAt), 'Invalid evaluation clock');
+  need(request.synced === undefined || typeof request.synced === 'boolean', 'Invalid synced-store guard');
   const selected = await directory(request.directory);
   if (['validate', 'dry-run', 'publish-own-record'].includes(request.action)) {
     const record = validateRecord(request.record, evaluatedAt);
     need(id(request.namespace) && record.namespace === request.namespace, 'Producer may publish only its own namespace');
-    if (request.action === 'publish-own-record') return publish(selected, record, evaluatedAt);
+    if (request.synced) assertExportSafe(record);
+    if (request.action === 'publish-own-record') return publish(selected, record, evaluatedAt, Boolean(request.synced));
+    if (request.synced) await requireExistingNamespace(selected, record.namespace);
     const namespace = join(selected, record.namespace);
     try { need((await lstat(namespace)).isDirectory() && await realpath(namespace) === namespace, 'Namespace must be ordinary directory'); }
     catch (error) { if (error.code !== 'ENOENT' || record.previous !== null) throw error; }

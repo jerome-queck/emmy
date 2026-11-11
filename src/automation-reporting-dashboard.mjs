@@ -11,7 +11,7 @@ const page = `<!doctype html>
 <footer>Producer claims remain reported. References do not authenticate execution or delivery. This view performs no monitoring or provider actions.</footer></main></body></html>`;
 
 const browserScript = `const sections = [
- ['Inventory', 'automations'], ['Expected occurrences', 'occurrences'], ['Runs', 'runs'],
+ ['Inventory', 'automations'], ['Automation observations', 'automationHealth'], ['Expected occurrences', 'occurrences'], ['Runs', 'runs'],
  ['Conflicts and gaps', 'findings'], ['Coverage', 'inventoryCoverage'],
  ['Publication', 'publications'], ['Delivery', 'deliveries'], ['Issues', 'issues'], ['Store scan', 'scan']
 ];
@@ -44,7 +44,7 @@ function recordCard(parent, record) {
  const name = document.createElement('h3'); name.textContent = record.data.name || record.data.title || record.key;
  row.append(name);
  const values = [['Automation', record.automationId], ['Namespace', record.namespace]];
- if (record.kind === 'automation') values.push(['Enabled', record.data.enabled], ['Schedule', record.data.schedule], ['Environment', record.data.environment]);
+ if (record.kind === 'automation') values.push(['Enabled', record.data.enabled], ['Schedule', record.data.schedule], ['Environment', record.data.environment], ['Observations', record.observationState ?? 'unknown']);
  if (record.kind === 'occurrence') values.push(['Occurrence', record.state], ['Scheduled for', record.data.scheduledFor], ['Execution', record.execution]);
  if (record.kind === 'run') values.push(['Execution', record.execution], ['Coverage', record.evidenceCoverage], ['Report', record.reportAvailability], ['Publication', record.publication], ['Delivery', record.userDelivery]);
  if (record.kind === 'publication' || record.kind === 'delivery') values.push(['State', record.state], ['Subject', record.data.subject]);
@@ -94,7 +94,7 @@ async function refresh() {
   if (!response.ok || !result.ok) throw new Error(result.error || 'Snapshot unavailable');
   if (stopped) return;
   render(result.data);
-  document.getElementById('status').textContent = result.data.status === 'ready' ? 'Ready' : 'Needs attention';
+  document.getElementById('status').textContent = result.data.status === 'ready' ? 'Store valid · recorded outcomes only' : 'Needs attention';
   lastSuccess = Date.now();
  } catch(error) {
   if (stopped) return;

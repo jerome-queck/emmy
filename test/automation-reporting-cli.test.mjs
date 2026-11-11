@@ -113,7 +113,7 @@ test('CLI exposes overdue gaps, bounded pagination, search and corrupt records',
   const corrupt = invoke('diagnose', '--directory', directory);
   assert.equal(corrupt.code, 3);
   assert.equal(corrupt.data.scan.complete, false);
-  assert.ok(corrupt.data.findings.some(finding => finding.startsWith('invalid-record:')));
+  assert.ok(corrupt.data.findings.some(finding => finding.startsWith('invalid-record-location-sha256:')));
 });
 
 test('CLI imports compact reports deterministically with dry-run and manual provenance', async t => {

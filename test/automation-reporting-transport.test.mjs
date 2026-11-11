@@ -18,7 +18,7 @@ const options = { namespace, evaluatedAt: at };
 async function fixture(fn) {
   const root = await mkdtemp(join(await realpath(tmpdir()), 'emmy-transport-'));
   const sourceDirectory = join(root, 'source'); const directory = join(root, 'target');
-  await mkdir(sourceDirectory); await mkdir(directory);
+  await mkdir(sourceDirectory); await mkdir(directory); await mkdir(join(directory, namespace));
   try { await fn({ root, sourceDirectory, directory, namespace }); } finally { await rm(root, { recursive: true, force: true }); }
 }
 async function seed(directory, records) { for (const record of records) await automationReporting({ action: 'publish-own-record', directory, namespace, record }, { evaluatedAt: at }); }
@@ -71,7 +71,7 @@ test('real CLI dry-run writes nothing, retries converge and original fallback by
   const sourceFiles = await readdir(join(request.sourceDirectory, namespace));
   const originals = await Promise.all(sourceFiles.map(file => readFile(join(request.sourceDirectory, namespace, file), 'utf8')));
   const dry = JSON.parse((await cli({ ...request, dryRun: true })).stdout).data;
-  assert.equal(dry.status, 'dry-run'); assert.equal(dry.mapping.length, 3); assert.deepEqual(await readdir(request.directory), []);
+  assert.equal(dry.status, 'dry-run'); assert.equal(dry.mapping.length, 3); assert.deepEqual(await readdir(join(request.directory, namespace)), []);
   const first = JSON.parse((await cli(request)).stdout).data;
   assert.equal(first.publication, 'pending-remote-verification'); assert.equal(first.userDelivery, 'pending');
   assert.deepEqual(first.resultCounts, { published: 3 }); assert.equal(first.results, undefined);
@@ -85,7 +85,7 @@ test('unsafe text anywhere in projection prevents all publication', async () => 
   const unsafe = { ...run, data: { ...run.data, report: { ...report, summary: 'Private /Users/private/report.json' } } };
   await seed(request.sourceDirectory, [automation, unsafe]);
   await assert.rejects(cli(request), error => error.code === 2 && /Private path/.test(error.stdout));
-  assert.deepEqual(await readdir(request.directory), []);
+  assert.deepEqual(await readdir(join(request.directory, namespace)), []);
   const oversized = { ...run, data: { ...run.data, report: { ...report, summary: 'x'.repeat(601) } } };
   assert.throws(() => sanitizeRecords([automation, oversized], options), /compact outcome|600/);
   assert.throws(() => sanitizeRecords([{ ...automation, data: { ...automation.data, nativeRef: '/Users/private/native' } }], options), /Private path/);
@@ -94,7 +94,7 @@ test('unsafe text anywhere in projection prevents all publication', async () => 
 test('corruption and symlink directories refuse; valid target branches remain visible', async () => fixture(async request => {
   await seed(request.sourceDirectory, [automation, run]);
   await writeFile(join(request.sourceDirectory, namespace, `${'f'.repeat(64)}.json`), '{');
-  await assert.rejects(transport(request), /Incomplete/); assert.deepEqual(await readdir(request.directory), []);
+  await assert.rejects(transport(request), /Incomplete/); assert.deepEqual(await readdir(join(request.directory, namespace)), []);
   await rm(join(request.sourceDirectory, namespace, `${'f'.repeat(64)}.json`));
   const alias = join(request.root, 'alias'); await symlink(request.directory, alias);
   await assert.rejects(transport({ ...request, directory: alias }), /ordinary|Symlink/);
@@ -139,7 +139,7 @@ test('credential-bearing raw source bytes refuse CLI publication and remain unch
   const file = join(request.sourceDirectory, namespace, `${recordDigest(unsafe)}.json`);
   await writeFile(file, bytes);
   await assert.rejects(cli(request), error => error.code === 2 && /Incomplete/.test(error.stdout));
-  assert.deepEqual(await readdir(request.directory), []); assert.equal(await readFile(file, 'utf8'), bytes);
+  assert.deepEqual(await readdir(join(request.directory, namespace)), []); assert.equal(await readFile(file, 'utf8'), bytes);
 }));
 
 test('new source contradiction changes an already published green run to explicit target conflict', async () => fixture(async request => {
@@ -187,7 +187,7 @@ test('real CLI bounds mapping and normalization output and pages by source diges
   assert.equal(new Set([...first.mapping, ...second.mapping].map(item => item.sourceDigest)).size, 62);
   const normalizationSecond = JSON.parse((await cli({ ...request, dryRun: true, mappingCursor: first.normalizationPage.nextCursor })).stdout).data;
   assert.equal(normalizationSecond.normalizations.manualNominalSlotOmittedSourceRetained.length, 11); assert.equal(normalizationSecond.normalizationPage.nextCursor, null);
-  assert.deepEqual(await readdir(request.directory), []);
+  assert.deepEqual(await readdir(join(request.directory, namespace)), []);
 }));
 
 test('conflicting occurrence definitions preserve all claims and reader correlation stays unknown', async () => fixture(async request => {
@@ -213,4 +213,8 @@ test('real CLI refuses equivalent source and target aliases without changing fal
     assert.deepEqual(await readdir(join(request.sourceDirectory, namespace)), beforeNames);
     assert.deepEqual(await Promise.all(beforeNames.map(file => readFile(join(request.sourceDirectory, namespace, file), 'utf8'))), beforeBytes);
   }
+}));
+test('missing synced namespace refuses before any provisioning or record writes',async()=>fixture(async request=>{
+  await seed(request.sourceDirectory,[automation,run]);await rm(join(request.directory,namespace),{recursive:true});
+  await assert.rejects(transport(request),error=>error.code==='ENOENT');assert.deepEqual(await readdir(request.directory),[]);
 }));

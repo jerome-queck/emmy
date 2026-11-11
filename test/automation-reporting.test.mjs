@@ -137,3 +137,22 @@ test('preflight and publication both refuse an existing symlink namespace', asyn
   await mkdir(join(directory, 'actual')); await symlink(join(directory, 'actual'), join(directory, 'producer'));
   for (const action of ['validate','dry-run','publish-own-record']) await assert.rejects(automationReporting({action,directory,namespace:'producer',record:run},{evaluatedAt:at}), /ordinary directory/);
 }));
+test('empty and enabled unobserved inventories remain unknown without invented failed runs', () => {
+  const empty=view([]);assert.equal(empty.status,'needs-attention');assert.equal(empty.runs.length,0);assert.equal(empty.automationHealth.scope,'unknown-empty-inventory');
+  const unobserved=view([automation]);assert.equal(unobserved.status,'needs-attention');assert.equal(unobserved.automations[0].observationState,'observation-needed');assert.equal(unobserved.runs.length,0);
+  const disabled=view([{...automation,data:{...automation.data,enabled:false}}]);assert.equal(disabled.status,'ready');assert.equal(disabled.automations[0].observationState,'disabled');
+  const missing=view([automation,occurrence]);assert.equal(missing.occurrences[0].state,'expected');assert.equal(missing.runs.length,0);assert.equal(missing.automations[0].observationState,'observation-needed');
+  const partial=view([automation,occurrence,run]);assert.equal(partial.automations[0].observationState,'reported-outcomes');assert.equal(partial.runs[0].execution,'completed');assert.equal(partial.runs[0].evidenceCoverage,'partial');
+});
+test('synced publication refuses absent namespace without provisioning; fallback can initialize', async () => fixture(async directory => {
+  await assert.rejects(automationReporting({action:'publish-own-record',directory,namespace:'producer',record:run,synced:true},{evaluatedAt:at}),error=>error.code==='ENOENT');assert.deepEqual(await readdir(directory),[]);
+  await mkdir(join(directory,'producer'));
+  const published=await automationReporting({action:'publish-own-record',directory,namespace:'producer',record:run,synced:true},{evaluatedAt:at});assert.equal(published.status,'published');
+}));
+test('early scheduled invocation can report running with no report and real early timing', () => {
+  const slot={...occurrence,data:{scheduledFor:'2026-11-01T01:00:00Z',expiresAt:'2026-11-01T02:00:00Z'}};
+  const early={...run,data:{...run.data,execution:'running',report:null,timing:{startedAt:at,lastHeartbeatAt:null,endedAt:null,observedAt:at,sourceRef:'actual-invocation-context'},evidenceRefs:['identity:producer-generated-opaque-id;provider-run-id-unavailable']}};
+  const result=view([automation,slot,early]);assert.equal(result.runs[0].execution,'running');assert.equal(result.runs[0].reportAvailability,'missing');assert.equal(result.runs[0].actualTiming.startedAt,at);
+  const report={schemaVersion:1,type:'automation-outcome',runId:early.key,provenance:'scheduled',scheduledFor:slot.data.scheduledFor,status:'running',coverage:'partial',availability:'available',summary:'Actual early invocation.',artifactLinks:[],sourceWindow:null,generatedAt:at};
+  assert.throws(()=>view([automation,slot,{...early,data:{...early.data,report}}]),/generic report time/);
+});
