@@ -368,7 +368,8 @@ function scopeReadView(result, request, ownedRecords) {
   for (const key of ['automations', 'occurrences', 'runs', 'publications', 'deliveries', 'issues', 'records']) result[key] = result[key].filter(own);
   result.pendingPublicationQueue = result.pendingPublicationQueue.filter(item => !request.namespace || item.namespace === request.namespace).filter(item => result.runs.some(run => run.id === item.subject));
   const hashes = new Set([...ownedRecords.map(recordDigest), ...result.registrations.map(record => record.id), ...result.expectations.map(record => record.id)]);
-  result.findings = result.findings.filter(finding => finding === 'incomplete-scan' || finding === 'empty-inventory' && !result.automations.length || [...hashes].some(hash => finding.includes(hash)) || finding.startsWith('missing-automation:') && ownedRecords.some(record => finding === `missing-automation:${record.namespace}/${record.automationId}`));
+  const identities = new Set([...ownedRecords, ...result.registrations, ...result.expectations].map(identity));
+  result.findings = result.findings.filter(finding => finding === 'incomplete-scan' || finding === 'empty-inventory' && !result.automations.length || [...hashes].some(hash => finding.includes(hash)) || finding.startsWith('conflict:') && identities.has(finding.slice('conflict:'.length)) || finding.startsWith('missing-automation:') && ownedRecords.some(record => finding === `missing-automation:${record.namespace}/${record.automationId}`));
   if (!result.automations.length && !result.findings.includes('empty-inventory')) result.findings.push('empty-inventory');
   result.findings.sort();
   result.status = result.findings.length ? 'needs-attention' : 'ready';

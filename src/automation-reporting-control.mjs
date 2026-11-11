@@ -165,7 +165,7 @@ export async function reconcileExpectations(request) {
     const readback = new Set((await ownRecords(request,evaluatedAt)).map(recordDigest));
     need(records.every(record => readback.has(recordDigest(record))), 'Published control record readback missing');
     need(manifests.every(manifest => manifest.snapshot.records.every(record => readback.has(recordDigest(record)))), 'Binding snapshot dependency readback missing');
-    if(request.manifestDirectory) for(const manifest of manifests) manifest.path = await writeManifest(request.manifestDirectory,`${manifest.targetNamespace}--${manifest.targetAutomationId}.json`,manifest.snapshot);
+    if(request.manifestDirectory) for(const manifest of manifests) manifest.path = await writeManifest(request.manifestDirectory,`binding-${recordDigest([manifest.targetNamespace,manifest.targetAutomationId])}.json`,manifest.snapshot);
   }
   return {status:pending.length ? 'pending' : 'ready',applied:request.apply === true,evaluatedAt,captures:captures.map(capture => ({...capture.data,...(capture.sourceHash ? {sourceHash:capture.sourceHash} : {})})),pending,records,publications,manifests};
 }

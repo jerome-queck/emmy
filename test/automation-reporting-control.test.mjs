@@ -74,6 +74,12 @@ test('native rereads produce actual fresh capture and preserve slot keys', async
 test('duplicate target captures refuse without writing', async()=>fixture(async({directory})=>{
   await assert.rejects(reconcileExpectations({...request(directory),captures:[capture,capture],apply:true}),/Duplicate/);assert.deepEqual(await readdir(directory),[]);
 }));
+test('distinct target pairs retain separate binding files despite ambiguous delimiter spellings', async()=>fixture(async({directory,root})=>{
+  const manifestDirectory=join(root,'bindings');await mkdir(manifestDirectory);
+  const result=await reconcileExpectations({...request(directory),captures:[{...capture,targetNamespace:'a--b',targetAutomationId:'c'},{...capture,targetNamespace:'a',targetAutomationId:'b--c'}],apply:true,manifestDirectory});
+  assert.equal(result.status,'ready');assert.equal(new Set(result.manifests.map(item=>item.path)).size,2);assert.equal((await readdir(manifestDirectory)).length,2);
+  for(const manifest of result.manifests)assert.deepEqual(JSON.parse(await readFile(manifest.path,'utf8')).target,manifest.snapshot.target);
+}));
 const cloudDefinition = (id,schedule,extra={}) => ({id,title:'Actual selected projection',schedule,timing_mode:'exact_schedule',is_enabled:true,default_timezone:'Asia/Singapore',next_run_time:null,last_run_time:null,updated_at:null,...extra});
 const cloudCapture = definitions => ({schemaVersion:1,clientCapturedAt:at,source:{tool:'actual-peek',operation:'read-only inventory',assurance:'observed-selected-fields',projection:'selected fields; not full API response'},definitions,limits:['No next-run identity inferred.']});
 const vevent = (start,rrule) => `BEGIN:VEVENT\nDTSTART;TZID=Asia/Singapore:${start}\nRRULE:${rrule}\nEND:VEVENT`;

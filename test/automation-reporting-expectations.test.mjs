@@ -72,3 +72,13 @@ test('real CLI plans/applies own control records and scoped reads retain read-on
   const projected = sanitizeRecords(history, { namespace: 'control', evaluatedAt: at });
   assert.deepEqual(projected.records.map(recordDigest).sort(), history.map(recordDigest).sort());
 }));
+test('scoped reads retain identity-based conflicts even when all issue leaves are resolved', async () => fixture(async ({ directory }) => {
+  const automation = envelope('automation', 'definition', { name: 'Disabled fixture', enabled: false, schedule: 'manual', environment: 'local', nativeRef: 'fixture', model: 'fixture', destination: 'fixture', freshChat: null, archiveOnSuccess: null, sourceRef: 'fixture', observedAt: at });
+  const left = envelope('issue', 'same-issue', { title: 'First resolution', state: 'resolved', evidenceRefs: ['first-proof'] });
+  const right = { ...left, data: { ...left.data, title: 'Conflicting resolution', evidenceRefs: ['other-proof'] } };
+  for (const record of [automation, left, right]) await automationReporting({ action: 'publish-own-record', directory, namespace: 'producer', record }, { evaluatedAt: at });
+  for (const scope of [{}, { namespace: 'producer' }, { namespace: 'producer', automationId: 'daily' }]) {
+    const result = await automationReporting({ action: 'inspect', directory, ...scope }, { evaluatedAt: at });
+    assert.equal(result.status, 'needs-attention'); assert.ok(result.findings.some(finding => finding.startsWith('conflict:'))); assert.ok(result.issues.every(record => record.conflict));
+  }
+}));
