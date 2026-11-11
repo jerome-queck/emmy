@@ -58,7 +58,7 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
   const root = await mkdtemp(join(tmpdir(), 'emmy-subsystem-admission-'));
   const source = fileURLToPath(new URL('..', import.meta.url));
   try {
-    for (const path of ['src', 'scripts', 'verification', 'test', 'registry', 'procedures', 'docs', '.agents', '.github', '.codex', 'AGENTS.md', '.gitignore', 'package.json', 'package-lock.json']) {
+    for (const path of ['src', 'scripts', 'verification', 'test', 'registry', 'schemas', 'procedures', 'docs', '.agents', '.github', '.codex', 'AGENTS.md', '.gitignore', 'package.json', 'package-lock.json']) {
       await cp(join(source, path), join(root, path), { recursive: true });
     }
     const check = (status, pattern) => {

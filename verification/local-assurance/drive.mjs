@@ -7,7 +7,7 @@ import { canonical, digest } from '../../src/content.mjs';
 
 export async function driveAssurance(sourceRoot, directory) {
   const root = join(directory, 'fixture'); await mkdir(root, { recursive: true });
-  for (const path of ['src', 'scripts', 'docs', 'registry', '.agents', 'verification', 'test', 'procedures', '.github', '.codex', 'AGENTS.md', 'package-lock.json']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
+  for (const path of ['src', 'scripts', 'docs', 'registry', '.agents', 'verification', 'test', 'schemas', 'procedures', '.github', '.codex', 'AGENTS.md', 'package-lock.json']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
   const coverage = JSON.parse(await readFile(join(sourceRoot, 'verification/publication/coverage.json'), 'utf8'));
   await writeFile(join(root, 'verification/publication/coverage.json'), JSON.stringify(coverage));
   await writeFile(join(root, '.gitignore'), '.local/\nnode_modules/\n');
