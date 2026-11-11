@@ -61,3 +61,5 @@ Flat Calendar raw `next_page_token` must be explicit null or nonempty text for c
 The common foundation uses direct `content.mjs` and `strict-json.mjs` helpers. The shared `briefing-core.mjs` serves local CLI and portable consumers. Run the new release and morning-observation suites plus the fleet focus. Separate collector-mode CLI evidence retains null provider clocks, original bounds, packet identity and a partial same-journal seal without effects. Same acquisition receipt cannot lose its observation. Exact-source release materialization remains staged.
 
 The [fleet health history skill](../../fleet-health/SKILL.md) checks a bounded actual reducer graph for retained episode, recovery and source-admission properties. Its synthetic declarations do not verify an account or a provider.
+
+The [morning send skill](../../morning-send/SKILL.md) checks a bounded actual policy-v3 initial-send graph, exact declared readback and scoped no-effect reconciliation. It does not verify provider delivery or source truth.
