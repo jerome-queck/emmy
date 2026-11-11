@@ -757,7 +757,7 @@
       "files": [
         {
           "path": "src/assurance.mjs",
-          "sha256": "17766080fba243c05d108dc56addac625a2869e157423284bcda92146044a013",
+          "sha256": "7d60165fb34b8e89f9d47eff058db4e03ac041d14bec2ef7ae73e21486bbfe61",
           "callers": [
             "src/local-assurance.mjs",
             "verification/local-assurance/check.mjs"
@@ -1064,7 +1064,7 @@
         },
         {
           "path": "src/metadata.mjs",
-          "sha256": "13fba596cb110a627b4b0c081ddf7f16f1e2a4980383f2767cd0fa33fa24db3d",
+          "sha256": "a296dc8454bd20d6e74aee6ae9105e87e1280f6160885bd0a46e536ded15cb68",
           "callers": [
             "src/briefing.mjs",
             "src/maintenance.mjs",
@@ -1292,7 +1292,7 @@
         },
         {
           "path": ".agents/skills/verify/features/fleet.md",
-          "sha256": "43a2f52e5e676c429bc05bfa0fd9a102b41e868bfbae91be3fb3f9ebafb60377",
+          "sha256": "ca773c50b0ec58d5cd7ca0fd1eddecfeaf9dbc21315110e8235545ab0f38edf8",
           "callers": [
             "public configuration"
           ]
@@ -1560,7 +1560,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "067a5111b0d7f7c08e6dfca1b77e2abcaa69a55b45477bcf326251dc0085d9d5",
+          "sha256": "5b7eaa472fda0e81248b835b14118811e5147c8a6dea2dfa6c3025e4210ce998",
           "callers": [
             "verification input"
           ]
@@ -2455,6 +2455,67 @@
       ],
       "scenarios": [
         "cloud-admission"
+      ]
+    },
+    {
+      "id": "fleet-health-history",
+      "stateOwner": "fleet-state.mjs fleetInitial, fleetTransition and captureCondition",
+      "classification": "bounded actual-source reachable reducer histories",
+      "bounds": "Five synchronous assessments from staged menus; two entities; bounded symbolic clocks and alerts.",
+      "gap": "Unmodeled input histories, provider truth, sign-in, journal publication and delivery.",
+      "files": [
+        {
+          "path": "verification/fleet-health/graph.mjs",
+          "sha256": "26a1482faed4dbd47a5e3a8d1a461eb7706c98d5aba272812a89b8a83f5316f3",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/fleet-health/check.mjs",
+          "sha256": "6be4019d30dc00a40825c6e2fbc3c28602a2de4e23dc2e32d59414b9b2166d5a",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/fleet-health/coverage.json",
+          "sha256": "bfb8bcff50e3a2039f9808fc0c3a2e0cc48e9bb29721481626d93d8704db9c0b",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": ".agents/skills/fleet-health/SKILL.md",
+          "sha256": "15452498ccb6cdf72cdeeb25654fdbcc3139f8f81141a0edf06b7eb1eb6845a7",
+          "callers": [
+            "public configuration"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/fleet-state.mjs",
+          "symbol": "fleetInitial"
+        },
+        {
+          "path": "src/fleet-state.mjs",
+          "symbol": "fleetTransition"
+        },
+        {
+          "path": "src/fleet-state.mjs",
+          "symbol": "captureCondition"
+        }
+      ],
+      "properties": [
+        "StableEpisode",
+        "ConservativeHealth",
+        "FreshRecovery",
+        "Admission",
+        "Recurrence"
+      ],
+      "scenarios": [
+        "fleet-health"
       ]
     }
   ]

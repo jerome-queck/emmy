@@ -444,5 +444,14 @@ export const subsystemEvidence = {
     "model": "reachable-history",
     "skillStatus": "maintained",
     "graph": { "kind": "reachable-history", "path": "verification/incarnation-ownership/graph.mjs", "record": "verification/incarnation-ownership/coverage.json", "checker": "verification/incarnation-ownership/check.mjs", "exports": ["graph", "spec"] }
+  },
+  "fleet-health-history": {
+    "drivers": ["verification/fleet-drive.mjs"],
+    "skills": [".agents/skills/fleet-health/SKILL.md"],
+    "replay": ["verification/fleet-health/check.mjs"],
+    "coverageRecords": ["verification/coverage.json", "verification/fleet-health/coverage.json"],
+    "model": "reachable-reducer",
+    "skillStatus": "maintained",
+    "graph": { "kind": "reachable-reducer", "path": "verification/fleet-health/graph.mjs", "record": "verification/fleet-health/coverage.json", "checker": "verification/fleet-health/check.mjs", "exports": ["graph", "spec"] }
   }
 };
