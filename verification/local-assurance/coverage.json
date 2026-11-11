@@ -1,24 +1,25 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "55cad1b31225cbf014c3b22f18223a6f817c2fcd",
+  "sourceCommit": "e28d81c66a094e212e8c656f7ab9e3fe1ab7485d",
   "sourceFiles": {
     "src/assurance.mjs": "908b8a1dbe4d80be821494298197aab5dcba954ec20cf109832b57450350eef7",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
-    "src/local-assurance.mjs": "ca0d00a4bf463acd859c88307e5e27448c4cb86102a9c544612dd0a86849810e",
+    "src/local-assurance.mjs": "6ff678f407e56d2b9b0f338698628dc08b07eda768cb8cb20ad288d0c9cb8764",
     "scripts/check.mjs": "f8b710af8abcafa21d3090a9739b820f04b01b98e9dfdfb8b49ca1b4877b204c",
     "scripts/check-markdown-links.mjs": "b40227b7d9e9617c9c1930c8286d67c550db6c4bf48c74d3d2ee3d1c4b78899c",
     "scripts/agent.mjs": "314099e863b0153da4415ac68f38a6f340dc112b1d9f7c5d5453760d21f2d7d5",
-    "src/metadata.mjs": "3655ea3d4ebd579b6e627291e8ae039fe0192ac5eb9f5a55e378362cc4c7e1c0"
+    "src/metadata.mjs": "3655ea3d4ebd579b6e627291e8ae039fe0192ac5eb9f5a55e378362cc4c7e1c0",
+    "scripts/verify-publication.mjs": "f2cf26ce7fdd9b79ef4b81f77989834518da11d6eb601af451ec37d58fd35849"
   },
   "verificationFiles": {
     "verification/local-assurance/graph.mjs": "9f89bbfc3f42841149600c0549603da719b3835cd20d0f41353d0607f8b22de5",
-    "verification/local-assurance/check.mjs": "141aa6d131a319fb67b6f31df15fff6a010b62c1a93344eb9a8c0866ece2336b",
-    "verification/local-assurance/drive.mjs": "3685e4a0259ea897cd3618fc802fa0de61495906d9a4e96f2394372d82744c93",
+    "verification/local-assurance/check.mjs": "e3638f1141a7cc30d10ca032c95b130fd423131b47022dcc505a005ae0bfcb9d",
+    "verification/local-assurance/drive.mjs": "426134c62cc29c9d0228dd49c05d3f6926e5c13ff38825216c91a81edaabf8f1",
     "verification/local-assurance/view.mjs": "987369e603e24ffdc5813e1f23e45d036e2dc663f129f939f8dea338b24fe0a6",
     "verification/local-assurance/chart.mmd": "555d30c6f63b8be9e4cf91840f29b767b9df697b0adac2cde5d62ed4ff927b68",
-    "test/local-assurance.test.mjs": "3e80e6d9b1d75275fc5a5662fc47c79e25d49dce2c2b27b292fd68513fceb482",
+    "test/local-assurance.test.mjs": "dd08e3e27d7c0530d9671767831ff0afe2405432c3362d7aed66f075416e2f8e",
     "test/markdown-links.test.mjs": "4c6b41c15971a063723cd82d8d915acf629e791270c767c6303df1cb5a5b97e3",
-    ".agents/skills/local-assurance/SKILL.md": "03837c79402d63154d962be7ba4c172f74b40645cf46129d4573286001655bc5"
+    ".agents/skills/local-assurance/SKILL.md": "7eff7b5b63b4f5af1a9d41fe4e1adc73bc778148a13165a2b9d2a3661d2cc6c4"
   },
   "mapping": [
     {
@@ -91,5 +92,6 @@
   "limits": [
     "Source/CLI hashes bind empirical integration only; TLC checks the reducer graph",
     "No atomic filesystem pinning, process containment, authorship/independence authentication, native host identity, provider effects or deployment"
-  ]
+  ],
+  "reviewBasis": " Reviewed preservation of existing pinned TLC acquisition before assurance binding and relocation of assurance evidence beneath existing hosted upload root. Tools-only mode reports tools-ready/sourceReviewGate=false and cannot satisfy the unchanged normal publication suite. Existing jar downloader, digest, Java selection, publication model and actual filesystem mutants are unchanged. Empirical cold-cache fixture intercepts fetch with existing pinned bytes, no network; missing overrides/corrupt cache refuse. Failed original output remains readable under .local/verification. Actual reducer/graph/invariants/bounds unchanged; prior strict pin refusals retained. Source sync e28d81c66a094e212e8c656f7ab9e3fe1ab7485d."
 }
