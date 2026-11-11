@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm, unlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, unlink, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -49,12 +49,22 @@ async function fixture(t) {
     assert.equal(result.remoteWrite, false);
     return result;
   };
-  const candidate = async () => {
+  const candidate = async version => {
+    let candidateSnapshot = snapshot, candidateBindings = bindings;
+    if (version) {
+      const replacement = join(root, 'reviewed-source'); await cp(source, replacement, { recursive: true });
+      await writeFile(join(replacement, 'plugin.json'), JSON.stringify({ ...metadata, version }));
+      policy.sources[0].version = version;
+      await writeFile(join(repo, 'registry/skill-sources.json'), JSON.stringify(policy));
+      candidateBindings = { fixture: replacement };
+      candidateSnapshot = (await refreshInventory(repo, candidateBindings)).snapshot;
+      git('add', 'registry', 'vendor'); await rm(source, { recursive: true });
+    }
     git('-c', 'user.name=fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-qm', 'reviewed candidate fixture');
     const revision = git('rev-parse', 'HEAD');
     const bytes = Buffer.from(`${canonical(buildFoundation(repo, revision))}\n`);
     const path = join(root, 'candidate.json'); await writeFile(path, bytes);
-    return { path, revision, bytes: bytes.length, sha256: digest(bytes), snapshot, approvalRef: 'synthetic-review-fixture' };
+    return { path, revision, bytes: bytes.length, sha256: digest(bytes), snapshot: candidateSnapshot, bindings: candidateBindings, approvalRef: 'synthetic-review-fixture' };
   };
   return { root, source, config, capture, now, raw, rawPath, metadata, run, preserve, candidate };
 }
@@ -139,8 +149,8 @@ for (const [name, change, pattern] of [
   assert.deepEqual(await readFile(f.rawPath), cloudBefore);
 });
 
-async function selectorFixture(t) {
-  const f = await fixture(t), candidate = await f.candidate(), candidateAttempt = join(f.root, 'candidate-attempt');
+async function selectorFixture(t, version) {
+  const f = await fixture(t), candidate = await f.candidate(version), candidateAttempt = join(f.root, 'candidate-attempt');
   const request = await preparePrivateCandidate(f.config, f.capture, candidate, candidateAttempt, f.now);
   const candidateCapture = structuredClone(f.capture);
   candidateCapture.rawPath = candidate.path; candidateCapture.file.id = 'new-capsule'; candidateCapture.file.size = String(candidate.bytes);
@@ -171,6 +181,16 @@ test('single writer selects only a fully read-back private capsule and immutable
   assert.deepEqual(await completePrivateSelection(f.attempt, f.finalCaptures, f.now), result);
   assert.equal((await checkPrivateSelection(result.binding, f.finalCaptures, join(f.root, 'daily-check'), f.now)).operation, 'unchanged');
   assert.equal(await readFile(f.captures.selector.rawPath, 'utf8'), f.oldBytes);
+  assert.deepEqual(await readFile(f.rawPath), f.raw);
+});
+
+test('explicitly reviewed replacement source version selects its new pinned snapshot while the missing old installation stays absent', async t => {
+  const f = await selectorFixture(t, '2');
+  await assert.rejects(readFile(join(f.source, 'plugin.json')), /ENOENT/);
+  const result = await completePrivateSelection(f.attempt, f.finalCaptures, f.now);
+  assert.notEqual(result.binding.accepted.snapshot, f.config.accepted.snapshot);
+  assert.notEqual(result.binding.bindings.fixture, f.config.bindings.fixture);
+  assert.equal((await checkPrivateSelection(result.binding, f.finalCaptures, join(f.root, 'version2-check'), f.now)).status, 'complete');
   assert.deepEqual(await readFile(f.rawPath), f.raw);
 });
 

@@ -70,13 +70,18 @@ export async function refreshPrivateSkills(config, capture, attempt, now = new D
 export async function preparePrivateCandidate(config, capture, candidate, attempt, now = new Date()) {
   await mkdir(attempt, { mode: 0o700 });
   await writeFile(join(attempt, 'candidate.json'), json(candidate), { flag: 'wx', mode: 0o600 });
-  await refreshPrivateSkills(config, capture, join(attempt, 'accepted'), now);
   need(typeof candidate.approvalRef === 'string' && candidate.approvalRef.length > 0, 'Independent source approval reference required');
+  need(config.consumer?.fileId === config.cloud.fileId && config.consumer?.sha256 === config.cloud.sha256 && config.consumer?.revision === config.revision && config.consumer?.snapshot === config.snapshot, 'Accepted consumer binding required');
+  await exactCloud(config.cloud, capture, now);
+  const accepted = await readFoundation(config.capsulePath, config.cloud.sha256);
+  need(accepted.revision === config.revision, 'Accepted source differs');
+  await materializeFoundation(accepted, join(attempt, 'accepted'), 'runtime');
+  need((await checkInventory(join(attempt, 'accepted'))).snapshot === config.snapshot, 'Accepted snapshot differs');
   const release = await readFoundation(candidate.path, candidate.sha256);
   need(release.revision === candidate.revision && release.distribution === 'runtime', 'Approved candidate revision required');
   const bytes = await readFile(candidate.path);
   need(bytes.length === candidate.bytes, 'Candidate raw byte count differs');
-  await inventory(release, config.bindings, candidate.snapshot, join(attempt, 'candidate-runtime'));
+  await inventory(release, candidate.bindings ?? config.bindings, candidate.snapshot, join(attempt, 'candidate-runtime'));
   const unchanged = candidate.sha256 === config.cloud.sha256;
   const request = { status: unchanged ? 'unchanged' : 'awaiting-upload', accepted: config.cloud, acceptedConsumer: config.consumer, candidate, upload: unchanged ? null : { file_uri: candidate.path, file_name: `emmy-runtime-${candidate.revision}-${candidate.sha256}.json`, mime_type: 'application/json', parent_folder_id: config.cloud.parentId }, selectionChanged: false };
   await writeFile(join(attempt, 'upload-request.json'), json(request), { flag: 'wx', mode: 0o600 });
@@ -141,12 +146,13 @@ export async function preparePrivateSelection(config, captures, candidateAttempt
   const candidateBytes = await exactCloud(cloud, captures.candidate, now);
   const release = await readFoundation(captures.candidate.rawPath, cloud.sha256);
   need(release.revision === request.candidate.revision, 'Candidate source differs');
-  await inventory(release, config.bindings, request.candidate.snapshot, join(attempt, 'runtime'));
+  const bindings = request.candidate.bindings ?? config.bindings;
+  await inventory(release, bindings, request.candidate.snapshot, join(attempt, 'runtime'));
   const selected = { fileId: cloud.fileId, sha256: digest(candidateBytes), bytes: candidateBytes.length, revision: release.revision, snapshot: request.candidate.snapshot };
   const selection = { schemaVersion: 1, kind: 'emmy-private-skill-selection', generation: previous.generation + 1, selected, previous: { selected: config.accepted, selectorSha256: config.selector.sha256, historyFileId: config.history.fileId }, approvalRef: request.candidate.approvalRef };
   const bytes = json(selection), path = join(attempt, 'selection.json');
   await writeFile(path, bytes, { flag: 'wx', mode: 0o600 });
-  const pending = { config, attempt: resolve(attempt), selection, sha256: digest(bytes), bytes: Buffer.byteLength(bytes), historyUpload: { file_uri: path, file_name: `emmy-skill-selection-${selection.generation}-${digest(bytes)}.json`, mime_type: 'application/json', parent_folder_id: config.parentId } };
+  const pending = { config, bindings, attempt: resolve(attempt), selection, sha256: digest(bytes), bytes: Buffer.byteLength(bytes), historyUpload: { file_uri: path, file_name: `emmy-skill-selection-${selection.generation}-${digest(bytes)}.json`, mime_type: 'application/json', parent_folder_id: config.parentId } };
   await writeFile(join(attempt, 'pending-selection.json'), json(pending), { flag: 'wx', mode: 0o600 });
   return pending;
 }
@@ -190,8 +196,8 @@ export async function completePrivateSelection(attempt, captures, now = new Date
   const release = await readFoundation(captures.candidate.rawPath, selected.sha256);
   need(release.revision === selected.revision, 'Selected release differs');
   const runtime = join(await mkdtemp(join(attempt, 'consumer-')), 'runtime');
-  const { before, reads } = await inventory(release, pending.config.bindings, selected.snapshot, runtime);
-  const next = { ...pending.config, selector: { fileId: cloud.fileId, sha256: pending.sha256, bytes: pending.bytes, generation: pending.selection.generation }, history, accepted: selected };
+  const { before, reads } = await inventory(release, pending.bindings, selected.snapshot, runtime);
+  const next = { ...pending.config, bindings: pending.bindings, selector: { fileId: cloud.fileId, sha256: pending.sha256, bytes: pending.bytes, generation: pending.selection.generation }, history, accepted: selected };
   const current = JSON.parse(await readFile(join(pending.config.home, 'current.json')));
   need([canonical(pending.config), canonical(next)].includes(canonical(current)), 'Local predecessor changed');
   for (const path of [join(attempt, 'accepted-binding.json'), join(pending.config.home, 'current.next.json')]) {
