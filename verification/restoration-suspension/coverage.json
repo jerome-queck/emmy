@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "693b277f8dc0e1a0acc03a5e739bf057c403479e",
+  "sourceFiles": {
+    "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
+    "src/records.mjs": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58",
+    "src/responsibilities.mjs": "07914317b5b8d310f2e347cdda0392f18c6a791cf26101124a5d651cb43a8674"
+  },
+  "verificationFiles": {
+    "verification/restoration-suspension/graph.mjs": "ea28a2bd312a88ea79a98207df7788e78c52cf5c8831acb115c0b43fd1f4e93a",
+    "verification/restoration-suspension/check.mjs": "80fb05e1e9e8b1b66844b55c5ff871d316ae534658e338b7b715128955283b0e",
+    "verification/restoration-suspension/replay-statechart.mjs": "6f7cfd87745215043dff8af7cf1bce0f5321077045eb6f19b86fe9ab7b09b5fd",
+    ".agents/skills/restoration-suspension/SKILL.md": "3ea3509d248f7e07267a9edee5983ee733c4e6e2b9d64009edb1cae3d08ce61d"
+  },
+  "mapping": {
+    "EpochEvidence": "restoredState epoch and category guards",
+    "CurrentEvidence": "currentObservations and restoredState with unavailable tasks supersession",
+    "FreshEvidence": "observationStatus age and restoredState",
+    "CategoryEvidence": "restoredState local-target, authority scope, completeness and subject",
+    "ReconcileGate": "reconcileState restored projection, finding and proposal guard"
+  },
+  "bounds": "Two epochs, one local target, four categories, one defective category, tasks supersession chain of at most three, four timestamps, one expiry.",
+  "atomicity": "One synchronous reconcileState call; observations and epoch appearance are external events; actual publication is excluded.",
+  "reviewBasis": "Accepted 693b277 and accepted 53118dc contain byte-identical work, records, responsibilities, and dispatch modules. Complete diff checked."
+}
