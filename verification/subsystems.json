@@ -754,7 +754,7 @@
       "files": [
         {
           "path": "src/assurance.mjs",
-          "sha256": "5861cf2154b957e614745cf863f76ddf07558f363fb281116476df120d4c9f7b",
+          "sha256": "382beafea87183497b217acaef63f8a7dade65a330ab7a833d951ae7ecdc9b5d",
           "callers": [
             "src/local-assurance.mjs",
             "verification/local-assurance/check.mjs"
@@ -1059,7 +1059,7 @@
         },
         {
           "path": "src/metadata.mjs",
-          "sha256": "ceb3ddb83109f58c572bf0f4947c5c225f2151d163b53ba7d7b4206a95923792",
+          "sha256": "7d26936d0f90fb1fe624fe56d51c6644dd990791cdb9b2777eeda5572cd51592",
           "callers": [
             "src/briefing.mjs",
             "src/maintenance.mjs",
@@ -1070,7 +1070,7 @@
         },
         {
           "path": "src/maintenance.mjs",
-          "sha256": "461a4ad70770e258e5c58e8c2dc90c24baccdbeb9acf933e840eb75890a413f4",
+          "sha256": "67512cc54add622d94f4a19517fd42453519d3d93719ce82d38c10944f393e81",
           "callers": [
             "scripts/agent.mjs"
           ]
@@ -1224,7 +1224,7 @@
         },
         {
           "path": ".agents/skills/local-assurance/SKILL.md",
-          "sha256": "7896792e3d9f361f5b9f360cbbc3044b696ecbc5b9dd19420f37ec6cc7d2a360",
+          "sha256": "f880f06f2a4df85e2569feb440aa6e8fa9b66cfe575064318c5e385dabedec2a",
           "callers": [
             "public configuration"
           ]
@@ -1280,7 +1280,7 @@
         },
         {
           "path": ".agents/skills/verify/features/evidence.md",
-          "sha256": "d1ba608871b00bcce80d9f3ca58fc50c74348b7bb9faeba4f31826a0141f15a8",
+          "sha256": "c44fcf552dca434663b799a6d7e2e3e87997eb236174b08b3886bf83a976a470",
           "callers": [
             "public configuration"
           ]
@@ -1555,7 +1555,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "8a9cd26fa6aeaf567067576b3996ce2733be07be337da256bd7830a13188aa84",
+          "sha256": "8fca794a0cd40a27adde6e96a4aaa6254d6bd12a7c66c782d0596c11d732e905",
           "callers": [
             "verification input"
           ]
@@ -1639,7 +1639,7 @@
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "117c3a7d5f763aed28d07d6d124426ef9807ac6bf972bf4399a4ef9e3489569c",
+          "sha256": "f0c25c5884b6d8d230d85073985520f12f8f157d7f80f03ca8e7ec150163dfaa",
           "callers": [
             "verification input"
           ]
@@ -1758,7 +1758,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "6efc767c0c21f144742563bfc95a625df5cb584b92f346e43a77b7d2903a614a",
+          "sha256": "2fb0650e841dc2a9dce43d16898c44b15406398be70c03c5f70e9c68de8ba38f",
           "callers": [
             "verification input"
           ]
@@ -1912,7 +1912,7 @@
         },
         {
           "path": "verification/publication/coverage.json",
-          "sha256": "bcadc1fa349873d64d932bdfa03c7c242b5b19ade7fb95eb31dc120b79143ba3",
+          "sha256": "11381b002ee7ec88e78722c5f637bf10e105f52670ab4edab6124651a73e2790",
           "callers": [
             "verification input"
           ]
@@ -1975,7 +1975,7 @@
         },
         {
           "path": "test/agent-local.test.mjs",
-          "sha256": "aad9a360b02f293b938db421d8105e48a49cca7fa53e6b7966f20bb5b4e1b7d3",
+          "sha256": "a49c0bb5027ac9e315c5eeda9715bc466c330d7e10bd356da79bf528e7e5a61a",
           "callers": [
             "verification input"
           ]
@@ -2218,6 +2218,60 @@
             "verification input"
           ]
         }
+      ]
+    },
+    {
+      "id": "responsibility-closure",
+      "stateOwner": "responsibilities.mjs reconcileState; work.mjs repairStatus",
+      "classification": "stateful; bounded reachable history",
+      "bounds": "One source-generated criterion failure, fixed timestamps and bounded record arrivals; synchronous reconcile and separately admitted retained review.",
+      "gap": "Multiple failure generations, multi-criterion findings, restoration, arbitrary inputs and native or I/O effects remain outside this graph.",
+      "files": [
+        {
+          "path": ".agents/skills/responsibility-closure/SKILL.md",
+          "sha256": "c7ba80787fae5e9295a1baeb02e7e134d16950558a0573c14026b252f8706216",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": "verification/responsibility-closure/check.mjs",
+          "sha256": "e08d31d9774afddf737256bcf44a8181eb1a8a25c4e63fe440cfe33f654a4d65",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/responsibility-closure/graph.mjs",
+          "sha256": "e9ff8533904648ed209587e7a3800586bc117d3e7885e7d1517a2ae27d18decf",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/responsibility-closure/coverage.json",
+          "sha256": "2ee270b92508bfecdb9839fc018a8f82f4ab7f9db39bfaedd21873c106caee34",
+          "callers": [
+            "verification input"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/responsibilities.mjs",
+          "symbol": "reconcileState"
+        },
+        {
+          "path": "src/work.mjs",
+          "symbol": "repairStatus"
+        }
+      ],
+      "properties": [
+        "failure-preservation",
+        "repair-closure"
+      ],
+      "scenarios": [
+        "self-check-repair"
       ]
     }
   ]

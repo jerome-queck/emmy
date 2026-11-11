@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "693b277f8dc0e1a0acc03a5e739bf057c403479e",
+  "sourceFiles": {
+    "src/responsibilities.mjs": "07914317b5b8d310f2e347cdda0392f18c6a791cf26101124a5d651cb43a8674",
+    "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
+    "src/records.mjs": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58"
+  },
+  "verificationFiles": {
+    "verification/responsibility-closure/graph.mjs": "e9ff8533904648ed209587e7a3800586bc117d3e7885e7d1517a2ae27d18decf",
+    "verification/responsibility-closure/check.mjs": "e08d31d9774afddf737256bcf44a8181eb1a8a25c4e63fe440cfe33f654a4d65",
+    ".agents/skills/responsibility-closure/SKILL.md": "c7ba80787fae5e9295a1baeb02e7e134d16950558a0573c14026b252f8706216"
+  },
+  "mapping": {
+    "Closure": "reconcileState, repairStatus, observationStatus and record fixtures; one source-generated criterion-failed finding"
+  },
+  "bounds": "One responsibility, one criterion-failed finding, one retained initial review, two definitions, fixed timestamps, one pass, reported completion, three repairs and arbitrary admitted record-arrival/reconciliation orderings.",
+  "atomicity": "One synchronous reconcileState call per inspection or reconciliation; retained review and record arrival separately modeled. Publication and actual I/O excluded.",
+  "reviewBasis": "Accepted coverage source 693b277 and 7cd37af have byte-identical responsibility, work and records modules; complete diff reviewed. Original component model unchanged except real graph export, pin guard and checkout-local evidence path."
+}
