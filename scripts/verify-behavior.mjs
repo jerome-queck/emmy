@@ -4,7 +4,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { hostname, tmpdir } from 'node:os';
 import { basename, join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { canonical, digest, parseObservation, recordPayload, readRecord, readStore } from '../src/records.mjs';
 import { fixtureScripts } from '../verification/fixtures.mjs';
@@ -345,7 +345,7 @@ try {
     await assert.rejects(readFile(authorityMarker), { code: 'ENOENT' });
     const waitForFile = async (path, ready = bytes => bytes.length > 0) => { for (let i = 0; i < 400; i++) { try { const bytes = await readFile(path, 'utf8'); if (ready(bytes)) return bytes; } catch (error) { if (error.code !== 'ENOENT') throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Timed out waiting for complete contents of ${path}`); };
     const gone = async pid => { for (let i = 0; i < 200; i++) { try { process.kill(pid, 0); } catch (error) { if (error.code === 'ESRCH') return; throw error; } await new Promise(resolve => setTimeout(resolve, 10)); } throw new Error(`Owned verifier child survived ${pid}`); };
-    const cleanupEnv = (path, mode = 'observe') => ({ NODE_OPTIONS: `--import=${join(root, 'fixture-verifiers/record-group-kill.mjs')}`, EMMY_VERIFY_GROUP_CALL_FILE: path, EMMY_VERIFY_GROUP_CALL_MODE: mode });
+    const cleanupEnv = (path, mode = 'observe') => ({ NODE_OPTIONS: `--import=${pathToFileURL(join(root, 'fixture-verifiers/record-group-kill.mjs')).href}`, EMMY_VERIFY_GROUP_CALL_FILE: path, EMMY_VERIFY_GROUP_CALL_MODE: mode });
     const groupCalls = async path => (await waitForFile(path, bytes => bytes.endsWith('\n'))).trim().split('\n').map(line => JSON.parse(line));
     const teardownGroups = async (path, entry) => {
       entry.harnessCleanup = [];
@@ -402,7 +402,7 @@ try {
       const deniedPid = join(home, `denied-${mode}-child.pid`); const deniedGroups = join(home, `denied-${mode}-groups.txt`);
       const deniedCheck = await makeCheck(`local-command-denied-${mode}`, 'output.mjs', [deniedPid]); await adopt(deniedCheck);
       try {
-        const data = await run(['reconcile', '--id', deniedCheck.id, '--as-of', now(), '--import', await fixture(`denied-${mode}-tasks.json`, { schemaVersion: 1, records: [tasks(deniedCheck.id)] })], 3, home, { NODE_OPTIONS: `--import=${join(root, 'fixture-verifiers/deny-group-kill.mjs')}`, EMMY_VERIFY_DENIED_GROUP_FILE: deniedGroups, EMMY_VERIFY_DENIED_GROUP_MODE: mode });
+        const data = await run(['reconcile', '--id', deniedCheck.id, '--as-of', now(), '--import', await fixture(`denied-${mode}-tasks.json`, { schemaVersion: 1, records: [tasks(deniedCheck.id)] })], 3, home, { NODE_OPTIONS: `--import=${pathToFileURL(join(root, 'fixture-verifiers/deny-group-kill.mjs')).href}`, EMMY_VERIFY_DENIED_GROUP_FILE: deniedGroups, EMMY_VERIFY_DENIED_GROUP_MODE: mode });
         const result = (await checkBytes(review(data))).check;
         assert.equal(result.outcome, 'fail'); assert.equal(result.reason, 'process-group-cleanup-failed'); assert.equal(result.terminationReason, 'output-limit');
         assert.equal(result.cleanup.status, 'unverified'); assert.ok(result.cleanup.errors.includes('EPERM')); assert.equal(result.cleanup.processGroup, Number((await waitForFile(deniedGroups)).trim().split('\n')[0]));
