@@ -20,9 +20,17 @@ export async function driveAutomationReporting(root, evidence) {
     if (mutation === 'receipt') candidate = replace(candidate, 'return executionStable && receiptStable && previous', 'return executionStable && previous');
     if (mutation === 'missing') candidate = replace(candidate, "execution: 'not-inferred'", "execution: 'completed'");
     if (mutation === 'authority') candidate = replace(candidate, "assurance: 'reported', publication: 'pending'", "assurance: 'authenticated', publication: 'pending'");
-    candidate = replace(candidate, "const handle = await open(temporary, 'wx', 0o600);", "const handle = await open(temporary, 'wx', 0o600);\n  if (process.env.EMMY_REPORT_MODEL_MARKER) { await import('node:fs/promises').then(fs => fs.writeFile(process.env.EMMY_REPORT_MODEL_MARKER, JSON.stringify({ temporary, hash, pid: process.pid }) + '\\n')); await new Promise(() => { setInterval(() => {}, 1000); }); }");
+    const checkpointSource = `const handle = await open(temporary, 'wx', 0o600);
+  if (process.env.EMMY_REPORT_MODEL_MARKER) {
+    setInterval(() => { void handle.fd; }, 1000);
+    if (typeof global.gc !== 'function') throw new Error('Checkpoint GC stress requires --expose-gc');
+    global.gc();
+    await import('node:fs/promises').then(fs => fs.writeFile(process.env.EMMY_REPORT_MODEL_MARKER, JSON.stringify({ temporary, hash, pid: process.pid, gcStressed: true, fd: handle.fd }) + '\\n'));
+    await new Promise(() => {});
+  }`;
+    candidate = replace(candidate, "const handle = await open(temporary, 'wx', 0o600);", checkpointSource);
     const path = join(directory, 'automation-reporting.mjs'); await writeFile(path, candidate);
-    for (const dependency of ['bounded-json.mjs', 'improvement-report.mjs', 'reporting-privacy.mjs']) await writeFile(join(directory, dependency), await readFile(join(root, 'src', dependency)));
+    for (const dependency of ['bounded-json.mjs', 'improvement-report.mjs', 'reporting-privacy.mjs', 'automation-reporting-outcome.mjs']) await writeFile(join(directory, dependency), await readFile(join(root, 'src', dependency)));
     const api = await import(pathToFileURL(path));
     const home = join(directory, 'home'); await mkdir(home);
     return { directory, path, api, home };
@@ -30,10 +38,10 @@ export async function driveAutomationReporting(root, evidence) {
   const publication = async (name, mutation) => {
     const trial = await prepare(name, mutation); const marker = join(trial.directory, 'marker.json'); const input = join(trial.directory, 'input.json');
     await save(input, { source: trial.path, marker, evaluatedAt, request: { action: 'publish-own-record', directory: trial.home, namespace: base.namespace, record: base } });
-    const child = spawn(process.execPath, [join(root, 'verification/automation-reporting/worker.mjs'), input]);
+    const child = spawn(process.execPath, ['--expose-gc', join(root, 'verification/automation-reporting/worker.mjs'), input]);
     let output = ''; child.stdout.on('data', b => output += b); child.stderr.on('data', b => output += b);
-    const completion = new Promise((resolve, reject) => { child.on('error', reject); child.on('close', (code, signal) => resolve({ code, signal, output })); });
-    let witness;
+    const completion = new Promise(resolve => { child.on('error', error => resolve({ code: null, signal: null, output, spawnError: error.message })); child.on('close', (code, signal) => resolve({ code, signal, output })); });
+    let witness; let primaryError; let cleanupError; let stopped;
     try {
       let checkpoint;
       for (let i = 0; i < 500; i++) {
@@ -43,12 +51,27 @@ export async function driveAutomationReporting(root, evidence) {
       }
       assert.ok(checkpoint, 'Writer must reach actual open-before-write boundary');
       assert.equal(checkpoint.pid, child.pid);
+      assert.equal(checkpoint.gcStressed, true); assert.ok(Number.isInteger(checkpoint.fd) && checkpoint.fd >= 0, 'The opened handle must survive forced GC at the checkpoint');
       const canonical = join(trial.home, base.namespace, `${trial.api.recordDigest(base)}.json`);
       const bytes = await readFile(canonical).catch(error => { if (error.code === 'ENOENT') return null; throw error; });
       witness = { property: 'PublishedComplete', checkpoint, canonicalPresent: bytes !== null, canonicalBytes: bytes?.length ?? null };
       assert.equal(witness.canonicalPresent, mutation === 'partial'); if (mutation) assert.equal(bytes.length, 0);
       await save(join(trial.directory, 'witness.json'), witness);
-    } finally { child.kill('SIGKILL'); const stopped = await completion; await save(join(trial.directory, 'process.json'), stopped); assert.equal(stopped.signal, 'SIGKILL'); }
+    } catch (error) { primaryError = error; }
+    finally {
+      try {
+        const killRequested = child.kill('SIGKILL'); stopped = { ...await completion, killRequested, pid: child.pid ?? null };
+        await save(join(trial.directory, 'process.json'), stopped);
+        assert.equal(stopped.signal, 'SIGKILL', 'Owned stopped writer must end by SIGKILL; an unrelated child exception is not a mutant witness');
+      } catch (error) { cleanupError = error; }
+    }
+    if (primaryError || cleanupError) {
+      const describe = error => error ? { name: error.name, message: error.message, stack: error.stack } : null;
+      let retentionError;
+      try { await save(join(trial.directory, 'failure.json'), { primary: describe(primaryError), cleanup: describe(cleanupError), process: stopped ?? null }); }
+      catch (error) { retentionError = error; }
+      throw new AggregateError([primaryError, cleanupError, retentionError].filter(Boolean), [primaryError && `Primary failure: ${primaryError.message}`, cleanupError && `Cleanup failure: ${cleanupError.message}`, retentionError && `Evidence retention failure: ${retentionError.message}`].filter(Boolean).join('; '));
+    }
     if (!mutation) {
       const request = { action: 'publish-own-record', directory: trial.home, namespace: base.namespace, record: base };
       const published = await trial.api.automationReporting(request, { evaluatedAt });
@@ -72,7 +95,7 @@ export async function driveAutomationReporting(root, evidence) {
     assert.ok(missing.findings.some(f => f.startsWith('missing-or-invalid-predecessor:')));
     await trial.api.automationReporting({ action: 'publish-own-record', directory: trial.home, namespace: base.namespace, record: base }, { evaluatedAt });
     await writeFile(join(trial.home, base.namespace, `${'d'.repeat(64)}.json`), '{broken');
-    const corrupt = await trial.api.automationReporting({ action: 'status', directory: trial.home }, { evaluatedAt });
+    const corrupt = await trial.api.automationReporting({ action: 'inspect', directory: trial.home }, { evaluatedAt });
     assert.equal(corrupt.scan.complete, false);
     assert.equal(corrupt.runs[0].execution, mutation === 'accept' ? 'completed' : 'unknown');
     const claims = trial.api.aggregate([base, receipt], { evaluatedAt });
@@ -81,6 +104,10 @@ export async function driveAutomationReporting(root, evidence) {
     const sourceAge = trial.api.aggregate([automation, { ...base, data: { ...base.data, report: oldReport } }], { evaluatedAt });
     assert.equal(sourceAge.automations[0].stale, mutation !== 'stale');
     assert.equal(sourceAge.runs[0].stale, mutation !== 'stale');
+    const generic = { schemaVersion: 1, type: 'automation-outcome', runId: base.key, provenance: 'manual', scheduledFor: null, status: 'completed', coverage: 'partial', availability: 'unavailable', summary: 'Synthetic generic outcome', artifactLinks: [], sourceWindow: null, generatedAt: evaluatedAt };
+    const genericState = trial.api.aggregate([{ ...base, data: { ...base.data, report: generic } }], { evaluatedAt });
+    assert.equal(genericState.runs[0].reportAvailability, 'unavailable');
+    assert.equal(genericState.runs[0].assurance, mutation === 'authority' ? 'authenticated' : 'reported');
     const timing = { startedAt: null, lastHeartbeatAt: null, endedAt: null, observedAt: '2026-10-29T00:00:00Z', sourceRef: 'synthetic:timing-observation' };
     const timingAge = trial.api.aggregate([{ ...base, data: { ...base.data, timing } }], { evaluatedAt });
     assert.equal(timingAge.runs[0].stale, mutation !== 'stale');
@@ -93,7 +120,7 @@ export async function driveAutomationReporting(root, evidence) {
     if (mutation === 'accept') { assert.equal(witness.incompleteExecution, 'completed'); assert.ok(witness.conflictExecutions.every(s => s === 'completed')); }
     else { assert.equal(witness.incompleteExecution, 'unknown'); assert.ok(witness.conflictExecutions.every(s => s === 'unknown')); }
     assert.equal(witness.assurance, mutation === 'authority' ? 'authenticated' : 'reported'); assert.equal(witness.deliveryClaim, 'verified');
-    await save(join(trial.directory, 'witness.json'), { ...witness, incomplete, conflict, missing, corrupt, stale, sourceAge, timingAge, claims }); return witness;
+    await save(join(trial.directory, 'witness.json'), { ...witness, incomplete, conflict, missing, corrupt, stale, sourceAge, timingAge, genericState, claims }); return witness;
   };
   const transitions = async (name, mutation) => {
     const trial = await prepare(name, mutation);

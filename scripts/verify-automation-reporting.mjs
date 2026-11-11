@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
@@ -100,14 +100,13 @@ try {
   assert.equal(process.argv.length, 2, 'Use node scripts/verify-automation-reporting.mjs without arguments');
   const coverage = JSON.parse(await readFile(join(root, 'verification/automation-reporting/coverage.json'), 'utf8'));
   assert.match(coverage.sourceCommit, /^[a-f0-9]{40}$/);
-  assert.equal(coverage.sourceState, 'reviewed-working-tree-bytes');
+  assert.ok(['reviewed-working-tree-bytes', 'reviewed-commit'].includes(coverage.sourceState), 'Explicit reviewed source state required');
   assert.ok(Object.keys(coverage.sourceFiles).length >= 3, 'Reviewed source closure must be pinned');
   assert.ok(coverage.mapping.length >= 4, 'Actual source mapping required');
   assert.ok(Object.keys(coverage.verificationFiles).length >= 9, 'Model/runner/bridge/skill must be pinned');
   for (const [path, expected] of Object.entries(coverage.sourceFiles)) {
     assert.equal(sha256(await readFile(join(root, path))), expected, `${path} changed. Review the source diff and model mapping before moving the automation reporting coverage record.`);
-    // Initial uncommitted implementation is bound by exact reviewed bytes; sourceCommit is its base.
-    // Once committed, maintenance must record the reviewed implementation commit.
+    if (coverage.sourceState === 'reviewed-commit') assert.equal(sha256(execFileSync('git', ['show', `${coverage.sourceCommit}:${path}`], { cwd: root })), expected, `${path} differs from the reviewed source commit`);
   }
   for (const [path, expected] of Object.entries(coverage.verificationFiles)) {
     assert.equal(sha256(await readFile(join(root, path))), expected, `${path} changed. Review the model, bridge and skill before refreshing verification digests.`);
