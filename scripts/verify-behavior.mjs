@@ -19,6 +19,7 @@ import { driveMorning } from '../verification/morning-drive.mjs';
 import { driveTokenReview, driveImprovementReport } from '../verification/improvement-drive.mjs';
 import { driveDailyBriefing } from '../verification/daily-briefing-drive.mjs';
 import { driveFleet } from '../verification/fleet-drive.mjs';
+import { driveAutomationReporting } from '../verification/automation-reporting-drive.mjs';
 import { driveAssurance } from '../verification/local-assurance/drive.mjs';
 
 const sourceRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -620,6 +621,7 @@ try {
   }
   assert.equal((await readdir(home)).includes('executor-invoked'), false);
   await cp(join(home, 'records'), join(evidenceDir, 'records'), { recursive: true });
+  if (!report.focus) await driveAutomationReporting({ run, scenario, evidenceDir, report });
   if (!report.focus) assert.deepEqual(report.scenarios.map(item => item.name).sort(), verification.features.flatMap(feature => feature.scenarios).sort(), 'Every mapped CLI scenario must execute');
   report.status = 'passed';
 } catch (error) {

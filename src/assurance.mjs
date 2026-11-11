@@ -29,6 +29,8 @@ export const assurancePlan = Object.freeze([
   { id: 'morning-send-formal', args: ['verification/morning-send/check.mjs'] },
   { id: 'calendar-attempt-formal', args: ['verification/calendar-attempt/check.mjs'] },
   { id: 'automation-lineage-formal', args: ['verification/automation-lineage/check.mjs'] },
+  { id: 'reporting-tests', args: ['--test', 'test/automation-reporting-cli.test.mjs', 'test/automation-reporting-cloud.test.mjs', 'test/automation-reporting-control.test.mjs', 'test/automation-reporting-expectations.test.mjs', 'test/automation-reporting-harness.test.mjs', 'test/automation-reporting-privacy.test.mjs', 'test/automation-reporting-transport.test.mjs', 'test/automation-reporting-unbound.test.mjs', 'test/automation-reporting-upkeep.test.mjs', 'test/automation-reporting.test.mjs'] },
+  { id: 'reporting-formal', args: ['scripts/verify-automation-reporting.mjs'] },
 ].map(row => Object.freeze({ ...row, args: Object.freeze(row.args) })));
 export const assurancePlanDigest = digest(canonical(assurancePlan));
 

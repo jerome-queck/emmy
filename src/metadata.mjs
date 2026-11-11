@@ -1,4 +1,5 @@
 export const commands = [
+  { name: 'reporting', description: 'Inspect validated private automation records or publish only a producer-owned immutable record; no workload execution.', options: [{ name: 'file', required: true }], feature: 'upkeep' },
   { name: 'help', description: 'List commands and JSON contracts.', options: [], feature: 'orientation' },
   { name: 'doctor', description: 'Check runtime, public references, bindings, private integrity, and restored suspension.', options: [], feature: 'orientation' },
   { name: 'catalog', description: 'Read public projects, source claims, capabilities, tools, and probes.', options: [], feature: 'orientation' },
@@ -36,7 +37,7 @@ export const verification = {
     { id: 'orientation', title: 'Orientation and private integrity', commands: ['help', 'doctor', 'catalog'], scenarios: ['orientation'], properties: [] },
     { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'dispatch', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'native-effect-correlation', 'native-dispatch', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope', 'native-uncertainty', 'dispatch-recovery'] },
     { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile', 'briefing', 'guidance-pin', 'calendar', 'calendar-register', 'token-review'], scenarios: ['self-check-repair', 'evidence-boundaries', 'live-cutoff', 'local-check', 'local-check-cleanup', 'trigger-evolution', 'briefing-guidance', 'briefing-draft', 'briefing-boundaries', 'calendar-acceptance', 'calendar-register', 'token-review'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay', 'current-evidence', 'live-cutoff', 'process-group-cleanup', 'trigger-coverage', 'retirement-closure', 'calendar-acceptance', 'calendar-register'] },
-    { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore', 'automation', 'daily-briefing', 'assurance'], scenarios: ['archive-recovery', 'cloud-recovery', 'restored-current-context', 'publication-interruption', 'derived-boundaries', 'improvement-report', 'automation-foundation', 'daily-briefing-pilot', 'local-assurance'], properties: ['restore-suspension', 'import-prefix', 'automation-contract'] }
+    { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore', 'reporting', 'automation', 'daily-briefing', 'assurance'], scenarios: ['archive-recovery', 'cloud-recovery', 'restored-current-context', 'publication-interruption', 'derived-boundaries', 'improvement-report', 'automation-foundation', 'daily-briefing-pilot', 'local-assurance', 'automation-reporting'], properties: ['restore-suspension', 'import-prefix', 'automation-contract'] }
   ],
   properties: [
     { id: 'morning-contract', source: 'src/morning.mjs', functions: ['classifyMail', 'morningTransition', 'renderMorning', 'morningView', 'deliveryReadback'], statement: 'Versioned conservative mail judgments, fleet-backed fresh Singapore-day source acquisitions, complete reviewed-ID accounting, exact delivered-body gates, unread-preserved reversible outcomes and same-message edits retain scoped provenance without claiming native truth.' },
@@ -70,6 +71,30 @@ export const verification = {
 
 // Reviewed association of subsystem evidence; file inventory remains in verification/subsystems.json.
 export const subsystemEvidence = {
+  "reporting-ledger": {
+  "drivers": [
+    "verification/automation-reporting-drive.mjs"
+  ],
+  "skills": [
+    ".agents/skills/automation-reporting-contract/SKILL.md"
+  ],
+  "replay": [
+    "scripts/verify-automation-reporting.mjs"
+  ],
+  "coverageRecords": [
+    "verification/automation-reporting/coverage.json"
+  ],
+  "model": "hand-mapped-await",
+  "skillStatus": "maintained",
+  "graph": {
+    "kind": "hand-mapped-await",
+    "path": "verification/automation-reporting/AutomationReporting.tla",
+    "record": "verification/automation-reporting/coverage.json",
+    "checker": "scripts/verify-automation-reporting.mjs",
+    "reviewedSha256": "950df3edff88fb86a48af82552e483a9419903c8c7e24a93a1b882a3b16271d7",
+    "checkerSha256": "140847ff30709bf0171b91eb190da2034086085c579cc5e98d04cca152156ce4"
+  }
+},
   "cooperative-cloud": {
     "drivers": ["verification/cloud-drive.mjs"],
     "skills": [".agents/skills/cooperative-cloud/SKILL.md"],

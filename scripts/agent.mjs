@@ -17,6 +17,8 @@ import { tokenReview } from '../src/token-review.mjs';
 import { signin } from '../src/signin.mjs';
 import { automationProcedure } from '../src/automation-procedure.mjs';
 import { boundedJson } from '../src/bounded-json.mjs';
+import { automationReporting } from '../src/automation-reporting.mjs';
+import { assertNoCredentials } from '../src/reporting-privacy.mjs';
 import { assessAssurance } from '../src/local-assurance.mjs';
 import { dailyBriefing, readDailyBriefingRequest } from '../src/daily-briefing.mjs';
 
@@ -55,6 +57,9 @@ try {
     case 'reconcile':
       data = await reconcile(home, { id: options.id, imports: options.import ? await readJson(resolve(options.import)) : null, asOf: timestamp(options['as-of'], 'as-of'), catalog: await readCatalog(root) });
       exitCode = data.status === 'current' ? 0 : 3; break;
+    case 'reporting':
+      data = await automationReporting(await boundedJson(resolve(options.file), 65536));
+      exitCode = data.status === 'needs-attention' ? 3 : 0; break;
     case 'assurance':
       data = await assessAssurance(root, await boundedJson(resolve(options.file)));
       exitCode = data.status === 'current-local-reported' ? 0 : 3; break;
@@ -119,6 +124,8 @@ try {
   process.stdout.write(`${JSON.stringify({ ok: true, command: command.name, data })}\n`);
   process.exitCode = exitCode;
 } catch (error) {
-  process.stdout.write(`${JSON.stringify({ ok: false, command: commandName, error: error.message })}\n`);
+  let message = typeof error.message === 'string' ? error.message : 'Request refused';
+  try { assertNoCredentials(message); } catch { message = 'Request refused'; }
+  process.stdout.write(`${JSON.stringify({ ok: false, command: commands.some(command => command.name === commandName) ? commandName : 'unknown', error: message })}\n`);
   process.exitCode = 2;
 }

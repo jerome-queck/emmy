@@ -52,13 +52,9 @@ A crash can leave a lock. Inspect the owning process and retained intent before 
 
 Filesystem observations are separate reads, not an atomic pin. Selections and statuses establish supplied-byte consistency and attribution claims, not execution or reviewer authentication. GitHub has no atomic expected-base merge parameter. Trusted current policy, cooperating writers and actual provider protection during the final request interval remain assumptions. Administrator capability grants no action permission.
 
-## Migrate protection without losing a gate
+## Hosted verification
 
-Keep current hosted requirements until reviewed policy is present on trusted `main`. Prepare exact transition and rollback bodies from a fresh protection read. Obtain action-time owner confirmation naming repository, branch, current base, candidate head and both bodies.
-
-Replace required `emmy-check` with `emmy-local-assurance`. Retain `emmy-independent-review`, strict current-base checks, administrator enforcement and every other setting. Validate local statuses and an exact-head guarded journey before setting repository variable `EMMY_DELIVERY_MODE` to `local`. That explicit variable skips both hosted jobs. An absent or different value retains historical execution. Event declarations remain for compatibility. Local mode requires no hosted job.
-
-For rollback, restore hosted execution first by removing the local variable value. Restore the saved protection body and verify fresh hosted `emmy-check` plus independent review at the exact head. Protection and workflow settings need separate readbacks. Never disable the old gate before verifying its replacement. This route has no protection or repository-variable write command.
+Hosted CI and independent review remain required. Local receipts supplement those checks. The workflows always run their required jobs. Local source support grants no protection or repository-variable change.
 
 ## Verify the implementation
 
