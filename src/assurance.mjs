@@ -7,7 +7,7 @@ export const assurancePlan = Object.freeze([
   { id: 'calendar', args: ['--test', 'test/calendar-collection.test.mjs', 'test/calendar-register.test.mjs', 'test/calendar-timing.test.mjs', 'test/calendar-handoff.test.mjs', 'test/academic-os-task-plan.test.mjs'] },
   { id: 'guidance-pin', args: ['--test', 'test/guidance-pin.test.mjs'] },
   { id: 'fleet-morning', args: ['--test', 'test/fleet.test.mjs', 'test/fleet-overrun.test.mjs', 'test/fleet-history.test.mjs', 'test/fleet-semantics.test.mjs', 'test/morning.test.mjs', 'test/morning-compact.test.mjs', 'test/morning-collection.test.mjs'] },
-  { id: 'briefing', args: ['--test', 'test/token-review.test.mjs', 'test/improvement-report.test.mjs', 'test/daily-briefing.test.mjs', 'test/briefing-policy.test.mjs', 'test/briefing-cloud-caller.test.mjs', 'test/briefing-source-normalization.test.mjs', 'test/briefing-reporting.test.mjs', 'test/morning-v3.test.mjs'] },
+  { id: 'briefing', args: ['--test', 'test/token-review.test.mjs', 'test/improvement-report.test.mjs', 'test/daily-briefing.test.mjs', 'test/briefing-policy.test.mjs', 'test/briefing-acquisition.test.mjs', 'test/briefing-source-normalization.test.mjs', 'test/briefing-reporting.test.mjs', 'test/morning-v3.test.mjs'] },
   { id: 'automation-foundation', args: ['--test', 'test/morning-observation.test.mjs', 'test/foundation-release.test.mjs', 'test/automation-procedure.test.mjs'] },
   { id: 'behavior', args: ['scripts/verify-behavior.mjs'] },
   { id: 'merge-tests', args: ['--test', 'test/github-auto-merge.test.mjs'] },
