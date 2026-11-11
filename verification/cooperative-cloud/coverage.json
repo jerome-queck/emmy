@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "2356e1c2b4ba95cc217696dadfe095c6668ae193",
+  "sourceCommit": "3ced171735cb3ed7bc9c979060b8d7411902b39c",
   "sourceFiles": {
     "src/automation-producer.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
     "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
@@ -28,5 +28,5 @@
     "verification/cooperative-cloud/check.mjs": "7e17a6f183e6fc841500ebd1d7c32667bcbde0f471e70f95818f76e58685498d",
     ".agents/skills/cooperative-cloud/SKILL.md": "c357240d0821b1dfe6c6c5794bf708fce585765f6bd772e84145272bd071945f"
   },
-  "reviewBasis": " Calendar attempt integration: appended one fixed suite and one metadata association; reviewed the synthetic Calendar driver and evidence feature additions. Existing transition guards and prior suite rows are unchanged. Full gate and independent review pending. Automation lineage integration: one appended suite and evidence association; prior plan rows and reducer guards unchanged. Source and adapter remain synthetic; exact-head full gate and independent review pending. Main integration review preserves existing model domains and invariants. Generic producer bytes move to automation-producer.mjs; shared validator bodies and publisher awaits retain their semantics. New metadata, copied dependency closure, generated references and mandatory reporting commands are reviewed in the integration source audit. Source witnesses are reachable neutral commits."
+  "reviewBasis": " Calendar attempt integration: appended one fixed suite and one metadata association; reviewed the synthetic Calendar driver and evidence feature additions. Existing transition guards and prior suite rows are unchanged. Full gate and independent review pending. Automation lineage integration: one appended suite and evidence association; prior plan rows and reducer guards unchanged. Source and adapter remain synthetic; exact-head full gate and independent review pending. Main integration review preserves existing model domains and invariants. Generic producer bytes move to automation-producer.mjs; shared validator bodies and publisher awaits retain their semantics. New metadata, copied dependency closure, generated references and mandatory reporting commands are reviewed in the integration source audit. Source witnesses are reachable neutral commits. Main integration review preserves existing model domains and invariants. Generic producer bytes move to automation-producer.mjs; shared validator bodies and publisher awaits retain their semantics. New metadata, copied dependency closure, generated references and mandatory reporting commands are reviewed in the integration source audit. Source witnesses are reachable neutral commits."
 }

@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "2356e1c2b4ba95cc217696dadfe095c6668ae193",
+  "sourceCommit": "3ced171735cb3ed7bc9c979060b8d7411902b39c",
   "sourceFiles": {
     "src/process-incarnation.mjs": "63810f9602f223315fe8d9ccfcda11b6591cf7bb5626092a8ea308a98acfe2ff",
     "verification/process-incarnation-fixtures.mjs": "ce6d81cfef3730bac0d57f7b482773ba1a5d691d815a7cb2f87f7608c419ed9c"

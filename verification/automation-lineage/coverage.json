@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "2356e1c2b4ba95cc217696dadfe095c6668ae193",
+  "sourceCommit": "3ced171735cb3ed7bc9c979060b8d7411902b39c",
   "sourceFiles": {
     "src/automation-producer.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
     "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
