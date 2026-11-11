@@ -1,1 +1,0 @@
-export const step = (action, result) => action === 'AssessDispatch' ? `Assess evidence [${result}]` : ({ SupplyEvidence: 'Current scoped evidence supplied', RetainResult: 'Retain the original result' })[action] ?? action;

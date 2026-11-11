@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { hostname } from 'node:os';
 import { authorityStatus, currentNativeEffects, currentObservations, definitionHeads, effectKey, observationStatus, restoredState, reviewAsOf, routeTarget, sameSubject } from './work.mjs';
-import { canonical, canonicalRepository, digest, dispatchIdentity, dispatchEfforts as efforts, parseDefinition, parseObservation, parseProjectDiscovery, readBindings, readJson, readStore } from './records.mjs';
+import { canonical, canonicalRepository, digest, dispatchEfforts as efforts, parseDefinition, parseObservation, parseProjectDiscovery, readBindings, readJson, readStore } from './records.mjs';
 import { inspectRepository } from './responsibilities.mjs';
 
 const identity = value => [value?.threadId, value?.hostId, value?.nativeProjectId];
@@ -15,7 +15,7 @@ function speedPolicy(settings, objectiveId, role) {
   return { serviceTier: approved ? requestedServiceTier : 'default', requestedServiceTier, approval: approved ? approval : null };
 }
 
-function readbackReasons(readback, expected, requested, asOf, maxAgeMs, label, restoredAt = null, speed = { serviceTier: 'default' }, policy = null) {
+function readbackReasons(readback, expected, requested, asOf, maxAgeMs, label, restoredAt = null, speed = { serviceTier: 'default' }) {
   if (!readback) return [`${label}-readback-needed`];
   const reasons = [];
   if (readback.threadId !== expected.threadId || readback.hostId !== null && readback.hostId !== expected.hostId || readback.nativeProjectId !== null && readback.nativeProjectId !== expected.nativeProjectId) reasons.push(`${label}-identity-mismatch`);
@@ -32,26 +32,9 @@ function readbackReasons(readback, expected, requested, asOf, maxAgeMs, label, r
     if (settings.model !== requested.model || !efforts.includes(settings.effort) || settings.effort !== requested.effort) reasons.push(`${label}-model-mismatch`);
     if (!settings.serviceTier) reasons.push(`${label}-speed-unverified`);
     else if (settings.serviceTier !== speed.serviceTier) reasons.push(`${label}-speed-mismatch`);
-    if (policy ? settings.sandboxMode !== policy.sandboxMode || settings.approvalPolicy !== policy.approvalPolicy : settings.sandboxMode !== 'danger-full-access' || settings.approvalPolicy !== 'never') reasons.push(`${label}-policy-mismatch`);
+    if (settings.sandboxMode !== 'danger-full-access' || settings.approvalPolicy !== 'never') reasons.push(`${label}-policy-mismatch`);
   }
   return reasons;
-}
-
-function rootReasons(readback, root, requested, asOf, maxAgeMs, restoredCutoff, speed) {
-  if (!readback) return ['root-readback-needed'];
-  const reasons = [];
-  if (canonical(readback.principal) !== canonical(root.principal) || readback.hostId !== root.hostId) reasons.push('root-identity-mismatch');
-  if (!currentTime(readback.observedAt, asOf, maxAgeMs) || restoredCutoff && Date.parse(readback.observedAt) < Date.parse(restoredCutoff)) reasons.push('root-readback-not-current');
-  const settings = readback.recordedSettings;
-  if (!settings || !currentTime(settings.observedAt, asOf, maxAgeMs) || restoredCutoff && Date.parse(settings.observedAt) < Date.parse(restoredCutoff)) reasons.push('root-settings-not-current');
-  if (settings?.model !== requested.model || settings?.effort !== requested.effort || settings?.serviceTier !== speed.serviceTier) reasons.push('root-settings-mismatch');
-  return reasons;
-}
-
-function directScope(root, target, asOf) {
-  const ref = root?.authorityRef;
-  return Boolean(ref?.reference && ref.action === 'dispatch-native-child-direct' && ref.resource === target.projectId && ref.destination === target.nativeProjectId
-    && (!ref.expiresAt || Date.parse(ref.expiresAt) >= Date.parse(asOf)) && root.childAccessIntent === 'supported-policy');
 }
 
 function standingScope(dispatcher, target, asOf) {
@@ -91,9 +74,6 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   const definition = heads[0]; const spec = definition.dispatch;
   if (!spec) return stop('objective-dispatch-definition-needed');
   const target = definition.target; const selected = bindings.projects[target.projectId]?.dispatcher;
-  const direct = spec.mode === 'direct-root';
-  const root = spec.root; const selectedRoot = bindings.projects[target.projectId]?.directRoot;
-  const coordinator = direct ? root : spec.dispatcher;
   const remote = target.hostId !== bindings.localHostId;
   const requested = spec.requestedSettings ?? ordinarySettings;
   const coordinatorRequested = spec.coordinatorRequestedSettings ?? ordinarySettings;
@@ -101,29 +81,22 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   const coordinatorSpeed = speedPolicy(coordinatorRequested, id, 'coordinator');
   Object.assign(result, { childSpeed, coordinatorSpeed, providerSpeed: 'unverified' });
   const key = effectKey(definition);
-  Object.assign(result, { correlationKey: spec.correlationKey, effectKey: key, ...(direct ? { mode: 'direct-root', root, selectedRoot: selectedRoot ?? null, requestedChildPolicy: root.childPolicy } : { dispatcher: spec.dispatcher, selectedDispatcher: selected ?? null }), requestedSettings: requested, coordinatorRequestedSettings: coordinatorRequested, childAccessIntent: coordinator.childAccessIntent, authorityRef: definition.authorityRef });
-  const stable = dispatchIdentity;
+  Object.assign(result, { correlationKey: spec.correlationKey, effectKey: key, dispatcher: spec.dispatcher, selectedDispatcher: selected ?? null, requestedSettings: requested, coordinatorRequestedSettings: coordinatorRequested, childAccessIntent: spec.dispatcher.childAccessIntent, authorityRef: definition.authorityRef });
+  const stable = value => value && { correlationKey: value.correlationKey, dispatcher: value.dispatcher, skill: value.skill };
   if (definitions.some(item => item.dispatch && canonical(stable(item.dispatch)) !== canonical(stable(spec)))) result.reasons.push('objective-dispatch-binding-conflict');
   if (records.some(record => record.type === 'definition' && record.id !== id && record.dispatch?.correlationKey === spec.correlationKey)) result.reasons.push('correlation-key-bound-to-another-objective');
-  if (!direct && (!selected || canonical(identity(selected)) !== canonical(identity(spec.dispatcher)))) result.reasons.push('dispatcher-selection-mismatch');
-  if (target.executor !== 'local-codex' || coordinator.hostId !== bindings.localHostId) result.reasons.push('dispatcher-target-mismatch');
-  const owners = direct ? [] : Object.entries(bindings.projects).filter(([, binding]) => binding.hostId === spec.dispatcher.hostId && binding.nativeProjectId === spec.dispatcher.nativeProjectId);
+  if (!selected || canonical(identity(selected)) !== canonical(identity(spec.dispatcher))) result.reasons.push('dispatcher-selection-mismatch');
+  if (target.executor !== 'local-codex' || spec.dispatcher.hostId !== bindings.localHostId) result.reasons.push('dispatcher-target-mismatch');
+  const owners = Object.entries(bindings.projects).filter(([, binding]) => binding.hostId === spec.dispatcher.hostId && binding.nativeProjectId === spec.dispatcher.nativeProjectId);
   const owner = owners.length === 1 ? { ...owners[0][1], projectId: owners[0][0] } : null;
-  if (!direct) result.dispatcherProject = owner?.projectId ?? null;
+  result.dispatcherProject = owner?.projectId ?? null;
   result.destination = target;
-  result.nativeRoute = { kind: 'studio-saved-project', coordinatorHostId: coordinator.hostId, destinationHostId: target.hostId, nativeProjectId: target.nativeProjectId, environment: 'local' };
-  if (direct) {
-    if (!selectedRoot || canonical(selectedRoot) !== canonical(root)) result.reasons.push('root-selection-mismatch');
-    if (bindings.hosts[root.hostId]?.machine !== machine) result.reasons.push('root-host-unverified');
-    if (!directScope(root, target, asOf) || !directScope(selectedRoot, target, asOf)) result.reasons.push('direct-root-authority-needed');
-  } else {
-    if (!owner || canonical(identity(owner.dispatcher)) !== canonical(identity(spec.dispatcher)) || !standingScope(owner.dispatcher, owner, asOf)) result.reasons.push('dispatcher-owner-unverified');
-    if (!owner || owner.hostId !== bindings.localHostId || bindings.hosts[owner.hostId]?.machine !== machine) result.reasons.push('dispatcher-host-unverified');
-  }
+  result.nativeRoute = { kind: 'studio-saved-project', coordinatorHostId: spec.dispatcher.hostId, destinationHostId: target.hostId, nativeProjectId: target.nativeProjectId, environment: 'local' };
+  if (!owner || canonical(identity(owner.dispatcher)) !== canonical(identity(spec.dispatcher)) || !standingScope(owner.dispatcher, owner, asOf)) result.reasons.push('dispatcher-owner-unverified');
+  if (!owner || owner.hostId !== bindings.localHostId || bindings.hosts[owner.hostId]?.machine !== machine) result.reasons.push('dispatcher-host-unverified');
   result.reasons.push(...routeTarget(definition, { bindings, catalog, machine }).reasons.filter(reason => !(remote && reason === 'local-host-unverified')));
-  if (direct && remote && (!remoteScope(selectedRoot, target, asOf) || !remoteScope(root, target, asOf))) result.reasons.push('remote-host-authority-needed');
-  if (!direct && remote && (!remoteScope(selected, target, asOf) || !remoteScope(spec.dispatcher, target, asOf))) result.reasons.push('remote-host-authority-needed');
-  if (!direct && (!standingScope(selected, target, asOf) || !standingScope(spec.dispatcher, target, asOf))) result.reasons.push('standing-dispatch-authority-needed');
+  if (remote && (!remoteScope(selected, target, asOf) || !remoteScope(spec.dispatcher, target, asOf))) result.reasons.push('remote-host-authority-needed');
+  if (!standingScope(selected, target, asOf) || !standingScope(spec.dispatcher, target, asOf)) result.reasons.push('standing-dispatch-authority-needed');
   if (!authorityStatus(definition, asOf).eligible) result.reasons.push('objective-authority-needed');
   if (definition.resource !== target.projectId || definition.destination !== target.nativeProjectId) result.reasons.push('objective-destination-authority-needed');
   let repositoryVerified = !remote && repositoryReadback && sameSubject({ ...target, ...repositoryReadback }, target);
@@ -171,18 +144,6 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   }
   if (!observation.evidenceRefs.length) result.reasons.push('native-source-evidence-needed');
   if (observation.tasks.some(task => task.effectKey !== key) || (observation.effects ?? []).some(effect => effect.key !== key)) result.reasons.push('native-effect-correlation-mismatch');
-  const requestsByAttempt = new Map();
-  for (const event of tasks) {
-    const item = event.dispatch;
-    if (item?.phase !== 'attempted' || item.correlationKey !== spec.correlationKey) continue;
-    if (!requestsByAttempt.has(item.attemptKey)) requestsByAttempt.set(item.attemptKey, new Set());
-    requestsByAttempt.get(item.attemptKey).add(item.requestDigest);
-  }
-  const conflictingAttemptKeys = [...requestsByAttempt].filter(([, requests]) => requests.size > 1).map(([attempt]) => attempt).sort();
-  if (conflictingAttemptKeys.length) {
-    result.conflictingAttemptKeys = conflictingAttemptKeys;
-    result.reasons.push('launch-attempt-request-conflict');
-  }
   const ancestors = new Set([observation.hash]); const byHash = new Map(tasks.map(record => [record.hash, record]));
   const chain = [observation];
   let predecessor = observation.supersedes?.hash;
@@ -198,13 +159,8 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   }
   if (!['attempted', 'pending', 'uncertain'].includes(state.phase) && unsettled.size) result.reasons.push(state.phase === 'absent' ? 'prior-launch-no-effect-readback-needed' : 'another-launch-unresolved');
   result.phase = state.phase;
-  if (direct) {
-    result.recordedRootSettings = state.root?.recordedSettings ?? null;
-    result.reasons.push(...rootReasons(state.root, root, coordinatorRequested, asOf, definition.freshness.maxAgeMs, epoch?.restoredAt, coordinatorSpeed));
-  } else {
-    result.recordedDispatcherSettings = state.dispatcher?.recordedSettings ?? null;
-    result.reasons.push(...readbackReasons(state.dispatcher, spec.dispatcher, coordinatorRequested, asOf, definition.freshness.maxAgeMs, 'dispatcher', epoch?.restoredAt, coordinatorSpeed));
-  }
+  result.recordedDispatcherSettings = state.dispatcher?.recordedSettings ?? null;
+  result.reasons.push(...readbackReasons(state.dispatcher, spec.dispatcher, coordinatorRequested, asOf, definition.freshness.maxAgeMs, 'dispatcher', epoch?.restoredAt, coordinatorSpeed));
   if (['attempted', 'pending', 'uncertain'].includes(state.phase)) {
     Object.assign(result, { next: state.phase === 'pending' ? 'resolve-pending' : 'rediscover', clientThreadId: state.clientThreadId ?? null, attemptKey: state.attemptKey });
     return stop('native-launch-unresolved');
@@ -213,24 +169,16 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
     if (knownIds.length) return stop('existing-child-requires-rediscovery');
     if (result.reasons.length) return stop();
     const attemptKey = digest({ objective: id, correlationKey: spec.correlationKey, effectKey: key, discovery: observation.hash });
-    const prompt = `[$pstack:poteto-mode](${spec.skill.path})\n\n# Goal\n${definition.goal}\n\n# Verification\n${definition.criteria.map(item => item.description).join('\n')}\n\n# Subgoals\n${definition.context}\nObjective ${definition.id}. Correlation ${spec.correlationKey}. Effect ${key}. Attempt ${attemptKey}.\nTarget repository ${target.repository}. Host ${target.hostId}. Saved native project ${target.nativeProjectId}. Checkout ${target.path}. Revision ${target.revision}. Dirty digest ${target.dirtyDigest}.\nRequested model ${requested.model} at ${requested.effort}. Required service tier ${childSpeed.serviceTier}. Speed approval declaration ${JSON.stringify(childSpeed.approval)}. Standard/non-fast is the default. An unanswered speed request is not approval and must continue Standard. Never inherit Fast or Ultrafast without explicit owner approval for this exact task and role. Verify supported recorded tier before work; no native tier field is implied by this prompt. Source ${requested.scopedOverrideRef ?? requested.sourceRef}. One-time permission declaration ${JSON.stringify(requested.oneTimePermission ?? null)}. This is declared scope; verify the owner source before relying on an exception. Ordinary coding and substantive helpers use Sol Medium. Heavy reasoning uses Sol High maximum. Any stronger effort or other coding model requires explicit one-time owner permission for that exact objective, role, model and effort. Generic "or higher" is not permission. Honor scoped human helper overrides in the task context.\n\n# Boundaries\nSource authority ${definition.authorityRef.reference}. ${direct ? `Direct root principal ${canonical(root.principal)}. Declared child policy ${canonical(root.childPolicy)}. Supported approvals may be required. Native creation grants no access inheritance.` : `Standing FullAccess-child intent ${spec.dispatcher.authorityRef.reference}.`} Preserve global defaults, other threads and separate connector/Computer Use grants. Retain actual first-turn policy/model readbacks separately from provider execution and effective access.\n\n# Output\nKeep private identifiers and receipts in ignored private state. Read and follow this destination's actual AGENTS.md, installed skills and verification requirements. Preserve its project defaults. Complete independent review and protected delivery where required.\n\n# Delegation\nParent owns native read/wait progress; do not depend on child callbacks.`;
+    const prompt = `[$pstack:poteto-mode](${spec.skill.path})\n\n${definition.goal}\n\n${definition.context}\n\nObjective ${definition.id}. Correlation ${spec.correlationKey}. Effect ${key}. Attempt ${attemptKey}.\nTarget repository ${target.repository}. Host ${target.hostId}. Saved native project ${target.nativeProjectId}. Checkout ${target.path}. Revision ${target.revision}. Dirty digest ${target.dirtyDigest}.\nRequested model ${requested.model} at ${requested.effort}. Required service tier ${childSpeed.serviceTier}. Speed approval declaration ${JSON.stringify(childSpeed.approval)}. Standard/non-fast is the default. An unanswered speed request is not approval and must continue Standard. Never inherit Fast or Ultrafast without explicit owner approval for this exact task and role. Verify supported recorded tier before work; no native tier field is implied by this prompt. Source ${requested.scopedOverrideRef ?? requested.sourceRef}. One-time permission declaration ${JSON.stringify(requested.oneTimePermission ?? null)}. This is declared scope; verify the owner source before relying on an exception. Ordinary coding and substantive helpers use Sol Medium. Heavy reasoning uses Sol High maximum. Any stronger effort or other coding model requires explicit one-time owner permission for that exact objective, role, model and effort. Generic "or higher" is not permission. Honor scoped human helper overrides in the task context.\nSource authority ${definition.authorityRef.reference}. Standing FullAccess-child intent ${spec.dispatcher.authorityRef.reference}. Preserve global defaults, other threads and separate connector/Computer Use grants. Retain actual first-turn policy/model readbacks separately from provider execution and effective access.\nFinish evidence ${definition.criteria.map(item => item.description).join(' ')}\nKeep private identifiers and receipts in ignored private state. Read and follow this destination's actual AGENTS.md, installed skills and verification requirements. Preserve its project defaults. Complete independent review and protected delivery where required. Parent owns native read/wait progress; do not depend on child callbacks.`;
     const words = definition.id.split('-').slice(0, 5); if (words.length === 1) words.push('objective');
-    return { ...result, status: 'advice-ready', next: direct ? 'create-direct' : 'create-via-dispatcher', attemptKey, beforeNativeCall: 'Apply the required childSpeed through supported destination configuration/control and verify it; nativeCreateRequest has no speed or permission argument. Retain attempted state with this attempt key and the exact request digest through reconcile --import, then use this pinned proposal once. Rediscover any uncertain result before retry.', nativeCreateRequest: { target: { type: 'project', projectId: target.nativeProjectId, environment: { type: 'local' } }, model: requested.model, thinking: requested.effort, title: `${bindings.projects[target.projectId].label} · ${words.join(' ')} 🟡`, prompt } };
+    return { ...result, status: 'advice-ready', next: 'create-via-dispatcher', attemptKey, beforeNativeCall: 'Apply the required childSpeed through supported destination configuration/control and verify it; nativeCreateRequest has no speed argument. Retain attempted state with this attempt key and the exact request digest through reconcile --import, then use this pinned proposal once. Rediscover any uncertain result before retry.', nativeCreateRequest: { target: { type: 'project', projectId: target.nativeProjectId, environment: { type: 'local' } }, model: requested.model, thinking: requested.effort, title: `${bindings.projects[target.projectId].label} · ${words.join(' ')} 🟡`, prompt } };
   }
   const task = observation.tasks[0];
-  if (!direct && (task.nativeId === spec.dispatcher.threadId || task.nativeId === selected?.threadId)) result.reasons.push('dispatcher-cannot-own-implementation');
-  if (direct && root.principal.kind === 'native-thread' && task.nativeId === root.principal.id) result.reasons.push('root-cannot-own-implementation');
+  if (task.nativeId === spec.dispatcher.threadId || task.nativeId === selected?.threadId) result.reasons.push('dispatcher-cannot-own-implementation');
   Object.assign(result, { readyThreadId: task.nativeId, actualHostId: state.child?.hostId ?? null, afterCursor: state.afterCursor ?? null, observedNativeStatus: task.status, recordedChildSettings: state.child?.recordedSettings ?? null });
-  result.reasons.push(...readbackReasons(state.child, { threadId: task.nativeId, hostId: target.hostId, nativeProjectId: target.nativeProjectId }, requested, asOf, definition.freshness.maxAgeMs, 'child', epoch?.restoredAt, childSpeed, direct ? root.childPolicy : null));
+  result.reasons.push(...readbackReasons(state.child, { threadId: task.nativeId, hostId: target.hostId, nativeProjectId: target.nativeProjectId }, requested, asOf, definition.freshness.maxAgeMs, 'child', epoch?.restoredAt, childSpeed));
   if (state.child?.correlationKey !== spec.correlationKey) result.reasons.push('child-correlation-unverified');
-  if (!direct && state.child?.creatorThreadId !== spec.dispatcher.threadId) result.reasons.push('child-creator-unverified');
-  if (direct) {
-    const creation = state.creation;
-    const attempts = tasks.filter(record => ancestors.has(record.hash) && record.dispatch?.phase === 'attempted' && record.dispatch.attemptKey === state.attemptKey && record.dispatch.correlationKey === spec.correlationKey);
-    if (!creation || canonical(creation.principal) !== canonical(root.principal) || creation.attemptKey !== state.attemptKey || !attempts.length || attempts.some(attempt => creation.requestDigest !== attempt.dispatch.requestDigest) || creation.childThreadId !== task.nativeId) result.reasons.push('direct-creation-provenance-needed');
-    if (!creation || !currentTime(creation.observedAt, asOf, definition.freshness.maxAgeMs) || attempts.some(attempt => Date.parse(creation.observedAt) < Date.parse(attempt.observedAt)) || epoch && Date.parse(creation.observedAt) < Date.parse(epoch.restoredAt)) result.reasons.push('direct-creation-not-current');
-    if (state.child?.creatorThreadId && state.child.creatorThreadId !== creation?.nativeCallerThreadId || root.principal.kind === 'native-thread' && creation?.nativeCallerThreadId !== root.principal.id) result.reasons.push('direct-native-creator-mismatch');
-  }
+  if (state.child?.creatorThreadId !== spec.dispatcher.threadId) result.reasons.push('child-creator-unverified');
   if (result.reasons.length) return { ...stop(), next: 'inspect-existing-child' };
   return { ...result, status: 'advice-ready', next: contextNeeded ? 'continue-child' : task.status === 'completed' ? 'inspect-outcome' : 'read-or-wait', supervision: 'Parent uses supported read_thread or bounded wait_threads, carries afterCursor and backs off unchanged state.' };
 }
@@ -259,10 +207,7 @@ async function resolveDestination(query, discovery, bindings, machine, asOf) {
   if (!binding || binding.path !== native.path) result.reasons.push('destination-binding-needed');
   if (remote) {
     const target = { projectId: result.project, hostId: native.hostId };
-    const destination = { ...target, nativeProjectId: native.projectId };
-    const legacy = remoteScope(binding?.dispatcher, target, asOf) && standingScope(binding?.dispatcher, destination, asOf);
-    const direct = remoteScope(binding?.directRoot, target, asOf) && directScope(binding?.directRoot, destination, asOf);
-    if (!legacy && !direct) result.reasons.push('remote-host-authority-needed');
+    if (!remoteScope(binding?.dispatcher, target, asOf) || !standingScope(binding?.dispatcher, { ...target, nativeProjectId: native.projectId }, asOf)) result.reasons.push('remote-host-authority-needed');
     return { ...result, status: result.reasons.length ? 'needs-observation' : 'resolved', next: result.reasons.length ? 'resolve-destination' : 'recover-project', proposedScope: { hostId: native.hostId, nativeProjectId: native.projectId, path: native.path, action: 'dispatch-native-remote-child', execution: 'native-create-unverified' }, source: { state: 'remote-uninspected' } };
   }
   if (bindings.hosts[native.hostId]?.machine !== machine) result.reasons.push('local-host-unverified');
@@ -291,9 +236,9 @@ export async function dispatch(home, { id, project, resolve: query, discoveryFil
   if (!id) {
     if (!project || contextNeeded) throw new Error('Use --id, or --project for bootstrap recovery');
     const binding = bindings.projects[project];
-    if (!binding?.dispatcher && !binding?.directRoot) throw new Error(`No selected dispatch route for project ${project}`);
+    if (!binding?.dispatcher) throw new Error(`No selected dispatcher for project ${project}`);
     const jobs = [...new Set(records.filter(record => record.type === 'definition' && record.target.projectId === project && record.dispatch).map(record => record.id))].sort().map(objective => ({ id: objective, heads: definitionHeads(records.filter(record => record.type === 'definition' && record.id === objective)).map(record => ({ definitionHash: record.hash, correlationKey: record.dispatch?.correlationKey })), readyThreadIds: [...new Set(records.filter(record => record.type === 'observation' && record.responsibilityId === objective && record.category === 'tasks').flatMap(record => record.tasks.map(task => task.nativeId)))].sort() }));
-    return { execution: 'proposal-only', status: 'recovered', next: 'select-objective', project, ...(binding.dispatcher ? { dispatcher: binding.dispatcher } : {}), ...(binding.directRoot ? { directRoot: binding.directRoot } : {}), jobs, asOf: effectiveTime, providerExecution: 'unverified', effectiveChildAccess: 'unverified' };
+    return { execution: 'proposal-only', status: 'recovered', next: 'select-objective', project, dispatcher: binding.dispatcher, jobs, asOf: effectiveTime, providerExecution: 'unverified', effectiveChildAccess: 'unverified' };
   }
   const heads = definitionHeads(records.filter(record => record.type === 'definition' && record.id === id));
   if (project && heads.some(record => record.target.projectId !== project)) throw new Error('Objective belongs to a different project');
