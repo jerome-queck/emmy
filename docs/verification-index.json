@@ -197,6 +197,17 @@
       "feature": "routing"
     },
     {
+      "name": "assurance",
+      "description": "Replay one exact retained local check receipt against current source, base, suite and environment without executing checks.",
+      "options": [
+        {
+          "name": "file",
+          "required": true
+        }
+      ],
+      "feature": "upkeep"
+    },
+    {
       "name": "maintain",
       "description": "Compare or regenerate public references without changing review records.",
       "options": [
@@ -357,7 +368,8 @@
         "backup",
         "restore",
         "automation",
-        "daily-briefing"
+        "daily-briefing",
+        "assurance"
       ],
       "scenarios": [
         "archive-recovery",
@@ -367,7 +379,8 @@
         "derived-boundaries",
         "improvement-report",
         "automation-foundation",
-        "daily-briefing-pilot"
+        "daily-briefing-pilot",
+        "local-assurance"
       ],
       "properties": [
         "restore-suspension",

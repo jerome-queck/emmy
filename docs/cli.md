@@ -23,6 +23,7 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 | briefing | `--file <value>` | Load an explicitly pinned local release or canonical public guidance, check a declared draft, and retain exact advisory Markdown. | evidence |
 | guidance-pin | `--file <value>` required | Activate, inspect or deactivate an exact approved installed local guidance release without changing canonical caches. | evidence |
 | probe | `--id <value>`, `--nonce <value>` required | Publish current-environment onboarding proposals; cloud delegation requires an explicit probe ID. | routing |
+| assurance | `--file <value>` required | Replay one exact retained local check receipt against current source, base, suite and environment without executing checks. | upkeep |
 | maintain | `--check`, `--write` | Compare or regenerate public references without changing review records. | upkeep |
 | backup | `--to <value>` required | Verify and atomically archive a pinned private record/evidence manifest and bindings. | upkeep |
 | restore | `--from <value>` required, `--into <value>` required | Verify an archive and restore into a new suspended private home. | upkeep |

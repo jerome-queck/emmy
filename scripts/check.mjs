@@ -1,27 +1,9 @@
 #!/usr/bin/env node
-import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runAssurance } from '../src/local-assurance.mjs';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-for (const args of [
-  ['scripts/check-markdown-links.mjs'],
-  ['--test', 'test/markdown-links.test.mjs', 'test/agent-local.test.mjs'],
-  ['scripts/agent.mjs', 'maintain', '--check'],
-  ['--test', 'test/calendar-collection.test.mjs', 'test/calendar-register.test.mjs', 'test/calendar-timing.test.mjs', 'test/calendar-handoff.test.mjs', 'test/academic-os-task-plan.test.mjs'],
-  ['--test', 'test/guidance-pin.test.mjs'],
-  ['--test', 'test/process-incarnation.test.mjs', 'test/cloud-migration.test.mjs'],
-  ['--test', 'test/fleet.test.mjs', 'test/fleet-overrun.test.mjs', 'test/fleet-history.test.mjs', 'test/fleet-semantics.test.mjs', 'test/morning.test.mjs', 'test/morning-compact.test.mjs', 'test/morning-collection.test.mjs'],
-  ['--test', 'test/token-review.test.mjs', 'test/improvement-report.test.mjs', 'test/daily-briefing.test.mjs', 'test/briefing-policy.test.mjs', 'test/briefing-cloud-caller.test.mjs', 'test/briefing-source-normalization.test.mjs', 'test/briefing-reporting.test.mjs', 'test/morning-v3.test.mjs'],
-  ['--test', 'test/morning-observation.test.mjs', 'test/foundation-release.test.mjs', 'test/automation-procedure.test.mjs'],
-  ['scripts/verify-behavior.mjs'],
-  ['--test', 'test/github-auto-merge.test.mjs'],
-  ['scripts/verify-formal.mjs'],
-  ['verification/merge-policy.mjs'],
-  ['scripts/verify-publication.mjs'],
-  ['scripts/verify-briefing-slot.mjs'],
-]) {
-  const result = spawnSync(process.execPath, args, { cwd: root, stdio: 'inherit' });
-  if (result.error) throw result.error;
-  if (result.status !== 0) process.exit(result.status ?? 1);
-}
+if (!(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--base')) throw new Error('Use npm run check [-- --base <ref>]');
+const result = await runAssurance(join(dirname(fileURLToPath(import.meta.url)), '..'), { baseRef: process.argv[3] ?? 'HEAD' });
+process.stdout.write(`${JSON.stringify(result)}\n`);
+process.exitCode = result.status === 'passed-local' ? 0 : 1;

@@ -1,6 +1,6 @@
 # Fleet health and sign-in recovery
 
-Run `node scripts/verify-behavior.mjs --focus fleet` and `node --test test/fleet.test.mjs test/fleet-semantics.test.mjs test/morning.test.mjs`. Read [the contract](../../../../docs/fleet-health.md) and [sign-in skill](../../sign-in/SKILL.md) first. The focused driver uses a separate synthetic private home, actual CLI processes and byte-retained receipts. It performs no native read, sign-in, send, or schedule change.
+Run `node scripts/verify-behavior.mjs --focus fleet` and `node --test test/fleet.test.mjs test/fleet-history.test.mjs test/fleet-semantics.test.mjs test/morning.test.mjs`. Read [the contract](../../../../docs/fleet-health.md) and [sign-in skill](../../sign-in/SKILL.md) first. The focused driver uses a separate synthetic private home, actual CLI processes and byte-retained receipts. It performs no native read, sign-in, send, or schedule change.
 
 Drive source age separately from acquisition age. Expired login, denied action, unavailable tool, timeout, pressure, monitoring failure, workflow failure, suspended, unknown, pending and recovered remain distinct. A disabled or missed expected run is visible. Completed execution needs outcome evidence; required delivery needs its own reference. Failed monitor coverage makes dependent health unknown. Do not call partial coverage healthy.
 

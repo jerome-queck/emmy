@@ -17,6 +17,7 @@ import { tokenReview } from '../src/token-review.mjs';
 import { signin } from '../src/signin.mjs';
 import { automationProcedure } from '../src/automation-procedure.mjs';
 import { boundedJson } from '../src/bounded-json.mjs';
+import { assessAssurance } from '../src/local-assurance.mjs';
 import { dailyBriefing, readDailyBriefingRequest } from '../src/daily-briefing.mjs';
 
 const args = process.argv.slice(2);
@@ -54,6 +55,9 @@ try {
     case 'reconcile':
       data = await reconcile(home, { id: options.id, imports: options.import ? await readJson(resolve(options.import)) : null, asOf: timestamp(options['as-of'], 'as-of'), catalog: await readCatalog(root) });
       exitCode = data.status === 'current' ? 0 : 3; break;
+    case 'assurance':
+      data = await assessAssurance(root, await boundedJson(resolve(options.file)));
+      exitCode = data.status === 'current-local-reported' ? 0 : 3; break;
     case 'automation': {
       const request = await boundedJson(resolve(options.file), 1048576);
       data = await automationProcedure(request);

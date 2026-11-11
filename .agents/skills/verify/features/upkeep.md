@@ -1,5 +1,11 @@
 # Upkeep and recovery
 
+## Local check assurance
+
+Run `npm run check` for the fixed complete production plan. It retains original output and exact receipts under ignored `.local/local-assurance/`. `assurance --file <request>` reads `{receiptFile, receiptDigest}` and returns `current-local-reported` only after replay and fresh source/base/environment observation. Failed, incomplete, reordered, changed or corrupted evidence cannot pass. Source symlinks and external dependency links refuse; ignored files are outside the source inventory. See [the contract](../../../../docs/local-assurance.md).
+
+The `local-assurance` empirical scenario uses labelled copied source with two synthetic commands and actual package/agent entry points. It proves orchestration/refusal behavior. Full aggregate execution separately proves the complete production plan. The [area formal skill](../../local-assurance/SKILL.md) covers the bounded reducer graph and actual-source mutants. These checks authenticate neither authorship nor independent review, native access, installation or future execution.
+
 ## User route
 
 Run `maintain --check` at session start. After public metadata changes, run `maintain --write`, inspect derived files, and run the aggregate check. Metadata owns commands, feature map, scenario names, and property IDs. Maintenance preserves research dates and formal sync records.

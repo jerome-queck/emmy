@@ -1,5 +1,7 @@
 # Emmy
 
+The [architecture roadmap](docs/architecture-evolution.md) records unfinished shared policy, exact-ID gateway and module convergence. [Local assurance](docs/local-assurance.md) binds `npm run check` to source, base and environment observations with retained output and fresh receipt assessment.
+
 The [generic automation foundation](docs/automation-foundation.md) builds staged creation plans from versioned procedures and exact configuration files, prepares the existing canonical outcome format, and reads fixed artifacts without history scans. Native products own saving and operation.
 
 Use the [common operating procedure](docs/operating-procedure.md) for the staged source release, exact consumer bindings, fixed report reads, and briefing-only pilot hold. The shared compiler and acquisition modules build directly from one Git commit. Existing installations remain separately accepted consumers.
