@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "b87c7155b6823ab24766037fc6f82f09c464f071",
+  "sourceFiles": {
+    "scripts/github-auto-merge.mjs": "ed5f614c203cfa4430154cdaa6896d2eb35ba711f52dc207bf2da5be5571207b",
+    "scripts/local-delivery.mjs": "c22e06a7ebfb3c7214a2d02d75eed59f9f6795932499d6a771219ddb876855f6",
+    "src/local-assurance.mjs": "6ff678f407e56d2b9b0f338698628dc08b07eda768cb8cb20ad288d0c9cb8764",
+    "src/assurance.mjs": "918e18befd47ee3e3ce81e0491d92c98d0c346645d7b194d30bd9c9be5010139",
+    "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
+    ".github/workflows/check.yml": "cac728413bf79655091a4c3ceaceb5deb1c1d84261336bb85b1c01f3fbc2f06e",
+    ".github/workflows/auto-merge.yml": "cdb8968eb1dc1dff2b81b71ef283fd66745fe96678afbc19aced63e0c67efbe7"
+  },
+  "verificationFiles": {
+    "verification/delivery/check.mjs": "3e532f043737e16a24133db7ae4e3d1f195cdf34eae29a0a4efcd4c19b44f744",
+    "verification/delivery/drive.mjs": "87945bad763bddcfaa8013aadfd338a4d2e8986656de03d0afa3071557531748",
+    "verification/delivery/fixtures.mjs": "918214e593d2d5d94c2375818d67c7401771e0a92877716573522e464fe09c18",
+    "verification/delivery/graph.mjs": "0e953d13267210d42fdc376a33aa0d325a6f78702338d65e5b3ef0b36b837876",
+    "verification/delivery/view.mjs": "ac343575580e2ab564345a8a9f328f22d2384fe23a3823b5b85bfb0b310868c6",
+    "verification/delivery/chart.mmd": "c413da33c875c0c8b66fdeaf96a0abce0a8c92966554595f5f74e14f74383d81",
+    "test/github-auto-merge.test.mjs": "41f5a82045765c1c2c1fcaf8cc6341da790e3a90081ea216953a198da4e6f728",
+    "test/local-delivery.test.mjs": "41b9c08dd194bb952ec308e5aff28a54322807833a5c1524733f87b0a91af3ed",
+    ".agents/skills/merge-assurance/SKILL.md": "76c1081f739378112a25f4abb0199841d74ce2f6b29434e932b54e7d4f0ffe04",
+    "docs/local-delivery.md": "ce80c5783f11e40bc934a50edbbee97e0ee6f468f5b980eb49dbe25a070dbb32"
+  },
+  "reviewBasis": "Read original merge owner and assurance source; kept independent provider I/O outside atomic reducer. Reviewed covered diff and retained old pin refusal, production tests, nine source controls, actual adapter retry mutation and restored TLC runs. Pure admission and lifecycle intentionally extend historical promise. One parent-dispatched independent exact-head practical verdict remains required.",
+  "mapping": [
+    {
+      "property": "LocalAdmission",
+      "files": [
+        "scripts/github-auto-merge.mjs"
+      ],
+      "functions": [
+        "evaluateLocalEvidence",
+        "evaluateEligibility"
+      ],
+      "mutations": [
+        "same-author",
+        "source-head",
+        "review-receipt",
+        "authorization"
+      ]
+    },
+    {
+      "property": "EffectSafe",
+      "files": [
+        "scripts/github-auto-merge.mjs"
+      ],
+      "functions": [
+        "beginDelivery",
+        "deliveryTransition"
+      ],
+      "mutations": [
+        "fake-review",
+        "denied-effect"
+      ]
+    },
+    {
+      "property": "UnknownPreserved",
+      "files": [
+        "scripts/github-auto-merge.mjs",
+        "scripts/local-delivery.mjs"
+      ],
+      "functions": [
+        "deliveryTransition",
+        "deliverLocal"
+      ],
+      "mutations": [
+        "unknown-readback",
+        "wrong-readback",
+        "adapter-unknown-retry"
+      ]
+    },
+    {
+      "property": "MergeReadback",
+      "files": [
+        "scripts/github-auto-merge.mjs",
+        "scripts/local-delivery.mjs"
+      ],
+      "functions": [
+        "deliveryTransition",
+        "createLocalProvider"
+      ],
+      "mutations": [
+        "unknown-readback",
+        "wrong-readback"
+      ]
+    },
+    {
+      "property": "NoDuplicate",
+      "files": [
+        "scripts/github-auto-merge.mjs",
+        "scripts/local-delivery.mjs"
+      ],
+      "functions": [
+        "deliveryTransition",
+        "deliverLocal"
+      ],
+      "mutations": [
+        "duplicate-attest",
+        "adapter-unknown-retry"
+      ]
+    }
+  ],
+  "bounds": {
+    "admissionBinaryFaults": 12,
+    "admissionCases": 4096,
+    "productionStates": 44,
+    "productionEdges": 1320,
+    "branchGenerations": 1,
+    "actions": [
+      "publish",
+      "open-pr",
+      "attest",
+      "merge"
+    ],
+    "attemptBoundary": 2
+  },
+  "assumptions": [
+    "Trusted checker and coordinator; collision-free hashes; honest acquired observations and native review acceptance.",
+    "One synchronous reducer call is atomic; filesystem observations, intent writes and provider calls are separate.",
+    "Cooperating filesystem writers; POSIX child execution; opaque selected authority and reviewer names do not authenticate their claims.",
+    "Provider metadata and enforcement are external; exact-head merge has no atomic base condition."
+  ],
+  "excluded": [
+    "Provider-wide exactly-once effects",
+    "Every-instruction crash durability and automatic stale lock recovery",
+    "Atomic filesystem snapshot or source/base pin",
+    "Execution/authorship/reviewer authentication",
+    "Live provider permission or protection changes",
+    "Installation, schedules and future invocation"
+  ]
+}

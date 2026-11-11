@@ -1,8 +1,8 @@
 {
-  "sourceCommit": "fc7664044b3ab870ee4b8e502914922d5a7a1a09",
+  "sourceCommit": "b87c7155b6823ab24766037fc6f82f09c464f071",
   "files": {
-    "scripts/github-auto-merge.mjs": "ac133794197dbae3983c1aabbac5419a8395edcdee290df7825b2a93d01203db",
-    "verification/merge-policy.mjs": "e909f86c4d44b482c255e61f841e6361347edf409e8f8d38e440096cf6615bac"
+    "scripts/github-auto-merge.mjs": "ed5f614c203cfa4430154cdaa6896d2eb35ba711f52dc207bf2da5be5571207b",
+    "verification/merge-policy.mjs": "9c3592fa9bbc84fc37f31e89c16734f50c352f9c2f537a5ab1d3c9b01b720e86"
   },
   "mapping": [
     {
@@ -41,5 +41,5 @@
     "Publisher, protection presence, required contexts and metadata normalization have focused tests beyond the finite enumeration.",
     "The verifier does not execute a GitHub merge or prove actual reviewer independence or provider race freedom."
   ],
-  "reviewBasis": "Coordinator read 493ec6e..fc76640 covered source, adapter test and workflow diffs. Repository identity is human-confirmed; merge commits preserve formal source ancestry. Eligibility fields and finite domains are unchanged. Old checker rejected intended hash drift; intended source mutants must pass before release."
+  "reviewBasis": "Owner read the covered diff before pinning. Explicit local delivery changes the merge promise intentionally; original coordination, publication and assurance properties are unchanged. Expanded owning docs and driver prose have no effect on those predicates. Old pins refused changed bytes; original aggregate, current CLI tests, real-source mutants and restored delivery model passed before this pin update. Independent exact-head review remains pending."
 }
