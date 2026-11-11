@@ -754,7 +754,7 @@
       "files": [
         {
           "path": "src/assurance.mjs",
-          "sha256": "382beafea87183497b217acaef63f8a7dade65a330ab7a833d951ae7ecdc9b5d",
+          "sha256": "d431d74c533f8c4aec5a58cb202890538301539d4b758ff8cf56e05553bdca7a",
           "callers": [
             "src/local-assurance.mjs",
             "verification/local-assurance/check.mjs"
@@ -1059,7 +1059,7 @@
         },
         {
           "path": "src/metadata.mjs",
-          "sha256": "7d26936d0f90fb1fe624fe56d51c6644dd990791cdb9b2777eeda5572cd51592",
+          "sha256": "ab1e78b57fe8ddd34664cc20a9a26cec16d677d1f2eeac9d66a8b15655401374",
           "callers": [
             "src/briefing.mjs",
             "src/maintenance.mjs",
@@ -1224,7 +1224,7 @@
         },
         {
           "path": ".agents/skills/local-assurance/SKILL.md",
-          "sha256": "f880f06f2a4df85e2569feb440aa6e8fa9b66cfe575064318c5e385dabedec2a",
+          "sha256": "a811d13a9495fa0ed70c194007bf7afcd2b66fa90b6d6c5b8ba3f8f938cae8a4",
           "callers": [
             "public configuration"
           ]
@@ -1308,7 +1308,7 @@
         },
         {
           "path": ".agents/skills/verify/features/upkeep.md",
-          "sha256": "ddefcd591e284eda905e446ea060f4d23073c86141ad4dcc2456ec364230e3cc",
+          "sha256": "c6509a61326e74c0316060eca459a775aacd5fa293001aebc7313b18ad8871b3",
           "callers": [
             "public configuration"
           ]
@@ -1555,7 +1555,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "8fca794a0cd40a27adde6e96a4aaa6254d6bd12a7c66c782d0596c11d732e905",
+          "sha256": "faed0511874639cfbed9e2a0895f0dde63f2898086535ac44b1013035ae91a76",
           "callers": [
             "verification input"
           ]
@@ -1590,7 +1590,7 @@
         },
         {
           "path": "verification/delivery/coverage.json",
-          "sha256": "9fc59bcfe9585a74b0fa86cbd2cfb4ca1bc54486f72c07411488d3ad68c782ee",
+          "sha256": "6186b171466abb3a3b8f4edc13832d003493a1ba6a9d3308d7b8fe8d38f25833",
           "callers": [
             "verification input"
           ]
@@ -1639,7 +1639,7 @@
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "f0c25c5884b6d8d230d85073985520f12f8f157d7f80f03ca8e7ec150163dfaa",
+          "sha256": "392442186388d419c873f93ae6dc600e97cd13c6dddba736434d32613efa82a7",
           "callers": [
             "verification input"
           ]
@@ -1758,7 +1758,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "2fb0650e841dc2a9dce43d16898c44b15406398be70c03c5f70e9c68de8ba38f",
+          "sha256": "4c540cbd1e5586ab4f600b665e89accd25473bc7dd61522d067c46cfac55fe4a",
           "callers": [
             "verification input"
           ]
@@ -1912,7 +1912,7 @@
         },
         {
           "path": "verification/publication/coverage.json",
-          "sha256": "11381b002ee7ec88e78722c5f637bf10e105f52670ab4edab6124651a73e2790",
+          "sha256": "361a6bfb5b3bce8fdbee6ef180b8f979f3a9e9820004d53bbaabc74e01b1508a",
           "callers": [
             "verification input"
           ]
@@ -2272,6 +2272,70 @@
       ],
       "scenarios": [
         "self-check-repair"
+      ]
+    },
+    {
+      "id": "restoration-suspension",
+      "stateOwner": "work.mjs restoredState and currentObservations; responsibilities.mjs reconcileState",
+      "classification": "stateful; bounded reachable history",
+      "bounds": "Two epochs, one local target, four categories, one defective category, tasks supersession chain of at most three, four timestamps, one expiry.",
+      "gap": "Native remote mode, actual publication, authentication, arbitrary arrivals and unbounded histories are excluded.",
+      "files": [
+        {
+          "path": "verification/restoration-suspension/graph.mjs",
+          "sha256": "ea28a2bd312a88ea79a98207df7788e78c52cf5c8831acb115c0b43fd1f4e93a",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/restoration-suspension/check.mjs",
+          "sha256": "80fb05e1e9e8b1b66844b55c5ff871d316ae534658e338b7b715128955283b0e",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/restoration-suspension/replay-statechart.mjs",
+          "sha256": "6f7cfd87745215043dff8af7cf1bce0f5321077045eb6f19b86fe9ab7b09b5fd",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": ".agents/skills/restoration-suspension/SKILL.md",
+          "sha256": "3ea3509d248f7e07267a9edee5983ee733c4e6e2b9d64009edb1cae3d08ce61d",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": "verification/restoration-suspension/coverage.json",
+          "sha256": "cf7c949a7cf4f5761e8e36a3f2439b3704db01a101ec8b1fe22588c435db4c3b",
+          "callers": [
+            "verification input"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/work.mjs",
+          "symbol": "restoredState"
+        },
+        {
+          "path": "src/work.mjs",
+          "symbol": "currentObservations"
+        },
+        {
+          "path": "src/responsibilities.mjs",
+          "symbol": "reconcileState"
+        }
+      ],
+      "properties": [
+        "restore-suspension"
+      ],
+      "scenarios": [
+        "restored-current-context"
       ]
     }
   ]
