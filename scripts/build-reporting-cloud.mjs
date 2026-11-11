@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const names = ['bounded-json', 'strict-json', 'immutable-slot', 'reporting-privacy', 'improvement-report', 'automation-reporting-outcome', 'automation-reporting-expectations', 'automation-reporting', 'automation-reporting-binding'];
+const names = ['strict-json', 'bounded-json', 'immutable-slot', 'reporting-privacy', 'improvement-report', 'automation-reporting-outcome', 'automation-reporting-expectations', 'automation-reporting', 'automation-reporting-binding'];
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const sources = [];
 let bundle = '#!/usr/bin/env node\n// Generated from the exact product modules. Do not edit.\nconst modules = {};\n';
@@ -21,6 +21,7 @@ for (const name of names) {
     if (!names.slice(0, names.indexOf(name)).includes(dependency)) throw new Error('Unsupported module dependency');
     return `const { ${members} } = modules['${dependency}'];\n`;
   });
+  source = source.replace(/^export \{ strictJson \} from '\.\/strict-json\.mjs';\n/gm, () => { exported.push('strictJson'); return ''; });
   source = source.replace(/^export (async )?(function|const) ([A-Za-z_$][\w$]*)/gm, (_, asyncWord = '', kind, symbol) => { exported.push(symbol); return `${asyncWord}${kind} ${symbol}`; });
   if (/^\s*(?:import|export)\b/m.test(source)) throw new Error(`Unsupported module syntax in ${path}`);
   bundle += `modules['${name}'] = await (async () => {\n${source}\nreturn { ${exported.join(', ')} };\n})();\n`;
