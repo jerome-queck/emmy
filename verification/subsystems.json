@@ -1555,7 +1555,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "337359dbdc06bc6f8e6342d4408ad5b680de55068f0e5738d2b9459c8579658d",
+          "sha256": "8a9cd26fa6aeaf567067576b3996ce2733be07be337da256bd7830a13188aa84",
           "callers": [
             "verification input"
           ]
@@ -1758,7 +1758,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "9a0962edf4b54a3f9b65a988055531a32536b289f90771c9c19493b1feb2813a",
+          "sha256": "6efc767c0c21f144742563bfc95a625df5cb584b92f346e43a77b7d2903a614a",
           "callers": [
             "verification input"
           ]
