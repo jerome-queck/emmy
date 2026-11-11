@@ -22,14 +22,14 @@ Global options are `--root <public-source>`, `--home <private-state>`, and `--js
 | daily-briefing | `--file <value>` required | Read the staged operating contract, validate private briefing policy, prepare fixed reports and reporting contracts, or compile/read exact held artifact slots without native effects. | upkeep |
 | briefing | `--file <value>` | Load an explicitly pinned local release or canonical public guidance, check a declared draft, and retain exact advisory Markdown. | evidence |
 | guidance-pin | `--file <value>` required | Activate, inspect or deactivate an exact approved installed local guidance release without changing canonical caches. | evidence |
-| probe | `--id <value>`, `--nonce <value>` required | Publish a proposed Dot onboarding packet with eight probes. | routing |
+| probe | `--id <value>`, `--nonce <value>` required | Publish current-environment onboarding proposals; cloud delegation requires an explicit probe ID. | routing |
 | maintain | `--check`, `--write` | Compare or regenerate public references without changing review records. | upkeep |
 | backup | `--to <value>` required | Verify and atomically archive a pinned private record/evidence manifest and bindings. | upkeep |
 | restore | `--from <value>` required, `--into <value>` required | Verify an archive and restore into a new suspended private home. | upkeep |
 
 Exit 0 means the command completed and its applicable checks passed. Exit 2 means invalid input, corrupt storage, or an operational error. Exit 3 means actionable findings, definition conflict, restored suspension, generated reference drift, or advisory revision/degradation. These exit codes do not report native task execution.
 
-`maintain` requires exactly one of `--check` and `--write`. `probe` selects all eight probes unless `--id` names one. `reconcile` reviews one responsibility with `--id`, or all when omitted. Imports are optional immutable bundles. Local checks require separately scoped execution authority. Restore always needs a new destination and fresh observations in its new epoch.
+`maintain` requires exactly one of `--check` and `--write`. `probe` omits optional cloud delegation by default; select it with `--id cloud-delegation`. Other probes can be selected when `--id` names one. `reconcile` reviews one responsibility with `--id`, or all when omitted. Imports are optional immutable bundles. Local checks require separately scoped execution authority. Restore always needs a new destination and fresh observations in its new epoch.
 
 `briefing` without a file loads verified local guidance when explicitly pinned, otherwise canonical public-main guidance. With `--file <draft.json>`, it returns advisory checked/revise/degraded results and exact rendered Markdown when usable. Revision has no normal body. Cached guidance retains its original successful main-check time. Global `--root` does not change the canonical guidance origin. See [the briefing procedure](briefing.md). No command installs native invocation.
 

@@ -8,7 +8,7 @@ The [deterministic briefing pilot](docs/deterministic-briefing.md) retains exact
 
 Emmy is Jerome's ChatGPT Dot. This repository gives one chief of staff durable responsibility context, current evidence checks, retained failures and repairs, and bounded next proposals.
 
-Use Node 24 or later. The agent CLI needs no dependency install. Verification uses locked development dependencies. No database, server, or API key is required.
+Use Node 24 or later. The agent CLI needs no dependency install. Verification uses locked development dependencies. No database, server, or API key is required. Run local commands directly with `node scripts/agent.mjs <command>`; npm is optional. Exact-file commands do not load the public catalog. Catalog inspection, doctor, maintenance, reconciliation, dispatch and onboarding probes still require it.
 
 ```sh
 npm ci --ignore-scripts
@@ -28,7 +28,7 @@ By default, `briefing` returns readable guidance from one pinned public-main bun
 
 [Change delivery](docs/change-delivery.md) proposes Emmy's native coding route and repository quality gates. Published source, installed runner, loaded guidance and ordinary-turn adoption require separate readbacks. Briefing recovery and output evidence stay private; the human body contains scoped updates, safe source links and material limits.
 
-The standing [thread and model policy](AGENTS.md#standing-thread-and-model-policy) applies to all Emmy work. Project `.codex/config.toml` supplies Sol Medium session and Sol Medium helper defaults. The [delivered calendar procedure](docs/operating-brief.md#plan-and-maintain-calendar-tasks) finds existing Tasks and maintains their saved slots through native connectors or Emmy's cloud Calendar UI. Existing native items and private notes or responsibilities own persistence. Follow [native acceptance](docs/dot-verification.md#verify-persistent-calendar-planning-and-standing-policy) to verify actual saved behavior separately from this guidance.
+The standing [thread and model policy](AGENTS.md#standing-thread-and-model-policy) applies to all Emmy work. Project `.codex/config.toml` supplies Sol Medium session and Sol Medium helper defaults. The [delivered calendar procedure](docs/operating-brief.md#plan-and-maintain-calendar-tasks) finds existing Tasks and maintains their saved slots through native connectors or a supported Calendar UI in the current verified execution environment. Existing native items and private notes or responsibilities own persistence. Follow [native acceptance](docs/dot-verification.md#verify-persistent-calendar-planning-and-standing-policy) to verify actual saved behavior separately from this guidance.
 
 The [improvement procedure](docs/daily-improvement.md) covers daily maintenance, separate opportunity suggestions, and twice-weekly [token optimisation](docs/token-review.md). It contributes compact material changes to the existing briefing. Its [initial audit](docs/research/self-improvement-audit.md) distinguishes repaired incidents from reproducible policy gaps. Source features and documentation do not by themselves create schedules, change permissions, or prove live adoption.
 

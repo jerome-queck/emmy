@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 for (const args of [
   ['scripts/check-markdown-links.mjs'],
-  ['--test', 'test/markdown-links.test.mjs'],
+  ['--test', 'test/markdown-links.test.mjs', 'test/agent-local.test.mjs'],
   ['scripts/agent.mjs', 'maintain', '--check'],
   ['--test', 'test/calendar-collection.test.mjs', 'test/calendar-register.test.mjs', 'test/calendar-timing.test.mjs', 'test/calendar-handoff.test.mjs', 'test/academic-os-task-plan.test.mjs'],
   ['--test', 'test/guidance-pin.test.mjs'],

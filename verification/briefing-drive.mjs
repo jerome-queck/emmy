@@ -49,9 +49,18 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
   assert.equal(Object.hasOwn(guidance, 'body'), false); assert.equal(Object.hasOwn(guidance, 'status'), false);
   assert.equal(guidance.guidance.commit, transport.commit); assert.match(guidance.guidance.text, /# Emmy's operating brief/); assert.match(guidance.guidance.text, /# Check a briefing/);
   const checkCalendarGuidance = text => {
+    for (const [requirement, detail] of [
+      [/Direct Studio attachment uses Studio as the primary executor[\s\S]*useful independent tasks that need no login[\s\S]*authenticated-session persistence has been verified[\s\S]*generic fallback is insufficient/, 'Require justified cloud-computer use'],
+      [/Missing or ambiguous host, account, operation or timezone evidence keeps the affected action pending/, 'Hold unresolved environment evidence'],
+      [/Verify the effective account separately[\s\S]*cannot expose effective-account identity[\s\S]*retain that gap before account-specific work/, 'Separate capability from effective-account proof'],
+      [/retain the original failure[\s\S]*at most one bounded supported same-host attach or tool rediscovery[\s\S]*Recheck the exact required operation and identity afterward/, 'Bound stale discovery recovery on the same host'],
+      [/no host or account substitution, denial retry, alias bypass or repeat of an uncertain effect[\s\S]*explicit refusal remains authoritative/, 'Preserve denial and uncertain-effect boundaries']
+    ]) assert.match(text, requirement, detail);
     const calendarGuidance = text.match(/## Plan and maintain calendar Tasks\n([\s\S]*?)(?=\n## |$)/)?.[1];
     assert.ok(calendarGuidance, 'Returned operating brief includes its calendar procedure');
     for (const [requirement, detail] of [
+      [/current authorized session[\s\S]*capable connectors first[\s\S]*verified execution environment/, 'Select Calendar tools from the current environment'],
+      [/persisted typed handoff retains its cloud planning and root-acceptance roles[\s\S]*direct Studio attachment does not migrate them/, 'Preserve persisted cloud handoff roles'],
       [/requested (?:Task )?notes/, 'Retain requested Task notes'],
       [/exact (?:requested |supplied )?text[\s\S]*meaningful line breaks[\s\S]*source URLs/, 'Preserve notes text, line breaks and source URLs'],
       [/Save[\s\S]*reload[\s\S]*reopen[\s\S]*same native ID[\s\S]*compare[\s\S]*notes/, 'Compare saved notes after Save, reload and same-ID reopen'],
@@ -79,7 +88,11 @@ export async function driveBriefing({ sourceRoot, root, home, run, scenario, rep
   for (const [name, before, after, rejectedRequirement] of [
     ['generic popup presence', /Compare the actual saved Task notes field[^.]+\./, 'Confirm that the popup contains nonempty text.', 'Compare the same saved Task notes field'],
     ['generic label accepted', /Generic popup text[^.]+\./, 'A Description label or generic popup boilerplate proves saved notes.', 'Reject generic labels'],
-    ['nonempty contents accepted', /Compare the actual saved Task notes field[^.]+\./, 'Compare the actual saved Task notes field bound to that same native ID with any nonempty text.', 'Compare the same saved Task notes field']
+    ['nonempty contents accepted', /Compare the actual saved Task notes field[^.]+\./, 'Compare the actual saved Task notes field bound to that same native ID with any nonempty text.', 'Compare the same saved Task notes field'],
+    ['cloud-only preference', /Direct Studio attachment uses Studio as the primary executor[^.]*\./, 'Always route app work through the cloud browser.', 'Require justified cloud-computer use'],
+    ['availability as account proof', /Verify the effective account separately[^.]+\./, 'A callable tool proves the effective account.', 'Separate capability from effective-account proof'],
+    ['unbounded discovery', /at most one bounded supported same-host attach or tool rediscovery/, 'unlimited discovery on any available host', 'Bound stale discovery recovery on the same host'],
+    ['denial bypass', /This recovery permits no host[^.]+\./, 'Refresh permits a retry through another host after denial.', 'Preserve denial and uncertain-effect boundaries']
   ]) {
     const weakened = JSON.parse(bundle); const document = weakened.documents.find(value => value.path === 'docs/operating-brief.md');
     const original = document.text; document.text = document.text.replace(before, after); assert.notEqual(document.text, original, name);

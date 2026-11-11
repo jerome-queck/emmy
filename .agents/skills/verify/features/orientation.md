@@ -2,7 +2,7 @@
 
 ## User route
 
-Run `help --json`, `catalog`, and `doctor`. Global `--root` selects public source; `--home` selects private state. Default home is the root's ignored `.local/`. Help lists the metadata-defined commands and actual option/exit contracts.
+Run `help --json`, `catalog`, and `doctor`. Global `--root` selects public source; `--home` selects private state. Default home is the root's ignored `.local/`. Help lists the metadata-defined commands and actual option/exit contracts. Only `catalog`, `doctor`, `maintain`, `reconcile`, `dispatch` and `probe` load public inventory. Other commands retain their own file, private-state and authority checks without requiring that unrelated catalog. `node --test test/agent-local.test.mjs` drives help and pinned automation plans with absent and corrupt catalogs, unchanged input bytes and no new register; a wrong input hash still refuses. All six catalog consumers still refuse missing inventory.
 
 Doctor validates bindings, immutable hashes, referenced records/evidence, retained historical records, generated references, and per-responsibility restore suspension. Missing bindings remain an empty local inventory. Native access and global inventory completeness remain unverified.
 
