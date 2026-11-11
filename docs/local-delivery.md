@@ -1,6 +1,6 @@
 # Deliver a locally verified change
 
-This route needs no hosted job. It reuses [local assurance](local-assurance.md) and the existing [merge owner](automation.md). Source support does not install settings or grant an action.
+This route binds local evidence to scoped provider actions. It reuses [local assurance](local-assurance.md) and the existing [merge owner](automation.md). Source support does not install settings or grant an action.
 
 ## Prepare exact evidence
 
@@ -53,6 +53,8 @@ A crash can leave a lock. Inspect the owning process and retained intent before 
 Filesystem observations are separate reads, not an atomic pin. Selections and statuses establish supplied-byte consistency and attribution claims, not execution or reviewer authentication. GitHub has no atomic expected-base merge parameter. Trusted current policy, cooperating writers and actual provider protection during the final request interval remain assumptions. Administrator capability grants no action permission.
 
 ## Hosted verification
+
+The retained local merge adapter requires its local-context protection policy and remains held under the current hosted policy. The coordinator uses the existing protected provider route for this integration.
 
 Hosted CI and independent review remain required. Local receipts supplement those checks. The workflows always run their required jobs. Local source support grants no protection or repository-variable change.
 
