@@ -46,7 +46,7 @@ The shared raw parser rejects provider `isError: true` and nonempty top-level `e
 
 ## Calendar collector observation
 
-Calendar source metadata may include exactly `collectorObservation: {basis, startedAt, endedAt}`. Retain the real cloud collector clock immediately before the provider read and immediately after its complete serialized result. Record these original bounds in the independently hashed sidecar. The file exchange's own `startedAt`/`capturedAt` measure later file ingestion. They never supply or refresh the collector observation.
+Calendar source metadata may include exactly `collectorObservation: {basis, startedAt, endedAt}`. Retain the real cloud collector clock immediately before the provider read and immediately after its complete serialized result. Record these original bounds in the independently hashed sidecar. Acquisition `startedAt` and `capturedAt` measure its supplied read, which may replay a retained file. These ingestion clocks never supply or refresh the original collector observation.
 
 `basis: "current-read-start"` requires provider `observedAt` and `capturedAt` both explicitly null. Freshness uses the original collector `startedAt`, with the existing five-minute threshold. The compiler always reports provider snapshot clocks unknown and collector observation only. Recent collection establishes no provider snapshot freshness. Items and selected-calendar pagination can remain usable, while unknown fields and inventory keep evidence coverage partial.
 
@@ -54,7 +54,7 @@ Calendar source metadata may include exactly `collectorObservation: {basis, star
 
 Both bases require canonical UTC millisecond timestamps and `startedAt <= endedAt <=` the ingestion capture clock and assessment `asOf`. Missing, malformed, future or inverted bounds, extra observation fields, unsupported bases and mixed page bases refuse. Every page must retain the same explicit basis. Aggregation keeps earliest collector start and latest collector end, original provider clocks or explicit nulls, exact raw cursor lineage and all partial coverage/gaps. Replay preserves those clocks and ages the same evidence. No replay-time fallback exists.
 
-A selected resource inventory does not establish full-account inventory. Retain actual inventory evidence and explicit missing/unknown coverage gaps. Unknown all-day type, Task linkage and timezone retain their existing null values and human-visible gaps. Hashes bind declarations and bytes; they do not authenticate provider or collector truth. This contract is covered by actual caller, exchange, prepare CLI and portable synthetic controls, outside existing finite/TLC source-truth promises.
+A selected resource inventory does not establish full-account inventory. Retain actual inventory evidence and explicit missing/unknown coverage gaps. Unknown all-day type, Task linkage and timezone retain their existing null values and human-visible gaps. Hashes bind declarations and bytes; they do not authenticate provider or collector truth. Direct acquisition, prepare CLI and portable synthetic controls cover this contract, outside existing finite/TLC source-truth promises.
 
 ## Retain observation in the journal
 

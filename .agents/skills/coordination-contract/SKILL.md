@@ -137,7 +137,7 @@ Ceiling regressions additionally cover maximum admission plus one, safe integer 
 
 The additive morning domain covers explicit inactive-predecessor migration, pinned private policy, ChatGPT destination, deterministic compiler equality, original inventory/clock binding, duplicate-copy extraction, code/link privacy, completed-Task projections, pending checks, and prior-facts fallback. Version-one and version-two replay retain their prior semantics. Read `verification/morning-properties.mjs` for the executed count and `verification/briefing-workflow-properties.mjs` for its declared twenty-five-case policy domain and twelve paired source mutations. Generated references do not advance source review.
 
-Canonical publication steps and graph edges remain unchanged. New policy, reporting, and caller functions retain declared interpretations, not provider truth. Actual raw bytes, exact delivery readbacks, source admission, and production caller sequencing remain behavioral boundaries. A finite pass does not authorize migration acceptance or a live pilot.
+Canonical publication steps and graph edges remain unchanged. Policy, reporting and acquisition functions retain declared interpretations, not provider truth. Behavioral controls cover raw-byte retention, declared exact delivery readbacks, source admission and journal-transition sequencing. The retired tool-effect adapter and its edit-availability branch have no current behavioral coverage. A finite pass does not authorize migration acceptance or a live pilot.
 
 ### Calendar observation retention
 
