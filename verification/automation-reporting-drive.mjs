@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile, readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { recordDigest } from '../src/automation-reporting.mjs';
+import { reconcileExpectations } from '../src/automation-reporting-control.mjs';
 
 export async function driveAutomationReporting({ run, scenario, evidenceDir, report }) {
   const retained = join(evidenceDir, 'automation-reporting');
@@ -29,9 +30,20 @@ export async function driveAutomationReporting({ run, scenario, evidenceDir, rep
   assert.equal((await call({ action: 'list', limit: 1 }, 3)).items.length, 1);
   const path = join(directory, 'fixture', `${recordDigest(record)}.json`);
   assert.deepEqual(JSON.parse(await readFile(path, 'utf8')), record);
+  const controlDirectory = join(retained, 'independent-control'); await mkdir(controlDirectory);
+  const future = new Date(Date.now() + 600000);
+  const control = { namespace: 'control', automationId: 'control' };
+  const controlPlan = await reconcileExpectations({ directory: controlDirectory, ...control, evaluatedAt: at, captures: [{ actor: 'registration-control', targetNamespace: 'planned-producer', targetAutomationId: 'daily', nativeRef: 'synthetic-saved-definition', enabled: true, rrule: `FREQ=DAILY;BYHOUR=${future.getUTCHours()};BYMINUTE=${future.getUTCMinutes()};BYSECOND=0`, dtstart: null, timezone: 'UTC', timezoneSource: 'synthetic-explicit-zone', sourceKind: 'owner-explicit', sourceRef: 'synthetic-independent-source', observedAt: at }] });
+  assert.equal(controlPlan.status, 'ready'); assert.deepEqual(await readdir(controlDirectory), []);
+  for (const record of controlPlan.records) await call({ directory: controlDirectory, action: 'publish-own-record', namespace: 'control', record });
+  const independent = await call({ directory: controlDirectory, action: 'inspect', namespace: 'planned-producer', automationId: 'daily', controlAuthority: control }, 3);
+  assert.equal(independent.runs.length, 0); assert.equal(independent.expectations.length, 8);
+  assert.ok(independent.expectations.every(record => record.state === 'expected' && record.execution === 'not-inferred' && Date.parse(record.recordedAt) < Date.parse(record.data.scheduledFor)));
+  assert.deepEqual(await readdir(controlDirectory), ['control']);
+  assert.equal((await call({ directory: controlDirectory, action: 'publish-own-record', namespace: 'control', record: controlPlan.records[0] })).status, 'identical');
   const bytes = '{'; await writeFile(join(directory, 'fixture', `${'f'.repeat(64)}.json`), bytes);
   const corrupt = await call({ action: 'inspect' }, 3);
   assert.equal(corrupt.scan.complete, false); assert.ok(corrupt.runs.every(value => value.execution === 'unknown'));
-  report.automationReporting = { retained, original: path, originalDigest: recordDigest(record), synthetic: true };
-  scenario('automation-reporting', 'Fresh CLI processes retain immutable own records, no-write dry-run, duplicate retry, coverage distinct from completed execution, conflict branches and corrupt sync without replaying workloads.');
+  report.automationReporting = { retained, original: path, originalDigest: recordDigest(record), independentControl: controlDirectory, futureExpectations: independent.expectations.map(record => record.id), synthetic: true };
+  scenario('automation-reporting', 'Fresh CLI processes retain immutable own records, independent future control expectations before any run, configured role and read-only target joins, duplicate retries, partial completion, conflicts and corrupt sync without replaying workloads.');
 }

@@ -7,16 +7,18 @@ import { exportOutcome } from '../src/automation-reporting-export.mjs';
 import { boundedJson } from '../src/bounded-json.mjs';
 import { automationReporting, improvementRecords, canonical } from '../src/automation-reporting.mjs';
 import { startDashboard } from '../src/automation-reporting-dashboard.mjs';
+import { reconcileExpectations } from '../src/automation-reporting-control.mjs';
 
-const actions = new Set(['inspect', 'list', 'get', 'status', 'publish-own-record', 'validate', 'diagnose', 'dry-run', 'reconcile', 'import-improvement', 'export-outcome', 'serve']);
+const actions = new Set(['inspect', 'list', 'get', 'status', 'publish-own-record', 'validate', 'diagnose', 'dry-run', 'reconcile', 'import-improvement', 'export-outcome', 'serve', 'expectations']);
 const options = new Map([
   ['--to', 'to'], ['--directory', 'directory'], ['--namespace', 'namespace'], ['--file', 'file'],
   ['--id', 'id'], ['--automation-id', 'automationId'], ['--query', 'query'],
   ['--finding-cursor', 'findingCursor'], ['--cursor', 'cursor'], ['--limit', 'limit'], ['--as-of', 'evaluatedAt'], ['--port', 'port'],
+  ['--control-namespace', 'controlNamespace'], ['--control-automation-id', 'controlAutomationId'],
 ]);
 const help = `Usage: automation-reporting <action> --directory <private-store> [options]
 Actions: inspect, list, get, status, publish-own-record, validate, diagnose,
-         dry-run, reconcile, import-improvement, export-outcome, serve
+         dry-run, reconcile, import-improvement, export-outcome, serve, expectations
 Options: --namespace <owner> --file <record.json> --id <digest>
          --automation-id <id> --query <text> --cursor <cursor> --limit <count>
          --finding-cursor <finding> --as-of <UTC> --port <port, serve only; default 0>
@@ -30,6 +32,9 @@ Use import-improvement --dry-run to validate without writing.
 export-outcome requires --id <current-run-digest> and --to <absolute-private-file>.
 Export writes sanitized compact JSON locally; publication remains pending.
 serve opens a read-only dashboard on 127.0.0.1 with an ephemeral port by default.
+expectations --namespace <control-owner> --file <capture-config> plans independently sourced future slots; --apply publishes only control-owned records.
+expectations --to <existing-private-manifest-directory> writes bounded per-target binding snapshots on apply.
+Read actions accept --control-namespace and --control-automation-id as the configured registration role; records cannot declare their own authority.
 --synced requires an existing verified namespace and sanitized export-safe record; never provisions a folder.
 JSON stdout. Exit 0 success, 2 invalid request, 3 findings.\n`;
 
@@ -76,12 +81,16 @@ try {
     const parsed = {};
     while (args.length) {
       const flag = args.shift();
+      if (flag === '--apply') {
+        if (action !== 'expectations' || parsed.apply) throw new Error('--apply requires expectations and cannot repeat');
+        parsed.apply = true; continue;
+      }
       if (flag === '--synced') {
         if (!['import-improvement', 'publish-own-record', 'validate', 'dry-run'].includes(action) || parsed.synced) throw new Error('--synced requires record publication or validation and cannot repeat');
         parsed.synced = true; continue;
       }
       if (flag === '--dry-run') {
-        if (action !== 'import-improvement' || parsed.dryRun) throw new Error('--dry-run requires import-improvement and cannot repeat');
+        if (!['import-improvement', 'expectations'].includes(action) || parsed.dryRun) throw new Error('--dry-run requires a supported importer/control action and cannot repeat');
         parsed.dryRun = true;
         continue;
       }
@@ -92,6 +101,11 @@ try {
       parsed[key] = value;
     }
     if (!parsed.directory) throw new Error('--directory is required');
+    if (parsed.controlNamespace !== undefined || parsed.controlAutomationId !== undefined) {
+      if (!parsed.controlNamespace || !parsed.controlAutomationId) throw new Error('Both configured control identity options required');
+      parsed.controlAuthority = { namespace: parsed.controlNamespace, automationId: parsed.controlAutomationId };
+      delete parsed.controlNamespace; delete parsed.controlAutomationId;
+    }
     for (const key of ['limit', 'port']) {
       if (parsed[key] !== undefined) {
         if (!/^\d+$/.test(parsed[key]) || !Number.isSafeInteger(Number(parsed[key]))) throw new Error(`Invalid --${key}`);
@@ -103,12 +117,19 @@ try {
     if (parsed.evaluatedAt !== undefined && !/^\d{4}-\d{2}-\d{2}T.*Z$/.test(parsed.evaluatedAt)) throw new Error('--as-of must be a UTC timestamp');
     if (parsed.evaluatedAt !== undefined && !Number.isFinite(Date.parse(parsed.evaluatedAt))) throw new Error('Invalid --as-of');
     if (action === 'serve') {
-      if (Object.keys(parsed).some(key => !['directory', 'port'].includes(key))) throw new Error('serve accepts only --directory and --port');
+      if (Object.keys(parsed).some(key => !['directory', 'port', 'controlAuthority'].includes(key))) throw new Error('serve accepts directory, port and configured control identity');
       const { server, address } = await startDashboard(parsed);
       process.stdout.write(JSON.stringify({ ok: true, status: 'serving', address, readOnly: true }) + '\n');
       const stop = () => server.close(() => process.exit(0));
       process.once('SIGINT', stop);
       process.once('SIGTERM', stop);
+    } else if (action === 'expectations') {
+      if (!parsed.namespace || !parsed.file || parsed.apply && parsed.dryRun || Object.keys(parsed).some(key => !['directory', 'namespace', 'automationId', 'file', 'apply', 'dryRun', 'to', 'evaluatedAt'].includes(key))) throw new Error('expectations requires its own namespace and capture config; choose apply or dry-run');
+      const request = await boundedJson(parsed.file, 65536);
+      if (request.namespace !== parsed.namespace || parsed.automationId && request.automationId !== parsed.automationId) throw new Error('Control config identity mismatch');
+      const result = await reconcileExpectations({ ...request, directory: parsed.directory, apply: parsed.apply === true, ...(parsed.to ? { manifestDirectory: parsed.to } : {}), ...(parsed.evaluatedAt ? { evaluatedAt: parsed.evaluatedAt } : {}) });
+      process.stdout.write(JSON.stringify({ ok: true, data: { status: result.status, applied: result.applied, evaluatedAt: result.evaluatedAt, capturedDefinitions: result.captures.length, preparedRecords: result.records.length, publishedRecords: result.publications.length, pending: result.pending.slice(0, 20), pendingPage: { total: result.pending.length, shown: Math.min(20, result.pending.length) }, manifests: result.manifests.map(({ targetNamespace, targetAutomationId, path, snapshot }) => ({ targetNamespace, targetAutomationId, path, records: snapshot.records.length, validThrough: snapshot.validThrough })), execution: 'not-inferred', graceMeaning: 'observation-tolerance-only' } }) + '\n');
+      if (result.status !== 'ready') process.exitCode = 3;
     } else if (action === 'export-outcome') {
       if (!parsed.id || !parsed.to || Object.keys(parsed).some(key => !['directory', 'id', 'to'].includes(key))) throw new Error('export-outcome requires only --directory, --id and --to');
       const exact = await automationReporting({ action: 'get', directory: parsed.directory, id: parsed.id });

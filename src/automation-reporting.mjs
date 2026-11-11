@@ -3,6 +3,7 @@ import { constants } from 'node:fs';
 import { open, lstat, realpath, mkdir, opendir, link, unlink } from 'node:fs/promises';
 import { resolve, join, dirname, parse, isAbsolute } from 'node:path';
 import { validateOutcomeReport } from './automation-reporting-outcome.mjs';
+import { validateControlRecord, expandExpectedSlots } from './automation-reporting-expectations.mjs';
 import { assertNoCredentials, assertExportSafe } from './reporting-privacy.mjs';
 import { strictJson } from './bounded-json.mjs';
 import { validateImprovementReport } from './improvement-report.mjs';
@@ -13,7 +14,7 @@ const id = value => typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,11
 const logicalKey = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 120 && !/[\u0000-\u001f\u007f]/.test(value);
 const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const stamp = value => typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{3})?Z$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().replace('.000Z', 'Z') === value.replace('.000Z', 'Z');
-const kinds = ['automation', 'occurrence', 'run', 'publication', 'delivery', 'issue'];
+const kinds = ['automation', 'occurrence', 'run', 'publication', 'delivery', 'issue', 'registration', 'expectation'];
 const actions = ['inspect', 'list', 'get', 'status', 'publish-own-record', 'validate', 'diagnose', 'dry-run', 'reconcile'];
 const MAX_BYTES = 32768;
 const MAX_FILES = 5000;
@@ -27,13 +28,17 @@ export function canonical(value) {
 export const recordDigest = value => createHash('sha256').update(canonical(value)).digest('hex');
 export function validateRecord(record, evaluatedAt = new Date().toISOString()) {
   fields(record, ['schemaVersion', 'namespace', 'automationId', 'kind', 'key', 'revision', 'previous', 'recordedAt', 'data']);
-  need(record.schemaVersion === 1 && id(record.namespace) && id(record.automationId) && kinds.includes(record.kind) && logicalKey(record.key), 'Invalid version or record identity');
+  need(record.schemaVersion === (['registration', 'expectation'].includes(record.kind) ? 2 : 1) && id(record.namespace) && id(record.automationId) && kinds.includes(record.kind) && logicalKey(record.key), 'Invalid version or record identity');
   need(Number.isSafeInteger(record.revision) && record.revision >= 0 && record.revision <= 10000 && (record.revision === 0 ? record.previous === null : digest(record.previous)), 'Invalid revision predecessor');
   need(stamp(evaluatedAt) && stamp(record.recordedAt) && Date.parse(record.recordedAt) <= Date.parse(evaluatedAt), 'Invalid or future recordedAt');
   need(Buffer.byteLength(canonical(record)) <= MAX_BYTES, 'Record exceeds 32 KiB');
   assertNoCredentials(record);
   const data = record.data;
   switch (record.kind) {
+    case 'registration':
+    case 'expectation':
+      validateControlRecord(record);
+      break;
     case 'automation':
       fields(data, ['name', 'enabled', 'schedule', 'environment', 'nativeRef', 'model', 'destination', 'freshChat', 'archiveOnSuccess', 'sourceRef', 'observedAt']);
       need(typeof data.name === 'string' && data.name.length > 0 && data.name.length <= 200 && typeof data.enabled === 'boolean', 'Invalid automation name/enabled');
@@ -129,10 +134,14 @@ function predecessorOK(record, previous) {
   const terminal = ['completed', 'failed', 'skipped'];
   const executionStable = record.kind !== 'run' || !previous || record.data.occurrenceKey === previous.data.occurrenceKey && (!terminal.includes(previous.data.execution) || record.data.execution === previous.data.execution);
   const receiptStable = !['publication', 'delivery'].includes(record.kind) || !previous || record.data.subject === previous.data.subject && (previous.data.state !== 'verified' || record.data.state === 'verified');
-  return executionStable && receiptStable && previous && identity(record) === identity(previous) && record.revision === previous.revision + 1 && Date.parse(record.recordedAt) >= Date.parse(previous.recordedAt);
+  const controlStable = !previous || (record.kind === 'registration'
+    ? Date.parse(record.data.observedAt) >= Date.parse(previous.data.observedAt)
+    : record.kind !== 'expectation' || record.data.registration === previous.data.registration);
+  return executionStable && receiptStable && controlStable && previous && identity(record) === identity(previous) && record.revision === previous.revision + 1 && Date.parse(record.recordedAt) >= Date.parse(previous.recordedAt);
 }
-export function aggregate(records, { evaluatedAt = new Date().toISOString(), findings = [], complete = true, maxAgeSeconds = 86400 } = {}) {
+export function aggregate(records, { evaluatedAt = new Date().toISOString(), findings = [], complete = true, maxAgeSeconds = 86400, controlAuthority = null } = {}) {
   need(stamp(evaluatedAt) && Number.isSafeInteger(maxAgeSeconds) && maxAgeSeconds >= 0 && maxAgeSeconds <= 31536000, 'Invalid evaluation clock/maximum age');
+  if (controlAuthority !== null) { fields(controlAuthority, ['namespace', 'automationId']); need(id(controlAuthority.namespace) && id(controlAuthority.automationId), 'Invalid configured registration control'); }
   const problems = [...findings]; const byDigest = new Map();
   for (const record of records) { validateRecord(record, evaluatedAt); byDigest.set(recordDigest(record), record); }
   const invalid = new Set();
@@ -152,7 +161,7 @@ export function aggregate(records, { evaluatedAt = new Date().toISOString(), fin
     const conflict = leaves.length !== 1;
     if (conflict) problems.push(`conflict:${identity(group[0])}`);
     for (const record of leaves) {
-      const sourceTimes = [record.recordedAt, ...(record.kind === 'automation' ? [record.data.observedAt] : []), ...(record.kind === 'run' && record.data.timing ? [record.data.timing.observedAt] : []), ...(record.kind === 'run' && record.data.report ? [record.data.report.generatedAt, ...(record.data.report.sourceWindow ? [record.data.report.sourceWindow.end] : [])] : [])];
+      const sourceTimes = [record.recordedAt, ...(['automation', 'registration'].includes(record.kind) ? [record.data.observedAt] : []), ...(record.kind === 'run' && record.data.timing ? [record.data.timing.observedAt] : []), ...(record.kind === 'run' && record.data.report ? [record.data.report.generatedAt, ...(record.data.report.sourceWindow ? [record.data.report.sourceWindow.end] : [])] : [])];
       const stale = sourceTimes.some(time => Date.parse(evaluatedAt) - Date.parse(time) > maxAgeSeconds * 1000);
       if (stale) problems.push(`stale:${record.id}`);
       current.push({ ...record, conflict, valid: !invalid.has(record.id), stale });
@@ -192,6 +201,9 @@ export function aggregate(records, { evaluatedAt = new Date().toISOString(), fin
     if (state === 'overdue' || state === 'unknown') problems.push(`occurrence-${state}:${record.id}`);
     return { ...record, state, runIds: observed.map(run => run.id), execution: 'not-inferred' };
   });
+  const registrations = current.filter(record => record.kind === 'registration');
+  const expectations = projectControlExpectations({ byDigest, invalid, current, runs, complete, evaluatedAt, controlAuthority });
+  for (const expected of expectations) if (expected.state !== 'expected' && expected.state !== 'observed' && expected.state !== 'withdrawn') problems.push(`expectation-${expected.state}:${expected.id}`);
   const automations = current.filter(record => record.kind === 'automation');
   if (!automations.length) problems.push('empty-inventory');
   for (const automation of automations) {
@@ -207,7 +219,31 @@ export function aggregate(records, { evaluatedAt = new Date().toISOString(), fin
   const issues = current.filter(record => record.kind === 'issue');
   for (const issue of issues) if (issue.data.state !== 'resolved') problems.push(`issue-${issue.data.state}:${issue.id}`);
   if (!complete) problems.push('incomplete-scan');
-  return { schemaVersion: 1, status: problems.length ? 'needs-attention' : 'ready', automationHealth, evaluatedAt, assurance: 'validated-recorded-claims', findings: [...new Set(problems)].sort(), scan: { complete, records: byDigest.size }, pendingPublicationQueue: runs.filter(run => run.publication !== 'verified').map(run => ({ subject: run.id, namespace: run.namespace, state: run.publication, action: 'reporting-only-parent-owned' })), inventoryCoverage: { knownAutomations: automations.length, scope: 'registered-only', unregisteredAutomations: 'unknown', nativeDiscovery: 'parent-owned' }, automations, occurrences, runs, publications, deliveries, issues, records: current, limits: ['Records do not authenticate execution, schedule firing, publication or user delivery.', 'Concurrent readers may precede later writes. This is a bounded scan, not an atomic snapshot.', 'Local publication only. Native publication, private transport and notification remain external gates.'] };
+  return { schemaVersion: 1, status: problems.length ? 'needs-attention' : 'ready', automationHealth, evaluatedAt, assurance: 'validated-recorded-claims', findings: [...new Set(problems)].sort(), scan: { complete, records: byDigest.size }, pendingPublicationQueue: runs.filter(run => run.publication !== 'verified').map(run => ({ subject: run.id, namespace: run.namespace, state: run.publication, action: 'reporting-only-parent-owned' })), inventoryCoverage: { knownAutomations: automations.length, scope: 'registered-only', unregisteredAutomations: 'unknown', nativeDiscovery: 'parent-owned', independentExpectations: expectations.length }, automations, occurrences, runs, publications, deliveries, issues, registrations, expectations, records: current, limits: ['Records do not authenticate execution, schedule firing, publication or user delivery.', 'Concurrent readers may precede later writes. This is a bounded scan, not an atomic snapshot.', 'Local publication only. Native publication, private transport and notification remain external gates.', 'Observation grace and source freshness never establish an execution deadline or execution failure.'] };
+}
+function projectControlExpectations({ byDigest, invalid, current, runs, complete, evaluatedAt, controlAuthority }) {
+  const usable = record => complete && record && record.valid && !record.conflict;
+  const ownOccurrences = new Map(current.filter(record => record.kind === 'occurrence' && usable(record)).map(record => [canonical([record.namespace, record.automationId, record.key]), record]));
+  const boundRuns = runs.map(run => ({ run, ownOccurrence: ownOccurrences.get(canonical([run.namespace, run.automationId, run.data.occurrenceKey])) }));
+  return current.filter(record => record.kind === 'expectation').map(record => {
+    const data = record.data;
+    const original = byDigest.get(data.registration);
+    const targetMatches = registration => registration?.kind === 'registration' && registration.namespace === record.namespace && registration.automationId === record.automationId && registration.data.targetNamespace === data.targetNamespace && registration.data.targetAutomationId === data.targetAutomationId;
+    const versions = current.filter(item => item.kind === 'registration' && targetMatches(item));
+    const latest = versions.length === 1 && usable(versions[0]) ? versions[0] : null;
+    let configuredSlot = false;
+    try { configuredSlot = targetMatches(original) && expandExpectedSlots(original.data, { from: data.scheduledFor, through: data.scheduledFor }).length === 1; } catch {}
+    const knownControl = record.namespace === controlAuthority?.namespace && record.automationId === controlAuthority?.automationId;
+    const originalValid = knownControl && configuredSlot && targetMatches(original) && !invalid.has(data.registration) && original.data.enabled && original.data.fingerprint === data.fingerprint && Date.parse(original.recordedAt) <= Date.parse(record.recordedAt) && Date.parse(data.observationDueAt) === Date.parse(data.scheduledFor) + original.data.observationGraceSeconds * 1000;
+    const sameConfiguration = latest && latest.data.enabled && latest.data.fingerprint === data.fingerprint;
+    const withdrawn = latest && !sameConfiguration && Date.parse(data.scheduledFor) >= Date.parse(latest.data.effectiveAt);
+    const sourceFresh = latest && Date.parse(evaluatedAt) - Date.parse(latest.data.observedAt) <= latest.data.sourceMaxAgeSeconds * 1000;
+    const applicable = usable(record) && originalValid && latest && sameConfiguration && sourceFresh;
+    const candidates = boundRuns.filter(({ run, ownOccurrence }) => run.namespace === data.targetNamespace && run.automationId === data.targetAutomationId && run.data.report?.provenance !== 'manual' && ownOccurrence && Date.parse(ownOccurrence.data.scheduledFor) === Date.parse(data.scheduledFor)).map(({ run }) => run);
+    const observed = candidates.filter(usable);
+    const state = !usable(record) || !originalValid || !latest ? 'unknown' : withdrawn ? 'withdrawn' : !applicable || observed.length !== candidates.length ? 'unknown' : observed.length ? 'observed' : Date.parse(evaluatedAt) > Date.parse(data.observationDueAt) ? 'observation-gap' : 'expected';
+    return { ...record, state, applicability: state === 'withdrawn' ? 'superseded-configuration' : applicable ? 'registered-configuration' : 'unknown', sourceFreshness: sourceFresh ? 'within-configured-age' : 'stale-or-unavailable', runIds: observed.map(run => run.id), execution: 'not-inferred', assurance: 'reported-control', graceMeaning: 'observation-tolerance-only' };
+  });
 }
 async function scan(selected, evaluatedAt) {
   const records = []; const findings = []; let count = 0; let complete = true;
@@ -262,7 +298,7 @@ function summaryView(result, request) {
   const tally = (values, field) => values.reduce((counts, item) => { const key = item[field]; counts[key] = (counts[key] ?? 0) + 1; return counts; }, {});
   return {
     schemaVersion: result.schemaVersion, status: result.status, evaluatedAt: result.evaluatedAt, assurance: result.assurance, automationHealth: result.automationHealth,
-    counts: Object.fromEntries(['automations', 'occurrences', 'runs', 'publications', 'deliveries', 'issues'].map(key => [key, result[key].length])),
+    counts: Object.fromEntries(['automations', 'occurrences', 'runs', 'publications', 'deliveries', 'issues', 'registrations', 'expectations'].map(key => [key, result[key].length])),
     execution: tally(result.runs, 'execution'), evidenceCoverage: tally(result.runs, 'evidenceCoverage'), reportAvailability: tally(result.runs, 'reportAvailability'),
     publication: tally(result.runs, 'publication'), userDelivery: tally(result.runs, 'userDelivery'),
     pendingPublicationCount: result.pendingPublicationQueue.length, findings: shown,
@@ -274,7 +310,7 @@ function detailView(result, request) {
   const summary = summaryView(result, request); const limit = request.limit ?? 50; const cursor = request.cursor ?? null;
   need(cursor === null || digest(cursor), 'Expected digest cursor');
   const pagination = {};
-  for (const key of ['automations', 'occurrences', 'runs', 'publications', 'deliveries', 'issues']) {
+  for (const key of ['automations', 'occurrences', 'runs', 'publications', 'deliveries', 'issues', 'registrations', 'expectations']) {
     const values = result[key].filter(record => !cursor || record.id > cursor);
     summary[key] = values.slice(0, limit); pagination[key] = { total: result[key].length, shown: summary[key].length, nextCursor: values.length > limit ? summary[key].at(-1).id : null };
   }
@@ -282,7 +318,7 @@ function detailView(result, request) {
 }
 export async function automationReporting(request, { evaluatedAt = new Date().toISOString() } = {}) {
   need(object(request) && actions.includes(request.action), 'Unknown reporting action');
-  fields(request, ['action', 'directory'], ['namespace', 'record', 'id', 'automationId', 'query', 'cursor', 'limit', 'maxAgeSeconds', 'findingCursor', 'synced']);
+  fields(request, ['action', 'directory'], ['namespace', 'record', 'id', 'automationId', 'query', 'cursor', 'limit', 'maxAgeSeconds', 'findingCursor', 'synced', 'controlAuthority']);
   need(stamp(evaluatedAt), 'Invalid evaluation clock');
   need(request.synced === undefined || typeof request.synced === 'boolean', 'Invalid synced-store guard');
   const selected = await directory(request.directory);
@@ -304,8 +340,11 @@ export async function automationReporting(request, { evaluatedAt = new Date().to
   need(request.automationId === undefined || id(request.automationId), 'Invalid automation filter');
   need(request.namespace === undefined || id(request.namespace), 'Invalid namespace filter');
   const snapshot = await scan(selected, evaluatedAt);
-  snapshot.records = snapshot.records.filter(record => (!request.namespace || record.namespace === request.namespace) && (!request.automationId || record.automationId === request.automationId));
-  const result = aggregate(snapshot.records, { ...snapshot, evaluatedAt, maxAgeSeconds: request.maxAgeSeconds ?? 86400 });
+  const ownScope = record => (!request.namespace || record.namespace === request.namespace) && (!request.automationId || record.automationId === request.automationId);
+  const ownedRecords = snapshot.records.filter(ownScope);
+  const result = aggregate(snapshot.records, { ...snapshot, evaluatedAt, maxAgeSeconds: request.maxAgeSeconds ?? 86400, controlAuthority: request.controlAuthority ?? null });
+  if (request.namespace || request.automationId) scopeReadView(result, request, ownedRecords);
+  snapshot.records = ownedRecords;
   if (['status', 'diagnose', 'reconcile'].includes(request.action)) return summaryView(result, request);
   if (request.action === 'inspect') return detailView(result, request);
   if (request.action === 'get') {
@@ -321,4 +360,19 @@ export async function automationReporting(request, { evaluatedAt = new Date().to
   const candidates = [...snapshot.records].map(record => ({ id: recordDigest(record), ...record })).sort((a, b) => a.id.localeCompare(b.id)).filter(record => (!cursor || record.id > cursor) && (!request.namespace || record.namespace === request.namespace) && (!request.automationId || record.automationId === request.automationId) && (!request.query || canonical(record).toLowerCase().includes(request.query.toLowerCase())));
   const items = candidates.slice(0, limit);
   return { status: result.status, items, nextCursor: candidates.length > limit ? items.at(-1).id : null, findings: summaryView(result, request).findings, findingPage: summaryView(result, request).findingPage, scan: result.scan, limits: ['Cursor pagination is over observed immutable IDs; concurrent additions before the cursor require a fresh scan.'] };
+}
+function scopeReadView(result, request, ownedRecords) {
+  const own = record => (!request.namespace || record.namespace === request.namespace) && (!request.automationId || record.automationId === request.automationId);
+  const dependency = record => own(record) || (!request.namespace || record.data.targetNamespace === request.namespace) && (!request.automationId || record.data.targetAutomationId === request.automationId);
+  for (const key of ['registrations', 'expectations']) result[key] = result[key].filter(dependency);
+  for (const key of ['automations', 'occurrences', 'runs', 'publications', 'deliveries', 'issues', 'records']) result[key] = result[key].filter(own);
+  result.pendingPublicationQueue = result.pendingPublicationQueue.filter(item => !request.namespace || item.namespace === request.namespace).filter(item => result.runs.some(run => run.id === item.subject));
+  const hashes = new Set([...ownedRecords.map(recordDigest), ...result.registrations.map(record => record.id), ...result.expectations.map(record => record.id)]);
+  result.findings = result.findings.filter(finding => finding === 'incomplete-scan' || finding === 'empty-inventory' && !result.automations.length || [...hashes].some(hash => finding.includes(hash)) || finding.startsWith('missing-automation:') && ownedRecords.some(record => finding === `missing-automation:${record.namespace}/${record.automationId}`));
+  if (!result.automations.length && !result.findings.includes('empty-inventory')) result.findings.push('empty-inventory');
+  result.findings.sort();
+  result.status = result.findings.length ? 'needs-attention' : 'ready';
+  result.automationHealth = { ...result.automationHealth, scope: result.automations.length ? 'registered-only' : 'unknown-empty-inventory', observations: result.automations.reduce((counts, automation) => { counts[automation.observationState] = (counts[automation.observationState] ?? 0) + 1; return counts; }, {}) };
+  result.inventoryCoverage = { ...result.inventoryCoverage, knownAutomations: result.automations.length, independentExpectations: result.expectations.length };
+  result.scan = { ...result.scan, records: ownedRecords.length, dependencyRecords: result.registrations.filter(record => !own(record)).length + result.expectations.filter(record => !own(record)).length };
 }

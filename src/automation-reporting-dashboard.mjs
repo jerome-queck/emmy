@@ -11,7 +11,7 @@ const page = `<!doctype html>
 <footer>Producer claims remain reported. References do not authenticate execution or delivery. This view performs no monitoring or provider actions.</footer></main></body></html>`;
 
 const browserScript = `const sections = [
- ['Inventory', 'automations'], ['Automation observations', 'automationHealth'], ['Expected occurrences', 'occurrences'], ['Runs', 'runs'],
+ ['Inventory', 'automations'], ['Automation observations', 'automationHealth'], ['Independent expectations', 'expectations'], ['Historical occurrence correlations', 'occurrences'], ['Runs', 'runs'],
  ['Conflicts and gaps', 'findings'], ['Coverage', 'inventoryCoverage'],
  ['Publication', 'publications'], ['Delivery', 'deliveries'], ['Issues', 'issues'], ['Store scan', 'scan']
 ];
@@ -46,6 +46,7 @@ function recordCard(parent, record) {
  const values = [['Automation', record.automationId], ['Namespace', record.namespace]];
  if (record.kind === 'automation') values.push(['Enabled', record.data.enabled], ['Schedule', record.data.schedule], ['Environment', record.data.environment], ['Observations', record.observationState ?? 'unknown']);
  if (record.kind === 'occurrence') values.push(['Occurrence', record.state], ['Scheduled for', record.data.scheduledFor], ['Execution', record.execution]);
+ if (record.kind === 'expectation') values.push(['Producer', record.data.targetAutomationId], ['Producer namespace', record.data.targetNamespace], ['Observation', record.state], ['Scheduled for', record.data.scheduledFor], ['Observation grace ends', record.data.observationDueAt], ['Configuration', record.applicability], ['Execution', record.execution]);
  if (record.kind === 'run') values.push(['Execution', record.execution], ['Coverage', record.evidenceCoverage], ['Report', record.reportAvailability], ['Publication', record.publication], ['Delivery', record.userDelivery]);
  if (record.kind === 'publication' || record.kind === 'delivery') values.push(['State', record.state], ['Subject', record.data.subject]);
  if (record.kind === 'issue') values.push(['State', record.data.state]);
@@ -116,9 +117,9 @@ window.addEventListener('pageshow', event => { if (event.persisted) window.locat
 freshness();
 refresh();`;
 
-export async function startDashboard({ directory, port = 0 }) {
+export async function startDashboard({ directory, port = 0, controlAuthority = null }) {
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Invalid dashboard port');
-  await automationReporting({ action: 'inspect', directory });
+  await automationReporting({ action: 'inspect', directory, controlAuthority });
   const server = createServer(async (request, response) => {
     const headers = {
       'Cache-Control': 'no-store',
@@ -133,7 +134,7 @@ export async function startDashboard({ directory, port = 0 }) {
     if (request.url === '/dashboard.js') return send(200, 'text/javascript; charset=utf-8', browserScript);
     if (request.url !== '/api') return send(404, 'application/json', JSON.stringify({ ok: false, error: 'Not found' }));
     try {
-      const data = await automationReporting({ action: 'inspect', directory });
+      const data = await automationReporting({ action: 'inspect', directory, controlAuthority });
       send(200, 'application/json', JSON.stringify({ ok: true, data }));
     } catch (error) { send(500, 'application/json', JSON.stringify({ ok: false, error: error.message })); }
   });

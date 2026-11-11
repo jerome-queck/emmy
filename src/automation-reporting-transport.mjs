@@ -32,6 +32,10 @@ export function sanitizeRecords(records, { namespace, evaluatedAt = new Date().t
     if (receipt(record)) { skipped[record.kind]++; continue; }
     const original = record.data; let data;
     switch (record.kind) {
+      case 'registration':
+      case 'expectation':
+        data = structuredClone(original);
+        break;
       case 'automation':
         data = { name: original.name, enabled: original.enabled, schedule: original.schedule, environment: original.environment, nativeRef: original.nativeRef, model: original.model, destination: original.destination, freshChat: original.freshChat, archiveOnSuccess: original.archiveOnSuccess, sourceRef: ref(original.sourceRef), observedAt: original.observedAt };
         break;
