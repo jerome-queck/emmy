@@ -126,11 +126,11 @@ test('real CLI retains old history, exposes new content and preserves conflictin
 }));
 
 test('legacy validator deliberately refuses new content while its records remain readable', async () => fixture(async directory => {
-  for (const name of ['automation-reporting-outcome', 'reporting-privacy']) await writeFile(join(directory, name + '.mjs'), execFileSync('git', ['show', '53982616279db4c87af4cef51c748d2d5acb952c:src/' + name + '.mjs'], { cwd: root }));
+  for (const name of ['automation-reporting-outcome', 'reporting-privacy']) await writeFile(join(directory, name + '.mjs'), execFileSync('git', ['show', '0034c1887a33b056e1337130796fe840da9dd31a:src/' + name + '.mjs'], { cwd: root }));
   const legacy = await import(pathToFileURL(join(directory, 'automation-reporting-outcome.mjs')).href);
   assert.throws(() => legacy.validateOutcomeReport(outcome()), /Invalid generic/);
   assert.equal(view([automation, start, terminal]).runs[0].execution, 'completed');
   const schema = JSON.parse(await readFile(join(root, 'schemas/automation-reporting-v3.schema.json')));
   assert.equal(schema.$defs.unboundReport.properties.schemaVersion.const, 2);
-  for (const version of [1, 2]) assert.deepEqual(await readFile(join(root, `schemas/automation-reporting-v${version}.schema.json`)), execFileSync('git', ['show', `53982616279db4c87af4cef51c748d2d5acb952c:schemas/automation-reporting-v${version}.schema.json`], { cwd: root }));
+  for (const version of [1, 2]) assert.deepEqual(await readFile(join(root, `schemas/automation-reporting-v${version}.schema.json`)), execFileSync('git', ['show', `0034c1887a33b056e1337130796fe840da9dd31a:schemas/automation-reporting-v${version}.schema.json`], { cwd: root }));
 }));
