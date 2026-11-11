@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, cp, readFile, writeFile, mkdir } from 'node:fs/promises';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -34,7 +34,7 @@ async function run(name, mutation) {
   const def = R.recordPayload(R.parseDefinition({ id:'watch', parents:[], goal:'Retain outcome', context:'fixture', target, action:'verify', resource:'alpha', destination:'local', authorityRef:{ reference:'owner', action:'verify', resource:'alpha', destination:'local' }, criteria:[criterion, other], freshness:{maxAgeMs:86400000,sources:[]}, reviewAt:time(1000), feature:{ id:'feature',method:'inspect',intendedEffect:'verify',reviewAt:time(1000) }, lifecycle:{status:'active'} }));
   const { hash: originalHash, ...rawDefinition } = def;
   const weak = R.recordPayload(R.parseDefinition({ ...rawDefinition, parents:[originalHash], criteria:[other] }));
-  const obs = (category, observedAt, claims=[], extra={}) => R.recordPayload({ ...R.parseObservation({ responsibilityId:def.id,subject:target,observedAt,observer:'fixture',category,availability:'available',coverage:{complete:true,gaps:[]},claims,evidenceRefs:[],...extra }), origin:'observed-local' });
+  const obs = (category, observedAt, claims=[], extra={}) => R.recordPayload({ ...R.parseObservation({ responsibilityId:def.id,subject:target,observedAt,observer:'fixture',category,availability:'available',coverage:{complete:true,gaps:[]},claims,evidenceRefs:[],...extra }), origin:category === 'effect' ? 'reported' : 'observed-local' });
   const claim = (item,outcome) => ({ criterionId:item.id,revision:target.revision,kind:item.evidence,specHash:W.criterionHash(item),outcome,evidenceRef:'fixture' });
   const failure=obs('criteria',time(1),[claim(criterion,'fail')]);
   const pass=obs('criteria',time(2),[claim(criterion,'pass')]);
@@ -61,7 +61,7 @@ async function run(name, mutation) {
       if((a===7 || a===9) && !(s.flags&1)) continue;
       if(a===8 && (!(s.flags&2)||!(s.flags&4))) continue;
       const n={...s,flags:a===9?s.flags:s.flags|bit};
-      if(a===7) { const observed = invoke(def,[failure],[],[]); assert.equal(observed.findings.find(x=>x.id===finding.id)?.status, 'open'); }
+      if(a===7) { const observed = invoke(def,[failure],[],[]); assert.deepEqual(observed, first); assert.equal(observed.findings.find(x=>x.id===finding.id)?.status, 'open'); }
       if(a===9) {
         const f=n.flags; const observations=[...(f&1?[failure]:[]),...(f&4?[pass]:[]),...(f&16?[unrelated]:[])];
         const repairs=[...(f&32?[repair(false)]:[]),...(f&64?[repair(true)]:[]),...(f&256?[wrongLink]:[])];
@@ -85,7 +85,7 @@ async function run(name, mutation) {
   const output=(tlc.stdout??'')+(tlc.stderr??''); await writeFile(join(dir,'tlc.out'),output);
   if(mutation) {
     assert.match(output,/Invariant Closure is violated/); const nodes=[...output.matchAll(/node = (\d+)/g)].map(x=>Number(x[1])-1); assert.ok(nodes.length>1);
-    const trace=nodes.slice(1).map((n,i)=>{const edge=edges.find(e=>e.from===nodes[i]&&e.to===n);assert.ok(edge); const s=states[n]; if(edge.action==='InspectFailure') assert.equal(invoke(def,[failure],[],[]).findings.find(x=>x.id===finding.id)?.status,'open'); if(edge.action==='Reconcile') { const f=s.flags; const observations=[failure,...(f&4?[pass]:[]),...(f&16?[unrelated]:[])]; const repairs=[...(f&32?[repair(false)]:[]),...(f&64?[repair(true)]:[]),...(f&256?[wrongLink]:[])]; const result=invoke(f&8?weak:def,observations,repairs,f&2?[retained]:[]); assert.equal(result.findings.find(x=>x.id===finding.id)?.status??'missing',s.review); } return {...edge,state:s}});
+    const trace=nodes.slice(1).map((n,i)=>{const edge=edges.find(e=>e.from===nodes[i]&&e.to===n);assert.ok(edge); const s=states[n]; if(edge.action==='InspectFailure') assert.deepEqual(invoke(def,[failure],[],[]),first); if(edge.action==='Reconcile') { const f=s.flags; const observations=[failure,...(f&4?[pass]:[]),...(f&16?[unrelated]:[])]; const repairs=[...(f&32?[repair(false)]:[]),...(f&64?[repair(true)]:[]),...(f&256?[wrongLink]:[])]; const result=invoke(f&8?weak:def,observations,repairs,f&2?[retained]:[]); assert.equal(result.findings.find(x=>x.id===finding.id)?.status??'missing',s.review); } return {...edge,state:s}});
     assert.ok(bad.includes(nodes.at(-1)+1)); await writeFile(join(dir,'replay.json'),JSON.stringify(trace,null,2));
   } else { assert.equal(tlc.status,0,output);assert.match(output,/Model checking completed\. No error has been found/); }
   return {name,states:states.length,edges:edges.length,bad:bad.length,path:dir};
