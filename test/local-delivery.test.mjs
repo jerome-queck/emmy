@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -8,6 +8,7 @@ import { evaluateEligibility, evaluateLocalEvidence } from '../scripts/github-au
 import { createLocalProvider, deliverLocal } from '../scripts/local-delivery.mjs';
 import { localSpecimen, localSnapshot } from '../verification/delivery/fixtures.mjs';
 import { driveDelivery } from '../verification/delivery/drive.mjs';
+import { canonical, digest } from '../src/content.mjs';
 
 test('explicit local mode accepts zero hosted jobs and refuses missing or conflicting evidence', () => {
   assert.deepEqual(evaluateEligibility(localSnapshot()), { eligible: true, waiting: [] });
@@ -37,7 +38,7 @@ function fakeProvider() {
     effects, observed, deny: false, timeoutAfterEffect: false, failReadback: false, drift: false,
     async discover(action) {
       if (this.failReadback && effects.length) { this.failReadback = false; throw new Error('read timeout'); }
-      return { exact: true, confirmed: observed.has(action), number: 7 };
+      return { exact: true, confirmed: observed.has(action), absent: !observed.has(action), number: 7 };
     },
     async destination() { return { exact: !this.drift }; },
     async mergeEligibility(b, local) { return evaluateEligibility(localSnapshot(local)); },
@@ -54,7 +55,7 @@ async function fixture(t) {
   const root = await mkdtemp(join(tmpdir(), 'emmy-delivery-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   const local = localSpecimen(); const provider = fakeProvider();
-  const request = { schemaVersion: 1, mode: 'local', binding: local.binding, action: 'publish' };
+  const request = { schemaVersion: 1, mode: 'local', binding: local.binding, action: 'publish', title: 'Synthetic delivery', body: 'Provider fake only.' };
   const run = action => { request.action = action; return deliverLocal(root, structuredClone(request), provider, async () => ({ ...local, action })); };
   return { root, local, provider, request, run };
 }
@@ -128,6 +129,46 @@ test('actual adapter keeps guarded branch push separate and merge uses exact hea
   assert.deepEqual(calls[0].body, { title: 'Exact title', body: 'Exact body', head: local.binding.branch, base: 'main', draft: false });
   assert.deepEqual(calls[1].body, { sha: local.binding.head, merge_method: 'merge' });
   assert.equal(calls.some(call => /protection/.test(call.url)), false, 'Adapter has no protection mutation');
+});
+
+test('selected fresh absence resolution permits one exact authorized retry per action', async t => {
+  for (const action of ['publish', 'open-pr', 'attest', 'merge']) {
+    const { root, request, run, provider, local } = await fixture(t);
+    for (const before of ['publish', 'open-pr', 'attest', 'merge']) { if (before === action) break; await run(before); }
+    provider.deny = true; const denied = await run(action);
+    const original = JSON.parse(await readFile(denied.checkpoint)); const pending = original.pending;
+    const resolution = { decision: 'confirmed-absence', attemptId: pending.id, requestDigest: pending.requestDigest, payloadDigest: pending.payloadDigest, action, bindingDigest: original.bindingDigest, observedAt: new Date().toISOString(), sourceRef: 'synthetic-owner-resolution' };
+    const select = async value => { const file = join(root, 'resolution.json'); const bytes = canonical(value); await writeFile(file, bytes); request.resolution = { file, sha256: digest(bytes) }; };
+    local.authorization.actions.push('resolve-absence'); local.authorization.resolveAttemptId = pending.id; local.authorization.resolveRequestDigest = pending.requestDigest;
+    const resolve = () => deliverLocal(root, request, provider, async () => ({ ...local, action }));
+    for (const bad of [{ ...resolution, attemptId: 'wrong' }, { ...resolution, observedAt: '2000-01-01T00:00:00Z' }, { ...resolution, bindingDigest: 'f'.repeat(64) }]) {
+      await select(bad); assert.equal((await resolve()).outcome, 'unknown');
+    }
+    await select(resolution); local.authorization.resolveAttemptId = 'wrong'; assert.equal((await resolve()).outcome, 'unknown'); local.authorization.resolveAttemptId = pending.id;
+    assert.equal((await resolve()).outcome, 'retry-ready');
+    assert.equal(provider.effects.filter(row => row === action).length, 1, 'Resolution performs no provider effect');
+    delete request.resolution; provider.deny = false;
+    await run(action); await run(action);
+    assert.equal(provider.effects.filter(row => row === action).length, 2, 'Only one authorized retry occurs');
+    const final = JSON.parse(await readFile(denied.checkpoint));
+    assert.equal(final.history.filter(row => row.kind === 'intent' && row.action === action).length, 2);
+    assert.equal(final.history.find(row => row.kind === 'intent' && row.action === action).id, pending.id);
+  }
+});
+
+test('a denied authorized retry cannot authorize a third attempt', async t => {
+  const { root, request, run, provider, local } = await fixture(t); provider.deny = true;
+  const denied = await run('publish');
+  const resolve = async () => {
+    const state = JSON.parse(await readFile(denied.checkpoint)); const pending = state.pending;
+    const resolution = { decision: 'confirmed-absence', attemptId: pending.id, requestDigest: pending.requestDigest, payloadDigest: pending.payloadDigest, action: 'publish', bindingDigest: state.bindingDigest, observedAt: new Date().toISOString(), sourceRef: 'synthetic-explicit-resolution' };
+    const bytes = canonical(resolution); const file = join(root, 'retry-resolution.json'); await writeFile(file, bytes); request.resolution = { file, sha256: digest(bytes) };
+    local.authorization.actions = ['publish', 'resolve-absence']; local.authorization.resolveAttemptId = pending.id; local.authorization.resolveRequestDigest = pending.requestDigest;
+    return deliverLocal(root, request, provider, async () => ({ ...local, action: 'publish' }));
+  };
+  assert.equal((await resolve()).outcome, 'retry-ready'); delete request.resolution;
+  assert.equal((await run('publish')).outcome, 'unknown');
+  assert.equal((await resolve()).outcome, 'unknown'); assert.deepEqual(provider.effects, ['publish', 'publish']);
 });
 
 test('fresh CLI processes enforce actual receipts and recover provider-fake effects', async () => {

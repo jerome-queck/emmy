@@ -33,6 +33,7 @@ export async function verifyDelivery({ development = false } = {}) {
       l => { l.review.receiptDigest = 'f'.repeat(64); }, l => { l.review.contextDigest = 'f'.repeat(64); },
       l => { l.review.practical = false; }, l => { l.authorization.actions = []; },
       l => { l.authorization.base = 'f'.repeat(40); }, l => { l.authorization.expiresAt = new Date(l.now).toISOString(); },
+      l => { l.review.payloadDigest = 'f'.repeat(64); }, l => { l.authorization.payloadDigest = 'f'.repeat(64); },
     ];
     for (let bits = 0; bits < 2 ** changes.length; bits++) {
       const local = localSpecimen();
@@ -45,6 +46,8 @@ export async function verifyDelivery({ development = false } = {}) {
       ['source-head', 'a.status === \'current-local-reported\' && same(a)', "a.status === 'current-local-reported'", changes[0]],
       ['review-receipt', 'r.receiptDigest === a.receiptDigest', 'true', changes[6]],
       ['authorization', 'now < Date.parse(grant.expiresAt)', 'true', changes[11]],
+      ['review-payload', 'r.payloadDigest === payloadDigest', 'true', changes[12]],
+      ['grant-payload', 'grant.payloadDigest === payloadDigest', 'true', changes[13]],
     ]) {
       assert.equal(source.split(find).length, 2, `Unique admission mutation ${name}`);
       const module = await copied(source.replace(find, replacement));
@@ -53,6 +56,29 @@ export async function verifyDelivery({ development = false } = {}) {
       assert.equal(production.evaluateLocalEvidence(local).eligible, false);
       assert.equal(module.evaluateLocalEvidence(local).eligible, true, `Intended forbidden admission ${name}`);
       report.admissionMutants.push({ name, local, original: production.evaluateLocalEvidence(local), mutantEligible: true });
+    }
+    report.resolutionCases = 0;
+    for (const action of ['publish', 'open-pr', 'attest', 'merge']) {
+      const make = () => {
+        const now = Date.now();
+        const pending = { id: 'original-attempt', requestDigest: 'a'.repeat(64), payloadDigest: 'b'.repeat(64), action };
+        return { pending, bindingDigest: 'c'.repeat(64), now, resolution: { decision: 'confirmed-absence', attemptId: pending.id, requestDigest: pending.requestDigest, payloadDigest: pending.payloadDigest, action, bindingDigest: 'c'.repeat(64), observedAt: new Date(now).toISOString(), sourceRef: 'synthetic-owner-resolution' }, authorization: { actions: ['resolve-absence'], resolveAttemptId: pending.id, resolveRequestDigest: pending.requestDigest }, discovered: { exact: true, absent: true, confirmed: false } };
+      };
+      const faults = [x => { x.resolution.attemptId = 'wrong'; }, x => { x.resolution.requestDigest = 'wrong'; }, x => { x.resolution.payloadDigest = 'wrong'; }, x => { x.resolution.bindingDigest = 'wrong'; }, x => { x.authorization.actions = []; }, x => { x.resolution.observedAt = '2000-01-01T00:00:00Z'; }, x => { x.discovered.absent = false; }, x => { x.discovered.exact = false; }];
+      for (let bits = 0; bits < 2 ** faults.length; bits++) {
+        const value = make(); faults.forEach((fault, index) => { if (bits & (1 << index)) fault(value); });
+        assert.equal(production.evaluateAbsenceResolution(value), bits === 0); report.resolutionCases++;
+      }
+      if (action === 'publish') for (const [name, find, replacement, fault] of [
+        ['resolution-attempt', 'r.attemptId === pending.id', 'true', faults[0]],
+        ['resolution-freshness', 'now - Date.parse(r.observedAt) <= 60_000', 'true', faults[5]],
+        ['resolution-absence', 'discovered.absent === true', 'true', faults[6]],
+      ]) {
+        assert.equal(source.split(find).length, 2); const module = await copied(source.replace(find, replacement));
+        assert.equal(module.evaluateAbsenceResolution(make()), true); const value = make(); fault(value);
+        assert.equal(production.evaluateAbsenceResolution(value), false); assert.equal(module.evaluateAbsenceResolution(value), true);
+        report.admissionMutants.push({ name, value, mutantEligible: true });
+      }
     }
     const { context } = await observeAssurance(root);
     report.tools = context.formal;
@@ -85,7 +111,7 @@ export async function verifyDelivery({ development = false } = {}) {
           assert.deepEqual(state, graph.states[trace[index].node].state); replay.push({ event: edge.event, state });
         }
         const last = graph.states[trace.at(-1).node];
-        assert.ok(rule === 'EffectSafe' ? last.unsafe : rule === 'NoDuplicate' ? Object.values(last.attempts).some(n => n > 1) : last.lostUnknown, 'Intended harm must replay against actual copied source');
+        assert.ok(rule === 'EffectSafe' ? last.unsafe : rule === 'NoDuplicate' ? Object.entries(last.attempts).some(([action,n]) => n > 1 + (last.resolutions[action] ?? 0)) : last.lostUnknown, 'Intended harm must replay against actual copied source');
         await writeFile(join(path, 'actual-code-replay.json'), `${canonical(replay)}\n`);
       } else { assert.equal(result.status, 0, output); assert.match(output, /Model checking completed\. No error has been found\./); }
       report.runs.push({ name, rule, states: graph.states.length, edges: graph.edges.length, directory: path });
@@ -95,8 +121,11 @@ export async function verifyDelivery({ development = false } = {}) {
       ['fake-review', "state.phase === 'checked' && event.valid", "state.phase === 'checked'", 'EffectSafe'],
       ['denied-effect', "state.phase === allowed[event.action] && event.valid", 'state.phase === allowed[event.action]', 'EffectSafe'],
       ['unknown-readback', 'if (event.confirmed === true)', 'if (true)', 'UnknownPreserved'],
-      ['wrong-readback', 'event.exact === true', 'true', 'UnknownPreserved'],
+      ['wrong-readback', "event.kind === 'observe' && state.phase === 'unknown' && event.action === state.active && event.exact === true", "event.kind === 'observe' && state.phase === 'unknown' && event.action === state.active", 'UnknownPreserved'],
       ['duplicate-attest', '!state.completed.includes(event.action)', 'true', 'NoDuplicate'],
+      ['wrong-resolution-attempt', 'event.attemptMatches === true', 'true', 'UnknownPreserved'],
+      ['uncertain-resolution', 'event.absent === true', 'true', 'UnknownPreserved'],
+      ['repeated-resolution', "(state.attempts?.[event.action] ?? 0) === 1 && !(state.retryUsed ?? []).includes(event.action)", 'true', 'UnknownPreserved'],
     ]) {
       assert.equal(source.split(find).length, 2, `Unique lifecycle mutation ${name}`);
       await run(name, await copied(source.replace(find, replacement)), rule);

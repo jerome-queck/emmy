@@ -26,12 +26,12 @@ globalThis.fetch=async(url,options={})=>{
  const s=load(); const method=options.method??'GET'; const p=u.pathname; s.calls.push({method,path:p,body:options.body?JSON.parse(options.body):null});
  let body;let code=200;
  const repo={full_name:'jerome-queck/emmy'};
- const pr={number:7,state:s.merged?'closed':'open',draft:false,merged:s.merged,merged_at:s.merged?'2026-11-10T00:00:00Z':null,head:{sha:s.head,repo},base:{sha:s.base,ref:'main',repo}};
- if(p.includes('/git/ref/heads/')){if(s.failReadback){s.failReadback=false;code=503;}else if(!s.branch)code=404;else body={object:{sha:s.head}};}
+ const pr={number:7,title:s.title,body:s.body,state:s.merged?'closed':'open',draft:false,merged:s.merged,merged_at:s.merged?'2026-11-10T00:00:00Z':null,head:{sha:s.head,repo},base:{sha:s.base,ref:'main',repo}};
+ if(p.includes('/git/ref/heads/')){if(s.denyRead)code=403;else if(s.uncertainRead)code=503;else if(s.failReadback){s.failReadback=false;code=503;}else if(!s.branch)code=404;else body={object:{sha:s.head}};}
  else if(p.endsWith('/branches/main/protection'))body={enforce_admins:{enabled:true},required_status_checks:{strict:true,contexts:['emmy-local-assurance','emmy-independent-review']}};
  else if(p.endsWith('/branches/main'))body={name:'main',commit:{sha:s.drift?'f'.repeat(40):s.base},protected:true,protection:{required_status_checks:{enforcement_level:'everyone',strict:true,contexts:['emmy-local-assurance','emmy-independent-review']}}};
  else if(p.endsWith('/pulls')&&method==='GET')body=s.pr?[pr]:[];
- else if(p.endsWith('/pulls')&&method==='POST'){s.pr=true;s.writes.push('open-pr');body=pr;}
+ else if(p.endsWith('/pulls')&&method==='POST'){s.pr=true;const text=JSON.parse(options.body);s.title=text.title;s.body=text.body;s.writes.push('open-pr');body=pr;}
  else if(p.endsWith('/pulls/7/merge')&&method==='PUT'){s.merged=true;s.writes.push('merge');body={merged:true,sha:'9'.repeat(40)};}
  else if(p.endsWith('/pulls/7'))body=pr;
  else if(p.endsWith('/check-runs'))body={check_runs:[]};
@@ -69,11 +69,12 @@ globalThis.fetch=async(url,options={})=>{
     const request = async () => {
       const binding = { repository: 'jerome-queck/emmy', branch: `codex/cli-${++serial}`, head: source.head, base: source.base, tree: source.workingTree, author: 'synthetic-author' };
       const exact = { head: binding.head, base: binding.base, tree: binding.tree };
+      const payloadDigest = digest(canonical({ title: 'Synthetic delivery', body: 'Provider fake only.', head: binding.branch, base: 'main', draft: false }));
       return {
         schemaVersion: 1, mode: 'local', binding, baseRef: 'acceptance-base', action: 'publish', title: 'Synthetic delivery', body: 'Provider fake only.',
         assurance: { receiptFile: checked.receiptFile, receiptDigest: checked.receiptDigest },
-        review: await selection(`review-${serial}.json`, { ...exact, author: binding.author, reviewer: 'synthetic-independent', practical: true, verdict: 'PASS', receiptDigest: checked.receiptDigest, contextDigest: receipt.initial.contextDigest, acceptanceRef: 'synthetic-owner-acceptance' }),
-        authorization: await selection(`authorization-${serial}.json`, { ...exact, repository: binding.repository, branch: binding.branch, actions: ['publish', 'open-pr', 'attest', 'merge'], sourceRef: 'synthetic-owner-scope', notBefore: '2026-01-01T00:00:00Z', expiresAt: '2099-01-01T00:00:00Z' }),
+        review: await selection(`review-${serial}.json`, { ...exact, payloadDigest, author: binding.author, reviewer: 'synthetic-independent', practical: true, verdict: 'PASS', receiptDigest: checked.receiptDigest, contextDigest: receipt.initial.contextDigest, acceptanceRef: 'synthetic-owner-acceptance' }),
+        authorization: await selection(`authorization-${serial}.json`, { ...exact, payloadDigest, repository: binding.repository, branch: binding.branch, actions: ['publish', 'open-pr', 'attest', 'merge'], sourceRef: 'synthetic-owner-scope', notBefore: '2026-01-01T00:00:00Z', expiresAt: '2099-01-01T00:00:00Z' }),
       };
     };
     const deliver = async (req, expected = 0) => { await writeFile(requestFile, canonical(req)); return run(['scripts/github-auto-merge.mjs', '--local', requestFile], expected)?.[0]; };
@@ -83,6 +84,16 @@ globalThis.fetch=async(url,options={})=>{
       green.action = action; assert.equal((await deliver(green)).outcome, phase); assert.equal((await deliver(green)).outcome, phase);
     }
     assert.deepEqual((await state()).writes, ['publish', 'open-pr', 'emmy-local-assurance', 'emmy-independent-review', 'merge']); report.cases.push('guarded-publication-to-confirmed-merge', 'duplicate-invocations-no-new-effect');
+    await provider({}); const changedText = await request();
+    changedText.title = 'Changed after acceptance'; assert.deepEqual((await deliver(changedText, 1)).waiting, ['payload']);
+    changedText.title = 'Synthetic delivery'; changedText.body = 'Changed after acceptance'; assert.deepEqual((await deliver(changedText, 1)).waiting, ['payload']);
+    assert.deepEqual((await state()).writes, []); report.cases.push('changed-pr-title-before-effect', 'changed-pr-body-before-effect');
+    await provider({}); const exactText = await request(); await deliver(exactText); exactText.action = 'open-pr'; const opened = await deliver(exactText);
+    const saved = await state(); saved.title = 'Provider field changed'; await writeFile(stateFile, JSON.stringify(saved));
+    assert.deepEqual((await deliver(exactText, 1)).waiting, ['pull-request-conflict']);
+    const intent = JSON.parse(await readFile(opened.checkpoint)).history.find(row => row.kind === 'intent' && row.action === 'open-pr');
+    assert.equal(intent.payload.title, exactText.title); assert.equal(intent.payload.body, exactText.body);
+    assert.equal(intent.payloadDigest, digest(canonical(intent.payload))); report.cases.push('saved-pr-text-must-match-retained-payload');
     await provider({}); const invalid = await request();
     await writeFile(join(root, 'source.txt'), 'changed'); assert.equal((await deliver(invalid, 1)).outcome, 'held'); await writeFile(join(root, 'source.txt'), 'original'); report.cases.push('actual-source-drift');
     git(['commit', '--allow-empty', '-qm', 'Synthetic delivery head drift']); assert.equal((await deliver(invalid, 1)).outcome, 'held'); git(['checkout', '--detach', source.head]); report.cases.push('actual-head-drift');
@@ -97,7 +108,28 @@ globalThis.fetch=async(url,options={})=>{
     const auth = JSON.parse(await readFile(invalid.authorization.file)); auth.expiresAt = '2026-01-01T00:00:00Z'; invalid.authorization = await selection('expired.json', auth); assert.deepEqual((await deliver(invalid, 1)).waiting, ['authorization']); report.cases.push('expired-action-scope');
     assert.deepEqual((await state()).writes, [], 'Every invalid evidence case prevents provider writes');
     await provider({ drift: true }); const drift = await request(); assert.deepEqual((await deliver(drift, 1)).waiting, ['current-base-or-protection']); report.cases.push('provider-current-base-drift');
-    await provider({ deny: true }); const denied = await request(); assert.equal((await deliver(denied, 1)).outcome, 'unknown'); assert.equal((await deliver(denied, 1)).rediscoveredOnly, true); assert.deepEqual((await state()).writes, ['publish']); report.cases.push('denied-push-no-retry');
+    await provider({ deny: true }); const denied = await request(); const unknown = await deliver(denied, 1); assert.equal(unknown.outcome, 'unknown'); assert.equal((await deliver(denied, 1)).rediscoveredOnly, true); assert.deepEqual((await state()).writes, ['publish']); report.cases.push('denied-push-no-retry');
+    const checkpoint = JSON.parse(await readFile(unknown.checkpoint)); const pending = checkpoint.pending;
+    const resolution = { decision: 'confirmed-absence', attemptId: pending.id, requestDigest: pending.requestDigest, payloadDigest: pending.payloadDigest, action: 'publish', bindingDigest: checkpoint.bindingDigest, observedAt: new Date().toISOString(), sourceRef: 'synthetic-explicit-resolution' };
+    const retryGrant = JSON.parse(await readFile(denied.authorization.file)); retryGrant.actions.push('resolve-absence'); retryGrant.resolveAttemptId = pending.id; retryGrant.resolveRequestDigest = pending.requestDigest;
+    denied.authorization = await selection('retry-grant.json', retryGrant);
+    for (const [name, value] of [['wrong-attempt', { ...resolution, attemptId: 'wrong' }], ['stale', { ...resolution, observedAt: '2000-01-01T00:00:00Z' }], ['wrong-scope', { ...resolution, bindingDigest: 'f'.repeat(64) }]]) {
+      denied.resolution = await selection(`resolve-${name}.json`, value); assert.equal((await deliver(denied, 1)).outcome, 'unknown'); report.cases.push(`absence-resolution-${name}-refused`);
+    }
+    denied.resolution = await selection('resolve-current.json', resolution);
+    denied.authorization = await selection('retry-no-resolution-scope.json', { ...retryGrant, actions: ['publish'] });
+    assert.equal((await deliver(denied, 1)).outcome, 'unknown'); report.cases.push('absence-without-resolution-authority-held');
+    denied.authorization = await selection('retry-wrong-attempt-grant.json', { ...retryGrant, resolveAttemptId: 'wrong' });
+    assert.equal((await deliver(denied, 1)).outcome, 'unknown'); report.cases.push('absence-wrong-attempt-authority-held');
+    denied.authorization = await selection('retry-grant.json', retryGrant);
+    for (const flag of ['denyRead', 'uncertainRead']) {
+      const current = await state(); current[flag] = true; await writeFile(stateFile, JSON.stringify(current)); await deliver(denied, 1);
+      current[flag] = false; await writeFile(stateFile, JSON.stringify(current)); report.cases.push(`absence-${flag}-held`);
+    }
+    assert.equal((await deliver(denied)).outcome, 'retry-ready'); assert.deepEqual((await state()).writes, ['publish']);
+    delete denied.resolution; const enabled = await state(); enabled.deny = false; await writeFile(stateFile, JSON.stringify(enabled));
+    assert.equal((await deliver(denied)).outcome, 'published'); assert.equal((await deliver(denied)).outcome, 'published');
+    assert.deepEqual((await state()).writes, ['publish', 'publish']); report.cases.push('fresh-process-absence-resolution-and-one-retry');
     await provider({ lost: true }); const lost = await request(); assert.equal((await deliver(lost, 1)).outcome, 'unknown'); assert.equal((await deliver(lost)).rediscoveredOnly, true); assert.deepEqual((await state()).writes, ['publish']); report.cases.push('lost-result-rediscovered-on-restart');
     report.retainedReceipt = checked; report.providerFinal = await state(); report.status = 'passed'; await save(); return report;
   } catch (error) { report.status = 'failed'; report.error = { message: error.message, stack: error.stack }; await save(); throw error; }
