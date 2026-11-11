@@ -13,6 +13,10 @@
           "path": "src/records.mjs",
           "sha256": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58",
           "callers": [
+            "scripts/agent.mjs",
+            "scripts/cloud-acceptance.mjs",
+            "scripts/verify-behavior.mjs",
+            "scripts/verify-formal.mjs",
             "src/calendar-collection.mjs",
             "src/cloud-migration.mjs",
             "src/cloud.mjs",
@@ -20,10 +24,18 @@
             "src/fleet.mjs",
             "src/responsibilities.mjs",
             "src/work.mjs",
-            "scripts/agent.mjs",
-            "scripts/cloud-acceptance.mjs",
-            "scripts/verify-behavior.mjs",
-            "scripts/verify-formal.mjs",
+            "test/briefing-cloud-caller.test.mjs",
+            "test/briefing-policy.test.mjs",
+            "test/briefing-source-normalization.test.mjs",
+            "test/calendar-collection.test.mjs",
+            "test/calendar-handoff.test.mjs",
+            "test/fixtures/briefing-policy.mjs",
+            "test/fleet-history.test.mjs",
+            "test/fleet-semantics.test.mjs",
+            "test/guidance-pin.test.mjs",
+            "test/morning-compact.test.mjs",
+            "test/morning-v3.test.mjs",
+            "test/morning.test.mjs",
             "verification/briefing-drive.mjs",
             "verification/briefing-workflow-properties.mjs",
             "verification/calendar-drive.mjs",
@@ -45,32 +57,20 @@
             "verification/morning-properties.mjs",
             "verification/morning-v3-drive.mjs",
             "verification/morning-v3-fixtures.mjs",
-            "verification/properties.mjs",
-            "test/briefing-cloud-caller.test.mjs",
-            "test/briefing-policy.test.mjs",
-            "test/briefing-source-normalization.test.mjs",
-            "test/calendar-collection.test.mjs",
-            "test/calendar-handoff.test.mjs",
-            "test/fixtures/briefing-policy.mjs",
-            "test/fleet-history.test.mjs",
-            "test/fleet-semantics.test.mjs",
-            "test/guidance-pin.test.mjs",
-            "test/morning-compact.test.mjs",
-            "test/morning-v3.test.mjs",
-            "test/morning.test.mjs"
+            "verification/properties.mjs"
           ]
         },
         {
           "path": "src/responsibilities.mjs",
           "sha256": "07914317b5b8d310f2e347cdda0392f18c6a791cf26101124a5d651cb43a8674",
           "callers": [
-            "src/dispatch.mjs",
             "scripts/agent.mjs",
             "scripts/verify-behavior.mjs",
+            "src/dispatch.mjs",
+            "test/fleet-semantics.test.mjs",
             "verification/cloud-drive.mjs",
             "verification/dispatch-drive.mjs",
-            "verification/fleet-drive.mjs",
-            "test/fleet-semantics.test.mjs"
+            "verification/fleet-drive.mjs"
           ]
         },
         {
@@ -82,9 +82,9 @@
             "src/fleet.mjs",
             "src/records.mjs",
             "src/responsibilities.mjs",
+            "test/calendar-handoff.test.mjs",
             "verification/dispatch-drive.mjs",
-            "verification/fleet-drive.mjs",
-            "test/calendar-handoff.test.mjs"
+            "verification/fleet-drive.mjs"
           ]
         }
       ],
@@ -156,9 +156,9 @@
           "path": "src/cloud.mjs",
           "sha256": "9e48c4f64f95ac23a8e7fb0a33e51b21fb9a2022a48e355dee06de3d76ef1a7f",
           "callers": [
+            "scripts/agent.mjs",
             "src/cloud-migration.mjs",
             "src/responsibilities.mjs",
-            "scripts/agent.mjs",
             "verification/cooperative-cloud/check.mjs"
           ]
         },
@@ -169,8 +169,8 @@
             "src/cloud.mjs",
             "src/records.mjs",
             "verification/cloud-properties.mjs",
-            "verification/cooperative-cloud/graph.mjs",
-            "verification/cooperative-cloud/check.mjs"
+            "verification/cooperative-cloud/check.mjs",
+            "verification/cooperative-cloud/graph.mjs"
           ]
         },
         {
@@ -185,9 +185,9 @@
           "path": "src/process-incarnation.mjs",
           "sha256": "63810f9602f223315fe8d9ccfcda11b6591cf7bb5626092a8ea308a98acfe2ff",
           "callers": [
+            "scripts/cloud-acceptance.mjs",
             "src/cloud-migration.mjs",
             "src/cloud.mjs",
-            "scripts/cloud-acceptance.mjs",
             "verification/cloud-drive.mjs"
           ]
         },
@@ -229,8 +229,8 @@
           "path": "src/fleet.mjs",
           "sha256": "058bf69e0e69c49d0aed09a57ae743cd1a48b796a598ecc443ff1c02b0b87f12",
           "callers": [
-            "src/responsibilities.mjs",
-            "scripts/agent.mjs"
+            "scripts/agent.mjs",
+            "src/responsibilities.mjs"
           ]
         },
         {
@@ -254,13 +254,13 @@
           "callers": [
             "src/fleet.mjs",
             "src/records.mjs",
-            "verification/morning-fixtures.mjs",
             "test/fleet-history.test.mjs",
             "test/fleet-overrun.test.mjs",
             "test/fleet-semantics.test.mjs",
             "test/fleet.test.mjs",
             "test/morning-v3.test.mjs",
-            "test/morning.test.mjs"
+            "test/morning.test.mjs",
+            "verification/morning-fixtures.mjs"
           ]
         },
         {
@@ -310,12 +310,12 @@
           "path": "src/morning-collection.mjs",
           "sha256": "37dae6e547e0e20494e714ecc1b20f28364989600ed751ee7fa2c817ae985287",
           "callers": [
-            "src/fleet.mjs",
             "scripts/collect-morning.mjs",
-            "verification/morning-drive.mjs",
-            "verification/morning-v3-drive.mjs",
+            "src/fleet.mjs",
             "test/morning-collection.test.mjs",
-            "test/morning-observation.test.mjs"
+            "test/morning-observation.test.mjs",
+            "verification/morning-drive.mjs",
+            "verification/morning-v3-drive.mjs"
           ]
         },
         {
@@ -355,7 +355,7 @@
       "files": [
         {
           "path": "src/briefing-acquisition.mjs",
-          "sha256": "0fa631189ec2b7a2a656b5f0e172adf6cf3342c85bd3b47fa5a046b9e54cbe47",
+          "sha256": "3511cb9112404dc4e63275ee09cc368f1abbf27bdfa48cf87dade388082aa8dc",
           "callers": [
             "src/briefing-cloud-caller.mjs",
             "src/briefing-cloud-exchange.mjs"
@@ -365,9 +365,9 @@
           "path": "src/briefing-cloud-caller.mjs",
           "sha256": "635a524c41c8784de042768a9c51d66fb6ce671e2a090c318d1145cdbd996867",
           "callers": [
-            "verification/morning-v3-drive.mjs",
             "test/briefing-cloud-caller.test.mjs",
-            "test/briefing-source-normalization.test.mjs"
+            "test/briefing-source-normalization.test.mjs",
+            "verification/morning-v3-drive.mjs"
           ]
         },
         {
@@ -403,10 +403,10 @@
           "callers": [
             "src/briefing-core.mjs",
             "src/morning.mjs",
-            "verification/morning-v3-fixtures.mjs",
             "test/briefing-policy.test.mjs",
             "test/morning-observation.test.mjs",
-            "test/morning-v3.test.mjs"
+            "test/morning-v3.test.mjs",
+            "verification/morning-v3-fixtures.mjs"
           ]
         },
         {
@@ -423,15 +423,15 @@
         },
         {
           "path": "src/briefing-reporting.mjs",
-          "sha256": "3bee7e7e912efa31ecda166099ee37f1d21ec00508157981c353584a8dc43e15",
+          "sha256": "36b87a2d43f12278f588df865deceaf5f03f02e347e369a2f98b9e4a1acbaae4",
           "callers": [
             "src/briefing-acquisition.mjs",
             "src/briefing-core.mjs",
             "src/briefing-plan.mjs",
-            "verification/morning-v3-drive.mjs",
             "test/automation-procedure.test.mjs",
             "test/briefing-cloud-caller.test.mjs",
-            "test/briefing-reporting.test.mjs"
+            "test/briefing-reporting.test.mjs",
+            "verification/morning-v3-drive.mjs"
           ]
         },
         {
@@ -447,11 +447,11 @@
           "path": "src/briefing.mjs",
           "sha256": "355717f83aa3c582d8c3a37352f8366cf94a8a4b3b2e5c0ec878fe1dd2676d62",
           "callers": [
-            "src/morning.mjs",
             "scripts/agent.mjs",
-            "verification/morning-compact-fixtures.mjs",
+            "src/morning.mjs",
             "test/guidance-pin.test.mjs",
-            "test/morning-compact.test.mjs"
+            "test/morning-compact.test.mjs",
+            "verification/morning-compact-fixtures.mjs"
           ]
         },
         {
@@ -554,11 +554,11 @@
           "callers": [
             "src/calendar-handoff.mjs",
             "src/calendar-register-io.mjs",
-            "verification/calendar-register-fixtures.mjs",
-            "verification/calendar-timing-fixtures.mjs",
             "test/calendar-handoff.test.mjs",
             "test/calendar-register.test.mjs",
-            "test/planning-policy.test.mjs"
+            "test/planning-policy.test.mjs",
+            "verification/calendar-register-fixtures.mjs",
+            "verification/calendar-timing-fixtures.mjs"
           ]
         },
         {
@@ -566,8 +566,8 @@
           "sha256": "7850f2dfea9935363e8ddab61bd0cbaac87d6eeda94cbaa6573bf19762955e57",
           "callers": [
             "src/calendar-handoff.mjs",
-            "verification/calendar-timing-fixtures.mjs",
-            "test/calendar-timing.test.mjs"
+            "test/calendar-timing.test.mjs",
+            "verification/calendar-timing-fixtures.mjs"
           ]
         },
         {
@@ -661,7 +661,7 @@
         },
         {
           "path": "src/automation-procedure.mjs",
-          "sha256": "c52e2228ef4c241598f95892b18268f174e42b64afca5b4124731c36a651e35b",
+          "sha256": "f645480052403dba37dc556a8c5eb517e2e6632d2d1510442b946309fa926f93",
           "callers": [
             "scripts/agent.mjs",
             "test/automation-procedure.test.mjs"
@@ -679,7 +679,7 @@
         },
         {
           "path": "src/operating-contract.mjs",
-          "sha256": "a8c513f23eeee99679d6b4e0e3d3ac0b6e91d26258abf33491e49a4f32143362",
+          "sha256": "ec84bbc86f228413a86491cbea3843e5b3777ff017084885751b02e51226f0b4",
           "callers": [
             "src/automation-procedure.mjs",
             "src/briefing-core.mjs",
@@ -758,7 +758,7 @@
       "files": [
         {
           "path": "src/assurance.mjs",
-          "sha256": "e305212a2f80202b919dbf503719b38bc138a1149cd1cc273e9f317727bf5df9",
+          "sha256": "e3bdc2f64e613cf2007556f6f209e2ef8e0b54011aff35c160b082fff4d0a0b6",
           "callers": [
             "src/local-assurance.mjs",
             "verification/local-assurance/check.mjs"
@@ -816,11 +816,11 @@
           "callers": [
             "executable ingress",
             "scripts/local-delivery.mjs",
+            "test/github-auto-merge.test.mjs",
+            "test/local-delivery.test.mjs",
             "verification/delivery/check.mjs",
             "verification/delivery/fixtures.mjs",
-            "verification/merge-policy.mjs",
-            "test/github-auto-merge.test.mjs",
-            "test/local-delivery.test.mjs"
+            "verification/merge-policy.mjs"
           ]
         },
         {
@@ -902,9 +902,10 @@
       "files": [
         {
           "path": "src/improvement-report.mjs",
-          "sha256": "fbab0e0b543ad481ed95a31bd5b6f427103c90d2e60b69008800f91ffdfd27b9",
+          "sha256": "462f9fc000b8d5970e479c12027012f037b37e4b0ee1279f1aca47f6304c6914",
           "callers": [
             "scripts/improvement-report.mjs",
+            "src/automation-reporting.mjs",
             "test/improvement-report.test.mjs"
           ]
         },
@@ -951,6 +952,8 @@
           "path": "src/content.mjs",
           "sha256": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
           "callers": [
+            "scripts/foundation-release.mjs",
+            "scripts/local-delivery.mjs",
             "src/academic-os-task-plan.mjs",
             "src/assurance.mjs",
             "src/automation-plan.mjs",
@@ -976,10 +979,14 @@
             "src/morning.mjs",
             "src/planning-policy.mjs",
             "src/records.mjs",
-            "scripts/foundation-release.mjs",
-            "scripts/local-delivery.mjs",
+            "test/agent-local.test.mjs",
+            "test/automation-procedure.test.mjs",
+            "test/foundation-release.test.mjs",
+            "test/local-delivery.test.mjs",
             "verification/automation-fixtures.mjs",
             "verification/automation-properties.mjs",
+            "verification/cooperative-cloud/check.mjs",
+            "verification/cooperative-cloud/graph.mjs",
             "verification/delivery/check.mjs",
             "verification/delivery/drive.mjs",
             "verification/delivery/fixtures.mjs",
@@ -989,13 +996,7 @@
             "verification/local-assurance/drive.mjs",
             "verification/local-assurance/graph.mjs",
             "verification/planning-policy/check.mjs",
-            "verification/planning-policy/fixtures.mjs",
-            "test/agent-local.test.mjs",
-            "test/automation-procedure.test.mjs",
-            "test/foundation-release.test.mjs",
-            "test/local-delivery.test.mjs",
-            "verification/cooperative-cloud/graph.mjs",
-            "verification/cooperative-cloud/check.mjs"
+            "verification/planning-policy/fixtures.mjs"
           ]
         },
         {
@@ -1018,7 +1019,14 @@
           "path": "src/bounded-json.mjs",
           "sha256": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
           "callers": [
+            "scripts/agent.mjs",
+            "scripts/automation-reporting.mjs",
+            "scripts/collect-morning.mjs",
+            "scripts/local-delivery.mjs",
             "src/automation-procedure.mjs",
+            "src/automation-reporting-control.mjs",
+            "src/automation-reporting-upkeep.mjs",
+            "src/automation-reporting.mjs",
             "src/briefing-cloud-exchange.mjs",
             "src/briefing.mjs",
             "src/calendar-register-io.mjs",
@@ -1027,9 +1035,6 @@
             "src/guidance-pin.mjs",
             "src/local-assurance.mjs",
             "src/signin.mjs",
-            "scripts/agent.mjs",
-            "scripts/collect-morning.mjs",
-            "scripts/local-delivery.mjs",
             "test/fleet.test.mjs"
           ]
         }
@@ -1065,13 +1070,13 @@
         },
         {
           "path": "src/metadata.mjs",
-          "sha256": "226e9827bb3fc89162904e60801a2ab8336c716563d9aeba1cb399aa36edfce2",
+          "sha256": "d16f3ac167bcf56b5a26d91636efccec389da5b89d1b136311baf3a35ca86f28",
           "callers": [
-            "src/briefing.mjs",
-            "src/maintenance.mjs",
             "scripts/agent.mjs",
             "scripts/verify-behavior.mjs",
-            "scripts/verify-formal.mjs"
+            "scripts/verify-formal.mjs",
+            "src/briefing.mjs",
+            "src/maintenance.mjs"
           ]
         },
         {
@@ -1083,7 +1088,7 @@
         },
         {
           "path": "scripts/agent.mjs",
-          "sha256": "314099e863b0153da4415ac68f38a6f340dc112b1d9f7c5d5453760d21f2d7d5",
+          "sha256": "40e3e0bf3479ce0ce198541bd33b53e99c15b4207c5b98aac56c1a1ccdb3edbb",
           "callers": [
             "executable ingress"
           ]
@@ -1097,7 +1102,7 @@
         },
         {
           "path": "scripts/verify-behavior.mjs",
-          "sha256": "459445e4303fb51495ac63840d36f0a4119c2b4ca74ed1743ff62842a9eb2500",
+          "sha256": "8974ca7ffbc9c9eef64b5538caa9954f33f73c3d26966552a908c5bb1886c065",
           "callers": [
             "executable ingress"
           ]
@@ -1125,7 +1130,7 @@
         },
         {
           "path": "package.json",
-          "sha256": "b2ba86d8ae68cf950030abe565f40f9a8f8640040de9ee89a991bb1f3ce035cf",
+          "sha256": "6d4897386179cffd14e4e94e36cdf386bba845cb80f252a3331925f9d1240a39",
           "callers": [
             "public configuration"
           ]
@@ -1139,7 +1144,7 @@
         },
         {
           "path": ".codex/config.toml",
-          "sha256": "e81550770f07e3d238f94b9fce8c0013915f243fcba6888d8b779de339ba8613",
+          "sha256": "629dd1d2c181633ca5b4655c26104cca51c6713989530da070fb5b43fbc11679",
           "callers": [
             "public configuration"
           ]
@@ -1188,21 +1193,21 @@
         },
         {
           "path": "docs/verification-index.json",
-          "sha256": "91fda8f60ff86dddc7e3c83836471eadf51cb2d28a7455ca0b7888b796d99d18",
+          "sha256": "57e0f515f7b449fe1a39141798c19af205087d50afc3eaca3e6a2d5b41b0cb80",
           "callers": [
             "public configuration"
           ]
         },
         {
           "path": ".github/workflows/check.yml",
-          "sha256": "cac728413bf79655091a4c3ceaceb5deb1c1d84261336bb85b1c01f3fbc2f06e",
+          "sha256": "23bcd9719506cef77c21a24b20d32eb0d304dd840f5d14714388953cf4ba8c6d",
           "callers": [
             "public configuration"
           ]
         },
         {
           "path": ".github/workflows/auto-merge.yml",
-          "sha256": "cdb8968eb1dc1dff2b81b71ef283fd66745fe96678afbc19aced63e0c67efbe7",
+          "sha256": "1cae007e8476d26b15723715db7405a9125d046ca52ea4535af5a16b20ec686c",
           "callers": [
             "public configuration"
           ]
@@ -1265,14 +1270,14 @@
         },
         {
           "path": ".agents/skills/verify/SKILL.md",
-          "sha256": "82255cba81c25a4aa24cced062d49ad287f6d023dbc50f8809d6768efa7bd316",
+          "sha256": "b935db84e5c5923b6e752421bbd91fb9aa1dd60cd15a0e2f89998430bfc7c9f9",
           "callers": [
             "public configuration"
           ]
         },
         {
           "path": ".agents/skills/verify/features/README.md",
-          "sha256": "9722c92e49bac907e7b551b381a32b7fb90415775b8fca5412567452d6bfa858",
+          "sha256": "055136df4d4df9481a8dce146e05239f3c29ce996de48c71fb564f3897d2d857",
           "callers": [
             "public configuration"
           ]
@@ -1314,7 +1319,7 @@
         },
         {
           "path": ".agents/skills/verify/features/upkeep.md",
-          "sha256": "6c55937bed7f5b2638cb7a464f1db14dc30dc084628c55ce27f16f6ead17591f",
+          "sha256": "b68bd1ef747afc326ece71d8c320703bd40c7dc4eb65bcf0eb88c4ae1898121e",
           "callers": [
             "public configuration"
           ]
@@ -1372,7 +1377,7 @@
         },
         {
           "path": "verification/automation-properties.mjs",
-          "sha256": "6160612a902eb4f7232548bc916e33f68bfa85fbc4a820324d926bde4463a837",
+          "sha256": "0232297abed46ae416b42684067a2edfa02d03bea4da5823a0a44733022fb4c4",
           "callers": [
             "verification input"
           ]
@@ -1407,7 +1412,7 @@
         },
         {
           "path": "verification/briefing-slot/coverage.json",
-          "sha256": "344325d1c099971528081d3a642027b186504b191118aa2a1b51134a16872269",
+          "sha256": "5e7ece834e4bf749b187e50e85a0497c7f0b85c7fd1838bb373305a6e967c234",
           "callers": [
             "verification input"
           ]
@@ -1561,7 +1566,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "1fcd18592bbfa91e02552cb20bf0907268201b7d3dc291654ed5c8c4c7c4da5b",
+          "sha256": "e613d63664d1c0a16256a4f127b59da0a5b52b114d9932050b38cc5ea55272d0",
           "callers": [
             "verification input"
           ]
@@ -1596,7 +1601,7 @@
         },
         {
           "path": "verification/delivery/coverage.json",
-          "sha256": "06ae12308e19209410f31db9fb5583c937fb25e0acaf666d5756f0cb060597b1",
+          "sha256": "0385e50fc9a19883578ba41b10c7e9f2240f0f8caa9502af810418602effdfe0",
           "callers": [
             "verification input"
           ]
@@ -1645,7 +1650,7 @@
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "780c16e98a455170715f696eef9eebfedaa6abcf9fd55fb331a60ccf9745e7ed",
+          "sha256": "0808e224ce3c1cf0128da329308af551728b7da86abdb1ce912e2646739416a9",
           "callers": [
             "verification input"
           ]
@@ -1764,7 +1769,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "f3ddf7757a5693fd2c0f98f96a1242fb977447c0290a9f39948f747d8e1fc721",
+          "sha256": "2069af7c154f665fc419ab217f5226498c9713cdc8b7733360434a8664221c54",
           "callers": [
             "verification input"
           ]
@@ -1792,7 +1797,7 @@
         },
         {
           "path": "verification/merge-coverage.json",
-          "sha256": "cd8bdb8f5aaaf02af341903131418fe3ef937f128a4a04de68b97d0a89834834",
+          "sha256": "3ff81748dbf16fd58af8bef2ba1c34fa00f7ecd66be3475be5f297b12351284a",
           "callers": [
             "verification input"
           ]
@@ -1869,7 +1874,7 @@
         },
         {
           "path": "verification/planning-policy/coverage.json",
-          "sha256": "691a050b874b96b7349ce8b5113b252607626a31a680d743b88b08970b67069c",
+          "sha256": "028fb04f5214c4d0f44930fb9d0c4c802fdf206a4597fe38772a33b541b389b4",
           "callers": [
             "verification input"
           ]
@@ -1918,7 +1923,7 @@
         },
         {
           "path": "verification/publication/coverage.json",
-          "sha256": "ca45a753bd96cd38f5f56fd24c80a022249fb63b96b16ef8951d739e713c8833",
+          "sha256": "af83b97afdb5398e919b43e415695ab18be6b6cdbcdb9ab88bb0c9341ab064a1",
           "callers": [
             "verification input"
           ]
@@ -1939,7 +1944,7 @@
         },
         {
           "path": "verification/publication/drive.mjs",
-          "sha256": "d7a63754ae3d2c20a90111f5051c814013cbac9f241c48aad8a144524662e97a",
+          "sha256": "424af4ee82b74a7d805a9e1d59f4a3eef9f4fe0d98dfd0cb16c1feb73e1fab82",
           "callers": [
             "verification input"
           ]
@@ -1988,7 +1993,7 @@
         },
         {
           "path": "test/automation-procedure.test.mjs",
-          "sha256": "b60afb7c63430dda95b440b16881c229302e663c57e44873e2f015f1632f179a",
+          "sha256": "2fdecf4d947dde25ea432857eb1938529242d030b1485af7f0d312ca9ce67b54",
           "callers": [
             "verification input"
           ]
@@ -2256,7 +2261,7 @@
         },
         {
           "path": "verification/responsibility-closure/coverage.json",
-          "sha256": "2ee270b92508bfecdb9839fc018a8f82f4ab7f9db39bfaedd21873c106caee34",
+          "sha256": "38bec942c6b73de791f8fffe52ff0054b1f9917e084b74a3e039a0e5e0acb740",
           "callers": [
             "verification input"
           ]
@@ -2296,7 +2301,7 @@
         },
         {
           "path": "verification/restoration-suspension/check.mjs",
-          "sha256": "07a1a42883a2bdc9b6e62a0dee12f29871fe50e57178265000f1fe06bb20d01a",
+          "sha256": "8edbc251ff3d3c5c9058b3e692eae6c6a783c5cddc7b3f8130c213b581c0ce70",
           "callers": [
             "verification input"
           ]
@@ -2317,7 +2322,7 @@
         },
         {
           "path": "verification/restoration-suspension/coverage.json",
-          "sha256": "f1b6df6d739632d1e40ebdb440b4e6308303862696614fc121507045bc167e4f",
+          "sha256": "b5548ea1c1d87cfb214b50467862b3da55bc7d84b6a8c5ebf66f8b19858447b3",
           "callers": [
             "verification input"
           ]
@@ -2367,7 +2372,7 @@
         },
         {
           "path": "verification/cooperative-cloud/coverage.json",
-          "sha256": "55c0892bcdc537e4c335f910e8ee066a50aac014069b5a2c41f88f01b585f4ab",
+          "sha256": "764e6e5dd5785cfc1f11bb459718c88476a66768482dff44e6af72bf41682cfe",
           "callers": [
             "verification input"
           ]
@@ -2425,7 +2430,7 @@
         },
         {
           "path": "verification/incarnation-ownership/coverage.json",
-          "sha256": "7efc85abe8050498c5ca6fda59e1e0a70c03aa0d28b16696b61bf17f3d3fd3b8",
+          "sha256": "f1a7cd293874c45cc765ac1e97a75b0c7c0fe9bc47e5fe9d1613e8e21024457e",
           "callers": [
             "verification input"
           ]
@@ -2481,7 +2486,7 @@
         },
         {
           "path": "verification/fleet-health/coverage.json",
-          "sha256": "70cbd341c39b3d782a91243ade6db575427f331e8d42648562fcb49186bdcd5b",
+          "sha256": "91d98fdd405aea366f8bf933ff3413a7544daa88bd957b43e4c809e40f98b783",
           "callers": [
             "verification input"
           ]
@@ -2542,7 +2547,7 @@
         },
         {
           "path": "verification/morning-send/coverage.json",
-          "sha256": "751687e357dd6177f7a373e624746bb4375fcfc6ed7a48d59a87bb783ee5fb08",
+          "sha256": "30c3a44bb2977453ec7e662b2f15913571c09211b6abebc0eaefb3b76f78ea39",
           "callers": [
             "verification input"
           ]
@@ -2597,7 +2602,7 @@
         },
         {
           "path": "verification/calendar-attempt/coverage.json",
-          "sha256": "98d76caf38fb0a82f8c847a77bb6412b099626bb98cdbc4d6b8ea53f1fbeae10",
+          "sha256": "3d2dc5aeae853f44ab605fc00dbac5321639914522b73e9d08e964bb535de0bb",
           "callers": [
             "verification input"
           ]
@@ -2642,14 +2647,14 @@
         },
         {
           "path": "verification/automation-lineage/check.mjs",
-          "sha256": "6ddda0b467ea2fd8c73b43698478ebb2771d286de7cef047756459b7e0ee24ce",
+          "sha256": "9b37c5409901becc507ed11abc6e8116a40af44683a33d8213f4de862469f4d9",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/automation-lineage/coverage.json",
-          "sha256": "653d8aaee54a4f93cd7146d1806ed9abfb3702d37fe1e5146ab598c364e9b5c3",
+          "sha256": "0b959a274f0602cdd72c5ed567da7311b35ccd9cd98d5e9ed7c5d63948791e79",
           "callers": [
             "verification input"
           ]
@@ -2676,6 +2681,584 @@
       ],
       "scenarios": [
         "automation-foundation"
+      ]
+    },
+    {
+      "id": "reporting-ledger",
+      "stateOwner": "automation-reporting.mjs immutable records and aggregate",
+      "classification": "stateful filesystem; hand-mapped awaits",
+      "bounds": "Two writers, finite captured sets, exact ordinary immutable bytes and same-filesystem hard links.",
+      "gap": "Arbitrary parser inputs, external execution and provider delivery require separate evidence.",
+      "ownerRefs": [
+        {
+          "path": "src/automation-reporting.mjs",
+          "symbol": "automationReporting"
+        },
+        {
+          "path": "src/automation-reporting.mjs",
+          "symbol": "aggregate"
+        }
+      ],
+      "scenarios": [
+        "automation-reporting"
+      ],
+      "properties": [
+        "PublishedComplete",
+        "CompletedSurvive",
+        "AcceptedSafe",
+        "NoFalseAuthority",
+        "StaleVisible"
+      ],
+      "files": [
+        {
+          "path": ".agents/skills/automation-reporting-contract/SKILL.md",
+          "sha256": "699ccabf90b1a022f3faf0c072e6e9871d371254080e185c80ccb1901e5fe857",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".agents/skills/verify/features/automation-reporting.md",
+          "sha256": "33918197be39f33025afb9e32d5e253fa73a0df7233807151c94b18a1201fc1d",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": "docs/automation-reporting.md",
+          "sha256": "09abdfc683b901451036e1037d0806c6bab85c932dd272f0c473a5f9ce58b60b",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": "schemas/automation-reporting-v1.schema.json",
+          "sha256": "fe4aa1de2501e2019d9480b059163395ec554d91b77af6fe8d16bb040d013987",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": "schemas/automation-reporting-v2.schema.json",
+          "sha256": "17e49ea6c695f5348f5455680e489ace434f8d9fb3b94ad10395e539d65282ac",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": "schemas/automation-reporting-v3.schema.json",
+          "sha256": "681054fcd1b5d4a9a073b0f7bd3a5e05dd4563d9a3c21cdf7b577f590c397a21",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": "scripts/automation-reporting-transport.mjs",
+          "sha256": "3e4e0b45caa48707e3260c133570b2ee6ff41dac49074b6035201d1b73e2da56",
+          "callers": [
+            "executable ingress"
+          ]
+        },
+        {
+          "path": "scripts/automation-reporting-upkeep.mjs",
+          "sha256": "58cae2ae22e7c01e0c9a934c1ad32c154e16effa410a788ec04fbf19eae4dd12",
+          "callers": [
+            "executable ingress"
+          ]
+        },
+        {
+          "path": "scripts/automation-reporting.mjs",
+          "sha256": "3837fcd2d12f70e497d85c7a2941c51987bb6d31184b35444f424948d199203d",
+          "callers": [
+            "executable ingress"
+          ]
+        },
+        {
+          "path": "scripts/build-reporting-cloud.mjs",
+          "sha256": "4bd4a124641cead1b988189fbc75926e619069fbae1d57c7a266125f24d662fa",
+          "callers": [
+            "executable ingress"
+          ]
+        },
+        {
+          "path": "scripts/verify-automation-reporting.mjs",
+          "sha256": "140847ff30709bf0171b91eb190da2034086085c579cc5e98d04cca152156ce4",
+          "callers": [
+            "executable ingress"
+          ]
+        },
+        {
+          "path": "src/automation-reporting-binding.mjs",
+          "sha256": "c228ec3fee0b3cccb2b159b690d12e483db58d52c78649366708c16d059b5e68",
+          "callers": [
+            "test/automation-reporting-cloud.test.mjs"
+          ]
+        },
+        {
+          "path": "src/automation-reporting-control.mjs",
+          "sha256": "f592cbb33fd3c6496592b146a68b8470e53a2b9ba8f572643edb95c189803c57",
+          "callers": [
+            "scripts/automation-reporting.mjs",
+            "test/automation-reporting-control.test.mjs",
+            "test/automation-reporting-expectations.test.mjs",
+            "test/automation-reporting-unbound.test.mjs",
+            "verification/automation-reporting-drive.mjs"
+          ]
+        },
+        {
+          "path": "src/automation-reporting-dashboard.mjs",
+          "sha256": "98c1582c35d39bc2e191d8b8356e46a20e033900acb35ec277c8cccce725c2ec",
+          "callers": [
+            "scripts/automation-reporting.mjs",
+            "test/automation-reporting-cli.test.mjs"
+          ]
+        },
+        {
+          "path": "src/automation-reporting-expectations.mjs",
+          "sha256": "05f7ee215756e1d5e7afccba55e76dacd62e23f0b4bbe1f00106ca063ebbe352",
+          "callers": [
+            "src/automation-reporting-binding.mjs",
+            "src/automation-reporting-control.mjs",
+            "src/automation-reporting.mjs",
+            "test/automation-reporting-cloud.test.mjs",
+            "test/automation-reporting-control.test.mjs"
+          ]
+        },
+        {
+          "path": "src/automation-reporting-export.mjs",
+          "sha256": "5b9795aa6aafc55dd10132ebbe5bd4bad0ec6c8d6e2ff8b4bb31bc74ae5fa18c",
+          "callers": [
+            "scripts/automation-reporting.mjs",
+            "src/automation-reporting-transport.mjs",
+            "test/automation-reporting-privacy.test.mjs",
+            "test/automation-reporting-unbound.test.mjs"
+          ]
+        },
+        {
+          "path": "src/automation-reporting-outcome.mjs",
+          "sha256": "169f7a4128757570f2ccf822bcc4cc8a7b9871dff8906b7a0f23ce4836ed8ef9",
+          "callers": [
+            "src/automation-reporting-transport.mjs",
+            "src/automation-reporting.mjs",
+            "test/automation-reporting-unbound.test.mjs"
+          ]
+        },
+        {
+          "path": "src/automation-reporting-transport.mjs",
+          "sha256": "8627261f707b1c1e2d5cf33b92f6f92f0724b160e0d507577e0a5bb40d5f41b1",
+          "callers": [
+            "scripts/automation-reporting-transport.mjs",
+            "src/automation-reporting-upkeep.mjs",
+            "test/automation-reporting-expectations.test.mjs",
+            "test/automation-reporting-transport.test.mjs",
+            "test/automation-reporting-unbound.test.mjs",
+            "test/automation-reporting-upkeep.test.mjs"
+          ]
+        },
+        {
+          "path": "src/automation-reporting-upkeep.mjs",
+          "sha256": "5f46c9b0126e3a1522580f463ac085b4f2a3992f0749cdc43525371a0783fd01",
+          "callers": [
+            "scripts/automation-reporting-upkeep.mjs",
+            "test/automation-reporting-upkeep.test.mjs"
+          ]
+        },
+        {
+          "path": "src/automation-reporting.mjs",
+          "sha256": "b0b35283262f7f5204ac9408935edb9e360317566e083e4b0c502be4a002c475",
+          "callers": [
+            "scripts/agent.mjs",
+            "scripts/automation-reporting.mjs",
+            "src/automation-reporting-binding.mjs",
+            "src/automation-reporting-control.mjs",
+            "src/automation-reporting-dashboard.mjs",
+            "src/automation-reporting-export.mjs",
+            "src/automation-reporting-transport.mjs",
+            "src/automation-reporting-upkeep.mjs",
+            "test/automation-reporting-cloud.test.mjs",
+            "test/automation-reporting-control.test.mjs",
+            "test/automation-reporting-expectations.test.mjs",
+            "test/automation-reporting-privacy.test.mjs",
+            "test/automation-reporting-transport.test.mjs",
+            "test/automation-reporting-unbound.test.mjs",
+            "test/automation-reporting-upkeep.test.mjs",
+            "test/automation-reporting.test.mjs",
+            "verification/automation-reporting-drive.mjs"
+          ]
+        },
+        {
+          "path": "src/reporting-privacy.mjs",
+          "sha256": "43092f368882ef5782315e57999eb3ea5c3cfd3e3db0e37677059921b4a69a45",
+          "callers": [
+            "scripts/agent.mjs",
+            "scripts/automation-reporting-transport.mjs",
+            "scripts/automation-reporting-upkeep.mjs",
+            "scripts/automation-reporting.mjs",
+            "src/automation-reporting-export.mjs",
+            "src/automation-reporting-outcome.mjs",
+            "src/automation-reporting-transport.mjs",
+            "src/automation-reporting.mjs",
+            "test/automation-reporting-privacy.test.mjs"
+          ]
+        },
+        {
+          "path": "test/automation-reporting-cli.test.mjs",
+          "sha256": "828a8c577f4b24a30905bdc8f107a4d605a89f33dcbdc0cc9a497612810737c0",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/automation-reporting-cloud.test.mjs",
+          "sha256": "1204993428f7e9168ee3fc794eb432d4cc4976ae5fbcc43749bae68e97d9ea9f",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/automation-reporting-control.test.mjs",
+          "sha256": "4d350f2a0a33f49d8cd5e4ac0821bfcc2903e4cd113352c00d4bac88543a2581",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/automation-reporting-expectations.test.mjs",
+          "sha256": "4a33dee67edab3018e53e409e746af9e2b8d8f4ea303be459a119a6a47645a96",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/automation-reporting-harness.test.mjs",
+          "sha256": "a1312e319778642d4a88149d2023faa01a8a5045af0d985efce0bbf976182dd9",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/automation-reporting-privacy.test.mjs",
+          "sha256": "e00157a63525861cbfb4e418be7e54af33e1aea7b45be98d95777f2476a332c0",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/automation-reporting-transport.test.mjs",
+          "sha256": "e5304c09da235f8fb798a4d432e05b45a50d5c9de129e652e6e8c068856e1d87",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/automation-reporting-unbound.test.mjs",
+          "sha256": "a1817f8409895475ba95494c828aafc7d619fe82b9095fe646ef5071cc12fabb",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/automation-reporting-upkeep.test.mjs",
+          "sha256": "9cf98dfbbb44d3403715b9a9ed7c708bc4b9739b770b220add229fb6c8e3d909",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/automation-reporting.test.mjs",
+          "sha256": "6f84e2b1e5a56b1202045f988901e5521cd0d7ccd8793af0aac4b336aafd960a",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting-drive.mjs",
+          "sha256": "ac9cbc781062849d6c19f4c5d4c3d754a7c94bd97e6b984223fe4974400874d0",
+          "callers": [
+            "scripts/verify-behavior.mjs"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/AutomationReporting.tla",
+          "sha256": "950df3edff88fb86a48af82552e483a9419903c8c7e24a93a1b882a3b16271d7",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/ExpectationProjection.tla",
+          "sha256": "9e3d4d224fd606629252b779de3f03b5bfd30fd4316b4800ed6a8b90674b44c7",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/RunTransitions.tla",
+          "sha256": "74ff75af46b2f2917cfe27d39670f9fdab5573fb4db201f7bf14091848841be4",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/UnboundOutcome.tla",
+          "sha256": "882213b684f3f1d8d77fe1b939ca521136d6f57a7f6e0193ae5c8eda51bd8daf",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/accept-mutant.cfg",
+          "sha256": "52158b62db0adbaa3c495025411f65f63040efa6f9bcb31122780a4db84ac9e3",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/authority-mutant.cfg",
+          "sha256": "07603a568218a348452d80f78cb8ce5a0f61360d60e3a63b39565bd288446c0c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/baseline.cfg",
+          "sha256": "bd50e6199b19c02ecc890cdfacacde5bebba30b5b65d9e33f11a0c657b7be2c9",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/coverage.json",
+          "sha256": "ac9cb0973605f2d9c5983e1525d1ca6564fdd4ab221976cd3cd2da2cd5cec29d",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/drive.mjs",
+          "sha256": "7448eb3ab6f3f6340851ad9cad3396f8398457a8628afdf11cbf5184536694c2",
+          "callers": [
+            "scripts/verify-automation-reporting.mjs",
+            "test/automation-reporting-harness.test.mjs"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-authority-mutant.cfg",
+          "sha256": "5db182843289678de9e41facdfbdf20ccf2f49063acbdfd2f26bde43712ccc85",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-complete-mutant.cfg",
+          "sha256": "e9bc19446e1c88e36cfe346c51c21e57cdb201b70528123b2f1e9ca1b346291e",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-dependency-mutant.cfg",
+          "sha256": "2792b264d20a2c1385920fc127db90efad05f44ac2f9e4bfc596ebd73f625075",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-exact-mutant.cfg",
+          "sha256": "6b616d95ac9b9b10c267087083630fd90060efedafde9963af9833ee5fded044",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-fresh-mutant.cfg",
+          "sha256": "9d43e9b8ef98b8f160254e99c51ed87d3cbff934c877fa8db8dfa244aa393ccf",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-infer-failure-mutant.cfg",
+          "sha256": "7f79f4630fc3c1e0b23fbf1bbb8747e1d5fa1d6423470320032a05c137adca38",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-infer-success-mutant.cfg",
+          "sha256": "ab5541e3642defaf4d38495f5d2b82f6e65953c5863a063fe75cdfc604347f67",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-manual-mutant.cfg",
+          "sha256": "529e6e61ef8d69b4b86c2715a96169a43f7650b6f7cb13efe3704253ec122311",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-owner-mutant.cfg",
+          "sha256": "0e42b4f6136c6a55bacb1519da70d95fea16af007c49ccfe9c26f51e0a2eed02",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-slot-mutant.cfg",
+          "sha256": "d354e9541929de93cbbeddab721519a8d30328ad628212222098eb439bb75a69",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-target-mutant.cfg",
+          "sha256": "689e1e7aa99b426d8881fb2306d1f686dfa1b1828b74319bc80d3fcb7552bd69",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-unbound-mutant.cfg",
+          "sha256": "bdbcd0c7ff8f56009fd7627c0c40a4ea949d16a58dfacf8406f2cfa30cdbca78",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectation-withdrawal-mutant.cfg",
+          "sha256": "53edee56b122eeda6cd304d5f48c1d067aa4a6b47e842873d2e6c8ef033b2b76",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectations-drive.mjs",
+          "sha256": "e362f10d83802ff198fc5915c47d6eeeac307f75e25fcde76c4e245585d0d87f",
+          "callers": [
+            "scripts/verify-automation-reporting.mjs"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/expectations.cfg",
+          "sha256": "02eee66974146033ce99949bec6945b8df49e266e0fcd1c84caa71a313d6ac80",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/missing-mutant.cfg",
+          "sha256": "b9edb51601055688f101d478eca5cd51e1965e9bd36477d41ba85e5919b7042d",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/partial-mutant.cfg",
+          "sha256": "92e388626f51bf33c563b47ed394fb58771c8c22c3c6eaa93b21c809cf105825",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/receipt-mutant.cfg",
+          "sha256": "3816c8ca6b3d6876512d7b268920451d156d1ecd2d8150793e445cef4d8ad7c9",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/run-view.mjs",
+          "sha256": "96bdf62508e2b6f9dce446cfc3103fd1f375a0f47427bfa96176b73fa0417573",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/stale-mutant.cfg",
+          "sha256": "1d922c9ca497b31059d876cfc2291a0ee2d93829400f76049a02da03d2b69ced",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/terminal-mutant.cfg",
+          "sha256": "2323400188f8714cbef0c9b9be5458da7e22677bd4a6ab8a8d8a4326996f0e32",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/transitions.cfg",
+          "sha256": "97912cbea5b13eacad5b5ee9c4f05960685b03a72fde9cfd12d20dadd16bd143",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/unbound-basis-mutant.cfg",
+          "sha256": "aa517bfe381398268788be274a7547b3b30d8340e77527ca9f465f125698408f",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/unbound-clocks-mutant.cfg",
+          "sha256": "c9d23496ac1f6612a6819814de852e5fb79a80762a58e222cd172735a3286806",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/unbound-drive.mjs",
+          "sha256": "13c6d24a4ca48357e30a78fafa5b2d5cd0f009dc2a6c8a6f8b474add178078d6",
+          "callers": [
+            "scripts/verify-automation-reporting.mjs"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/unbound-immutable-mutant.cfg",
+          "sha256": "bdc10adc7e00b037c543ed8175128164cf9b5315bab2287ddebe072b9d3a6695",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/unbound-metadata-mutant.cfg",
+          "sha256": "b9ad31cc8819b8867e700ac69cbe09fcb10d1e1da4aee291946eacc6b3840fb8",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/unbound-representation-mutant.cfg",
+          "sha256": "15f5c90e0ce1bf353f00fdcd147b2d3eec30183d527822edfd2e0d4f76c503bc",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/unbound.cfg",
+          "sha256": "0e9b699871963f249c2106ae7b10b1a0aa5a2cfd7d9bcc2489a6359243601b55",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/view.mjs",
+          "sha256": "778ca820999fca6b65feb2f628f8651256de8ef422e7f194ad4e6700251c5495",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-reporting/worker.mjs",
+          "sha256": "53227abdc8737bcc3a820342f5877d4a20b0f10e4af696f3fa2bfef57ebfcbbd",
+          "callers": [
+            "verification input"
+          ]
+        }
       ]
     }
   ]

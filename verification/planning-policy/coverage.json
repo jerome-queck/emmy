@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "5a2f68528214fac9c5269091871a9ce9cbc3dcc5",
+  "sourceCommit": "2356e1c2b4ba95cc217696dadfe095c6668ae193",
   "sourceFiles": {
     "src/planning-policy.mjs": "ec3c8bd2a3d9d03e0cc75a77af2d014381b28c24d81ee9ee108d5ab89aecadcc",
     "src/calendar-policy.mjs": "2b40d5d2cf26efa2307741df89b60d87bcf0589aab612dff08362f7db598d1f9",
@@ -132,5 +132,5 @@
     "No provider truth, global immutable rule store, authorization authenticity, async/concurrent safety, durable writes, gateway/module publication, installation or native adoption",
     "Historicalv1remains explicitly callable without v2assurance"
   ],
-  "reviewBasis": "Read entire original semantic policy and both callers, source ownership/retention flows, new evaluator/domain/graph/checker, unchanged semantic guards and all slice diffs. Reviewed-source pins follow actual copied-source mutations and /statechart paths. Current source changes only formatting/refusal labels after final dev graph; strict full gate reruns actual source. Retention repair: reviewed complete delta from eab50f0. Shared v2 resolution now includes semanticPolicyDigest; native/API original associations remain exact. Added actual native source-reassociation regression/CLI refusal; graph semantics/bounds/mutations unchanged, retained original failing real-code probe. Source pins follow new source commit. Original v1wire unchanged. Ported accepted mapped source to the reachable local source witness. Reviewed exact bytes and retained existing properties and guards. The local-assurance plan count records the actual 27 suites."
+  "reviewBasis": "Read entire original semantic policy and both callers, source ownership/retention flows, new evaluator/domain/graph/checker, unchanged semantic guards and all slice diffs. Reviewed-source pins follow actual copied-source mutations and /statechart paths. Current source changes only formatting/refusal labels after final dev graph; strict full gate reruns actual source. Retention repair: reviewed complete delta from eab50f0. Shared v2 resolution now includes semanticPolicyDigest; native/API original associations remain exact. Added actual native source-reassociation regression/CLI refusal; graph semantics/bounds/mutations unchanged, retained original failing real-code probe. Source pins follow new source commit. Original v1wire unchanged. Ported accepted mapped source to the reachable local source witness. Reviewed exact bytes and retained existing properties and guards. The local-assurance plan count records the actual 27 suites. Main integration review preserves existing model domains and invariants. Generic producer bytes move to automation-producer.mjs; shared validator bodies and publisher awaits retain their semantics. New metadata, copied dependency closure, generated references and mandatory reporting commands are reviewed in the integration source audit. Source witnesses are reachable neutral commits."
 }
