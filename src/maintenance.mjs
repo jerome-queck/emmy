@@ -13,8 +13,7 @@ const graphOwners = {
   briefing: ['hand-mapped-await', 'verification/briefing-slot/BriefingSlot.tla', 'MODULE BriefingSlot']
 };
 
-async function coverageInventory(root) {
-  const inventory = JSON.parse(await readFile(join(root, 'verification/subsystems.json'), 'utf8'));
+async function coverageInventory(root, inventory, generated) {
   const need = (value, message) => { if (!value) throw new Error(`Subsystem inventory: ${message}`); };
   need(inventory.schemaVersion === 1 && inventory.foundationReady === false && Array.isArray(inventory.subsystems), 'invalid schema or readiness');
   const paths = new Set(); const ids = new Set();
@@ -43,7 +42,8 @@ async function coverageInventory(root) {
       need(typeof entry.path === 'string' && !paths.has(entry.path) && /^[a-f0-9]{64}$/.test(entry.sha256) && entry.callers?.length, `invalid mapping in ${area.id}`);
       need(!entry.path.startsWith('/') && !entry.path.split('/').includes('..'), `unsafe source in ${area.id}`);
       paths.add(entry.path);
-      need(digest(await readFile(join(root, entry.path))) === entry.sha256, `stale mapping ${entry.path}`);
+      const reviewedBytes = generated.has(entry.path) ? generated.get(entry.path) : await readFile(join(root, entry.path));
+      need(digest(reviewedBytes) === entry.sha256, `stale mapping ${entry.path}`);
       for (const caller of entry.callers) {
         need(caller === 'executable ingress' || caller === 'public configuration' || caller === 'verification input' || typeof caller === 'string' && !caller.startsWith('/') && !caller.split('/').includes('..'), `invalid caller ${entry.path}`);
         need(!entry.path.startsWith('src/') || !['executable ingress', 'public configuration', 'verification input'].includes(caller), `missing source caller ${entry.path}`);
@@ -95,12 +95,16 @@ export function generatedFiles(catalog, guidanceDocuments, inventory) {
 
 export async function maintain(root, catalog, write) {
   const drift = [];
-  const inventory = await coverageInventory(root);
+  const inventory = JSON.parse(await readFile(join(root, 'verification/subsystems.json'), 'utf8'));
+  const mapped = new Set((inventory.subsystems ?? []).flatMap(area => (area.files ?? []).map(file => file.path)));
+  for (const path of briefingGuidance.paths) if (!mapped.has(path)) throw new Error(`Subsystem inventory: unmapped guidance input ${path}`);
   const guidanceDocuments = await Promise.all(briefingGuidance.paths.map(async path => {
     const text = await readFile(join(root, path), 'utf8');
     return { path, bytes: Buffer.byteLength(text), sha256: digest(text), text };
   }));
-  for (const [path, expected] of generatedFiles(catalog, guidanceDocuments, inventory)) {
+  const generated = generatedFiles(catalog, guidanceDocuments, inventory);
+  await coverageInventory(root, inventory, generated);
+  for (const [path, expected] of generated) {
     let actual;
     try { actual = await readFile(join(root, path), 'utf8'); }
     catch (error) { if (error.code !== 'ENOENT') throw error; }

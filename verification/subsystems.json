@@ -1203,7 +1203,7 @@
     },
     {
       "id": "orientation-and-checks",
-      "stateOwner": "metadata.mjs command map; maintenance.mjs generated references; catalog.mjs public catalog",
+      "stateOwner": "metadata.mjs command map and guidance input selection; maintenance.mjs reads configured guidance and generates references; catalog.mjs public catalog",
       "classification": "metadata and check tooling; empirical only",
       "drivers": [
         "test/agent-local.test.mjs",
@@ -1234,7 +1234,7 @@
         },
         {
           "path": "src/maintenance.mjs",
-          "sha256": "a000b7a6c44ddaa2c70e833d79e7748fbe746a2c7caec01ded7da92d95c2bf22",
+          "sha256": "f888466b63b746b064433ea7749047370868fbe4a3aa3916747fa82bbba35c4f",
           "callers": [
             "scripts/agent.mjs"
           ]
@@ -1300,6 +1300,27 @@
           "sha256": "e81550770f07e3d238f94b9fce8c0013915f243fcba6888d8b779de339ba8613",
           "callers": [
             "public configuration"
+          ]
+        },
+        {
+          "path": "docs/operating-brief.md",
+          "sha256": "613dfc5e89d0eb44c540c42221ef34394dfbf23ac5150b9eb39baca077d20af9",
+          "callers": [
+            "src/metadata.mjs"
+          ]
+        },
+        {
+          "path": "docs/briefing.md",
+          "sha256": "9a1d640110b299f5faf505c657c6dd1b4d8b4254dc13458c8dc8d39e8333878f",
+          "callers": [
+            "src/metadata.mjs"
+          ]
+        },
+        {
+          "path": ".agents/skills/sign-in/SKILL.md",
+          "sha256": "558542d0c5a9eecf5c9a5b605fd6e57200c8ff25fd725515ccbc2ee8aac2b252",
+          "callers": [
+            "src/metadata.mjs"
           ]
         },
         {
@@ -2004,7 +2025,7 @@
         },
         {
           "path": "test/agent-local.test.mjs",
-          "sha256": "b861442f31fe38b5e37a8cb88bac5a0843cdb658561b170a2ddf4d452c214d92",
+          "sha256": "49b0c1e7b6ee4a44c973f311e0978b5eb62ce35f7f5a59254156b8bb027be0cd",
           "callers": [
             "verification input"
           ]
