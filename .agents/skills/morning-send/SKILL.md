@@ -9,7 +9,7 @@ Run `node verification/morning-send/check.mjs` from the repository root with Nod
 
 ## Promises
 
-- `IntentSafe`: the sealed body is bound to an uncertain intent; pending or delivered attempts cannot be blindly repeated or resealed.
+- `IntentSafe`: the sealed body is bound to an uncertain intent; pending attempts cannot be blindly repeated or resealed, and delivered attempts cannot be repeated.
 - `DeliveryExact`: only the current attempt and body, exact configured scope and an acquisition from intent through evaluation, with a distinct readback reference and matching delivered body, establish the declared delivered state. Retain its declared native ID and reference.
 - `ResolutionSafe`: only scoped, attributable known-unexecuted reconciliation of the current attempt clears uncertainty, retaining the old attempt and resolution. A subsequent intent may then proceed.
 
@@ -17,7 +17,7 @@ The checker makes a real parsed policy-v3 run using `morningFixture`, real asses
 
 The staged menu has one run, one body and destination, two send references, two native IDs and bounded clocks. Intent is at zero, first readback evaluation at two seconds, retry at three seconds, retry readback evaluation at five seconds. It includes early/late, wrong scope, body, attempt, reused reference, invalid resolution, and stale prior-attempt controls. Depth is four; the explicit node and edge limits are 1000. A statechart can hide self loops, not graph exploration. The source mapping and immutable source sync are in [coverage.json](../../../verification/morning-send/coverage.json).
 
-The copied-source negative controls remove the overlapping pending-send guards together, or separately break destination, attempt binding, delivered body, readback separation, acquisition interval, resolution outcome, and history retention. TLC must name the intended invariant, and each exact trace is replayed against broken and restored modules. The paired pending mutation is necessary because either original guard alone can refuse the duplicate. Source pins reject drift before execution. Do not count syntax errors, unrelated exceptions or pin refusals as semantic counterexamples.
+The copied-source negative controls remove the overlapping pending-send guards together, or separately break destination, attempt binding, delivered body, readback separation, acquisition interval, resolution outcome, and history retention. TLC must name the intended invariant, and each exact trace is replayed against broken and restored modules. The paired pending mutation is necessary because either original guard alone can refuse the duplicate. Source pins reject drift before graph and TLC verification; static imports run before the pin check. Do not count syntax errors, unrelated exceptions or pin refusals as semantic counterexamples.
 
 This checks supplied declarations, not true native execution or delivery, globally unique send references, real clocks, authentication, source acquisition, asynchronous journal publication, migration, cleanup, mail, edits, arbitrary histories, installation or provider behavior. The fixture-derived setup is a precondition, not a proof of intake or seal correctness.
 

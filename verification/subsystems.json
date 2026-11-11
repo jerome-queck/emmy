@@ -2541,14 +2541,14 @@
         },
         {
           "path": "verification/morning-send/coverage.json",
-          "sha256": "2da99d46d41cb68bbd497f6117b5857702370ac64e23045f2ba2020814b8f49c",
+          "sha256": "0d4044598f7f701df13a0ed107221ae9e81ca90df26f0dae70d4978bde6b56a0",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": ".agents/skills/morning-send/SKILL.md",
-          "sha256": "5c25f4a4ded2d0e8585eb2e3abf1877eef00dd21a1cfe704f297dc9ff1b05b1b",
+          "sha256": "36dbc95196b0039da59939c3d59f2b26949f3631923ad1a4d2f88aa8e6cb5923",
           "callers": [
             "public configuration"
           ]

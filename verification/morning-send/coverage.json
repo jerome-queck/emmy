@@ -27,7 +27,7 @@
   "verificationFiles": {
     "verification/morning-send/graph.mjs": "f77b1d5be740ad211fc890fd350908b9007342a68df702e5c8446b90ba77dbcb",
     "verification/morning-send/check.mjs": "79f5918e4f4bd4ed29c8a927d1f2d1fd5e2d3d0eaa7a058b9961c041aada0788",
-    ".agents/skills/morning-send/SKILL.md": "5c25f4a4ded2d0e8585eb2e3abf1877eef00dd21a1cfe704f297dc9ff1b05b1b"
+    ".agents/skills/morning-send/SKILL.md": "36dbc95196b0039da59939c3d59f2b26949f3631923ad1a4d2f88aa8e6cb5923"
   },
   "mapping": {
     "IntentSafe": "morningTransition seal and send-intent",
