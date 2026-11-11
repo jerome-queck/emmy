@@ -26,7 +26,7 @@ try {
     for(const [path,want] of Object.entries(coverage.sourceFiles)) { assert.equal(hash(await readFile(path)),want,`Review source ${path}`); assert.equal(hash(execFileSync('git',['show',`${coverage.sourceCommit}:${path}`])),want,`Review source sync ${path}`); }
     for(const [path,want] of Object.entries(coverage.verificationFiles)) assert.equal(hash(await readFile(path)),want,`Review verification ${path}`);
   const jar=join(cwd,'.local/tools/tla2tools-1.7.4.jar'); assert.equal(hash(await readFile(jar)),'936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88');
-  const java=execFileSync('which',['java'],{encoding:'utf8'}).trim();
+  const java=process.env.EMMY_JAVA_BIN || execFileSync('which',['java'],{encoding:'utf8'}).trim();
   const version=spawnSync(java,['-version'],{encoding:'utf8'}); assert.equal(version.status,0); assert.match(version.stderr,/version "21[.\"]/); report.java={path:java,version:version.stderr,jarSha256:hash(await readFile(jar))};
   async function run(name,api,expected,focused=false) {
     const g=graph(api), dir=join(scratch,name), out=join(evidence,name); await mkdir(dir); await mkdir(out);

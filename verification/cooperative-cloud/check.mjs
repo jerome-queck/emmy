@@ -29,7 +29,7 @@ try {
   for (const [path, expected] of Object.entries(pins.verificationFiles)) assert.equal(digest(await readFile(join(root, path))), expected, `Review changed verification ${path}`);
   const jar = join(root, '.local/tools/tla2tools-1.7.4.jar');
   assert.equal(digest(await readFile(jar)), '936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88');
-  const java = execFileSync('/usr/bin/env', ['which', 'java'], { encoding: 'utf8' }).trim();
+  const java = process.env.EMMY_JAVA_BIN || execFileSync('/usr/bin/env', ['which', 'java'], { encoding: 'utf8' }).trim();
   const javaVersion = spawnSync(java, ['-version'], { encoding: 'utf8' });
   assert.equal(javaVersion.status, 0); assert.match(javaVersion.stderr, /version "21[.\"]/);
   const run = async (name, module, rule) => {

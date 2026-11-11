@@ -31,7 +31,7 @@ try {
   for (const [path, expected] of Object.entries(pins.verificationFiles)) assert.equal(digest(await readFile(path)), expected, `Review verification: ${path}`);
   const jar = join(root, '.local/tools/tla2tools-1.7.4.jar');
   assert.equal(digest(await readFile(jar)), '936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88');
-  const java = execFileSync('which', ['java'], { encoding: 'utf8' }).trim();
+  const java = process.env.EMMY_JAVA_BIN || execFileSync('which', ['java'], { encoding: 'utf8' }).trim();
   const version = spawnSync(java, ['-version'], { encoding: 'utf8' });
   assert.equal(version.status, 0); assert.match(version.stderr, /version "21[."]/);
   report.java = { path: java, version: version.stderr, jarSha256: digest(await readFile(jar)) };
