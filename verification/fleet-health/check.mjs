@@ -25,14 +25,15 @@ try {
   for (const [path, expected] of Object.entries(coverage.sourceFiles)) { assert.equal(digest(await readFile(join(work,path))),expected,`Review source ${path}`); assert.equal(digest(execFileSync('git',['show',`${coverage.sourceCommit}:${path}`],{cwd:work})),expected,`Review source sync ${path}`); }
   for (const [path, expected] of Object.entries(coverage.verificationFiles)) assert.equal(digest(await readFile(join(work,path))),expected,`Review verification ${path}`);
   assert.equal(digest(await readFile(jar)), '936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88');
-  const java = execFileSync('which',['java'],{encoding:'utf8'}).trim(); const version = spawnSync(java,['-version'],{encoding:'utf8'}); assert.equal(version.status,0); assert.match(version.stderr,/version "21[.\"]/);
-  report.java = {path:java, version:version.stderr, jarSha256:digest(await readFile(jar))};
+  const java = execFileSync('which',['java'],{encoding:'utf8'}).trim(); const versionDir = join(scratch, 'java-version'); await mkdir(versionDir); const versionEnv = { ...process.env, TMPDIR: versionDir }; delete versionEnv.JAVA_TOOL_OPTIONS; delete versionEnv._JAVA_OPTIONS; delete versionEnv.JDK_JAVA_OPTIONS;
+  const version = spawnSync(java,[`-Djava.io.tmpdir=${versionDir}`,'-version'],{encoding:'utf8',env:versionEnv}); assert.equal(version.status,0); assert.match(version.stderr,/version "21[.\"]/);
+  report.java = {path:java, version:version.stderr, versionDir, jarSha256:digest(await readFile(jar)), selectedEnvironment: { TMPDIR: process.env.TMPDIR ?? null, JAVA_HOME: process.env.JAVA_HOME ?? null, JAVA_TOOL_OPTIONS: process.env.JAVA_TOOL_OPTIONS ?? null, JDK_JAVA_OPTIONS: process.env.JDK_JAVA_OPTIONS ?? null, _JAVA_OPTIONS: process.env._JAVA_OPTIONS ?? null }};
   async function run(name, api, expected) {
     const g = graph(api); const dir = join(scratch,name); const outdir = join(evidence,name); await mkdir(dir); await mkdir(outdir);
     const tla = spec(g); await writeFile(join(dir,'FleetHealth.tla'),tla); await writeFile(join(dir,'FleetHealth.cfg'),cfg);
     await writeFile(join(outdir,'FleetHealth.tla'),tla); await writeFile(join(outdir,'FleetHealth.cfg'),cfg); await writeFile(join(outdir,'graph.json'),JSON.stringify(g));
-    const env={...process.env,TMPDIR:dir,JAVA_TOOL_OPTIONS:`-Djava.io.tmpdir=${dir}`};
-    const result=spawnSync(java,['-XX:+UseParallelGC','-Xmx1g','-cp',jar,'tlc2.TLC','-workers','1','-fp','0','-config','FleetHealth.cfg','FleetHealth.tla'],{cwd:dir,env,encoding:'utf8',timeout:120000,maxBuffer:32*1024*1024});
+    const env={...process.env,TMPDIR:dir}; delete env.JAVA_TOOL_OPTIONS; delete env._JAVA_OPTIONS; delete env.JDK_JAVA_OPTIONS;
+    const result=spawnSync(java,[`-Djava.io.tmpdir=${dir}`,'-XX:+UseParallelGC','-Xmx1g','-cp',jar,'tlc2.TLC','-workers','1','-fp','0','-config','FleetHealth.cfg','FleetHealth.tla'],{cwd:dir,env,encoding:'utf8',timeout:120000,maxBuffer:32*1024*1024});
     const output=(result.stdout??'')+(result.stderr??''); await writeFile(join(outdir,'tlc.out'),output); assert.equal(result.error,undefined); assert.equal(result.signal,null);
     if (!expected) { assert.equal(result.status,0,output); assert.match(output,/Model checking completed\. No error has been found/); assert.ok(g.states.every(s=>Object.values(s.rules).every(Boolean)));
       for (const path of [['both','auth-fail','auth-fail','auth-good','auth-fail'],['both','monitor-fail','auth-good','monitor-good','empty'],['both','auth-partial','empty','auth-good','stale']]) assert.ok(g.states.some(s=>JSON.stringify(s.path)===JSON.stringify(path)), `Required history ${path}`);

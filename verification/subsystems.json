@@ -2473,14 +2473,14 @@
         },
         {
           "path": "verification/fleet-health/check.mjs",
-          "sha256": "5f1fa94013b5d8f48721ac051b883917c4c32933212e38e4d9dddacbd93b6584",
+          "sha256": "0625f01631c6eeea5cdb8c4f3c08d82281c377a541560f7ed97fb6409cbd9204",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/fleet-health/coverage.json",
-          "sha256": "a874350e6ab520fc304d892e4cf51b6455f7a3bbb51ec4e49a34a364e2c78731",
+          "sha256": "e8fd131727be7fcbc4c564925aa844f8e6a1c1a2658995817361dfe50d6a6d7f",
           "callers": [
             "verification input"
           ]
