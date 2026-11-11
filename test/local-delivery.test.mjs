@@ -1,0 +1,138 @@
+import assert from 'node:assert/strict';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import test from 'node:test';
+import { evaluateEligibility, evaluateLocalEvidence } from '../scripts/github-auto-merge.mjs';
+import { createLocalProvider, deliverLocal } from '../scripts/local-delivery.mjs';
+import { localSpecimen, localSnapshot } from '../verification/delivery/fixtures.mjs';
+import { driveDelivery } from '../verification/delivery/drive.mjs';
+
+test('explicit local mode accepts zero hosted jobs and refuses missing or conflicting evidence', () => {
+  assert.deepEqual(evaluateEligibility(localSnapshot()), { eligible: true, waiting: [] });
+  const changes = [
+    s => { s.mode = 'pretend-local'; }, s => { delete s.local; },
+    s => { s.local.assurance.status = 'refused'; }, s => { s.local.assurance.clean = false; },
+    s => { s.local.assurance.head = 'f'.repeat(40); }, s => { s.local.assurance.base = 'f'.repeat(40); },
+    s => { s.local.assurance.tree = 'f'.repeat(40); }, s => { s.local.assurance.contextDigest = ''; },
+    s => { s.local.review.reviewer = s.local.review.author; }, s => { s.local.review.practical = false; },
+    s => { s.local.review.receiptDigest = 'f'.repeat(64); }, s => { s.local.review.verdict = 'self-certified'; },
+    s => { s.local.review.acceptanceRef = ''; }, s => { s.local.authorization.actions = ['publish']; },
+    s => { s.local.authorization.expiresAt = new Date(s.local.now).toISOString(); },
+    s => { s.local.authorization.notBefore = '2099-01-01T00:00:00Z'; },
+    s => { s.local.authorization.branch = 'codex/other'; }, s => { s.local.binding.head = 'f'.repeat(40); },
+    s => { s.local.binding.base = 'f'.repeat(40); }, s => { s.branch.strict = false; },
+    s => { s.branch.contexts.push('emmy-check'); }, s => { s.statuses[0].creatorType = 'Bot'; },
+    s => { s.statuses[0].state = 'failure'; }, s => { s.statuses[1].creator = 'fake-owner'; },
+  ];
+  for (const change of changes) { const s = localSnapshot(); change(s); assert.equal(evaluateEligibility(s).eligible, false, String(change)); }
+  const s = localSnapshot(); delete s.mode;
+  assert.equal(evaluateEligibility(s).eligible, false, 'Local statuses never satisfy historical github-actions gate');
+});
+
+function fakeProvider() {
+  const effects = []; const observed = new Set();
+  return {
+    effects, observed, deny: false, timeoutAfterEffect: false, failReadback: false, drift: false,
+    async discover(action) {
+      if (this.failReadback && effects.length) { this.failReadback = false; throw new Error('read timeout'); }
+      return { exact: true, confirmed: observed.has(action), number: 7 };
+    },
+    async destination() { return { exact: !this.drift }; },
+    async mergeEligibility(b, local) { return evaluateEligibility(localSnapshot(local)); },
+    async effect(action) {
+      effects.push(action);
+      if (this.deny) { const error = new Error('denied'); error.status = 403; throw error; }
+      observed.add(action);
+      if (this.timeoutAfterEffect) throw new Error('lost result after provider effect');
+    },
+  };
+}
+
+async function fixture(t) {
+  const root = await mkdtemp(join(tmpdir(), 'emmy-delivery-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const local = localSpecimen(); const provider = fakeProvider();
+  const request = { schemaVersion: 1, mode: 'local', binding: local.binding, action: 'publish' };
+  const run = action => { request.action = action; return deliverLocal(root, structuredClone(request), provider, async () => ({ ...local, action })); };
+  return { root, local, provider, request, run };
+}
+
+test('provider-fake publication, PR, status and merge converge without duplicate effects', async t => {
+  const { run, provider } = await fixture(t);
+  for (const [action, phase] of [['publish', 'published'], ['open-pr', 'pr-open'], ['attest', 'pr-open'], ['merge', 'merged']]) {
+    assert.equal((await run(action)).outcome, phase);
+    assert.equal((await run(action)).outcome, phase);
+  }
+  assert.deepEqual(provider.effects, ['publish', 'open-pr', 'attest', 'merge']);
+});
+
+test('denial stays uncertain across restart and never blindly retries', async t => {
+  const { run, provider } = await fixture(t); provider.deny = true;
+  const first = await run('publish'); assert.equal(first.outcome, 'unknown');
+  provider.deny = false;
+  const second = await run('publish'); assert.equal(second.outcome, 'unknown'); assert.equal(second.rediscoveredOnly, true);
+  assert.deepEqual(provider.effects, ['publish']);
+  const checkpoint = JSON.parse(await readFile(first.checkpoint));
+  assert.equal(checkpoint.history.find(row => row.kind === 'effect-error').status, 403);
+});
+
+test('lost result and lost readback recover actual effect before any next action', async t => {
+  const { run, provider } = await fixture(t); provider.timeoutAfterEffect = true; provider.failReadback = true;
+  assert.equal((await run('publish')).outcome, 'unknown');
+  const recovered = await run('open-pr'); assert.equal(recovered.outcome, 'published'); assert.equal(recovered.rediscoveredOnly, true);
+  assert.deepEqual(provider.effects, ['publish']);
+  assert.equal((await run('open-pr')).outcome, 'pr-open');
+  assert.deepEqual(provider.effects, ['publish', 'open-pr']);
+});
+
+test('fresh evidence, current base and exact action grants gate every effect', async t => {
+  const { run, provider, local } = await fixture(t);
+  local.review.reviewer = local.review.author;
+  assert.deepEqual((await run('publish')).waiting, ['localReview']); assert.equal(provider.effects.length, 0);
+  local.review.reviewer = 'independent-task'; provider.drift = true;
+  assert.deepEqual((await run('publish')).waiting, ['current-base-or-protection']); assert.equal(provider.effects.length, 0);
+  assert.equal(evaluateLocalEvidence({ ...local, action: 'unknown' }).eligible, false);
+});
+
+test('changed source binding cannot discard retained uncertain intent', async t => {
+  const { root, request, run, provider, local } = await fixture(t); provider.deny = true;
+  await run('publish'); request.binding = { ...request.binding, head: 'f'.repeat(40) };
+  await assert.rejects(deliverLocal(root, request, provider, async () => local), /different binding/);
+  assert.deepEqual(provider.effects, ['publish']);
+});
+
+test('real adapter mutation demonstrates why unknown intent must force rediscovery', async t => {
+  const sourceFile = fileURLToPath(new URL('../scripts/local-delivery.mjs', import.meta.url));
+  const source = await readFile(sourceFile, 'utf8');
+  const anchor = "if (state.delivery.phase === 'unknown') {";
+  assert.equal(source.split(anchor).length, 2);
+  const copied = source.replace(anchor, 'if (false) {').replace(/from '(\.{1,2}\/[^']+)'/g, (_, path) => `from '${pathToFileURL(resolve(dirname(sourceFile), path)).href}'`);
+  const mutant = await import(`data:text/javascript;base64,${Buffer.from(copied).toString('base64')}`);
+  const { root, request, provider, local, run } = await fixture(t); provider.deny = true;
+  assert.equal((await run('publish')).outcome, 'unknown');
+  assert.equal((await run('publish')).outcome, 'unknown'); assert.deepEqual(provider.effects, ['publish']);
+  await mutant.deliverLocal(root, request, provider, async () => ({ ...local, action: 'publish' }));
+  assert.deepEqual(provider.effects, ['publish', 'publish'], 'Removing actual rediscovery guard repeats a denied uncertain effect');
+});
+
+test('actual adapter keeps guarded branch push separate and merge uses exact head', async () => {
+  const calls = []; const local = localSpecimen();
+  const provider = createLocalProvider('synthetic-token', '/not-used', async (url, options) => {
+    calls.push({ url, method: options.method, body: options.body ? JSON.parse(options.body) : null });
+    return { ok: true, json: async () => ({ merged: true, sha: 'f'.repeat(40) }) };
+  });
+  await provider.effect('open-pr', { binding: local.binding, title: 'Exact title', body: 'Exact body' }, {}, local);
+  await provider.effect('merge', { binding: local.binding }, { number: 7 }, local);
+  assert.deepEqual(calls[0].body, { title: 'Exact title', body: 'Exact body', head: local.binding.branch, base: 'main', draft: false });
+  assert.deepEqual(calls[1].body, { sha: local.binding.head, merge_method: 'merge' });
+  assert.equal(calls.some(call => /protection/.test(call.url)), false, 'Adapter has no protection mutation');
+});
+
+test('fresh CLI processes enforce actual receipts and recover provider-fake effects', async () => {
+  const report = await driveDelivery();
+  assert.equal(report.status, 'passed');
+  assert.ok(report.commands.length >= 20);
+  assert.ok(report.cases.includes('lost-result-rediscovered-on-restart'));
+});

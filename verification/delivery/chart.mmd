@@ -1,0 +1,43 @@
+---
+title: "Local verified delivery"
+---
+stateDiagram-v2
+  s0: Ready to verify source
+  s1: Local checks running
+  s2: Source or base changed
+  s3: Local checks passed
+  s4: Checks failed
+  s5: Independent review accepted
+  s6: Publication scope accepted
+  s7: Awaiting publish readback
+  s8: Exact branch published
+  s9: Awaiting open-pr readback
+  s10: Exact PR open
+  s11: Merge scope accepted
+  s12: Awaiting attest readback
+  s13: Awaiting merge readback
+  s14: Merge and history confirmed
+  [*] --> s0
+  s0 --> s1: run local checks
+  s0 --> s2: observe changed source or base
+  s1 --> s2: observe changed source or base
+  s1 --> s3: all checks pass
+  s1 --> s4: a check fails
+  s3 --> s5: accept independent practical review
+  s3 --> s2: observe changed source or base
+  s4 --> s2: observe changed source or base
+  s5 --> s6: accept exact publication scope
+  s5 --> s2: observe changed source or base
+  s6 --> s2: observe changed source or base
+  s6 --> s7: retain intent and publish branch
+  s7 --> s8: read exact published branch
+  s8 --> s2: observe changed source or base
+  s8 --> s9: retain intent and open PR
+  s9 --> s10: read exact open PR
+  s10 --> s11: accept exact merge scope
+  s10 --> s2: observe changed source or base
+  s10 --> s12: retain intent and attest evidence
+  s11 --> s2: observe changed source or base
+  s11 --> s13: retain intent and request guarded merge
+  s12 --> s10: read both exact statuses
+  s13 --> s14: read merged PR and main history
