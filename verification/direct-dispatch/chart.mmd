@@ -1,18 +1,18 @@
 ---
-title: "Direct root and historical dispatch"
+title: "Selected router and optional direct dispatch"
 ---
 stateDiagram-v2
   s0: Awaiting scoped evidence
   s1: Scoped evidence supplied
-  s2: Inspect or continue same child
-  s3: Hold and inspect same objective
-  s4: Mixed or changed route refused
-  s5: Direct root may create once
-  s6: Historical dispatcher may create once
+  s2: Hold and inspect same objective
+  s3: Explicit direct route may create once
+  s4: Inspect or continue same child
+  s5: Selected router may create once
+  s6: Mixed or changed route refused
   [*] --> s0
   s0 --> s1: Current scoped evidence supplied
-  s1 --> s3: Assess evidence [Hold and inspect same objective]
-  s1 --> s2: Assess evidence [Inspect or continue same child]
-  s1 --> s4: Assess evidence [Mixed or changed route refused]
-  s1 --> s5: Assess evidence [Direct root may create once]
-  s1 --> s6: Assess evidence [Historical dispatcher may create once]
+  s1 --> s2: Assess evidence [Hold and inspect same objective]
+  s1 --> s3: Assess evidence [Explicit direct route may create once]
+  s1 --> s4: Assess evidence [Inspect or continue same child]
+  s1 --> s5: Assess evidence [Selected router may create once]
+  s1 --> s6: Assess evidence [Mixed or changed route refused]

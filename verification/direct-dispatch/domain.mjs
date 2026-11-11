@@ -43,7 +43,38 @@ function remote(input, modules) {
   const source = modules.records.recordPayload(modules.records.parseObservation({ type: 'observation', responsibilityId: input.id, subject: { ...target }, category: 'target', observer: 'Synthetic complete remote source', observedAt: clock, availability: 'available', coverage: { complete: true, gaps: [] }, claims: [], evidenceRefs: [{ path: '/synthetic/remote-source.json', sha256: modules.records.digest('source') }] }));
   input.records.splice(1, 0, source);
 }
+
+function repeatedAttempt(input, modules, { conflict = true, reverse = false, absent = false, response = 'earlier', creationBetween = false } = {}) {
+  let original = input.records.find(record => record.dispatch?.phase === 'attempted');
+  if (creationBetween) {
+    const { hash, fileDigests, ...body } = original;
+    const replacement = modules.records.recordPayload(modules.records.parseObservation({ ...body, observedAt: '2026-11-10T11:59:59.997Z' }));
+    input.records[input.records.indexOf(original)] = replacement; original = replacement;
+  }
+  const { hash, fileDigests, ...body } = structuredClone(original);
+  body.dispatch.requestDigest = conflict ? modules.records.digest('different original request under reused attempt key') : original.dispatch.requestDigest;
+  body.supersedes = { hash: original.hash, reason: 'Retained acquisition under this declared attempt key.' };
+  if (creationBetween) body.observedAt = '2026-11-10T11:59:59.999Z';
+  const later = modules.records.recordPayload(modules.records.parseObservation(body));
+  const current = input.records.at(-1);
+  current.supersedes = { hash: later.hash, reason: 'Current result retains the whole original request chain.' };
+  if (absent) {
+    current.tasks = []; current.effects = [{ key: modules.work.effectKey(def(input)), status: 'absent' }];
+    Object.assign(current.dispatch, { phase: 'absent', resolution: 'confirmed-no-effect' });
+    delete current.dispatch.child; delete current.dispatch.creation;
+  } else if (response === 'later' && current.dispatch.creation) current.dispatch.creation.requestDigest = later.dispatch.requestDigest;
+  if (creationBetween) current.dispatch.creation.observedAt = '2026-11-10T11:59:59.998Z';
+  input.records.splice(input.records.length - 1, 0, later);
+  if (reverse) input.records.reverse();
+}
 export const cases = [
+  ...['direct-root', 'legacy'].flatMap(mode => [false, true].flatMap(reverse => [
+    { name: `conflicting-attempt-${mode}-${reverse}-ready`, mode, edit: (i, m) => repeatedAttempt(i, m, { reverse }), expected: null, rule: 'ExactAttemptRequest' },
+    { name: `conflicting-attempt-${mode}-${reverse}-absence`, mode, edit: (i, m) => repeatedAttempt(i, m, { reverse, absent: true }), expected: null, rule: 'ExactAttemptRequest' },
+    { name: `identical-attempt-${mode}-${reverse}`, mode, edit: (i, m) => repeatedAttempt(i, m, { conflict: false, reverse }), expected: 'read-or-wait', rule: 'ViableRoute' },
+  ])),
+  ...[false, true].map(reverse => ({ name: `conflicting-attempt-direct-later-response-${reverse}`, edit: (i, m) => repeatedAttempt(i, m, { reverse, response: 'later' }), expected: null, rule: 'ExactAttemptRequest' })),
+  ...[false, true].map(reverse => ({ name: `identical-attempt-creation-between-clocks-${reverse}`, edit: (i, m) => repeatedAttempt(i, m, { reverse, conflict: false, creationBetween: true }), expected: null, rule: 'ProvenanceHeld' })),
   ...['absent', 'attempted', 'pending', 'uncertain', 'ready'].flatMap(phase => [true, false].flatMap(complete => ['available', 'unavailable', 'denied', 'unknown'].map(availability => ({ name: `direct-product-${phase}-${complete}-${availability}`, phase, edit: i => { i.records.at(-1).coverage = { complete, gaps: complete ? [] : ['missing page'] }; i.records.at(-1).availability = availability; }, expected: complete && availability === 'available' ? phase === 'absent' ? 'create-direct' : phase === 'ready' ? 'read-or-wait' : null : null, rule: complete && availability === 'available' && ['ready', 'absent'].includes(phase) ? 'ViableRoute' : 'HistoryHeld' })))),
   ...['direct-root', 'legacy'].flatMap(mode => ['absent', 'attempted', 'pending', 'uncertain', 'ready'].map(phase => ({ name: `${mode}-${phase}`, mode, phase, expected: phase === 'absent' ? mode === 'direct-root' ? 'create-direct' : 'create-via-dispatcher' : phase === 'ready' ? 'read-or-wait' : null, rule: phase === 'ready' || phase === 'absent' ? 'ViableRoute' : 'HistoryHeld' }))),
   ...[

@@ -54,6 +54,8 @@ Standard/non-fast is the default for coding sessions, coordinators and helpers. 
 
 The native-dispatch driver also covers generic escalation refusal, wrong objective/role/model/effort permissions, and an exact one-time permission for both child and coordinator. Five paired production mutations prove the exceptional-choice gate and each scope comparison can fail. These checks do not authenticate permission sources.
 
-## Direct root route
+## Optional direct root route
 
-Fresh direct objectives explicitly snapshot `mode: direct-root` and exact root selection. Historical records stay callable without rewriting or normalization. Run the [direct dispatch formal skill](../../direct-dispatch/SKILL.md). The CLI driver also exercises direct creation advice without any dispatcher selection, actual import/restart recovery, pending/uncertain/no-effect, exact invocation provenance, same-child membership repair, immutable-route refusal and restored holds. All native captures are synthetic. No real native call or permission inheritance is established.
+Operational coordination uses the existing selected router. Optional explicitly selected direct objectives snapshot `mode: direct-root` and exact root selection. Historical records stay callable without rewriting or normalization. Run the [direct dispatch formal skill](../../direct-dispatch/SKILL.md). The CLI driver also exercises direct creation advice without any dispatcher selection, actual import/restart recovery, pending/uncertain/no-effect, exact invocation provenance, same-child membership repair, immutable-route refusal and restored holds. All native captures are synthetic. No real native call or permission inheritance is established.
+
+Conflicting original request digests under one attempt key hold both routes regardless of input order or later no-effect claims. Identical-request repeated observations retain compatibility under the same evidence gates. The driver exercises both actual stored hash orders and verifies the same child remains available for inspection.

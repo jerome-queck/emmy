@@ -1,5 +1,7 @@
 # Recover and dispatch native coding objectives
 
+Operational coordination continues through the existing selected native router. Direct-root mode is optional explicit source capability, not an active operational replacement or permission grant. This change installs no runner, selection or binding. Preserve the actual original creator for every retained owner/reviewer.
+
 Use the trusted installed runner with the existing private home. This command recovers saved state and returns advice. Supported native tools perform creation and supervision.
 
 ```sh
@@ -21,11 +23,11 @@ For a requested native child, read the local preparation installation at `.local
 4. Save the native request with its `prompt` copied directly from the returned JSON string. Verify identical UTF-8 bytes and retain the request hash and attempted marker before calling the designated host's native `mcp__codex_app__create_thread` once. Use the discovered saved project and local environment through the objective's direct root or historical dispatcher. The CLI prepares data; the agent invokes the supported tool.
 5. Retain the original native response. Resolve pending identities and read back actual same-thread host, saved membership, settings where exposed, and progress using the existing procedure below. Amend the same task record while preserving its prelaunch bytes and contrary evidence. Missing telemetry stays unverified. Parent reviews original criterion evidence before acceptance.
 
-These saved project instructions guide fresh callers without implementation conversation history. They neither intercept native calls nor guarantee an agent follows them. A later parent-owned fresh-context request must separately establish observed consumption, exact prompt use, native creation, and saved membership. Preserve historical dispatcher selections and their scope. Fresh authorized direct objectives need no dispatcher hop.
+These saved project instructions guide fresh callers without implementation conversation history. They neither intercept native calls nor guarantee an agent follows them. A later parent-owned fresh-context request must separately establish observed consumption, exact prompt use, native creation, and saved membership. Preserve historical dispatcher selections and their scope. A separately authorized and explicitly selected direct objective can use the optional source contract. This does not replace the current operational router.
 
-## Select direct root creation for a fresh objective
+## Optional direct-root source capability
 
-Native root coordination can create fresh project owners and reviewers directly. Keep historical `.dispatcher` bindings and records unchanged. Select a direct root separately under `bindings.projects.<project-key>.directRoot`, and snapshot that complete object in a fresh definition's `dispatch.root` with `dispatch.mode: "direct-root"`. A legacy definition has no mode and retains its `dispatcher`. Mixed or unknown forms refuse. Neither mode can silently change through a definition revision. Recover unresolved work under its original objective before opening another objective for the same work.
+The optional direct-root source contract supports explicit direct creation of fresh project owners and reviewers. Current operational coordination remains with the existing selected router. Keep historical `.dispatcher` bindings and records unchanged. Select a direct root separately under `bindings.projects.<project-key>.directRoot`, and snapshot that complete object in a fresh definition's `dispatch.root` with `dispatch.mode: "direct-root"`. A legacy definition has no mode and retains its `dispatcher`. Mixed or unknown forms refuse. Neither mode can silently change through a definition revision. Recover unresolved work under its original objective before opening another objective for the same work.
 
 A direct root binding contains this declared shape:
 
@@ -199,6 +201,8 @@ Evidence imports remain reported. Retained byte hashes cannot authenticate nativ
 7. The parent owns bounded `read_thread` or `wait_threads` progress through the existing connection. Preserve the ready ID, actual host and cursor. Carry `afterCursor` forward, back off unchanged state, and inspect completion and useful outcome independently. Native completed status defaults to `inspect-outcome`; it cannot establish a release. An authorized same-objective follow-up with needed context may continue that completed native chat.
 
 Multiple objective bindings for one child, multiple unsuperseded native observations, or contradictory source records hold further action. Preserve the records and resolve them explicitly. Repository similarity never establishes objective equality. The command cannot stop a caller acting outside this procedure or recover a native effect whose history was never retained.
+
+One `attemptKey` binds one exact original `requestDigest`. Conflicting retained attempted observations under that key hold both routes, even after a ready result or a declared no-effect resolution. Neither array order, content-hash order, staleness nor a later source revision chooses an authoritative request. Retain the same child for inspection. Repeated identical-request observations are compatible when all other gates hold; direct creation acquisition must follow every matching attempted ancestor. Repeated evidence grants no permission for another native call. A changed original request needs a distinct attempt key and prior uncertainty must still be resolved within the same objective.
 
 Standalone pending, uncertain or completed effect records require targeted rediscovery before creation or continuation. Partial or stale replacement evidence cannot erase their history. Child reuse checks include existing objectives without the optional dispatch extension. A ready result for one attempt cannot settle a different unresolved attempt. An implementation child cannot be the selected dispatcher. A confirmed no-effect observation settles only its named attempt; retain the entire chain and every original failure.
 

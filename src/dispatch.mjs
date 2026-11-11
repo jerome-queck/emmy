@@ -171,6 +171,18 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   }
   if (!observation.evidenceRefs.length) result.reasons.push('native-source-evidence-needed');
   if (observation.tasks.some(task => task.effectKey !== key) || (observation.effects ?? []).some(effect => effect.key !== key)) result.reasons.push('native-effect-correlation-mismatch');
+  const requestsByAttempt = new Map();
+  for (const event of tasks) {
+    const item = event.dispatch;
+    if (item?.phase !== 'attempted' || item.correlationKey !== spec.correlationKey) continue;
+    if (!requestsByAttempt.has(item.attemptKey)) requestsByAttempt.set(item.attemptKey, new Set());
+    requestsByAttempt.get(item.attemptKey).add(item.requestDigest);
+  }
+  const conflictingAttemptKeys = [...requestsByAttempt].filter(([, requests]) => requests.size > 1).map(([attempt]) => attempt).sort();
+  if (conflictingAttemptKeys.length) {
+    result.conflictingAttemptKeys = conflictingAttemptKeys;
+    result.reasons.push('launch-attempt-request-conflict');
+  }
   const ancestors = new Set([observation.hash]); const byHash = new Map(tasks.map(record => [record.hash, record]));
   const chain = [observation];
   let predecessor = observation.supersedes?.hash;
@@ -214,9 +226,9 @@ export function dispatchDecision({ id, records, bindings, catalog, machine, asOf
   if (!direct && state.child?.creatorThreadId !== spec.dispatcher.threadId) result.reasons.push('child-creator-unverified');
   if (direct) {
     const creation = state.creation;
-    const attempt = tasks.find(record => ancestors.has(record.hash) && record.dispatch?.phase === 'attempted' && record.dispatch.attemptKey === state.attemptKey);
-    if (!creation || canonical(creation.principal) !== canonical(root.principal) || creation.attemptKey !== state.attemptKey || creation.requestDigest !== attempt?.dispatch.requestDigest || creation.childThreadId !== task.nativeId) result.reasons.push('direct-creation-provenance-needed');
-    if (!creation || !currentTime(creation.observedAt, asOf, definition.freshness.maxAgeMs) || Date.parse(creation.observedAt) < Date.parse(attempt?.observedAt) || epoch && Date.parse(creation.observedAt) < Date.parse(epoch.restoredAt)) result.reasons.push('direct-creation-not-current');
+    const attempts = tasks.filter(record => ancestors.has(record.hash) && record.dispatch?.phase === 'attempted' && record.dispatch.attemptKey === state.attemptKey && record.dispatch.correlationKey === spec.correlationKey);
+    if (!creation || canonical(creation.principal) !== canonical(root.principal) || creation.attemptKey !== state.attemptKey || !attempts.length || attempts.some(attempt => creation.requestDigest !== attempt.dispatch.requestDigest) || creation.childThreadId !== task.nativeId) result.reasons.push('direct-creation-provenance-needed');
+    if (!creation || !currentTime(creation.observedAt, asOf, definition.freshness.maxAgeMs) || attempts.some(attempt => Date.parse(creation.observedAt) < Date.parse(attempt.observedAt)) || epoch && Date.parse(creation.observedAt) < Date.parse(epoch.restoredAt)) result.reasons.push('direct-creation-not-current');
     if (state.child?.creatorThreadId && state.child.creatorThreadId !== creation?.nativeCallerThreadId || root.principal.kind === 'native-thread' && creation?.nativeCallerThreadId !== root.principal.id) result.reasons.push('direct-native-creator-mismatch');
   }
   if (result.reasons.length) return { ...stop(), next: 'inspect-existing-child' };

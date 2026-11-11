@@ -18,7 +18,7 @@ const mutations = [
   ['root-identity', 'src/dispatch.mjs', [["canonical(readback.principal) !== canonical(root.principal) || readback.hostId !== root.hostId", 'false']], 'AuthorityHeld'],
   ['root-settings', 'src/dispatch.mjs', [["settings?.model !== requested.model || settings?.effort !== requested.effort || settings?.serviceTier !== speed.serviceTier", 'false']], 'AuthorityHeld'],
   ['child-policy', 'src/dispatch.mjs', [["policy ? settings.sandboxMode !== policy.sandboxMode || settings.approvalPolicy !== policy.approvalPolicy", 'policy ? false']], 'AuthorityHeld'],
-  ['creation-request', 'src/dispatch.mjs', [["creation.requestDigest !== attempt?.dispatch.requestDigest", 'false']], 'ProvenanceHeld'],
+  ['creation-request', 'src/dispatch.mjs', [["creation.requestDigest !== attempt.dispatch.requestDigest", 'false']], 'ProvenanceHeld'],
   ['creation-principal', 'src/dispatch.mjs', [["canonical(creation.principal) !== canonical(root.principal)", 'false']], 'ProvenanceHeld'],
   ['native-creator', 'src/dispatch.mjs', [["state.child?.creatorThreadId && state.child.creatorThreadId !== creation?.nativeCallerThreadId", 'false']], 'ProvenanceHeld'],
   ['lost-response', 'src/dispatch.mjs', [["!['attempted', 'pending', 'uncertain'].includes(state.phase) && unsettled.size", 'false']], 'HistoryHeld'],
@@ -27,6 +27,9 @@ const mutations = [
   ['force-legacy-hop', 'src/dispatch.mjs', [["direct ? 'create-direct' : 'create-via-dispatcher'", "'create-via-dispatcher'"]], 'ViableRoute'],
   ['restored-root', 'src/dispatch.mjs', [["restoredCutoff && Date.parse(readback.observedAt) < Date.parse(restoredCutoff)", 'false'], ["restoredCutoff && Date.parse(settings.observedAt) < Date.parse(restoredCutoff)", 'false']], 'AuthorityHeld'],
   ['restored-creation', 'src/dispatch.mjs', [["epoch && Date.parse(creation.observedAt) < Date.parse(epoch.restoredAt)", 'false']], 'ProvenanceHeld'],
+  ['conflicting-original-requests', 'src/dispatch.mjs', [["if (conflictingAttemptKeys.length)", 'if (false)']], 'ExactAttemptRequest'],
+  ['order-dependent-original-request', 'src/dispatch.mjs', [["if (conflictingAttemptKeys.length)", 'if (conflictingAttemptKeys.length && !direct)'], ["attempts.some(attempt => creation.requestDigest !== attempt.dispatch.requestDigest)", "creation.requestDigest !== attempts[0]?.dispatch.requestDigest"]], 'ExactAttemptRequest'],
+  ['order-dependent-attempt-clock', 'src/dispatch.mjs', [["attempts.some(attempt => Date.parse(creation.observedAt) < Date.parse(attempt.observedAt))", "Date.parse(creation.observedAt) < Date.parse(attempts[0]?.observedAt)"]], 'ProvenanceHeld'],
 ];
 const modules = async path => ({ dispatch: await import(pathToFileURL(join(path, 'src/dispatch.mjs'))), records: await import(pathToFileURL(join(path, 'src/records.mjs'))), work: await import(pathToFileURL(join(path, 'src/work.mjs'))) });
 try {
@@ -51,8 +54,8 @@ try {
     await writeFile(join(path, 'graph.json'), `${canonical(graph)}\n`);
     await writeFile(join(path, 'DirectDispatch.tla'), dispatchSpec(graph));
     await writeFile(join(path, 'DirectDispatch.cfg'), dispatchConfig);
-    const labels = graph.states.map(row => row.phase === 'awaiting' ? 'Awaiting scoped evidence' : row.phase === 'supplied' ? 'Scoped evidence supplied' : row.disagrees ? `Contract breaks ${row.rule}` : row.assessed.next === 'create-direct' ? 'Direct root may create once' : row.assessed.next === 'create-via-dispatcher' ? 'Historical dispatcher may create once' : row.assessed.next === null ? 'Hold and inspect same objective' : row.assessed.next === 'parser-refused' || row.assessed.next === 'identity-changed' ? 'Mixed or changed route refused' : 'Inspect or continue same child');
-    await writeFile(join(path, 'view.mjs'), `const labels = ${JSON.stringify(labels)};\nexport const title = 'Direct root and historical dispatch';\nexport const state = v => labels[v.node - 1];\nimport { step as labelStep } from ${JSON.stringify(pathToFileURL(join(root, 'verification/direct-dispatch/view.mjs')).href)};\nexport const step = (action, from, to) => labelStep(action, labels[to.node - 1]);\n`);
+    const labels = graph.states.map(row => row.phase === 'awaiting' ? 'Awaiting scoped evidence' : row.phase === 'supplied' ? 'Scoped evidence supplied' : row.disagrees ? `Contract breaks ${row.rule}` : row.assessed.next === 'create-direct' ? 'Explicit direct route may create once' : row.assessed.next === 'create-via-dispatcher' ? 'Selected router may create once' : row.assessed.next === null ? 'Hold and inspect same objective' : row.assessed.next === 'parser-refused' || row.assessed.next === 'identity-changed' ? 'Mixed or changed route refused' : 'Inspect or continue same child');
+    await writeFile(join(path, 'view.mjs'), `const labels = ${JSON.stringify(labels)};\nexport const title = 'Selected router and optional direct dispatch';\nexport const state = v => labels[v.node - 1];\nimport { step as labelStep } from ${JSON.stringify(pathToFileURL(join(root, 'verification/direct-dispatch/view.mjs')).href)};\nexport const step = (action, from, to) => labelStep(action, labels[to.node - 1]);\n`);
     const child = spawnSync(java, ['-XX:+UseParallelGC', '-Xmx1g', '-cp', jar, 'tlc2.TLC', '-workers', '1', '-fp', '0', '-config', 'DirectDispatch.cfg', 'DirectDispatch.tla'], { cwd: path, encoding: 'utf8', timeout: 60000, maxBuffer: 16 * 1024 * 1024 });
     const output = `${child.stdout ?? ''}${child.stderr ?? ''}`; await writeFile(join(path, 'tlc.out'), output);
     assert.equal(child.signal, null); assert.equal(child.error, undefined);

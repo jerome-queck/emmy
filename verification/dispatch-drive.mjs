@@ -355,6 +355,53 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   const directArchive = join(home, 'direct-dispatch-backup'); const directRestored = join(home, 'direct-dispatch-restored');
   await cli(['backup', '--to', directArchive]); await cli(['restore', '--from', directArchive, '--into', directRestored]);
   assert.ok((await advise(3, [], directRestored, directJob.id)).reasons.includes('restored-home-suspended'));
+  const requestChains = [];
+  for (const order of ['earlier-first', 'later-first']) for (const variant of ['identical', 'conflicting', 'later-clock']) {
+    const conflict = variant === 'conflicting'; const clockConflict = variant === 'later-clock';
+    const requestDefinition = structuredClone(directDefinition);
+    requestDefinition.id = `request-chain-${order}-${variant}`;
+    requestDefinition.dispatch.correlationKey = `synthetic-${requestDefinition.id}`;
+    const requestJob = await adopt(requestDefinition);
+    const makeAttempt = async prior => {
+      const value = await observation(requestJob, 'attempted', prior, { root: directReadback() }); delete value.dispatch.dispatcher; return value;
+    };
+    const predict = async value => {
+      const files = {};
+      for (const [index, ref] of value.evidenceRefs.entries()) files[`evidence-${index}.bin`] = await readFile(ref.path);
+      const { parseObservation, recordPayload } = await import('../src/records.mjs');
+      return recordPayload(parseObservation(value), files);
+    };
+    const firstBody = await makeAttempt(null);
+    const firstObserver = firstBody.observer; let predictedFirst;
+    for (let nonce = 0; nonce < 256; nonce++) {
+      firstBody.observer = `${firstObserver} first acquisition ${nonce}`; predictedFirst = await predict(firstBody);
+      if (predictedFirst.hash[0] >= '4' && predictedFirst.hash[0] <= 'b') break;
+    }
+    assert.ok(predictedFirst.hash[0] >= '4' && predictedFirst.hash[0] <= 'b', 'Bounded synthetic hash order setup');
+    const first = await retain(firstBody); assert.equal(first.hash, predictedFirst.hash);
+    assert.equal((await retain(firstBody)).hash, first.hash, 'Exact repeated original import is idempotent');
+    const laterBody = await makeAttempt(first);
+    laterBody.dispatch.attemptKey = first.dispatch.attemptKey;
+    laterBody.dispatch.requestDigest = conflict ? digest(`Different original request ${requestJob.id}`) : first.dispatch.requestDigest;
+    const laterObserver = laterBody.observer; let predictedLater;
+    for (let nonce = 0; nonce < 256; nonce++) {
+      laterBody.observer = `${laterObserver} second acquisition ${nonce}`; predictedLater = await predict(laterBody);
+      if ((first.hash < predictedLater.hash) === (order === 'earlier-first')) break;
+    }
+    assert.equal(first.hash < predictedLater.hash, order === 'earlier-first', 'Exercise both actual readStore hash orders');
+    const later = await retain(laterBody); assert.equal(later.hash, predictedLater.hash);
+    const requestChild = { ...directChild, threadId: `synthetic-${requestJob.id}`, correlationKey: requestJob.dispatch.correlationKey, observedAt: now(), recordedSettings: { ...directChild.recordedSettings, effort: 'high', observedAt: now() } };
+    const requestCreation = { ...creation, attemptKey: first.dispatch.attemptKey, requestDigest: first.dispatch.requestDigest, childThreadId: requestChild.threadId, observedAt: clockConflict ? new Date(Math.floor((Date.parse(first.observedAt) + Date.parse(later.observedAt)) / 2)).toISOString() : now() };
+    const ready = await observation(requestJob, 'ready', later, { root: directReadback(), child: requestChild, creation: requestCreation }); delete ready.dispatch.dispatcher;
+    await retain(ready);
+    const requestAdvice = await advise(conflict || clockConflict ? 3 : 0, [], privateHome, requestJob.id);
+    assert.equal(requestAdvice.readyThreadId, requestChild.threadId);
+    assert.equal(requestAdvice.next, conflict || clockConflict ? 'inspect-existing-child' : 'read-or-wait');
+    assert.equal(requestAdvice.reasons.includes('launch-attempt-request-conflict'), conflict);
+    assert.equal(requestAdvice.reasons.includes('direct-creation-not-current'), clockConflict);
+    requestChains.push({ order, variant, conflict, clockConflict, attemptKey: first.dispatch.attemptKey, firstHash: first.hash, laterHash: later.hash, firstRequest: first.dispatch.requestDigest, laterRequest: later.dispatch.requestDigest, firstObservedAt: first.observedAt, laterObservedAt: later.observedAt, creationObservedAt: requestCreation.observedAt, readyThreadId: requestAdvice.readyThreadId, next: requestAdvice.next, reasons: requestAdvice.reasons });
+  }
+  report.requestChains = requestChains;
   await writeFile(bindingsPath, JSON.stringify(selectedBindings));
   await cli(['maintain', '--write']);
   for (const path of ['docs/cli.md', 'docs/catalog.md', 'docs/briefing-guidance.json', 'docs/verification-index.json']) {

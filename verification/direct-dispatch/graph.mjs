@@ -1,6 +1,6 @@
 import { cases, evaluateCase } from './domain.mjs';
 
-export const rules = ['AuthorityHeld', 'ProvenanceHeld', 'HistoryHeld', 'RouteHeld', 'ViableRoute'];
+export const rules = ['AuthorityHeld', 'ProvenanceHeld', 'HistoryHeld', 'RouteHeld', 'ViableRoute', 'ExactAttemptRequest'];
 export function dispatchGraph(modules) {
   const states = [{ phase: 'awaiting' }]; const edges = [];
   for (const test of cases) {
