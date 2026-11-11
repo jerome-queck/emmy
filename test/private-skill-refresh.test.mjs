@@ -4,8 +4,10 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, unlink } from 'node:fs/promise
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import { refreshInventory } from '../scripts/skill-inventory.mjs';
-import { refreshPrivateSkills, preparePrivateCandidate, verifyPrivateCandidate } from '../scripts/private-skill-refresh.mjs';
+import { refreshPrivateSkills, preparePrivateCandidate, verifyPrivateCandidate, preparePrivateSelection, preparePrivateSelectorUpdate, completePrivateSelection, checkPrivateSelection } from '../scripts/private-skill-refresh.mjs';
 import { buildFoundation } from '../src/foundation-release.mjs';
 import { canonical, digest } from '../src/content.mjs';
 
@@ -135,4 +137,71 @@ for (const [name, change, pattern] of [
   await assert.rejects(f.run(), pattern);
   assert.equal((await f.preserve()).status, 'held');
   assert.deepEqual(await readFile(f.rawPath), cloudBefore);
+});
+
+async function selectorFixture(t) {
+  const f = await fixture(t), candidate = await f.candidate(), candidateAttempt = join(f.root, 'candidate-attempt');
+  const request = await preparePrivateCandidate(f.config, f.capture, candidate, candidateAttempt, f.now);
+  const candidateCapture = structuredClone(f.capture);
+  candidateCapture.rawPath = candidate.path; candidateCapture.file.id = 'new-capsule'; candidateCapture.file.size = String(candidate.bytes);
+  await verifyPrivateCandidate(candidateAttempt, { fileId: 'new-capsule', requestSha256: request.requestSha256 }, candidateCapture, f.now);
+  const accepted = { ...f.config.consumer, bytes: f.config.cloud.bytes };
+  const old = { schemaVersion: 1, kind: 'emmy-private-skill-selection', generation: 0, selected: accepted, previous: null, approvalRef: 'synthetic-initial' };
+  const oldBytes = `${JSON.stringify(old, null, 2)}\n`, oldPath = join(f.root, 'old-selector.json'); await writeFile(oldPath, oldBytes);
+  const config = { home: join(f.root, 'selection-home'), bindings: f.config.bindings, parentId: f.config.cloud.parentId, owner: f.config.cloud.owner, accepted, selector: { fileId: 'current-selector', sha256: digest(oldBytes), bytes: Buffer.byteLength(oldBytes), generation: 0 }, history: { fileId: 'initial-history', sha256: digest(oldBytes), bytes: Buffer.byteLength(oldBytes) } };
+  await mkdir(config.home); await writeFile(join(config.home, 'current.json'), JSON.stringify(config));
+  const capture = (fileId, path, bytes) => ({ ...structuredClone(f.capture), rawPath: path, file: { ...structuredClone(f.capture.file), id: fileId, size: String(bytes) } });
+  const captures = { selector: capture(config.selector.fileId, oldPath, config.selector.bytes), history: capture(config.history.fileId, oldPath, config.history.bytes), candidate: candidateCapture };
+  const attempt = join(f.root, 'selection-attempt');
+  const pending = await preparePrivateSelection(config, captures, candidateAttempt, attempt, f.now);
+  const next = capture('new-history', join(attempt, 'selection.json'), pending.bytes);
+  const update = await preparePrivateSelectorUpdate(attempt, { fileId: 'new-history' }, next, f.now);
+  const finalCaptures = { selector: { ...next, file: { ...next.file, id: config.selector.fileId } }, history: next, candidate: candidateCapture };
+  return { ...f, config, captures, finalCaptures, candidateAttempt, attempt, pending, update, oldBytes };
+}
+
+test('single writer selects only a fully read-back private capsule and immutable history, then repeat converges', async t => {
+  const f = await selectorFixture(t);
+  assert.equal(f.update.fileId, f.config.selector.fileId);
+  await assert.rejects(preparePrivateSelection(f.config, f.captures, f.candidateAttempt, join(f.root, 'second-writer'), f.now), /EEXIST/);
+  const result = await completePrivateSelection(f.attempt, f.finalCaptures, f.now);
+  assert.equal(result.binding.accepted.fileId, 'new-capsule');
+  assert.deepEqual(result.priorBinding, f.config);
+  assert.equal(result.consumer.reads.length, 5);
+  assert.deepEqual(await completePrivateSelection(f.attempt, f.finalCaptures, f.now), result);
+  assert.equal((await checkPrivateSelection(result.binding, f.finalCaptures, join(f.root, 'daily-check'), f.now)).operation, 'unchanged');
+  assert.equal(await readFile(f.captures.selector.rawPath, 'utf8'), f.oldBytes);
+  assert.deepEqual(await readFile(f.rawPath), f.raw);
+});
+
+for (const [name, change, pattern] of [
+  ['uncertain selector write still reads old bytes', f => { f.finalCaptures.selector.rawPath = f.captures.selector.rawPath; }, /raw hash/],
+  ['candidate transport corruption', f => { f.finalCaptures.candidate.rawPath = f.rawPath; }, /raw hash/],
+  ['new history corruption', f => { f.finalCaptures.history.rawPath = f.captures.history.rawPath; }, /raw hash/],
+  ['wrong selector identity', f => { f.finalCaptures.selector.file.id = 'other'; }, /identity/],
+  ['expanded selector access', f => { f.finalCaptures.selector.file.shared = true; }, /identity/],
+  ['source dependency changed before acceptance', f => writeFile(join(f.source, 'skills/leaf/reference.md'), 'Changed'), /Unreviewed/],
+]) test(`${name} keeps prior local selection, old capsule and writer claim`, async t => {
+  const f = await selectorFixture(t), before = await readFile(join(f.config.home, 'current.json'));
+  await change(f);
+  await assert.rejects(completePrivateSelection(f.attempt, f.finalCaptures, f.now), pattern);
+  assert.deepEqual(await readFile(join(f.config.home, 'current.json')), before);
+  assert.deepEqual(await readFile(f.rawPath), f.raw);
+  assert.equal(await readFile(f.captures.selector.rawPath, 'utf8'), f.oldBytes);
+  assert.equal(JSON.parse(await readFile(join(f.config.home, 'writer.lock/owner.json'))).attempt, f.attempt);
+});
+
+test('postselection diagnostic failure resolves by exact readback without a second selector write', async t => {
+  const f = await selectorFixture(t);
+  const original = fs.promises.writeFile;
+  fs.promises.writeFile = async (path, ...args) => {
+    if (path === join(f.attempt, 'selection-result.json')) throw new Error('Injected postselection diagnostic failure');
+    return original(path, ...args);
+  };
+  syncBuiltinESMExports();
+  try { await assert.rejects(completePrivateSelection(f.attempt, f.finalCaptures, f.now), /Injected postselection/); }
+  finally { fs.promises.writeFile = original; syncBuiltinESMExports(); }
+  assert.equal(JSON.parse(await readFile(join(f.config.home, 'current.json'))).accepted.fileId, 'new-capsule');
+  assert.equal((await completePrivateSelection(f.attempt, f.finalCaptures, f.now)).status, 'selected');
+  assert.deepEqual(await readFile(f.rawPath), f.raw);
 });

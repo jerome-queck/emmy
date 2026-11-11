@@ -1,6 +1,6 @@
 # Upkeep and recovery
 
-Restricted private skill work uses [the exact capsule procedure](../../../../docs/private-skill-refresh.md). Its CLI stages only approved inventory work, emits immutable candidate upload requests, and verifies fresh raw cloud captures. Consumer selection stays held. Run its dedicated tests and real CLI capture separately from the existing full behavioral driver. No finite or TLA+ property covers this derived snapshot or native scheduler.
+Restricted private skill work uses [the exact capsule procedure](../../../../docs/private-skill-refresh.md). Its CLI stages only approved inventory work, verifies immutable candidate/history uploads, and accepts an exact-ID private selector only after fresh complete readback. A retained writer claim covers uncertain external effects. Run dedicated tests and the actual selector/consumer journey separately from the full behavioral driver. No finite or TLA+ property covers this derived snapshot, cross-system selection or native scheduler.
 
 ## User route
 

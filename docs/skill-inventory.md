@@ -33,6 +33,6 @@ Existing Sunday 01:17 UTC GitHub checks already run `npm run check`, which now v
 
 ## Verification limits
 
-The [restricted private capsule runner](private-skill-refresh.md) stages approved inventory work and verifies exact-ID cloud reads. Its immutable candidate upload protocol preserves accepted selections. Candidate transport has no accepted-consumer selection transition and cannot establish automatic remote refresh or schedule readiness.
+The [restricted private capsule runner](private-skill-refresh.md) stages approved inventory work, verifies immutable candidate uploads, and advances one private exact-ID selector only after complete candidate/history readback. A persistent single-writer claim retains uncertain writes. Old capsules, immutable selection history and prior local bindings remain available. Native schedule readiness and cloud-task adoption require separate acceptance.
 
 The [API fixtures](../test/skill-inventory.test.mjs) test synthetic source identity, complete discovery, version and hash drift, missing and changed licences, dependency changes, deletion, incomplete sources, nonordinary files, corruption, lock refusal and old-snapshot preservation. They do not establish upstream truth or live cloud registration. Existing finite and TLA+ contracts do not cover this independent derived snapshot mechanism; their source mappings and sync pins remain unchanged.
