@@ -85,17 +85,6 @@
       "feature": "routing"
     },
     {
-      "name": "cloud",
-      "description": "Run bounded cooperative cloud jobs with durable checkpoints, priority admission and pending health escalation.",
-      "options": [
-        {
-          "name": "file",
-          "required": true
-        }
-      ],
-      "feature": "cloud"
-    },
-    {
       "name": "fleet",
       "description": "Retain scoped fleet health, parent read admission, alert delivery and explicit bounded history archival in the responsibility journal.",
       "options": [
@@ -279,21 +268,6 @@
       ]
     },
     {
-      "id": "cloud",
-      "title": "Cooperative cloud admission",
-      "commands": [
-        "cloud"
-      ],
-      "scenarios": [
-        "cloud-admission"
-      ],
-      "properties": [
-        "cloud-admission",
-        "process-incarnation",
-        "legacy-baseline"
-      ]
-    },
-    {
       "id": "orientation",
       "title": "Orientation and private integrity",
       "commands": [
@@ -428,43 +402,12 @@
       "statement": "Current scheduled health requires exact occurrence provenance; structured actions coalesce paraphrases, fresh source acquisitions close pending recovery, and explicit upgrades preserve historical states and review views. Parent read, uncertainty, archive ancestry and delivery guards remain bounded."
     },
     {
-      "id": "process-incarnation",
-      "source": "src/process-incarnation.mjs",
-      "functions": [
-        "parseProcStat",
-        "parseProcStatus",
-        "parseProcMount",
-        "validIncarnation",
-        "compareIncarnations",
-        "ownerDecision"
-      ],
-      "statement": "Validated kernel witnesses distinguish process incarnations while missing, incomparable or unrooted namespace evidence leaves owner absence unknown."
-    },
-    {
-      "id": "legacy-baseline",
-      "source": "src/cloud-migration.mjs",
-      "functions": [
-        "assessLegacyAttestation"
-      ],
-      "statement": "Exact legacy checkpoint/report bindings, distinct attributable calls and declared review establish reported historical evidence only; fresh observed baseline and later restart remain separate live gates."
-    },
-    {
       "id": "automation-contract",
       "source": "src/automation-plan.mjs",
       "functions": [
         "planAutomation"
       ],
       "statement": "Versioned staged plans bind supplied configuration, scope, source pins, budgets and destinations. Canonical run ingestion rejects invalid timing, telemetry and nonterminal reports without granting effects or native creation."
-    },
-    {
-      "id": "cloud-admission",
-      "source": "src/cloud.mjs",
-      "functions": [
-        "cloudTransition",
-        "capacityDecision",
-        "cloudState"
-      ],
-      "statement": "Bounded cooperative transitions reserve priority capacity, coalesce stable identities, retain checkpoints, bound retries, defer unavailable capacity and deduplicate pending health escalation."
     },
     {
       "id": "exact-binding",

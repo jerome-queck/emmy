@@ -5,7 +5,7 @@ description: Check shared scoped planning rules, rounded booking, native/API adm
 
 # Shared planning policy contract
 
-Run `node verification/planning-policy/check.mjs` using Node 24 or later, existing Java 21 and the existing hash-pinned TLC jar. No installation or download occurs. Run `node --test test/planning-policy.test.mjs` and `node scripts/verify-behavior.mjs --focus calendar` for full historical arithmetic equivalence, actual CLI packet retention and native/API receipt journeys. Run full `npm run check` for the original seventeen groups plus the two planning-policy groups.
+Run `node verification/planning-policy/check.mjs` using Node 24 or later, existing Java 21 and the existing hash-pinned TLC jar. No installation or download occurs. Run `node --test test/planning-policy.test.mjs` and `node scripts/verify-behavior.mjs --focus calendar` for full historical arithmetic equivalence, actual CLI packet retention and native/API receipt journeys. Run full `npm run check` for the complete remaining fixed suite plan.
 
 Read every TLC result with `/statechart` by name. The report retains each generated spec, config, graph, view, raw TLC output and copied-source replay. Follow that installed skill's current invocation. Preserve failures. Development mode skips source pins and cannot satisfy aggregate assurance.
 

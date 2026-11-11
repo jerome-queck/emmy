@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "sourceCommit": "3ced171735cb3ed7bc9c979060b8d7411902b39c",
   "sourceFiles": {
-    "src/assurance.mjs": "e3bdc2f64e613cf2007556f6f209e2ef8e0b54011aff35c160b082fff4d0a0b6",
+    "src/assurance.mjs": "9b71ce366029a84343007f7d9e217fe6978bc199a3fb0817b9bc2e423c69a32a",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
     "src/local-assurance.mjs": "6ff678f407e56d2b9b0f338698628dc08b07eda768cb8cb20ad288d0c9cb8764",
     "scripts/check.mjs": "f8b710af8abcafa21d3090a9739b820f04b01b98e9dfdfb8b49ca1b4877b204c",
     "scripts/check-markdown-links.mjs": "b40227b7d9e9617c9c1930c8286d67c550db6c4bf48c74d3d2ee3d1c4b78899c",
-    "scripts/agent.mjs": "40e3e0bf3479ce0ce198541bd33b53e99c15b4207c5b98aac56c1a1ccdb3edbb",
-    "src/metadata.mjs": "d16f3ac167bcf56b5a26d91636efccec389da5b89d1b136311baf3a35ca86f28",
+    "scripts/agent.mjs": "768cbdcde2e6958cede49e99335687ed771e15111ded3845400577ea0603f371",
+    "src/metadata.mjs": "d07550e73007c13d037d6dc1c051ac7b395defc9c0ac51c80e5a310deec2941e",
     "scripts/verify-publication.mjs": "f883deaedb39f8c551baa065ea43fbeec51f9412b835d6f487f8de2cd2fd954a"
   },
   "verificationFiles": {
@@ -19,7 +19,7 @@
     "verification/local-assurance/chart.mmd": "555d30c6f63b8be9e4cf91840f29b767b9df697b0adac2cde5d62ed4ff927b68",
     "test/local-assurance.test.mjs": "dd08e3e27d7c0530d9671767831ff0afe2405432c3362d7aed66f075416e2f8e",
     "test/markdown-links.test.mjs": "4c6b41c15971a063723cd82d8d915acf629e791270c767c6303df1cb5a5b97e3",
-    ".agents/skills/local-assurance/SKILL.md": "29b0b779454fb2080394eb4440d36cad80fb4952eb289e402bea91545c81111c"
+    ".agents/skills/local-assurance/SKILL.md": "82ea7245edb522f3c631d2a9e0918beaa6b3d26513a6868b4fb3ddacf1a86807"
   },
   "mapping": [
     {

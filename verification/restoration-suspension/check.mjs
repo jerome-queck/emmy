@@ -1,3 +1,4 @@
+import { tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
@@ -38,7 +39,7 @@ try {
   }
   const run = async (name, modules, expected = null) => {
     const path = join(directory, name); await mkdir(path, { recursive: true });
-    const probeTmp = await mkdtemp('/tmp/emmy-restore-probe-'); const tmp = await mkdtemp('/tmp/emmy-restore-tlc-');
+    const probeTmp = await mkdtemp(join(tmpdir(), 'emmy-restore-probe-')); const tmp = await mkdtemp(join(tmpdir(), 'emmy-restore-tlc-'));
     const graph = history(modules); await writeFile(join(path, 'graph.json'), JSON.stringify(graph));
     await writeFile(join(path, 'Restoration.tla'), graphSpec(graph)); await writeFile(join(path, 'Restoration.cfg'), config);
     const labels = graph.nodes.map(n => !n.result ? 'Evidence changed, reconciliation pending' : n.result.restored.suspended ? n.state.expired ? 'Evidence expired' : n.state.revocations[n.state.epoch] === 1 ? 'Evidence unavailable' : 'Restoration suspended' : 'Restoration ready');

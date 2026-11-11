@@ -5,7 +5,7 @@
     "scripts/github-auto-merge.mjs": "3c89e3044e08fd70841e481da1943a8efa2dea615a3a98c27cbe7d020e7bce9d",
     "scripts/local-delivery.mjs": "b339a2c581ad2751ffe013d93652b6917439c10e4268e636dbe91fb8e14657bf",
     "src/local-assurance.mjs": "6ff678f407e56d2b9b0f338698628dc08b07eda768cb8cb20ad288d0c9cb8764",
-    "src/assurance.mjs": "e3bdc2f64e613cf2007556f6f209e2ef8e0b54011aff35c160b082fff4d0a0b6",
+    "src/assurance.mjs": "9b71ce366029a84343007f7d9e217fe6978bc199a3fb0817b9bc2e423c69a32a",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
     ".github/workflows/check.yml": "246e8e82f73abfb7e8d38901eda0cb1c293b4e6071cf9a9fdb9f0245545b8994",
     ".github/workflows/auto-merge.yml": "1cae007e8476d26b15723715db7405a9125d046ca52ea4535af5a16b20ec686c"

@@ -13,18 +13,18 @@
     "src/fleet-schema.mjs": "d9d87c7834b006fb5dd7dac1bb41b0f2075b2e20057f40c656c0974b4576ea27",
     "src/fleet-state.mjs": "4e3f1d689b3cb7df2301e4df46298c7bea221584b3e67b76d844685046439d53",
     "src/guidance-pin.mjs": "f037a3f461db221e884f9f72da45515d51e536f6f271bf70ff11a36b6cf238b7",
-    "src/metadata.mjs": "d16f3ac167bcf56b5a26d91636efccec389da5b89d1b136311baf3a35ca86f28",
+    "src/metadata.mjs": "d07550e73007c13d037d6dc1c051ac7b395defc9c0ac51c80e5a310deec2941e",
     "src/morning-presentation.mjs": "36d171d854c34b3062da02e9c9ac5b095e509164e2c674bf0dd4ccae1268a343",
     "src/morning.mjs": "c01412274bccfb57e15a423b88c830a9cdb8d6486b2b264c074e7ce30b34d026",
     "src/operating-contract.mjs": "ec84bbc86f228413a86491cbea3843e5b3777ff017084885751b02e51226f0b4",
-    "src/records.mjs": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58",
+    "src/records.mjs": "32b2bdae797dcb135a55f04a417b4c01dd1cd996a65347dc2f6fd8478dbff95d",
     "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
     "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
     "verification/fleet-fixtures.mjs": "4257eeaa42d60df8d226ea7ffd9b48ab83099799d54c8883379392cdfcee1d4b"
   },
   "verificationFiles": {
     "verification/fleet-health/graph.mjs": "a1e7ced6ce9f7c91c0d470192ea6444b008500f891ffe6b49c85d3c3977101c8",
-    "verification/fleet-health/check.mjs": "a836d8ee831dc3f2d190a0054d525938eb0355a74f73be8942ccd0185b050cdc",
+    "verification/fleet-health/check.mjs": "418b95ed00cffdcc2c89a8b0de92c06365a5b28cf1583f618382581998be4ce5",
     ".agents/skills/fleet-health/SKILL.md": "124b0354e7be6113a91afc5f3910d9444e2e991c36d193ca71622c26ad095cf9"
   },
   "reviewBasis": " Calendar attempt integration: appended one fixed suite and one metadata association; reviewed the synthetic Calendar driver and evidence feature additions. Existing transition guards and prior suite rows are unchanged. Full gate and independent review pending. Automation lineage integration: one appended suite and evidence association; prior plan rows and reducer guards unchanged. Source and adapter remain synthetic; exact-head full gate and independent review pending. Main integration review preserves existing model domains and invariants. Generic producer bytes move to automation-producer.mjs; shared validator bodies and publisher awaits retain their semantics. New metadata, copied dependency closure, generated references and mandatory reporting commands are reviewed in the integration source audit. Source witnesses are reachable neutral commits. Main integration review preserves existing model domains and invariants. Generic producer bytes move to automation-producer.mjs; shared validator bodies and publisher awaits retain their semantics. New metadata, copied dependency closure, generated references and mandatory reporting commands are reviewed in the integration source audit. Source witnesses are reachable neutral commits."

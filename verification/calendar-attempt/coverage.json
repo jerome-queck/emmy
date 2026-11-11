@@ -5,10 +5,10 @@
     "src/calendar-policy.mjs": "2b40d5d2cf26efa2307741df89b60d87bcf0589aab612dff08362f7db598d1f9",
     "src/planning-policy.mjs": "ec3c8bd2a3d9d03e0cc75a77af2d014381b28c24d81ee9ee108d5ab89aecadcc",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
-    "src/records.mjs": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58"
+    "src/records.mjs": "32b2bdae797dcb135a55f04a417b4c01dd1cd996a65347dc2f6fd8478dbff95d"
   },
   "verificationFiles": {
-    "verification/calendar-attempt/check.mjs": "dab22b445292a000940d4f67feed8fc00cd06348d1e62c5394f258fe69399eca",
+    "verification/calendar-attempt/check.mjs": "cd75c3435c694a1119f3d29c69a285645ca9e010e5ba16deaae928abbadaa3b0",
     "verification/calendar-attempt/graph.mjs": "3bcfecee881ab80875c06ae4d150b56ff2c5dd8461571c42920a9bc462c5a90c",
     "verification/calendar-register-fixtures.mjs": "307c62c12a7e6e8f9cdd1fdb5715198d0f0387f925ce07df057f0cc907885783",
     ".agents/skills/calendar-attempt/SKILL.md": "8c5a8e1a96c59db1e236ae77f24b8f738512ba215294a60c55d90b4bd10dd070"

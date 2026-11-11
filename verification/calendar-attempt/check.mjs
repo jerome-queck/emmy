@@ -1,3 +1,4 @@
+import { tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
@@ -10,7 +11,7 @@ import { registerFixture } from '../calendar-register-fixtures.mjs';
 
 const hash = value => createHash('sha256').update(value).digest('hex');
 const root = process.cwd(), output = join(root, '.local/verification/calendar-attempt', randomUUID());
-const scratch = await mkdtemp('/tmp/emmy-calendar-attempt-');
+const scratch = await mkdtemp(join(tmpdir(), 'emmy-calendar-attempt-'));
 await mkdir(output, { recursive: true });
 const report = { status: 'running', scratch, runs: [] };
 const mutants = [

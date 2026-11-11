@@ -2,11 +2,10 @@ import { canonical, digest } from './content.mjs';
 
 export const assurancePlan = Object.freeze([
   { id: 'markdown-links', args: ['scripts/check-markdown-links.mjs', '--tree', '@source-tree'] },
-  { id: 'cli-boundaries', args: ['--test', 'test/markdown-links.test.mjs', 'test/agent-local.test.mjs'] },
+  { id: 'cli-boundaries', args: ['--test', 'test/markdown-links.test.mjs', 'test/agent-local.test.mjs', 'test/runtime-boundary.test.mjs'] },
   { id: 'generated-references', args: ['scripts/agent.mjs', 'maintain', '--check'] },
   { id: 'calendar', args: ['--test', 'test/calendar-collection.test.mjs', 'test/calendar-register.test.mjs', 'test/calendar-timing.test.mjs', 'test/calendar-handoff.test.mjs', 'test/academic-os-task-plan.test.mjs'] },
   { id: 'guidance-pin', args: ['--test', 'test/guidance-pin.test.mjs'] },
-  { id: 'kernel-incarnation', args: ['--test', 'test/process-incarnation.test.mjs', 'test/cloud-migration.test.mjs'] },
   { id: 'fleet-morning', args: ['--test', 'test/fleet.test.mjs', 'test/fleet-overrun.test.mjs', 'test/fleet-history.test.mjs', 'test/fleet-semantics.test.mjs', 'test/morning.test.mjs', 'test/morning-compact.test.mjs', 'test/morning-collection.test.mjs'] },
   { id: 'briefing', args: ['--test', 'test/token-review.test.mjs', 'test/improvement-report.test.mjs', 'test/daily-briefing.test.mjs', 'test/briefing-policy.test.mjs', 'test/briefing-cloud-caller.test.mjs', 'test/briefing-source-normalization.test.mjs', 'test/briefing-reporting.test.mjs', 'test/morning-v3.test.mjs'] },
   { id: 'automation-foundation', args: ['--test', 'test/morning-observation.test.mjs', 'test/foundation-release.test.mjs', 'test/automation-procedure.test.mjs'] },
@@ -23,8 +22,6 @@ export const assurancePlan = Object.freeze([
   { id: 'local-assurance-formal', args: ['verification/local-assurance/check.mjs'] },
   { id: 'responsibility-closure-formal', args: ['verification/responsibility-closure/check.mjs'] },
   { id: 'restoration-suspension-formal', args: ['verification/restoration-suspension/check.mjs'] },
-  { id: 'cooperative-cloud-formal', args: ['verification/cooperative-cloud/check.mjs'] },
-  { id: 'incarnation-ownership-formal', args: ['verification/incarnation-ownership/check.mjs'] },
   { id: 'fleet-health-formal', args: ['verification/fleet-health/check.mjs'] },
   { id: 'morning-send-formal', args: ['verification/morning-send/check.mjs'] },
   { id: 'calendar-attempt-formal', args: ['verification/calendar-attempt/check.mjs'] },

@@ -100,11 +100,11 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
     await writeFile(join(root, 'src/new-area/new.mjs'), 'export const newArea = 1;\n');
     check(2, /unmapped src\/new-area\/new\.mjs/);
     await rm(join(root, 'src/new-area'), { recursive: true });
-    const target = join(root, 'src/cloud.mjs'); const original = await readFile(target);
-    await rm(target); check(2, /cloud\.mjs/); await writeFile(target, original);
-    await writeFile(target, Buffer.concat([original, Buffer.from('\n')])); check(2, /stale mapping src\/cloud\.mjs/);
+    const target = join(root, 'src/signin.mjs'); const original = await readFile(target);
+    await rm(target); check(2, /signin\.mjs/); await writeFile(target, original);
+    await writeFile(target, Buffer.concat([original, Buffer.from('\n')])); check(2, /stale mapping src\/signin\.mjs/);
     const refusedWrite = run(root, ['maintain', '--write']); assert.equal(refusedWrite.status, 2, refusedWrite.stdout);
-    assert.match(JSON.parse(refusedWrite.stdout).error, /stale mapping src\/cloud\.mjs/);
+    assert.match(JSON.parse(refusedWrite.stdout).error, /stale mapping src\/signin\.mjs/);
     await writeFile(target, original);
     await writeFile(join(root, 'verification/unmapped-check.mjs'), 'export const check = true;\n');
     check(2, /unmapped verification\/unmapped-check\.mjs/); await rm(join(root, 'verification/unmapped-check.mjs'));
@@ -124,10 +124,10 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
     await mutate(value => { value.subsystems[0].files.shift(); }); check(2, /unmapped src\/records\.mjs/);
     const unmappedWrite = run(root, ['maintain', '--write']); assert.equal(unmappedWrite.status, 2, unmappedWrite.stdout);
     assert.match(JSON.parse(unmappedWrite.stdout).error, /unmapped src\/records\.mjs/);
-    await mutate(value => { value.subsystems.find(area => area.id === 'publication').drivers = ['verification/cloud-drive.mjs']; }); check(2, /duplicate evidence binding/);
+    await mutate(value => { value.subsystems.find(area => area.id === 'publication').drivers = ['verification/fleet-drive.mjs']; }); check(2, /duplicate evidence binding/);
     await mutate(value => { value.subsystems.find(area => area.id === 'publication').skills = ['.agents/skills/local-assurance/SKILL.md']; }); check(2, /duplicate evidence binding/);
     await writeFile(manifest, originalManifest);
-    for (const [from, to] of [['verification/publication/drive.mjs','verification/cloud-drive.mjs'],['.agents/skills/publication-contract/SKILL.md','.agents/skills/local-assurance/SKILL.md']]) {
+    for (const [from, to] of [['verification/publication/drive.mjs','verification/fleet-drive.mjs'],['.agents/skills/publication-contract/SKILL.md','.agents/skills/local-assurance/SKILL.md']]) {
       assert.ok(metadataBefore.includes(`"${from}"`));
       await writeFile(metadata, metadataBefore.replace(`"${from}"`, `"${to}"`));
       await mutate(value => { value.subsystems.flatMap(area => area.files).find(file => file.path === 'src/metadata.mjs').sha256 = digest(metadataBefore.replace(`"${from}"`, `"${to}"`)); });

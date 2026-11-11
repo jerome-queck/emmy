@@ -6,7 +6,6 @@ export const commands = [
   { name: 'responsibility', description: 'Retain an immutable goal, context, exact target, criteria, authority, feature, and lifecycle definition.', options: [{ name: 'file', required: true }], feature: 'routing' },
   { name: 'reconcile', description: 'Import evidence, inspect current local state, retain findings/repairs, and propose bounded next work.', options: [{ name: 'id' }, { name: 'import' }, { name: 'as-of', required: true }], feature: 'evidence' },
   { name: 'dispatch', description: 'Resolve saved destinations, recover explicit direct-root or historical bindings, and return read-only native dispatch advice.', options: [{ name: 'id' }, { name: 'project' }, { name: 'resolve' }, { name: 'discovery' }, { name: 'as-of', required: true }, { name: 'context-needed', flag: true }], feature: 'routing' },
-  { name: 'cloud', description: 'Run bounded cooperative cloud jobs with durable checkpoints, priority admission and pending health escalation.', options: [{ name: 'file', required: true }], feature: 'cloud' },
   { name: 'fleet', description: 'Retain scoped fleet health, parent read admission, alert delivery and explicit bounded history archival in the responsibility journal.', options: [{ name: 'file', required: true }], feature: 'fleet' },
   { name: 'signin', description: 'Choose a scoped sign-in recovery handoff without accepting or retaining secrets.', options: [{ name: 'file', required: true }], feature: 'fleet' },
   { name: 'token-review', description: 'Assess bounded supplied usage captures and complete cost per verified success without telemetry or execution.', options: [{ name: 'file', required: true }], feature: 'evidence' },
@@ -33,7 +32,6 @@ export const briefingGuidance = {
 export const verification = {
   features: [
     { id: 'fleet', title: 'Fleet health and sign-in recovery', commands: ['fleet', 'signin'], scenarios: ['fleet-health', 'signin-recovery', 'morning-run'], properties: ['fleet-contract', 'morning-contract'] },
-    { id: 'cloud', title: 'Cooperative cloud admission', commands: ['cloud'], scenarios: ['cloud-admission'], properties: ['cloud-admission', 'process-incarnation', 'legacy-baseline'] },
     { id: 'orientation', title: 'Orientation and private integrity', commands: ['help', 'doctor', 'catalog'], scenarios: ['orientation'], properties: [] },
     { id: 'routing', title: 'Responsibilities and proposals', commands: ['responsibility', 'dispatch', 'probe'], scenarios: ['persistent-context', 'binding-boundaries', 'native-effect-correlation', 'native-dispatch', 'probe-packet', 'definition-concurrency'], properties: ['exact-binding', 'branch-blocking', 'effect-stability', 'authority-scope', 'native-uncertainty', 'dispatch-recovery'] },
     { id: 'evidence', title: 'Reconciliation and correction', commands: ['reconcile', 'briefing', 'guidance-pin', 'calendar', 'calendar-register', 'token-review'], scenarios: ['self-check-repair', 'evidence-boundaries', 'live-cutoff', 'local-check', 'local-check-cleanup', 'trigger-evolution', 'briefing-guidance', 'briefing-draft', 'briefing-boundaries', 'calendar-acceptance', 'calendar-register', 'token-review'], properties: ['observation-gates', 'reported-assurance', 'failure-preservation', 'repair-closure', 'deterministic-replay', 'current-evidence', 'live-cutoff', 'process-group-cleanup', 'trigger-coverage', 'retirement-closure', 'calendar-acceptance', 'calendar-register'] },
@@ -42,10 +40,7 @@ export const verification = {
   properties: [
     { id: 'morning-contract', source: 'src/morning.mjs', functions: ['classifyMail', 'morningTransition', 'renderMorning', 'morningView', 'deliveryReadback'], statement: 'Versioned conservative mail judgments, fleet-backed fresh Singapore-day source acquisitions, complete reviewed-ID accounting, exact delivered-body gates, unread-preserved reversible outcomes and same-message edits retain scoped provenance without claiming native truth.' },
     { id: 'fleet-contract', source: 'src/fleet-state.mjs', functions: ['captureCondition', 'fleetHistory', 'fleetTransition', 'fleetState', 'fleetView'], statement: 'Current scheduled health requires exact occurrence provenance; structured actions coalesce paraphrases, fresh source acquisitions close pending recovery, and explicit upgrades preserve historical states and review views. Parent read, uncertainty, archive ancestry and delivery guards remain bounded.' },
-    { id: 'process-incarnation', source: 'src/process-incarnation.mjs', functions: ['parseProcStat', 'parseProcStatus', 'parseProcMount', 'validIncarnation', 'compareIncarnations', 'ownerDecision'], statement: 'Validated kernel witnesses distinguish process incarnations while missing, incomparable or unrooted namespace evidence leaves owner absence unknown.' },
-    { id: 'legacy-baseline', source: 'src/cloud-migration.mjs', functions: ['assessLegacyAttestation'], statement: 'Exact legacy checkpoint/report bindings, distinct attributable calls and declared review establish reported historical evidence only; fresh observed baseline and later restart remain separate live gates.' },
     { id: 'automation-contract', source: 'src/automation-plan.mjs', functions: ['planAutomation'], statement: 'Versioned staged plans bind supplied configuration, scope, source pins, budgets and destinations. Canonical run ingestion rejects invalid timing, telemetry and nonterminal reports without granting effects or native creation.' },
-    { id: 'cloud-admission', source: 'src/cloud.mjs', functions: ['cloudTransition', 'capacityDecision', 'cloudState'], statement: 'Bounded cooperative transitions reserve priority capacity, coalesce stable identities, retain checkpoints, bound retries, defer unavailable capacity and deduplicate pending health escalation.' },
     { id: 'exact-binding', source: 'src/work.mjs', functions: ['routeTarget'], statement: 'Only own project/host bindings with exact target identity establish a local route.' },
     { id: 'branch-blocking', source: 'src/responsibilities.mjs', functions: ['reconcileState'], statement: 'Concurrent definition heads survive and block action proposals.' },
     { id: 'effect-stability', source: 'src/work.mjs', functions: ['effectKey'], statement: 'Same responsibility, target, effect and occurrence retain the same effect key across review time and definition edits.' },
@@ -95,15 +90,6 @@ export const subsystemEvidence = {
     "checkerSha256": "140847ff30709bf0171b91eb190da2034086085c579cc5e98d04cca152156ce4"
   }
 },
-  "cooperative-cloud": {
-    "drivers": ["verification/cloud-drive.mjs"],
-    "skills": [".agents/skills/cooperative-cloud/SKILL.md"],
-    "replay": ["verification/cooperative-cloud/check.mjs"],
-    "coverageRecords": ["verification/coverage.json", "verification/cooperative-cloud/coverage.json"],
-    "model": "reachable-reducer",
-    "skillStatus": "maintained",
-    "graph": { "kind": "reachable-reducer", "path": "verification/cooperative-cloud/graph.mjs", "record": "verification/cooperative-cloud/coverage.json", "checker": "verification/cooperative-cloud/check.mjs", "exports": ["graph", "spec"] }
-  },
   "responsibility-closure": {
     "drivers": ["scripts/verify-behavior.mjs"],
     "skills": [".agents/skills/responsibility-closure/SKILL.md"],
@@ -172,24 +158,6 @@ export const subsystemEvidence = {
         "dispatchConfig"
       ]
     }
-  },
-  "cloud": {
-    "drivers": [
-      "verification/cloud-drive.mjs"
-    ],
-    "skills": [
-      ".agents/skills/coordination-contract/SKILL.md"
-    ],
-    "replay": [
-      "verification/cloud-mutations.mjs",
-      "verification/incarnation-mutations.mjs",
-      "scripts/verify-formal.mjs"
-    ],
-    "coverageRecords": [
-      "verification/coverage.json"
-    ],
-    "model": "finite-predicates",
-    "skillStatus": "maintained"
   },
   "fleet": {
     "drivers": [
@@ -460,15 +428,6 @@ export const subsystemEvidence = {
     ],
     "model": "empirical-only",
     "skillStatus": "not-applicable"
-  },
-  "incarnation-ownership": {
-    "drivers": ["verification/cloud-drive.mjs"],
-    "skills": [".agents/skills/incarnation-ownership/SKILL.md"],
-    "replay": ["verification/incarnation-ownership/check.mjs"],
-    "coverageRecords": ["verification/coverage.json", "verification/incarnation-ownership/coverage.json"],
-    "model": "reachable-history",
-    "skillStatus": "maintained",
-    "graph": { "kind": "reachable-history", "path": "verification/incarnation-ownership/graph.mjs", "record": "verification/incarnation-ownership/coverage.json", "checker": "verification/incarnation-ownership/check.mjs", "exports": ["graph", "spec"] }
   },
   "fleet-health-history": {
     "drivers": ["verification/fleet-drive.mjs"],

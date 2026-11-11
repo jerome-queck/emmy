@@ -1,3 +1,4 @@
+import { tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
@@ -8,7 +9,7 @@ import * as original from '../../src/fleet-state.mjs';
 import { morningRoot } from '../morning-fixtures.mjs';
 import { graph, spec, cfg, precondition, expected as expectedRefusals } from './graph.mjs';
 const hash = b => createHash('sha256').update(b).digest('hex');
-const cwd=process.cwd(), evidence=join(cwd,'.local/verification/morning-send',randomUUID()), scratch=await mkdtemp('/tmp/emmy-morning-send-');
+const cwd=process.cwd(), evidence=join(cwd,'.local/verification/morning-send',randomUUID()), scratch=await mkdtemp(join(tmpdir(), 'emmy-morning-send-'));
 await mkdir(evidence,{recursive:true}); const report={status:'running',scratch,runs:[]};
 const mutations=[
   ['pending-duplicate','IntentSafe', [['!uncertainRun(run) && run.sealed?.outcomeDigest', 'run.sealed?.outcomeDigest'], ['run.sealed && !run.delivery && run.sealed.bodyDigest', 'run.sealed && run.sealed.bodyDigest']]],

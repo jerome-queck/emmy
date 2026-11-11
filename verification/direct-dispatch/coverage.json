@@ -3,13 +3,13 @@
   "sourceCommit": "3ced171735cb3ed7bc9c979060b8d7411902b39c",
   "sourceFiles": {
     "src/dispatch.mjs": "9156804f77c06577d02ebd7f142c627db2474fcb6fa14e826b08cac799a08383",
-    "src/records.mjs": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58",
+    "src/records.mjs": "32b2bdae797dcb135a55f04a417b4c01dd1cd996a65347dc2f6fd8478dbff95d",
     "src/work.mjs": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
-    "src/responsibilities.mjs": "07914317b5b8d310f2e347cdda0392f18c6a791cf26101124a5d651cb43a8674",
+    "src/responsibilities.mjs": "0f1ccdfb50b37c292574341dbb2033b239a2a5dea4bb6467534b6299a4a9304e",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
-    "src/assurance.mjs": "e3bdc2f64e613cf2007556f6f209e2ef8e0b54011aff35c160b082fff4d0a0b6",
-    "src/metadata.mjs": "d16f3ac167bcf56b5a26d91636efccec389da5b89d1b136311baf3a35ca86f28",
-    "scripts/agent.mjs": "40e3e0bf3479ce0ce198541bd33b53e99c15b4207c5b98aac56c1a1ccdb3edbb",
+    "src/assurance.mjs": "9b71ce366029a84343007f7d9e217fe6978bc199a3fb0817b9bc2e423c69a32a",
+    "src/metadata.mjs": "d07550e73007c13d037d6dc1c051ac7b395defc9c0ac51c80e5a310deec2941e",
+    "scripts/agent.mjs": "768cbdcde2e6958cede49e99335687ed771e15111ded3845400577ea0603f371",
     "verification/dispatch-drive.mjs": "bc43637428fcbfe78acd42bac4bd039e3d8663217c64b13f6a28163b5f99fca5"
   },
   "verificationFiles": {

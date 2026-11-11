@@ -38,7 +38,6 @@ The standing [thread and model policy](AGENTS.md#standing-thread-and-model-polic
 
 The [improvement procedure](docs/daily-improvement.md) covers daily maintenance, separate opportunity suggestions, and twice-weekly [token optimisation](docs/token-review.md). It contributes compact material changes to the existing briefing. Its [initial audit](docs/research/self-improvement-audit.md) distinguishes repaired incidents from reproducible policy gaps. Source features and documentation do not by themselves create schedules, change permissions, or prove live adoption.
 
-[`cloud --file <private-envelope.json>`](docs/cloud-admission.md) executes one bounded cooperative standard-library chunk on the invoking executor. One responsibility-backed queue per private home retains priorities, explicit backpressure, retries, checkpoints and pending health escalation. It cannot enforce provider-wide capacity or deliver a Dot notification. The two-phase acceptance script survives a separate process invocation; parent cloud use remains a separate acceptance stage.
 
 [`fleet --file <private-envelope.json>`](docs/fleet-health.md) retains executable scoped health, corrections, alert episodes, and bounded parent-owned read tickets in the same responsibility journal. Parent performs actual app/native/schedule reads and separate alert send/readback. [`signin`](.agents/skills/sign-in/SKILL.md) chooses a secure recovery handoff without accepting secrets. Browser and connector recovery remain separate.
 
@@ -60,7 +59,6 @@ The [CLI reference](docs/cli.md), [architecture](docs/architecture.md), and [pub
 
 Run `maintain --check` at session start. After metadata changes, run `maintain --write` and inspect the diff. The [behavioral skill](.agents/skills/verify/SKILL.md) drives real isolated CLI journeys. The [coordination contract](.agents/skills/coordination-contract/SKILL.md) checks finite production-function domains and paired source mutants. The [publication contract](.agents/skills/publication-contract/SKILL.md) runs a bounded TLA+ model of filesystem interleavings with paired actual-source witnesses. That check requires Java 21 and downloads a hash-pinned TLC jar into ignored local storage. The aggregate check retains both finite verifiers and the existing merge tests.
 
-The [cooperative cloud contract](.agents/skills/cooperative-cloud/SKILL.md) adds bounded reachable histories of the actual logical-job reducer. Claims, publication and process incarnation remain separate.
 
 Use the installed pstack verification maintenance workflows after covered changes. Generated references do not replace independent source reading, a live pass, or review of formal assumptions. Actual Dot installation and capabilities remain unverified until the [native probes](docs/dot-verification.md) succeed.
 
@@ -71,3 +69,5 @@ Ordinary coding sessions and substantive helpers use Sol Medium. Heavy reasoning
 Standard/non-fast is the default for coding sessions, coordinators and helpers. Fast or Ultrafast requires explicit owner approval for that exact task, role and tier. An unanswered request is not approval; continue Standard without waiting. Never inherit an accelerated tier from a parent, saved session or broader preference. Model/effort permission does not grant speed permission. Use supported native/config controls only, verify recorded settings separately, and report an unavailable tier control or readback.
 
 The reporting CLI and its bounded publication verification run in the full aggregate. Generic automation producers use `src/automation-producer.mjs`; private reporting uses `src/automation-reporting.mjs`. Hosted CI and independent review remain required.
+
+The [runtime boundary](docs/runtime-boundary.md) removes the cooperative SHA executor and its queue, claims, telemetry and migration. Current journal history remains; explicit legacy recovery uses exact retained installations on copies.
