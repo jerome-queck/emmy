@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { refreshInventory } from '../scripts/skill-inventory.mjs';
-import { refreshPrivateSkills } from '../scripts/private-skill-refresh.mjs';
+import { refreshPrivateSkills, preparePrivateCandidate, verifyPrivateCandidate } from '../scripts/private-skill-refresh.mjs';
 import { buildFoundation } from '../src/foundation-release.mjs';
 import { canonical, digest } from '../src/content.mjs';
 
@@ -47,7 +47,14 @@ async function fixture(t) {
     assert.equal(result.remoteWrite, false);
     return result;
   };
-  return { root, source, config, capture, now, raw, rawPath, metadata, run, preserve };
+  const candidate = async () => {
+    git('-c', 'user.name=fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-qm', 'reviewed candidate fixture');
+    const revision = git('rev-parse', 'HEAD');
+    const bytes = Buffer.from(`${canonical(buildFoundation(repo, revision))}\n`);
+    const path = join(root, 'candidate.json'); await writeFile(path, bytes);
+    return { path, revision, bytes: bytes.length, sha256: digest(bytes), snapshot, approvalRef: 'synthetic-review-fixture' };
+  };
+  return { root, source, config, capture, now, raw, rawPath, metadata, run, preserve, candidate };
 }
 
 test('repeat refresh validates exact private bytes, preserves source clocks and notices without a remote write', async t => {
@@ -59,6 +66,45 @@ test('repeat refresh validates exact private bytes, preserves source clocks and 
   assert.equal(first.reads.length, 5);
   assert.equal((await f.preserve()).status, 'complete');
   assert.deepEqual(await readFile(f.rawPath), f.raw);
+});
+
+test('new immutable upload request and exact readback never select the candidate or overwrite the accepted capsule', async t => {
+  const f = await fixture(t), candidate = await f.candidate(), attempt = join(f.root, 'upload');
+  const request = await preparePrivateCandidate(f.config, f.capture, candidate, attempt, f.now);
+  assert.equal(request.status, 'awaiting-upload');
+  assert.equal(request.upload.parent_folder_id, f.config.cloud.parentId);
+  const receipt = { fileId: 'new-file', requestSha256: request.requestSha256 };
+  const capture = structuredClone(f.capture);
+  capture.rawPath = candidate.path; capture.file.id = receipt.fileId; capture.file.size = String(candidate.bytes);
+  const result = await verifyPrivateCandidate(attempt, receipt, capture, f.now);
+  assert.equal(result.status, 'candidate-verified');
+  assert.equal(result.selectionChanged, false);
+  assert.equal(result.activation, 'held-consumer-acceptance');
+  assert.deepEqual(await readFile(f.config.capsulePath), f.raw);
+  assert.deepEqual(await readFile(f.rawPath), f.raw);
+  await assert.rejects(preparePrivateCandidate(f.config, f.capture, candidate, attempt, f.now), /EEXIST/);
+});
+
+for (const [name, change, pattern] of [
+  ['uncertain upload identity', (receipt) => { receipt.fileId = ''; }, /receipt/],
+  ['last-good overwrite', (receipt) => { receipt.fileId = 'accepted-file'; }, /receipt/],
+  ['wrong upload request', (receipt) => { receipt.requestSha256 = '0'.repeat(64); }, /receipt/],
+  ['wrong raw bytes', (_receipt, capture, f) => { capture.rawPath = f.rawPath; }, /raw hash/],
+  ['wrong private parent', (_receipt, capture) => { capture.file.parent_ids = ['other']; }, /parent/],
+  ['expanded candidate permissions', (_receipt, capture) => { capture.file.shared = true; }, /identity/],
+]) test(`${name} preserves pending upload and accepted cloud consumer`, async t => {
+  const f = await fixture(t), candidate = await f.candidate(), attempt = join(f.root, 'upload');
+  const request = await preparePrivateCandidate(f.config, f.capture, candidate, attempt, f.now);
+  const original = await readFile(join(attempt, 'upload-request.json'));
+  const receipt = { fileId: 'new-file', requestSha256: request.requestSha256 };
+  const capture = structuredClone(f.capture);
+  capture.rawPath = candidate.path; capture.file.id = receipt.fileId; capture.file.size = String(candidate.bytes);
+  change(receipt, capture, f);
+  await assert.rejects(verifyPrivateCandidate(attempt, receipt, capture, f.now), pattern);
+  assert.deepEqual(await readFile(join(attempt, 'upload-request.json')), original);
+  assert.deepEqual(await readFile(f.config.capsulePath), f.raw);
+  assert.deepEqual(await readFile(f.rawPath), f.raw);
+  await assert.rejects(readFile(join(attempt, 'candidate-verified.json')), /ENOENT/);
 });
 
 for (const [name, change, pattern] of [
