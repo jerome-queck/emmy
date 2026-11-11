@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -51,5 +51,44 @@ test('catalog consumers still refuse missing public inventory before proposing w
       assert.match(JSON.parse(result.stdout).error, /registry\/catalog\.json/);
     }
     assert.deepEqual(await readdir(root), []);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('maintain CLI rejects missing, stale and unsupported subsystem coverage', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'emmy-subsystem-admission-'));
+  const source = fileURLToPath(new URL('..', import.meta.url));
+  try {
+    for (const path of ['src', 'scripts', 'verification', 'test', 'registry', 'procedures', 'docs', '.agents', '.github', '.codex', 'package.json', 'package-lock.json']) {
+      await cp(join(source, path), join(root, path), { recursive: true });
+    }
+    const check = (status, pattern) => {
+      const result = run(root, ['maintain', '--check']);
+      assert.equal(result.status, status, result.stdout + result.stderr);
+      const data = JSON.parse(result.stdout);
+      if (pattern) assert.match(data.error, pattern);
+    };
+    check(0);
+    await mkdir(join(root, 'src/new-area'));
+    await writeFile(join(root, 'src/new-area/new.mjs'), 'export const newArea = 1;\n');
+    check(2, /unmapped src\/new-area\/new\.mjs/);
+    await rm(join(root, 'src/new-area'), { recursive: true });
+    const target = join(root, 'src/cloud.mjs'); const original = await readFile(target);
+    await rm(target); check(2, /cloud\.mjs/); await writeFile(target, original);
+    await writeFile(target, Buffer.concat([original, Buffer.from('\n')])); check(2, /stale mapping src\/cloud\.mjs/);
+    await writeFile(target, original);
+    await writeFile(join(root, 'verification/unmapped-check.mjs'), 'export const check = true;\n');
+    check(2, /unmapped verification\/unmapped-check\.mjs/); await rm(join(root, 'verification/unmapped-check.mjs'));
+    const manifest = join(root, 'verification/subsystems.json'); const originalManifest = await readFile(manifest, 'utf8');
+    const mutate = async fn => { const value = JSON.parse(originalManifest); fn(value); await writeFile(manifest, JSON.stringify(value)); };
+    await mutate(value => { value.subsystems[0].files.shift(); }); check(2, /unmapped src\/records\.mjs/);
+    await mutate(value => { value.subsystems[0].drivers = ['verification/no-driver.mjs']; }); check(2, /no-driver\.mjs/);
+    await mutate(value => { value.subsystems[0].skills = ['.agents/skills/no-skill/SKILL.md']; }); check(2, /no-skill/);
+    await mutate(value => { value.subsystems[0].skills = []; }); check(2, /missing formal evidence/);
+    await mutate(value => { value.subsystems[0].files[0].callers = ['src/catalog.mjs']; }); check(2, /stale caller/);
+    await mutate(value => { const area = value.subsystems.find(row => row.id === 'local-assurance'); area.graph.path = 'verification/local-assurance/chart.mmd'; }); check(2, /unsupported graph/);
+    await mutate(value => { const area = value.subsystems.find(row => row.id === 'dispatch'); area.graph.kind = 'reachable-reducer'; }); check(2, /unsupported graph/);
+    await mutate(value => { delete value.subsystems.find(row => row.id === 'dispatch').graph; }); check(2, /missing or unsupported graph/);
+    await mutate(value => { value.foundationReady = true; }); check(2, /invalid schema or readiness/);
+    await writeFile(manifest, originalManifest); check(0);
   } finally { await rm(root, { recursive: true, force: true }); }
 });

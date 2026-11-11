@@ -1,0 +1,2246 @@
+{
+  "schemaVersion": 1,
+  "foundationReady": false,
+  "subsystems": [
+    {
+      "id": "responsibility",
+      "stateOwner": "responsibilities.mjs reconcileState; records.mjs journal and work.mjs review",
+      "classification": "stateful; finite predicates",
+      "drivers": [
+        "scripts/verify-behavior.mjs",
+        "verification/properties.mjs"
+      ],
+      "skills": [
+        ".agents/skills/coordination-contract/SKILL.md"
+      ],
+      "replay": [
+        "verification/mutations.mjs",
+        "scripts/verify-formal.mjs"
+      ],
+      "bounds": "Finite supplied histories; honest local evidence and scoped clocks.",
+      "gap": "Reachable repair and restore lifecycle and dedicated contract missing.",
+      "files": [
+        {
+          "path": "src/records.mjs",
+          "sha256": "26929c7254a4261bd244514e315223bd8a20170c450232e951b81b614f994b58",
+          "callers": [
+            "src/calendar-collection.mjs",
+            "src/cloud-migration.mjs",
+            "src/cloud.mjs",
+            "src/dispatch.mjs",
+            "src/fleet.mjs",
+            "src/responsibilities.mjs",
+            "src/work.mjs",
+            "scripts/agent.mjs"
+          ]
+        },
+        {
+          "path": "src/responsibilities.mjs",
+          "sha256": "07914317b5b8d310f2e347cdda0392f18c6a791cf26101124a5d651cb43a8674",
+          "callers": [
+            "src/dispatch.mjs",
+            "scripts/agent.mjs",
+            "scripts/verify-behavior.mjs",
+            "verification/cloud-drive.mjs",
+            "verification/dispatch-drive.mjs",
+            "verification/fixtures.mjs",
+            "verification/fleet-drive.mjs",
+            "test/fleet-semantics.test.mjs"
+          ]
+        },
+        {
+          "path": "src/work.mjs",
+          "sha256": "3870696da8a7539c527873649fb3ad37dae8453c1432c22cc71463248d3ab9d1",
+          "callers": [
+            "src/cloud.mjs",
+            "src/dispatch.mjs",
+            "src/fleet.mjs",
+            "src/records.mjs",
+            "src/responsibilities.mjs",
+            "verification/dispatch-drive.mjs",
+            "verification/fleet-drive.mjs",
+            "test/calendar-handoff.test.mjs"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/responsibilities.mjs",
+          "symbol": "reconcileState"
+        },
+        {
+          "path": "src/records.mjs",
+          "symbol": "restoreHome"
+        },
+        {
+          "path": "src/work.mjs",
+          "symbol": "repairStatus"
+        }
+      ],
+      "properties": [
+        "failure-preservation",
+        "repair-closure",
+        "restore-suspension"
+      ],
+      "coverageRecords": [
+        "verification/coverage.json"
+      ],
+      "scenarios": [
+        "persistent-context",
+        "self-check-repair",
+        "archive-recovery",
+        "restored-current-context"
+      ],
+      "model": "finite-predicates",
+      "skillStatus": "maintained"
+    },
+    {
+      "id": "dispatch",
+      "stateOwner": "dispatch.mjs dispatchDecision; records.mjs immutable lineage",
+      "classification": "stateful advice; finite assessment",
+      "drivers": [
+        "verification/dispatch-drive.mjs"
+      ],
+      "skills": [
+        ".agents/skills/direct-dispatch/SKILL.md"
+      ],
+      "replay": [
+        "verification/direct-dispatch/check.mjs"
+      ],
+      "bounds": "Finite supplied histories, one synchronous assessment per case; no native create.",
+      "gap": "Native authority, execution and complete history remain external.",
+      "graph": {
+        "kind": "finite-assessment",
+        "path": "verification/direct-dispatch/graph.mjs"
+      },
+      "files": [
+        {
+          "path": "src/dispatch.mjs",
+          "sha256": "9156804f77c06577d02ebd7f142c627db2474fcb6fa14e826b08cac799a08383",
+          "callers": [
+            "scripts/agent.mjs"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/dispatch.mjs",
+          "symbol": "dispatchDecision"
+        }
+      ],
+      "properties": [
+        "AuthorityHeld",
+        "HistoryHeld",
+        "RouteHeld",
+        "ExactAttemptRequest"
+      ],
+      "coverageRecords": [
+        "verification/direct-dispatch/coverage.json"
+      ],
+      "scenarios": [
+        "native-dispatch"
+      ],
+      "model": "finite-assessment",
+      "skillStatus": "maintained"
+    },
+    {
+      "id": "cloud",
+      "stateOwner": "cloud.mjs cloudTransition; process-incarnation.mjs ownerDecision",
+      "classification": "stateful; finite predicates",
+      "drivers": [
+        "verification/cloud-drive.mjs"
+      ],
+      "skills": [
+        ".agents/skills/coordination-contract/SKILL.md"
+      ],
+      "replay": [
+        "verification/cloud-mutations.mjs",
+        "verification/incarnation-mutations.mjs",
+        "scripts/verify-formal.mjs"
+      ],
+      "bounds": "Cooperative bounded queue and declared observations; Linux-specific incarnation cannot be inferred on macOS.",
+      "gap": "Dedicated lifecycle graph and formal contract missing.",
+      "files": [
+        {
+          "path": "src/cloud.mjs",
+          "sha256": "9e48c4f64f95ac23a8e7fb0a33e51b21fb9a2022a48e355dee06de3d76ef1a7f",
+          "callers": [
+            "src/cloud-migration.mjs",
+            "src/responsibilities.mjs",
+            "scripts/agent.mjs"
+          ]
+        },
+        {
+          "path": "src/cloud-schema.mjs",
+          "sha256": "2179301f012a5832b597f493f9744df8d86f60427d2bbac0664f4f6fd95853bd",
+          "callers": [
+            "src/cloud.mjs",
+            "src/records.mjs",
+            "verification/cloud-properties.mjs"
+          ]
+        },
+        {
+          "path": "src/cloud-migration.mjs",
+          "sha256": "03677e6b0a50afa25ccadf1c65057ec3bc5e65c2e57c8803dd3b48e6e1f4a08b",
+          "callers": [
+            "scripts/cloud-acceptance.mjs",
+            "test/cloud-migration.test.mjs"
+          ]
+        },
+        {
+          "path": "src/process-incarnation.mjs",
+          "sha256": "63810f9602f223315fe8d9ccfcda11b6591cf7bb5626092a8ea308a98acfe2ff",
+          "callers": [
+            "src/cloud-migration.mjs",
+            "src/cloud.mjs",
+            "scripts/cloud-acceptance.mjs",
+            "verification/cloud-drive.mjs",
+            "test/process-incarnation.test.mjs"
+          ]
+        },
+        {
+          "path": "scripts/cloud-acceptance.mjs",
+          "sha256": "9940ac43b1c277bfe1f9f9cebbf60568e62aee293af2817c4cb5689548e07583",
+          "callers": [
+            "executable ingress"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/cloud.mjs",
+          "symbol": "cloudTransition"
+        },
+        {
+          "path": "src/process-incarnation.mjs",
+          "symbol": "ownerDecision"
+        }
+      ],
+      "properties": [
+        "cloud-admission",
+        "process-incarnation",
+        "legacy-baseline"
+      ],
+      "coverageRecords": [
+        "verification/coverage.json"
+      ],
+      "scenarios": [
+        "cloud-admission"
+      ],
+      "model": "finite-predicates",
+      "skillStatus": "maintained"
+    },
+    {
+      "id": "fleet",
+      "stateOwner": "fleet-state.mjs fleetTransition; fleet.mjs retained operations",
+      "classification": "stateful; finite predicates",
+      "drivers": [
+        "verification/fleet-drive.mjs"
+      ],
+      "skills": [
+        ".agents/skills/coordination-contract/SKILL.md"
+      ],
+      "replay": [
+        "verification/fleet-mutations.mjs",
+        "scripts/verify-formal.mjs"
+      ],
+      "bounds": "Finite events and declared health facts; native sources remain external.",
+      "gap": "Dedicated lifecycle graph and formal contract missing.",
+      "files": [
+        {
+          "path": "src/fleet.mjs",
+          "sha256": "058bf69e0e69c49d0aed09a57ae743cd1a48b796a598ecc443ff1c02b0b87f12",
+          "callers": [
+            "src/responsibilities.mjs",
+            "scripts/agent.mjs"
+          ]
+        },
+        {
+          "path": "src/fleet-schema.mjs",
+          "sha256": "d9d87c7834b006fb5dd7dac1bb41b0f2075b2e20057f40c656c0974b4576ea27",
+          "callers": [
+            "src/fleet-state.mjs",
+            "src/fleet.mjs",
+            "src/morning-collection.mjs",
+            "src/morning.mjs",
+            "src/records.mjs",
+            "src/signin.mjs",
+            "test/fleet-overrun.test.mjs",
+            "test/fleet-semantics.test.mjs"
+          ]
+        },
+        {
+          "path": "src/fleet-state.mjs",
+          "sha256": "4e3f1d689b3cb7df2301e4df46298c7bea221584b3e67b76d844685046439d53",
+          "callers": [
+            "src/fleet.mjs",
+            "src/records.mjs",
+            "verification/morning-fixtures.mjs",
+            "test/fleet-history.test.mjs",
+            "test/fleet-overrun.test.mjs",
+            "test/fleet-semantics.test.mjs",
+            "test/fleet.test.mjs",
+            "test/morning-v3.test.mjs"
+          ]
+        },
+        {
+          "path": "src/signin.mjs",
+          "sha256": "5152185349d8fa2a61ec9c65a3ebe2a67ce03ae51a3345347d34ce24e6229444",
+          "callers": [
+            "scripts/agent.mjs",
+            "test/fleet.test.mjs"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/fleet-state.mjs",
+          "symbol": "fleetTransition"
+        }
+      ],
+      "properties": [
+        "fleet-contract"
+      ],
+      "coverageRecords": [
+        "verification/coverage.json"
+      ],
+      "scenarios": [
+        "fleet-health",
+        "signin-recovery"
+      ],
+      "model": "finite-predicates",
+      "skillStatus": "maintained"
+    },
+    {
+      "id": "morning",
+      "stateOwner": "morning.mjs morningTransition; morning-collection.mjs acquisition",
+      "classification": "stateful; finite predicates",
+      "drivers": [
+        "verification/morning-drive.mjs",
+        "verification/morning-v3-drive.mjs"
+      ],
+      "skills": [
+        ".agents/skills/coordination-contract/SKILL.md",
+        ".agents/skills/morning-collect/SKILL.md"
+      ],
+      "replay": [
+        "verification/morning-properties.mjs",
+        "scripts/verify-formal.mjs"
+      ],
+      "bounds": "Finite source and delivery cases; declared provider receipts do not authenticate effects.",
+      "gap": "Collection-to-delivery lifecycle contract missing.",
+      "files": [
+        {
+          "path": "src/morning.mjs",
+          "sha256": "c01412274bccfb57e15a423b88c830a9cdb8d6486b2b264c074e7ce30b34d026",
+          "callers": [
+            "src/briefing-cloud-caller.mjs",
+            "src/fleet-schema.mjs",
+            "src/fleet-state.mjs",
+            "src/fleet.mjs",
+            "src/records.mjs",
+            "test/morning-v3.test.mjs",
+            "test/morning.test.mjs"
+          ]
+        },
+        {
+          "path": "src/morning-collection.mjs",
+          "sha256": "37dae6e547e0e20494e714ecc1b20f28364989600ed751ee7fa2c817ae985287",
+          "callers": [
+            "src/fleet.mjs",
+            "scripts/collect-morning.mjs",
+            "verification/morning-drive.mjs",
+            "verification/morning-v3-drive.mjs",
+            "test/morning-collection.test.mjs",
+            "test/morning-observation.test.mjs"
+          ]
+        },
+        {
+          "path": "src/morning-presentation.mjs",
+          "sha256": "36d171d854c34b3062da02e9c9ac5b095e509164e2c674bf0dd4ccae1268a343",
+          "callers": [
+            "src/morning.mjs"
+          ]
+        },
+        {
+          "path": "scripts/collect-morning.mjs",
+          "sha256": "861b14011777a382c9a35a4bc3f6c21de1ec9b0f3e395168eb740819226b2f86",
+          "callers": [
+            "executable ingress"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/morning.mjs",
+          "symbol": "morningTransition"
+        }
+      ],
+      "properties": [
+        "morning-contract"
+      ],
+      "coverageRecords": [
+        "verification/coverage.json"
+      ],
+      "scenarios": [
+        "morning-run"
+      ],
+      "model": "finite-predicates",
+      "skillStatus": "maintained"
+    },
+    {
+      "id": "briefing",
+      "stateOwner": "briefing-plan.mjs and daily-briefing.mjs artifact preparation; immutable-slot.mjs publication",
+      "classification": "stateful slots and pure assessment; partial hand-mapped model",
+      "drivers": [
+        "verification/daily-briefing-drive.mjs",
+        "verification/briefing-drive.mjs"
+      ],
+      "skills": [
+        ".agents/skills/coordination-contract/SKILL.md"
+      ],
+      "replay": [
+        "verification/briefing-slot/drive.mjs",
+        "scripts/verify-briefing-slot.mjs"
+      ],
+      "bounds": "Two symbolic writers and bounded crash/retry for slot model; not briefing delivery.",
+      "gap": "Dedicated briefing lifecycle and immutable-slot formal skill missing.",
+      "graph": {
+        "kind": "hand-mapped-await",
+        "path": "verification/briefing-slot/BriefingSlot.tla"
+      },
+      "files": [
+        {
+          "path": "src/briefing-acquisition.mjs",
+          "sha256": "0fa631189ec2b7a2a656b5f0e172adf6cf3342c85bd3b47fa5a046b9e54cbe47",
+          "callers": [
+            "src/briefing-cloud-caller.mjs",
+            "src/briefing-cloud-exchange.mjs"
+          ]
+        },
+        {
+          "path": "src/briefing-cloud-caller.mjs",
+          "sha256": "635a524c41c8784de042768a9c51d66fb6ce671e2a090c318d1145cdbd996867",
+          "callers": [
+            "verification/morning-v3-drive.mjs",
+            "test/briefing-cloud-caller.test.mjs",
+            "test/briefing-source-normalization.test.mjs"
+          ]
+        },
+        {
+          "path": "src/briefing-cloud-exchange.mjs",
+          "sha256": "cc8a0d121889e037ddf504088080b24381c9e56378bb8b026b3d857218ea1779",
+          "callers": [
+            "scripts/briefing-cloud-exchange.mjs",
+            "test/briefing-source-normalization.test.mjs"
+          ]
+        },
+        {
+          "path": "src/briefing-core.mjs",
+          "sha256": "ddb4583942b2b1328e56d6ebc63b4f2dc98c04470713fbf31d47f6233be795c9",
+          "callers": [
+            "src/daily-briefing.mjs",
+            "test/foundation-release.test.mjs"
+          ]
+        },
+        {
+          "path": "src/briefing-observation.mjs",
+          "sha256": "1482eddda3ed1f8aa1778e18d49b9ead4000b3d868d9dbba6084205a0a5f5d01",
+          "callers": [
+            "src/briefing-acquisition.mjs",
+            "src/briefing-plan.mjs",
+            "src/briefing-source-normalization.mjs",
+            "src/morning-collection.mjs",
+            "src/morning.mjs",
+            "verification/morning-v3-drive.mjs"
+          ]
+        },
+        {
+          "path": "src/briefing-plan.mjs",
+          "sha256": "4c89d562a714b5cd314e952c8a7cf5c263fbbb4085a855cae386bee11bf77225",
+          "callers": [
+            "src/briefing-core.mjs",
+            "src/morning.mjs",
+            "verification/morning-v3-fixtures.mjs",
+            "test/briefing-policy.test.mjs",
+            "test/morning-observation.test.mjs",
+            "test/morning-v3.test.mjs"
+          ]
+        },
+        {
+          "path": "src/briefing-policy.mjs",
+          "sha256": "4f810fe256874753c5ad5e7957fd1f69536c8573b2f02a044431d2de2701b02c",
+          "callers": [
+            "src/briefing-acquisition.mjs",
+            "src/briefing-core.mjs",
+            "src/briefing-plan.mjs",
+            "src/fleet.mjs",
+            "src/morning.mjs",
+            "verification/briefing-workflow-properties.mjs",
+            "test/briefing-cloud-caller.test.mjs",
+            "test/briefing-policy.test.mjs"
+          ]
+        },
+        {
+          "path": "src/briefing-reporting.mjs",
+          "sha256": "3bee7e7e912efa31ecda166099ee37f1d21ec00508157981c353584a8dc43e15",
+          "callers": [
+            "src/briefing-acquisition.mjs",
+            "src/briefing-core.mjs",
+            "src/briefing-plan.mjs",
+            "verification/morning-v3-drive.mjs",
+            "test/automation-procedure.test.mjs",
+            "test/briefing-cloud-caller.test.mjs",
+            "test/briefing-reporting.test.mjs"
+          ]
+        },
+        {
+          "path": "src/briefing-source-normalization.mjs",
+          "sha256": "c364b1552acf88b4b4d8792a8547e17bade6bb3f693c1ea9e610902e4e613c9a",
+          "callers": [
+            "src/briefing-acquisition.mjs",
+            "src/briefing-cloud-caller.mjs",
+            "test/briefing-source-normalization.test.mjs"
+          ]
+        },
+        {
+          "path": "src/briefing.mjs",
+          "sha256": "355717f83aa3c582d8c3a37352f8366cf94a8a4b3b2e5c0ec878fe1dd2676d62",
+          "callers": [
+            "src/morning.mjs",
+            "scripts/agent.mjs",
+            "verification/morning-compact-fixtures.mjs",
+            "test/daily-briefing.test.mjs",
+            "test/guidance-pin.test.mjs",
+            "test/morning-compact.test.mjs"
+          ]
+        },
+        {
+          "path": "src/daily-briefing.mjs",
+          "sha256": "5395f4a0e6f8731d8244adc7febbfc6b01f7fc256a1f34af92a3636af0fe7045",
+          "callers": [
+            "scripts/agent.mjs",
+            "test/daily-briefing.test.mjs"
+          ]
+        },
+        {
+          "path": "src/immutable-slot.mjs",
+          "sha256": "59e8ccd7c37783268e22703f63897c8c6d2b97c497ab37ff300e636a33744035",
+          "callers": [
+            "src/daily-briefing.mjs",
+            "src/improvement-report.mjs"
+          ]
+        },
+        {
+          "path": "scripts/briefing-cloud-exchange.mjs",
+          "sha256": "ece4c710643cb2c1f4d32610324f1a346669ef67cfeaee7c8a833af878458703",
+          "callers": [
+            "executable ingress"
+          ]
+        },
+        {
+          "path": "scripts/verify-briefing-slot.mjs",
+          "sha256": "0e61fb002d6b2b0a175920d644411b024a02f1fee5b9b2bbc37c698650781ae3",
+          "callers": [
+            "executable ingress"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/briefing-plan.mjs",
+          "symbol": "preparePolicyBriefing"
+        },
+        {
+          "path": "src/immutable-slot.mjs",
+          "symbol": "publishSlot"
+        }
+      ],
+      "properties": [
+        "PublishedComplete",
+        "CanonicalImmutable",
+        "FirstMarkerPersists",
+        "RetryConverges",
+        "ConflictRetained",
+        "ObservedImmutable"
+      ],
+      "coverageRecords": [
+        "verification/briefing-slot/coverage.json",
+        "verification/coverage.json"
+      ],
+      "scenarios": [
+        "daily-briefing-pilot",
+        "briefing-guidance",
+        "briefing-draft",
+        "briefing-boundaries"
+      ],
+      "model": "hand-mapped-await",
+      "skillStatus": "missing"
+    },
+    {
+      "id": "calendar",
+      "stateOwner": "calendar.mjs assessCalendar; calendar-register.mjs assessCalendarRegister",
+      "classification": "stateful external boundary; finite predicates",
+      "drivers": [
+        "verification/calendar-drive.mjs",
+        "verification/calendar-register-drive.mjs"
+      ],
+      "skills": [
+        ".agents/skills/coordination-contract/SKILL.md"
+      ],
+      "replay": [
+        "verification/calendar-mutations.mjs",
+        "scripts/verify-formal.mjs"
+      ],
+      "bounds": "Declared snapshots and finite cases; native saved-item truth remains external.",
+      "gap": "Saved-item lifecycle graph and area contract missing.",
+      "files": [
+        {
+          "path": "src/calendar.mjs",
+          "sha256": "6ff6bd2e854aba0f4f8ac051f3cf663dddc6ec578b7a98ccc6da385b886eee54",
+          "callers": [
+            "scripts/agent.mjs"
+          ]
+        },
+        {
+          "path": "src/calendar-collection.mjs",
+          "sha256": "38f2bdfe3fb813158a0246153cdb9e0d65095b10319f6a4f07d6f25c477a48a5",
+          "callers": [
+            "src/calendar-register-io.mjs",
+            "test/calendar-collection.test.mjs"
+          ]
+        },
+        {
+          "path": "src/calendar-handoff.mjs",
+          "sha256": "a2b8c10702c6982cf994d7b6da56cfac0356919a90cb7f781d11f3a403975d23",
+          "callers": [
+            "src/calendar-register-io.mjs",
+            "test/calendar-handoff.test.mjs"
+          ]
+        },
+        {
+          "path": "src/calendar-register-io.mjs",
+          "sha256": "6d0443dd60b59a49dcd620c73f7a78d21489ac48fc552eef9fc74fe58dbfc005",
+          "callers": [
+            "scripts/agent.mjs",
+            "test/calendar-register.test.mjs"
+          ]
+        },
+        {
+          "path": "src/calendar-register.mjs",
+          "sha256": "1a750c0bcfb4c05ebe559fdf7882cb4fc7f263a50ff1fe831680be2afbb4f15e",
+          "callers": [
+            "src/calendar-handoff.mjs",
+            "src/calendar-register-io.mjs",
+            "verification/calendar-register-fixtures.mjs",
+            "verification/calendar-timing-fixtures.mjs",
+            "test/calendar-handoff.test.mjs",
+            "test/calendar-register.test.mjs",
+            "test/planning-policy.test.mjs"
+          ]
+        },
+        {
+          "path": "src/calendar-timing.mjs",
+          "sha256": "7850f2dfea9935363e8ddab61bd0cbaac87d6eeda94cbaa6573bf19762955e57",
+          "callers": [
+            "src/calendar-handoff.mjs",
+            "verification/calendar-timing-fixtures.mjs",
+            "test/calendar-timing.test.mjs"
+          ]
+        },
+        {
+          "path": "src/academic-os-task-plan.mjs",
+          "sha256": "9e997cf82ba3bc408fb3b0c01c14f76794a507f706da67856231fccc55ab35a9",
+          "callers": [
+            "src/calendar-register-io.mjs",
+            "test/academic-os-task-plan.test.mjs",
+            "test/planning-policy.test.mjs"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/calendar.mjs",
+          "symbol": "assessCalendar"
+        },
+        {
+          "path": "src/calendar-register.mjs",
+          "symbol": "assessCalendarRegister"
+        }
+      ],
+      "properties": [
+        "calendar-acceptance",
+        "calendar-register"
+      ],
+      "coverageRecords": [
+        "verification/coverage.json"
+      ],
+      "scenarios": [
+        "calendar-acceptance",
+        "calendar-register"
+      ],
+      "model": "finite-predicates",
+      "skillStatus": "maintained"
+    },
+    {
+      "id": "planning-policy",
+      "stateOwner": "planning-policy.mjs assessPlanningPolicy and assessRoundedBooking",
+      "classification": "pure scoped rule assessment; finite case graph",
+      "drivers": [
+        "verification/calendar-register-drive.mjs",
+        "test/planning-policy.test.mjs"
+      ],
+      "skills": [
+        ".agents/skills/planning-policy/SKILL.md"
+      ],
+      "replay": [
+        "verification/planning-policy/check.mjs"
+      ],
+      "bounds": "Finite supplied contexts, synchronous assessment, trusted inputs; not calendar lifecycle.",
+      "gap": "Native acceptance and broader calendar lifecycle remain separate.",
+      "graph": {
+        "kind": "finite-assessment",
+        "path": "verification/planning-policy/graph.mjs"
+      },
+      "files": [
+        {
+          "path": "src/planning-policy.mjs",
+          "sha256": "ec3c8bd2a3d9d03e0cc75a77af2d014381b28c24d81ee9ee108d5ab89aecadcc",
+          "callers": [
+            "src/calendar-policy.mjs",
+            "test/planning-policy.test.mjs"
+          ]
+        },
+        {
+          "path": "src/calendar-policy.mjs",
+          "sha256": "2b40d5d2cf26efa2307741df89b60d87bcf0589aab612dff08362f7db598d1f9",
+          "callers": [
+            "src/academic-os-task-plan.mjs",
+            "src/calendar-register.mjs",
+            "test/calendar-register.test.mjs"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/planning-policy.mjs",
+          "symbol": "assessPlanningPolicy"
+        },
+        {
+          "path": "src/planning-policy.mjs",
+          "symbol": "assessRoundedBooking"
+        }
+      ],
+      "properties": [
+        "ResolvedAdmission",
+        "ViableAdmission",
+        "RoundedExact",
+        "ScopedSelection"
+      ],
+      "coverageRecords": [
+        "verification/planning-policy/coverage.json"
+      ],
+      "scenarios": [
+        "calendar-register and planning-policy unit cases"
+      ],
+      "model": "finite-assessment",
+      "skillStatus": "maintained"
+    },
+    {
+      "id": "automation",
+      "stateOwner": "automation-plan.mjs planAutomation; automation-reporting.mjs artifact contract",
+      "classification": "stateful publication boundary and pure planning; finite predicates",
+      "drivers": [
+        "test/automation-procedure.test.mjs",
+        "scripts/verify-behavior.mjs"
+      ],
+      "skills": [
+        ".agents/skills/coordination-contract/SKILL.md"
+      ],
+      "replay": [
+        "verification/automation-properties.mjs",
+        "scripts/verify-formal.mjs"
+      ],
+      "bounds": "Finite declared procedure cases; no native execution authority.",
+      "gap": "Dedicated automation lifecycle graph and formal contract missing.",
+      "files": [
+        {
+          "path": "src/automation-plan.mjs",
+          "sha256": "4a9a94eea37330dfe7521a98448b5e6c63a92dcb7c296517e58a112adeeb9f59",
+          "callers": [
+            "src/automation-procedure.mjs",
+            "test/agent-local.test.mjs"
+          ]
+        },
+        {
+          "path": "src/automation-procedure.mjs",
+          "sha256": "c52e2228ef4c241598f95892b18268f174e42b64afca5b4124731c36a651e35b",
+          "callers": [
+            "scripts/agent.mjs",
+            "test/automation-procedure.test.mjs"
+          ]
+        },
+        {
+          "path": "src/automation-reporting.mjs",
+          "sha256": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
+          "callers": [
+            "src/automation-procedure.mjs",
+            "src/briefing-reporting.mjs",
+            "test/automation-procedure.test.mjs"
+          ]
+        },
+        {
+          "path": "src/operating-contract.mjs",
+          "sha256": "a8c513f23eeee99679d6b4e0e3d3ac0b6e91d26258abf33491e49a4f32143362",
+          "callers": [
+            "src/automation-procedure.mjs",
+            "src/briefing-core.mjs",
+            "src/briefing-reporting.mjs"
+          ]
+        },
+        {
+          "path": "procedures/bounded-automation-v1.json",
+          "sha256": "926ec4a3ca46d8605c7da48f8898cfa628ed805340a2abeb5cb4861c06d18e34",
+          "callers": [
+            "public configuration"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/automation-plan.mjs",
+          "symbol": "planAutomation"
+        },
+        {
+          "path": "src/automation-reporting.mjs",
+          "symbol": "assessAutomationReporting"
+        }
+      ],
+      "properties": [
+        "automation-contract"
+      ],
+      "coverageRecords": [
+        "verification/coverage.json"
+      ],
+      "scenarios": [
+        "automation-foundation"
+      ],
+      "model": "finite-predicates",
+      "skillStatus": "maintained"
+    },
+    {
+      "id": "publication",
+      "stateOwner": "records.mjs publishRecord and importOrder",
+      "classification": "stateful filesystem; hand-mapped awaits",
+      "drivers": [
+        "verification/publication/drive.mjs"
+      ],
+      "skills": [
+        ".agents/skills/publication-contract/SKILL.md"
+      ],
+      "replay": [
+        "scripts/verify-publication.mjs"
+      ],
+      "bounds": "Bounded writers and dependency edge; atomic same-filesystem rename and cooperating ordinary files assumed.",
+      "gap": "Model does not cover all record semantics or external filesystem actors.",
+      "graph": {
+        "kind": "hand-mapped-await",
+        "path": "verification/publication/RecordPublication.tla"
+      },
+      "files": [
+        {
+          "path": "verification/publication/RecordPublication.tla",
+          "sha256": "9570ee406a8ea90a767dc5093186585860f83cbf082b94b9b8e13e67a83d0edb",
+          "callers": [
+            "verification input"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/records.mjs",
+          "symbol": "publishRecord"
+        },
+        {
+          "path": "src/records.mjs",
+          "symbol": "importOrder"
+        }
+      ],
+      "properties": [
+        "TypeOK",
+        "PublishedComplete",
+        "ImportPrefixSafe",
+        "ReadbackExact",
+        "CompletedSurvive",
+        "RetryConvergesOnReturn",
+        "AcceptedManifestComplete"
+      ],
+      "coverageRecords": [
+        "verification/publication/coverage.json"
+      ],
+      "scenarios": [
+        "publication-interruption"
+      ],
+      "model": "hand-mapped-await",
+      "skillStatus": "maintained"
+    },
+    {
+      "id": "local-assurance",
+      "stateOwner": "assurance.mjs assuranceTransition; local-assurance.mjs receipt and subprocesses",
+      "classification": "stateful reducer and empirical filesystem boundary",
+      "drivers": [
+        "verification/local-assurance/drive.mjs"
+      ],
+      "skills": [
+        ".agents/skills/local-assurance/SKILL.md"
+      ],
+      "replay": [
+        "verification/local-assurance/check.mjs"
+      ],
+      "bounds": "One reducer call per graph edge; bounded suite plan, trusted verifier and ordinary filesystem.",
+      "gap": "Receipt authenticity and hostile-process containment are not established.",
+      "graph": {
+        "kind": "reachable-reducer",
+        "path": "verification/local-assurance/graph.mjs"
+      },
+      "files": [
+        {
+          "path": "src/assurance.mjs",
+          "sha256": "5861cf2154b957e614745cf863f76ddf07558f363fb281116476df120d4c9f7b",
+          "callers": [
+            "src/local-assurance.mjs",
+            "scripts/agent.mjs",
+            "scripts/check.mjs",
+            "scripts/local-delivery.mjs",
+            "verification/delivery/check.mjs",
+            "verification/local-assurance/check.mjs",
+            "verification/planning-policy/check.mjs"
+          ]
+        },
+        {
+          "path": "src/local-assurance.mjs",
+          "sha256": "6ff678f407e56d2b9b0f338698628dc08b07eda768cb8cb20ad288d0c9cb8764",
+          "callers": [
+            "scripts/agent.mjs",
+            "scripts/check.mjs",
+            "scripts/local-delivery.mjs",
+            "verification/delivery/check.mjs",
+            "verification/local-assurance/check.mjs",
+            "verification/planning-policy/check.mjs"
+          ]
+        },
+        {
+          "path": "scripts/check.mjs",
+          "sha256": "f8b710af8abcafa21d3090a9739b820f04b01b98e9dfdfb8b49ca1b4877b204c",
+          "callers": [
+            "executable ingress"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/assurance.mjs",
+          "symbol": "assuranceTransition"
+        },
+        {
+          "path": "src/local-assurance.mjs",
+          "symbol": "runAssurance"
+        }
+      ],
+      "properties": [
+        "PassedComplete",
+        "PassedClean",
+        "RefusalTerminal"
+      ],
+      "coverageRecords": [
+        "verification/local-assurance/coverage.json"
+      ],
+      "scenarios": [
+        "local-assurance"
+      ],
+      "model": "reachable-reducer",
+      "skillStatus": "maintained"
+    },
+    {
+      "id": "local-delivery",
+      "stateOwner": "github-auto-merge.mjs deliveryTransition; local-delivery.mjs provider adapter",
+      "classification": "stateful reducer and empirical provider boundary",
+      "drivers": [
+        "verification/delivery/drive.mjs"
+      ],
+      "skills": [
+        ".agents/skills/merge-assurance/SKILL.md"
+      ],
+      "replay": [
+        "verification/delivery/check.mjs"
+      ],
+      "bounds": "One synchronous reducer call per edge, bounded attempts and declared provider facts.",
+      "gap": "Lower-stack and live provider authorization and execution remain separate.",
+      "graph": {
+        "kind": "reachable-reducer",
+        "path": "verification/delivery/graph.mjs"
+      },
+      "files": [
+        {
+          "path": "scripts/github-auto-merge.mjs",
+          "sha256": "3c89e3044e08fd70841e481da1943a8efa2dea615a3a98c27cbe7d020e7bce9d",
+          "callers": [
+            "executable ingress"
+          ]
+        },
+        {
+          "path": "scripts/local-delivery.mjs",
+          "sha256": "b339a2c581ad2751ffe013d93652b6917439c10e4268e636dbe91fb8e14657bf",
+          "callers": [
+            "executable ingress"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "scripts/github-auto-merge.mjs",
+          "symbol": "deliveryTransition"
+        }
+      ],
+      "properties": [
+        "EffectSafe",
+        "UnknownPreserved",
+        "MergeReadback",
+        "NoDuplicate"
+      ],
+      "coverageRecords": [
+        "verification/delivery/coverage.json"
+      ],
+      "scenarios": [
+        "delivery actual adapter and reducer controls"
+      ],
+      "model": "reachable-reducer",
+      "skillStatus": "maintained"
+    },
+    {
+      "id": "guidance-release",
+      "stateOwner": "foundation-release.mjs packaged closure; guidance-pin.mjs local selection",
+      "classification": "stateful file boundaries and pure helpers; empirical only",
+      "drivers": [
+        "test/foundation-release.test.mjs",
+        "test/guidance-pin.test.mjs"
+      ],
+      "skills": [],
+      "replay": [],
+      "bounds": "Exact input and local filesystem controls; hashes do not prove adoption.",
+      "gap": "Release/acquisition and guidance lifecycle models missing.",
+      "files": [
+        {
+          "path": "src/foundation-release.mjs",
+          "sha256": "2e76c64c1a318eb1b61f7f5c2a676ebc1455f680b047aa2b40aaaf13987d5d96",
+          "callers": [
+            "scripts/foundation-release.mjs",
+            "test/foundation-release.test.mjs"
+          ]
+        },
+        {
+          "path": "src/guidance-pin.mjs",
+          "sha256": "f037a3f461db221e884f9f72da45515d51e536f6f271bf70ff11a36b6cf238b7",
+          "callers": [
+            "src/briefing.mjs"
+          ]
+        },
+        {
+          "path": "scripts/foundation-release.mjs",
+          "sha256": "8d4740442cd3fbbf6e0d5454568bef52ea1596e9207ae528a65f5c8e2fec692c",
+          "callers": [
+            "executable ingress"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/foundation-release.mjs",
+          "symbol": "buildFoundation"
+        },
+        {
+          "path": "src/guidance-pin.mjs",
+          "symbol": "manageGuidancePin"
+        }
+      ],
+      "properties": [],
+      "coverageRecords": [],
+      "scenarios": [
+        "briefing-boundaries and foundation-release unit cases"
+      ],
+      "model": "empirical-only",
+      "skillStatus": "missing"
+    },
+    {
+      "id": "improvement",
+      "stateOwner": "improvement-report.mjs immutable reports; token-review.mjs supplied assessment",
+      "classification": "stateful file boundary and pure assessment; empirical only",
+      "drivers": [
+        "verification/improvement-drive.mjs",
+        "test/token-review.test.mjs"
+      ],
+      "skills": [],
+      "replay": [],
+      "bounds": "Declared captures and immutable local artifacts; no native delivery claim.",
+      "gap": "Report lifecycle coverage and external telemetry remain incomplete.",
+      "files": [
+        {
+          "path": "src/improvement-report.mjs",
+          "sha256": "fbab0e0b543ad481ed95a31bd5b6f427103c90d2e60b69008800f91ffdfd27b9",
+          "callers": [
+            "scripts/improvement-report.mjs",
+            "test/improvement-report.test.mjs"
+          ]
+        },
+        {
+          "path": "src/token-review.mjs",
+          "sha256": "27e6313bbb88c8650c10aa184addf1521dee3d95effe5894e892775edfce027c",
+          "callers": [
+            "scripts/agent.mjs",
+            "test/token-review.test.mjs"
+          ]
+        },
+        {
+          "path": "scripts/improvement-report.mjs",
+          "sha256": "7a84179a8b5d955fa7cdb1d4408b0fe29ac8421984ca073ae57b39ee17952f12",
+          "callers": [
+            "executable ingress"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/improvement-report.mjs",
+          "symbol": "improvementReport"
+        },
+        {
+          "path": "src/token-review.mjs",
+          "symbol": "assessTokenReview"
+        }
+      ],
+      "properties": [],
+      "coverageRecords": [],
+      "scenarios": [
+        "token-review",
+        "improvement-report"
+      ],
+      "model": "empirical-only",
+      "skillStatus": "missing"
+    },
+    {
+      "id": "shared-utilities",
+      "stateOwner": "content.mjs canonical digest; strict-json.mjs and bounded-json.mjs input parsing",
+      "classification": "pure helpers and bounded file reads; empirical only",
+      "drivers": [
+        "test/automation-procedure.test.mjs",
+        "scripts/verify-behavior.mjs"
+      ],
+      "skills": [],
+      "replay": [],
+      "bounds": "Tests exercise selected callers; collision resistance and parser runtime assumed.",
+      "gap": "Explicit helper boundary review and broader failure cases pending.",
+      "files": [
+        {
+          "path": "src/content.mjs",
+          "sha256": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
+          "callers": [
+            "src/academic-os-task-plan.mjs",
+            "src/assurance.mjs",
+            "src/automation-plan.mjs",
+            "src/automation-procedure.mjs",
+            "src/briefing-acquisition.mjs",
+            "src/briefing-cloud-caller.mjs",
+            "src/briefing-cloud-exchange.mjs",
+            "src/briefing-plan.mjs"
+          ]
+        },
+        {
+          "path": "src/strict-json.mjs",
+          "sha256": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
+          "callers": [
+            "src/academic-os-task-plan.mjs",
+            "src/automation-procedure.mjs",
+            "src/automation-reporting.mjs",
+            "src/bounded-json.mjs",
+            "src/briefing-source-normalization.mjs",
+            "src/daily-briefing.mjs",
+            "src/foundation-release.mjs",
+            "src/improvement-report.mjs"
+          ]
+        },
+        {
+          "path": "src/bounded-json.mjs",
+          "sha256": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc",
+          "callers": [
+            "src/automation-procedure.mjs",
+            "src/briefing-cloud-exchange.mjs",
+            "src/briefing.mjs",
+            "src/calendar-register-io.mjs",
+            "src/fleet.mjs",
+            "src/foundation-release.mjs",
+            "src/guidance-pin.mjs",
+            "src/local-assurance.mjs"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/content.mjs",
+          "symbol": "digest"
+        },
+        {
+          "path": "src/strict-json.mjs",
+          "symbol": "strictJson"
+        }
+      ],
+      "properties": [],
+      "coverageRecords": [],
+      "scenarios": [
+        "automation-foundation and CLI boundary cases"
+      ],
+      "model": "empirical-only",
+      "skillStatus": "not-applicable"
+    },
+    {
+      "id": "orientation-and-checks",
+      "stateOwner": "metadata.mjs command map; maintenance.mjs generated references; catalog.mjs public catalog",
+      "classification": "metadata and check tooling; empirical only",
+      "drivers": [
+        "test/agent-local.test.mjs",
+        "scripts/verify-behavior.mjs"
+      ],
+      "skills": [],
+      "replay": [],
+      "bounds": "Local file and CLI checks; metadata does not authenticate execution or semantic completeness.",
+      "gap": "Subsystem mappings and all missing lifecycle contracts require independent review.",
+      "files": [
+        {
+          "path": "src/catalog.mjs",
+          "sha256": "d2c333d10851197c893a96eed024d3163473306189c8dce220ba9cfc5c14c27e",
+          "callers": [
+            "scripts/agent.mjs"
+          ]
+        },
+        {
+          "path": "src/metadata.mjs",
+          "sha256": "04dde9842a694abc4678920359d7f0cc702ffbdc02302cac0f570ccfa9235ecf",
+          "callers": [
+            "src/briefing.mjs",
+            "src/maintenance.mjs",
+            "scripts/agent.mjs",
+            "scripts/verify-behavior.mjs",
+            "scripts/verify-formal.mjs"
+          ]
+        },
+        {
+          "path": "src/maintenance.mjs",
+          "sha256": "a000b7a6c44ddaa2c70e833d79e7748fbe746a2c7caec01ded7da92d95c2bf22",
+          "callers": [
+            "scripts/agent.mjs"
+          ]
+        },
+        {
+          "path": "scripts/agent.mjs",
+          "sha256": "314099e863b0153da4415ac68f38a6f340dc112b1d9f7c5d5453760d21f2d7d5",
+          "callers": [
+            "executable ingress"
+          ]
+        },
+        {
+          "path": "scripts/check-markdown-links.mjs",
+          "sha256": "b40227b7d9e9617c9c1930c8286d67c550db6c4bf48c74d3d2ee3d1c4b78899c",
+          "callers": [
+            "executable ingress"
+          ]
+        },
+        {
+          "path": "scripts/verify-behavior.mjs",
+          "sha256": "8eaaad84fe4afd0cddbfc60fbc4a07feb59b6e19bba47ba561ae8ca2c642b7ed",
+          "callers": [
+            "executable ingress"
+          ]
+        },
+        {
+          "path": "scripts/verify-formal.mjs",
+          "sha256": "c9d43d42de0a9e4b46f1173e80870818e11857387230da12dcbf74b6591598ba",
+          "callers": [
+            "executable ingress"
+          ]
+        },
+        {
+          "path": "scripts/verify-publication.mjs",
+          "sha256": "f883deaedb39f8c551baa065ea43fbeec51f9412b835d6f487f8de2cd2fd954a",
+          "callers": [
+            "executable ingress"
+          ]
+        },
+        {
+          "path": "registry/catalog.json",
+          "sha256": "5867f129ad5b297e182a8b2f7e4286234dce44277bda08cba212d73ff5fb64a9",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": "package.json",
+          "sha256": "b2ba86d8ae68cf950030abe565f40f9a8f8640040de9ee89a991bb1f3ce035cf",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "8d971415d832ea3441202296c90eb958de1488a5cdc264673d1e17db858cec92",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".codex/config.toml",
+          "sha256": "e81550770f07e3d238f94b9fce8c0013915f243fcba6888d8b779de339ba8613",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": "docs/briefing-guidance.json",
+          "sha256": "e2346383b66624ea99ccf27cb8425974c9d42d87db803152352fa2599ea50398",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": "docs/verification-index.json",
+          "sha256": "91fda8f60ff86dddc7e3c83836471eadf51cb2d28a7455ca0b7888b796d99d18",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".github/workflows/check.yml",
+          "sha256": "cac728413bf79655091a4c3ceaceb5deb1c1d84261336bb85b1c01f3fbc2f06e",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".github/workflows/auto-merge.yml",
+          "sha256": "cdb8968eb1dc1dff2b81b71ef283fd66745fe96678afbc19aced63e0c67efbe7",
+          "callers": [
+            "public configuration"
+          ]
+        },
+        {
+          "path": ".github/dependabot.yml",
+          "sha256": "a7c09a87e843df2ffed0a27b0f30af6238f0232722c9a5680b70be5624d35c49",
+          "callers": [
+            "public configuration"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/maintenance.mjs",
+          "symbol": "maintain"
+        },
+        {
+          "path": "src/catalog.mjs",
+          "symbol": "readCatalog"
+        }
+      ],
+      "properties": [],
+      "coverageRecords": [],
+      "scenarios": [
+        "orientation and maintain CLI admission controls"
+      ],
+      "model": "empirical-only",
+      "skillStatus": "not-applicable"
+    },
+    {
+      "id": "verification-tooling",
+      "stateOwner": "scripts/verify-formal.mjs and scripts/verify-behavior.mjs execute maintained properties and journeys",
+      "classification": "verification inputs and tests; source-backed scope varies by area",
+      "drivers": [
+        "scripts/verify-formal.mjs",
+        "scripts/verify-behavior.mjs"
+      ],
+      "skills": [],
+      "replay": [],
+      "bounds": "Fixtures and scripts are evidence inputs, not independently executed by inclusion in this inventory.",
+      "gap": "Individual model assumptions and test adequacy require area-by-area review.",
+      "ownerRefs": [
+        {
+          "path": "scripts/verify-formal.mjs",
+          "symbol": "properties"
+        },
+        {
+          "path": "scripts/verify-behavior.mjs",
+          "symbol": "scenario"
+        }
+      ],
+      "properties": [],
+      "coverageRecords": [],
+      "scenarios": [
+        "Existing aggregate formal and behavioral suites"
+      ],
+      "model": "empirical-only",
+      "skillStatus": "not-applicable",
+      "files": [
+        {
+          "path": "verification/academic-os-plan-fixtures.mjs",
+          "sha256": "1a5408b97b9ca870b8a641d09afef5d4edef29034b81f110ee0f4d499f8f48ca",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-fixtures.mjs",
+          "sha256": "37e1e4061989bd81759795cacabe962e9890727dd2a44623dfc3ce9554c371a6",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/automation-properties.mjs",
+          "sha256": "6160612a902eb4f7232548bc916e33f68bfa85fbc4a820324d926bde4463a837",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-drive.mjs",
+          "sha256": "341c7f8846cc9bb07f6a7189420855862e05d9b2c54e0589dc6f3277d8c2396b",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-fixtures.mjs",
+          "sha256": "b882ee5e672110184e8ebb1f1159c721d1d3ce9be037339fd367d4e9d7dad792",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-slot/BriefingSlot.tla",
+          "sha256": "ce970cea18806e44fe923e9bb6771b2543f199071bbcfff1efac81aeb327580a",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-slot/coverage.json",
+          "sha256": "344325d1c099971528081d3a642027b186504b191118aa2a1b51134a16872269",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-slot/distinct.cfg",
+          "sha256": "37612ed2b74bc02a37aabc991c168e76b0b5cac1e9950c7e9eac1c8f5ccbddb8",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-slot/drive.mjs",
+          "sha256": "679ee43a1ec05ac3b201b032a67e51f4b3a42f187b1a8697cb06456693b448b3",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-slot/early-mutant.cfg",
+          "sha256": "18bbf8a020951b2b810027107134eadc702f74a2f55a1136e9fe2376a2fc2b11",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-slot/omit-marker-mutant.cfg",
+          "sha256": "d9e0b5342c1352b85d314c834f04c3825a77faca045cf6f10dd6cf1078b974c1",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-slot/overwrite-mutant.cfg",
+          "sha256": "addce091ab0cef317137f9324b8df1541b6953cd210895fd1a912ccf1c52ae52",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-slot/same.cfg",
+          "sha256": "828ab53b94c24e564ad786e13fdc9899511d0b10fd94d9797127e17968e6c3f2",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-slot/worker.mjs",
+          "sha256": "743c2d5693af2520c1b5fe10c8e3afd2418c651155440ca044124029cf0104cd",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/briefing-workflow-properties.mjs",
+          "sha256": "9bf166211f3b71b0eae581c74ef9e46ac81c573352658d5d18070347928d6010",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/calendar-drive.mjs",
+          "sha256": "5b5e9340c13cfd9de05546b54ef1abc9035417f65c7f6cb4462b013db1ab4410",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/calendar-fixtures.mjs",
+          "sha256": "c94524d874a9d209463a6243176bec1e00097db809e605245e0b56abd6a288c5",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/calendar-mutations.mjs",
+          "sha256": "b911302cb61295eed5b3f8f16a4ea9cc3556dc61e457b383caf620146821eda3",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/calendar-policy-fixtures.mjs",
+          "sha256": "11ad91ecfaf9f07d7dc5962913bfd39088065032918c15ff2900811269f9005e",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/calendar-properties.mjs",
+          "sha256": "aa69413c21f6a5b2809a019cfb83eeb181cca70de6717517826b98ef9cc39726",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/calendar-register-drive.mjs",
+          "sha256": "67c89b80bb93f36279b105041588ad62ab39574ee8f6ca107520cfc2ba51861b",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/calendar-register-fixtures.mjs",
+          "sha256": "307c62c12a7e6e8f9cdd1fdb5715198d0f0387f925ce07df057f0cc907885783",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/calendar-register-properties.mjs",
+          "sha256": "d31d675e205ff3bfd153c4fd434365bd0ca4c3a74c0aa5b2a86d3623055ade42",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/calendar-timing-fixtures.mjs",
+          "sha256": "1a1c975ba90496fa52987f7cc1c3eaab24afe433cb7b6bb4d7732350e9863587",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/cloud-drive.mjs",
+          "sha256": "86f35cc6ccd9e5335406fd950df1f184ed0ccf75e702ec380cfd88b8affdcbca",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/cloud-migration-fixtures.mjs",
+          "sha256": "5cdb30a0a1eb48889034039388c742aefd8ee5501d757073da8eb2cfee3d4a20",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/cloud-mutations.mjs",
+          "sha256": "c948e32cff4b8dd0226c149f81013cc751b62311896c040deba6c22c4112895f",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/cloud-properties.mjs",
+          "sha256": "c2639d858364b8b9e293757c98d67afb5efe929aced3264bf5b69446d0f95541",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/coverage.json",
+          "sha256": "2e949916e7cd6dccca9ad1bd1fcbef52b2d30059f68feca1b6b88e269c063a71",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/daily-briefing-drive.mjs",
+          "sha256": "345a3f0d431bb368a646f9311a718c6db9d3c17705e22d8d1f0e8e7df2fdea49",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/daily-briefing-fixtures.mjs",
+          "sha256": "cd93bb95e17b0d14934891262998b62bd3287c7ccf00b11df90a86af61e403e1",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/delivery/chart.mmd",
+          "sha256": "c4bba229358771f495c65cdc622461ba1dc66a0e2da8940f5252e3b248bcba92",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/delivery/check.mjs",
+          "sha256": "f126298040e9739a8c337d54184718d5a307c8af48a048f8181a5d1f36e2ed64",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/delivery/coverage.json",
+          "sha256": "9122bd701524ab6d7e2d0a2a1977e7a8997338790b29f3033502c72ddb659ef6",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/delivery/drive.mjs",
+          "sha256": "b43424a0fe4729f874c0f5cb1d1f442aded600e1418b3eaadc6b4ccbd4ff2822",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/delivery/fixtures.mjs",
+          "sha256": "3b8f75ee9dcba69a8a176c0244a4f1bff2c82f39e1b4391f3101e87064f5f0bf",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/delivery/graph.mjs",
+          "sha256": "c5991e788169474ab1d70836625509081ac77055dec8383d4d5518bb6f124d88",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/delivery/view.mjs",
+          "sha256": "74326e92da34329aaf524f59c9c14673d23c2917f90e46997738a08badba599d",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/direct-dispatch/chart.mmd",
+          "sha256": "6912b39c6f70cb542c30fba4c3e5295c2c57a5e0adb2955900d04cc4c1d03874",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/direct-dispatch/check.mjs",
+          "sha256": "3d802ed66f07df4be04cfdfb11f46903682a688139c51cb1ff799a2fc65253e9",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/direct-dispatch/coverage.json",
+          "sha256": "2cbc2af26a0f7f01b709f1760fdde8d39695193a388998dadc14dfae571e3ec6",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/direct-dispatch/domain.mjs",
+          "sha256": "a6653e0c6152b8a95cdffef8471205b975ab765ec7a3a4d37f4cff610f3fbd78",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/direct-dispatch/graph.mjs",
+          "sha256": "a23d9f0d232531866ad29ad1f7dad8b06ec5b37393033e30ce7a6cea836e7703",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/direct-dispatch/view.mjs",
+          "sha256": "5cf9b6c3faa8462c376420cc4590f0e6e4276f3b4a24f2af5ad5565df0b6a917",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/dispatch-drive.mjs",
+          "sha256": "bc43637428fcbfe78acd42bac4bd039e3d8663217c64b13f6a28163b5f99fca5",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/dispatch-properties.mjs",
+          "sha256": "373a2c4b6bf50f7f40733d63c38c93b1cf24a1199329e8fe815ad8d66faa5932",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/fixtures.mjs",
+          "sha256": "388cf9e2fc5ccec675367a7110ea123902b53f7d22198c5c51035db12517f98c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/fleet-drive.mjs",
+          "sha256": "09362197dc203aa39c17e5b346b308a116468f13b55d4fa467433debb5b55e67",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/fleet-fixtures.mjs",
+          "sha256": "4257eeaa42d60df8d226ea7ffd9b48ab83099799d54c8883379392cdfcee1d4b",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/fleet-mutations.mjs",
+          "sha256": "7e6d2b97aa2ab8aaaa9aa96dd7f060f3ceaf48759b67ab2f31926f968cf5b53c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/fleet-properties.mjs",
+          "sha256": "c800ecf054cd1acb5ca19ae03c654eeb59d5b5aa4df8674c5921721a4adc868c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/guidance-pin-fixtures.mjs",
+          "sha256": "1040063c43d4bbbdfbc37e75151f3aae07873bc2bbc20a711b681e6295269644",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/improvement-drive.mjs",
+          "sha256": "3a69639a0d83ebb9d94f036d216b5ce12c6756b8063b63941cac5a76431f6eb4",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/incarnation-mutations.mjs",
+          "sha256": "76468d1b92ffd4d7955a4a4f9e343b1509d2672af0b0d6cf949c73bbc327bf5c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/incarnation-properties.mjs",
+          "sha256": "c27b8cc34199f83a556b5c7d9df09a14285c46621fe1c3aeb1be5796e925eff5",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/local-assurance/chart.mmd",
+          "sha256": "555d30c6f63b8be9e4cf91840f29b767b9df697b0adac2cde5d62ed4ff927b68",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/local-assurance/check.mjs",
+          "sha256": "e3638f1141a7cc30d10ca032c95b130fd423131b47022dcc505a005ae0bfcb9d",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/local-assurance/coverage.json",
+          "sha256": "663f6392755d998d1d53ae8d2987f0c745be77baec72a841d8686eecc7039b4c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/local-assurance/drive.mjs",
+          "sha256": "bdc3b07934cbb0d478efb03fa96e47b951a14fdac94eb7f894ebbb9fead961ba",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/local-assurance/graph.mjs",
+          "sha256": "9f89bbfc3f42841149600c0549603da719b3835cd20d0f41353d0607f8b22de5",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/local-assurance/view.mjs",
+          "sha256": "987369e603e24ffdc5813e1f23e45d036e2dc663f129f939f8dea338b24fe0a6",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/merge-coverage.json",
+          "sha256": "cd8bdb8f5aaaf02af341903131418fe3ef937f128a4a04de68b97d0a89834834",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/merge-policy.mjs",
+          "sha256": "9c3592fa9bbc84fc37f31e89c16734f50c352f9c2f537a5ab1d3c9b01b720e86",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/morning-compact-fixtures.mjs",
+          "sha256": "c6a353f0131896b741e9ed845cd10157465b4dddd8611bcc49003ac0d9b4746e",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/morning-drive.mjs",
+          "sha256": "6917a9a49536397f036dc2ba26628e35771bc8488e4c87461d7d12c6ef8b33cb",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/morning-fixtures.mjs",
+          "sha256": "46d30552715990237b0c27af2278f97e03afd950aa679dd32be5d50f285ad8bb",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/morning-properties.mjs",
+          "sha256": "8a0b21e06a5fab8753d9e8d6fdb62ce313588ada3a2365116c14490f4e070666",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/morning-v3-drive.mjs",
+          "sha256": "cda8d4b1d147959db3089978645652f0c017f988673ac5b0f60a795d55a73dcd",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/morning-v3-fixtures.mjs",
+          "sha256": "f13d5a19cc6d275fe2472ac057e044d1d447683ef8b8369d50bde19e84e505b4",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/mutations.mjs",
+          "sha256": "7c8c78fc58fc73da6a2e6a267b41e7ed35b199d4c9044233fdfd62e5b3ba0840",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/planning-policy/chart.mmd",
+          "sha256": "9d14aff29ced031fd6e851d5b0ad8871c870217b430d15551a71a2b28de5aaf6",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/planning-policy/check.mjs",
+          "sha256": "3bd54282104b2469b27fd28b55cdce3641aa32bdcf793ea8ca5ba3661dfa4075",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/planning-policy/coverage.json",
+          "sha256": "132b56b103910b2a3a302992cc94af924d47ed5635ebdb7a4e562f30132fef36",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/planning-policy/domain.mjs",
+          "sha256": "c60bca3d08ab302c88db3ec9262a59a01a14132bdbe37d8474e474f8761e963e",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/planning-policy/fixtures.mjs",
+          "sha256": "5ae2ef8291af59ef0572c295862dff5254ded37e2053d96d1bb49adc59fd3231",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/planning-policy/graph.mjs",
+          "sha256": "d9f5ca3db6c30034e2432edf883f5d4e46a89c462734c2fb8c0eba11de10e37c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/planning-policy/view.mjs",
+          "sha256": "85b6a9f37a6e9be75258643f15456d2d6905e6fa9413cc269ad84f2932a2d67d",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/process-incarnation-fixtures.mjs",
+          "sha256": "ce6d81cfef3730bac0d57f7b482773ba1a5d691d815a7cb2f87f7608c419ed9c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/properties.mjs",
+          "sha256": "441e845b3bc15db8734916d57f05b2f4a77893e3ec43f10aa93bb4240535c7a3",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/publication/coverage.json",
+          "sha256": "14526031c2dd5eed458b285bea08e423cf88c834b21ca89882817c9fd2c338f4",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/publication/direct-canonical-mutant.cfg",
+          "sha256": "ac01138937a08ef825759358c3096312c563aaa81213c9395763a3746e8375e2",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/publication/distinct-import.cfg",
+          "sha256": "2e8541dfee1521933f7012664ae951d27ade45b4345c4f43edc7ecacabda0b80",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/publication/drive.mjs",
+          "sha256": "d7a63754ae3d2c20a90111f5051c814013cbac9f241c48aad8a144524662e97a",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/publication/reversed-import-mutant.cfg",
+          "sha256": "3d01afb8d826dcaa45673a67cb9391409b9164576d4248a3d5b5ca74fa05e21c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/publication/same-hash.cfg",
+          "sha256": "79aeb92f6b87a4373b508cbe1b5404625c53890ad85a7b762024e62debc6d0e3",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/publication/worker.mjs",
+          "sha256": "92ea1c8bb11138b5f2ae32b7465e7e9fc8e9edd688be6bc2062c3a1a0fcb630d",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/token-review-fixtures.mjs",
+          "sha256": "da496709392746ccc01d42d8606330629f85534efd2c516a6d0a734b361fdab2",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/academic-os-task-plan.test.mjs",
+          "sha256": "2111ebf0045b452b0220ca17209cf66eeec6b5179238f0f3c7aecdd092cb4269",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/agent-local.test.mjs",
+          "sha256": "b861442f31fe38b5e37a8cb88bac5a0843cdb658561b170a2ddf4d452c214d92",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/automation-procedure.test.mjs",
+          "sha256": "b60afb7c63430dda95b440b16881c229302e663c57e44873e2f015f1632f179a",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/briefing-cloud-caller.test.mjs",
+          "sha256": "25919b20bc39defae84f7b4cd9dd134cf5fcb8a63ac334979c4c6441f920a0f9",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/briefing-policy.test.mjs",
+          "sha256": "450e59ed67c9ce8fc9ca6d3456fed486e12898eaac0f30d92ab73d37b1058a4e",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/briefing-reporting.test.mjs",
+          "sha256": "1314aca8159ce5e99b3bee7402a845d5eb5455136539467d44e4d28c6d660a38",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/briefing-source-normalization.test.mjs",
+          "sha256": "4150c805a48415a807d4713428767ca33cc971f32557218cdd37b814a186c023",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/calendar-collection.test.mjs",
+          "sha256": "a8f195c8c232f19d667863649be3ff7a279d2ecffde82f3046f94e548f352139",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/calendar-handoff.test.mjs",
+          "sha256": "8d5776b194a82769926d2488b9586479a828c81ab228a553839438e8bcbcf059",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/calendar-register.test.mjs",
+          "sha256": "770a2c3b171f9226810b98d180f44d9ba113b3b5abd3ffdb7f6dd6f38442740c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/calendar-timing.test.mjs",
+          "sha256": "58785c60de65c2081e84dd62188189e8436e65ca4e98bc370081c3e332ab7575",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/cloud-migration.test.mjs",
+          "sha256": "749d80285d093088f1d15c6ec560ae7a2db31bea2bc71498c10112a7df8a693c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/daily-briefing.test.mjs",
+          "sha256": "4566f12eede514684a7410cee88f123be7083e2c11731929a7df7aa160053f71",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/fixtures/briefing-policy.mjs",
+          "sha256": "28b28341a46269a53c1c62a029575eb89bb070d215f393a869b32f7cbd1908a6",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/fixtures/fleet-v1-journal.json",
+          "sha256": "03c8524ab16eb085bcd25e05a5ae55d9e5ac4bf9454b6a7600bc475b9cee4fee",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/fixtures/fleet-v1-review.json",
+          "sha256": "73ed74da219b33491e77e4dab8703260a5a0fb4ec68f3709b2e0ffc07f0b5fbb",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/fleet-history.test.mjs",
+          "sha256": "378006c2e2511c7bb8971bba56bbfd02a73ab210a4a2d7246d7d3fb7578f31c8",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/fleet-overrun.test.mjs",
+          "sha256": "61deb53a4947da8da2ffab1ff47eb14af91120a66bcfea3cad8582122f884bc8",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/fleet-semantics.test.mjs",
+          "sha256": "4d31d8ed7e3e9ae5fbbe6e51b437b8762922b4ee6a38b363e2ff8dd0e0513c00",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/fleet.test.mjs",
+          "sha256": "2a3bd0ca424abe26f9b57c9ce8f3a640ff72b38fd62955b4a0ddf5cebd557858",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/foundation-release.test.mjs",
+          "sha256": "4a5cd19d1c107e2ad37d85a38f8e1555282cfa2a106397d7f6aadffdddc91a6b",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/github-auto-merge.test.mjs",
+          "sha256": "41f5a82045765c1c2c1fcaf8cc6341da790e3a90081ea216953a198da4e6f728",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/guidance-pin.test.mjs",
+          "sha256": "d4ce04c46c250a62a410b15f33428d41e08ada29a6025acff343caa7e4bab21c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/improvement-report.test.mjs",
+          "sha256": "350ad1eb8b9657172e329ca2fb23c7d458dae92763cbcb7686e358f0cfb7e7f6",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/local-assurance.test.mjs",
+          "sha256": "dd08e3e27d7c0530d9671767831ff0afe2405432c3362d7aed66f075416e2f8e",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/local-delivery.test.mjs",
+          "sha256": "8357705533cf40553cb6ea2d3dbbd017d433567cdebc84dc9e0b75e98774cfe1",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/markdown-links.test.mjs",
+          "sha256": "4c6b41c15971a063723cd82d8d915acf629e791270c767c6303df1cb5a5b97e3",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/morning-collection.test.mjs",
+          "sha256": "6c4911d954e8f176191cc9e9bf33c80fa9d8ddbd20ff31be16ccad5db257d851",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/morning-compact.test.mjs",
+          "sha256": "90b3ff238e9fbc143a9e4988ecddd5370bc2237cf7921b32999428b9fb8abb0f",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/morning-observation.test.mjs",
+          "sha256": "5b6dabb723e30f692449da59b4d41a6a2022693556e34cccf6119ab5c96c2a5a",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/morning-v3.test.mjs",
+          "sha256": "d676a34aa54ccb50272b4ba8e34ce4fbfe4ec3ec164211a9e33fd0d578c3ca6a",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/morning.test.mjs",
+          "sha256": "8fdd62ed3f68b6df1451d2eee7044b7a3773797f8de39582c04cadbb62b1a9da",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/planning-policy.test.mjs",
+          "sha256": "fa1604fe2c9c7592d68ed073a7831618ce90959fca4b50276882838e84b08dba",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/process-incarnation.test.mjs",
+          "sha256": "3df49dab78220aa1bcc2acb93ea0b6b9a710626899d163818615d82b654e95e4",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "test/token-review.test.mjs",
+          "sha256": "e175b8c6cce940ca337fb0a461e1a5bec9616a94812e3165a20493e95ffc7331",
+          "callers": [
+            "verification input"
+          ]
+        }
+      ]
+    }
+  ]
+}

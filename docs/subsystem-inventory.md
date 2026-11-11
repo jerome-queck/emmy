@@ -1,0 +1,23 @@
+# Subsystem inventory
+
+Generated from `verification/subsystems.json`. Structural admission is not semantic proof. Whole-repository foundation readiness: **incomplete**.
+
+| Subsystem | State owner | Classification | Remaining gap |
+| --- | --- | --- | --- |
+| responsibility | responsibilities.mjs reconcileState; records.mjs journal and work.mjs review | stateful; finite predicates | Reachable repair and restore lifecycle and dedicated contract missing. |
+| dispatch | dispatch.mjs dispatchDecision; records.mjs immutable lineage | stateful advice; finite assessment | Native authority, execution and complete history remain external. |
+| cloud | cloud.mjs cloudTransition; process-incarnation.mjs ownerDecision | stateful; finite predicates | Dedicated lifecycle graph and formal contract missing. |
+| fleet | fleet-state.mjs fleetTransition; fleet.mjs retained operations | stateful; finite predicates | Dedicated lifecycle graph and formal contract missing. |
+| morning | morning.mjs morningTransition; morning-collection.mjs acquisition | stateful; finite predicates | Collection-to-delivery lifecycle contract missing. |
+| briefing | briefing-plan.mjs and daily-briefing.mjs artifact preparation; immutable-slot.mjs publication | stateful slots and pure assessment; partial hand-mapped model | Dedicated briefing lifecycle and immutable-slot formal skill missing. |
+| calendar | calendar.mjs assessCalendar; calendar-register.mjs assessCalendarRegister | stateful external boundary; finite predicates | Saved-item lifecycle graph and area contract missing. |
+| planning-policy | planning-policy.mjs assessPlanningPolicy and assessRoundedBooking | pure scoped rule assessment; finite case graph | Native acceptance and broader calendar lifecycle remain separate. |
+| automation | automation-plan.mjs planAutomation; automation-reporting.mjs artifact contract | stateful publication boundary and pure planning; finite predicates | Dedicated automation lifecycle graph and formal contract missing. |
+| publication | records.mjs publishRecord and importOrder | stateful filesystem; hand-mapped awaits | Model does not cover all record semantics or external filesystem actors. |
+| local-assurance | assurance.mjs assuranceTransition; local-assurance.mjs receipt and subprocesses | stateful reducer and empirical filesystem boundary | Receipt authenticity and hostile-process containment are not established. |
+| local-delivery | github-auto-merge.mjs deliveryTransition; local-delivery.mjs provider adapter | stateful reducer and empirical provider boundary | Lower-stack and live provider authorization and execution remain separate. |
+| guidance-release | foundation-release.mjs packaged closure; guidance-pin.mjs local selection | stateful file boundaries and pure helpers; empirical only | Release/acquisition and guidance lifecycle models missing. |
+| improvement | improvement-report.mjs immutable reports; token-review.mjs supplied assessment | stateful file boundary and pure assessment; empirical only | Report lifecycle coverage and external telemetry remain incomplete. |
+| shared-utilities | content.mjs canonical digest; strict-json.mjs and bounded-json.mjs input parsing | pure helpers and bounded file reads; empirical only | Explicit helper boundary review and broader failure cases pending. |
+| orientation-and-checks | metadata.mjs command map; maintenance.mjs generated references; catalog.mjs public catalog | metadata and check tooling; empirical only | Subsystem mappings and all missing lifecycle contracts require independent review. |
+| verification-tooling | scripts/verify-formal.mjs and scripts/verify-behavior.mjs execute maintained properties and journeys | verification inputs and tests; source-backed scope varies by area | Individual model assumptions and test adequacy require area-by-area review. |

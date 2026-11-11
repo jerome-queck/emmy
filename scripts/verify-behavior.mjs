@@ -48,7 +48,7 @@ const review = data => data.responsibilities[0].record;
 const reconcile = async (id, expected = 0, imports = null, selectedHome = home, asOf = now()) => run(['reconcile', '--id', id, '--as-of', asOf, ...(imports ? ['--import', await fixture(`import-${randomUUID()}.json`, { schemaVersion: 1, records: imports })] : [])], expected, selectedHome);
 try {
   assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing', 'dispatch', 'calendar', 'cloud', 'fleet', 'token-review', 'assurance'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing|dispatch|calendar|cloud|fleet|token-review|assurance');
-  for (const path of ['registry', 'docs', '.agents', 'src', 'scripts']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
+  for (const path of ['registry', 'docs', '.agents', 'src', 'scripts', 'verification', 'test', 'procedures', '.github', '.codex', 'package.json', 'package-lock.json']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
   await mkdir(join(home, 'records'), { recursive: true }); await mkdir(join(root, 'bin'));
   for (const name of ['gh', 'codex', 'curl', 'ssh']) await writeFile(join(root, 'bin', name), `#!/bin/sh\necho invoked >> '${join(home, 'executor-invoked')}'\nexit 99\n`, { mode: 0o755 });
   await writeFile(join(root, '.gitignore'), '.local/\nbin/\n');
@@ -600,6 +600,9 @@ try {
     }
     assert.equal(report.interruptions.length, 10); scenario('publication-interruption', 'Actual SIGSTOP checkpoints followed by SIGKILL at three record, three archive, three restore boundaries and forward-dependent import prefix; replay converges or explicitly refuses existing restored destination. No all-instruction crash-durability claim.');
     const catalogBefore = await readFile(join(root, 'registry/catalog.json')); const formalPath = join(root, 'verification/coverage.json'); await mkdir(dirname(formalPath), { recursive: true }); await writeFile(formalPath, '{"sourceCommit":"do-not-advance"}\n'); const formalBefore = await readFile(formalPath);
+    const inventoryPath = join(root, 'verification/subsystems.json'); const syntheticInventory = JSON.parse(await readFile(inventoryPath, 'utf8'));
+    for (const area of syntheticInventory.subsystems) for (const file of area.files) if (file.path === 'verification/coverage.json') file.sha256 = digest(formalBefore);
+    await writeFile(inventoryPath, JSON.stringify(syntheticInventory));
     await writeFile(join(root, 'docs/cli.md'), 'Stale generated reference'); assert.equal((await run(['maintain', '--check'], 3)).status, 'drift'); await run(['maintain', '--write']); await run(['maintain', '--check']); assert.deepEqual((await run(['maintain', '--write'])).changed, []);
     const publicBefore = await readFile(join(root, 'docs/catalog.md')); await writeFile(join(home, 'bindings.json'), JSON.stringify({ ...bindings, privateSentinel: 'synthetic-private-never-public' })); await run(['maintain', '--write']); assert.deepEqual(await readFile(join(root, 'docs/catalog.md')), publicBefore); assert.equal((await readFile(join(root, 'docs/catalog.md'), 'utf8')).includes('synthetic-private-never-public'), false); assert.deepEqual(await readFile(formalPath), formalBefore); assert.deepEqual(await readFile(join(root, 'registry/catalog.json')), catalogBefore);
     scenario('derived-boundaries', 'Generated drift fails then regenerates idempotently; private state never enters public references; catalog review dates and formal pins stay unchanged.');
