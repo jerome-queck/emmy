@@ -462,5 +462,14 @@ export const subsystemEvidence = {
     "model": "reachable-reducer",
     "skillStatus": "maintained",
     "graph": { "kind": "reachable-reducer", "path": "verification/morning-send/graph.mjs", "record": "verification/morning-send/coverage.json", "checker": "verification/morning-send/check.mjs", "exports": ["graph", "spec"] }
+  },
+  "calendar-attempt-history": {
+    "drivers": ["verification/calendar-register-drive.mjs"],
+    "skills": [".agents/skills/calendar-attempt/SKILL.md"],
+    "replay": ["verification/calendar-attempt/check.mjs"],
+    "coverageRecords": ["verification/coverage.json", "verification/calendar-attempt/coverage.json"],
+    "model": "reachable-history",
+    "skillStatus": "maintained",
+    "graph": { "kind": "reachable-history", "path": "verification/calendar-attempt/graph.mjs", "record": "verification/calendar-attempt/coverage.json", "checker": "verification/calendar-attempt/check.mjs", "exports": ["graph", "spec"] }
   }
 };

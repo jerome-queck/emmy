@@ -27,6 +27,7 @@ export const assurancePlan = Object.freeze([
   { id: 'incarnation-ownership-formal', args: ['verification/incarnation-ownership/check.mjs'] },
   { id: 'fleet-health-formal', args: ['verification/fleet-health/check.mjs'] },
   { id: 'morning-send-formal', args: ['verification/morning-send/check.mjs'] },
+  { id: 'calendar-attempt-formal', args: ['verification/calendar-attempt/check.mjs'] },
 ].map(row => Object.freeze({ ...row, args: Object.freeze(row.args) })));
 export const assurancePlanDigest = digest(canonical(assurancePlan));
 
