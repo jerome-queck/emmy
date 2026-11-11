@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, rm, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { acquireBriefingSource, awaitBriefingChecks, executeBriefingEffect } from '../src/briefing-cloud-caller.mjs';
+import { acquireBriefingSource, awaitBriefingChecks } from '../src/briefing-acquisition.mjs';
 import { assessBriefingReporting } from '../src/briefing-reporting.mjs';
 import { digest } from '../src/records.mjs';
 import { plan, at, policy } from './fixtures/briefing-policy.mjs';
@@ -38,16 +38,11 @@ test('pending checks continue same admitted request with paced reads until actua
   assert.equal(result.readyForBriefing, true); assert.equal(reads, 3); assert.equal(paced, 3); assert.equal(storage.retained.length, 3);
   const controller = new AbortController(); controller.abort(); const interrupted = await awaitBriefingChecks(initial, { now: () => at }, { signal: controller.signal }); assert.equal(interrupted.interrupted, true); assert.equal(interrupted.readyForBriefing, false);
 });
-test('production cloud boundary reaches real versioned prepare CLI without any connector effect', async t => {
+test('direct acquisition boundary reaches real versioned prepare CLI without any connector effect', async t => {
   const storage = await sink(t); const input = plan(); const path = join(storage.directory, 'request.json'); await writeFile(path, JSON.stringify({ action: 'prepare', input }));
   const called = spawnSync(process.execPath, [resolve('scripts/agent.mjs'), 'daily-briefing', '--file', path], { encoding: 'utf8' }); assert.equal(called.status, 3, called.stdout);
   const bytes = Buffer.from(called.stdout); const retained = await storage.retainRaw(bytes, { sha256: digest(bytes), byteCount: bytes.length });
   const output = JSON.parse(await readFile(retained.sourceRef, 'utf8')); assert.equal(output.ok, true); assert.equal(output.data.contract, 'daily-briefing-v3'); assert.equal(output.data.inputDigest, digest(input)); assert.ok(output.data.body.includes('Archived'));
-});
-test('implementation authority and unsupported delivery never call a native tool', async () => {
-  let effects = 0;
-  await assert.rejects(executeBriefingEffect({ schemaVersion: 1, envelope: { action: { operation: 'morning', command: { step: 'send-intent' } } }, pilotAuthority: { accepted: false } }, { chatgpt: { send: async () => effects++ } }), /pilot authority/);
-  assert.equal(effects, 0);
 });
 test('representative provider envelope projects exact raw IDs and rejects divergent normalized state', async t => {
   const storage = await sink(t); let calls = 0;
@@ -74,7 +69,7 @@ test('tool errors and explicit provider partial coverage cannot establish acquis
   assert.equal((await acquireBriefingSource(request, adapters)).complete, false);
 });
 test('invocation UUID is labelled and durably retained once before any effect or upload', async t => {
-  const {retainBriefingInvocation}=await import('../src/briefing-cloud-caller.mjs'); const storage=await sink(t); const path=join(storage.directory,'invocation.json'); let writes=0;
+  const {retainBriefingInvocation}=await import('../src/briefing-acquisition.mjs'); const storage=await sink(t); const path=join(storage.directory,'invocation.json'); let writes=0;
   const adapters={readInvocation:async()=>{try{return JSON.parse(await readFile(path,'utf8'));}catch(error){if(error.code==='ENOENT')return null;throw error;}},retainInvocation:async(key,value)=>{assert.equal(key,'root/day');try{await writeFile(path,JSON.stringify(value),{flag:'wx'});writes++;}catch(error){if(error.code!=='EEXIST')throw error;}return JSON.parse(await readFile(path,'utf8'));}};
   const request={runKey:'root/day',providerInvocationId:null};const first=await retainBriefingInvocation(request,adapters);assert.equal(first.source,'producer-generated'); assert.deepEqual(await retainBriefingInvocation(request,adapters),first);assert.equal(writes,1);
 });
@@ -127,4 +122,24 @@ test('provider projection needs explicit coverage and boolean Outlook unread evi
   assert.equal((await acquireBriefingSource(scoped, adapters)).complete, false);
   adapters.read = async () => ({ raw: JSON.stringify({ items: [], cursor: null, complete: true, before: false, after: false }), projection });
   assert.equal((await acquireBriefingSource(scoped, adapters)).complete, true);
+});
+
+test('retired cloud transport emits no descriptor or source for valid old requests and preserves private bytes', async t => {
+  const storage = await sink(t);
+  const request = { schemaVersion: 1, role: 'tasks', account: 'primary@example.test', environment: 'dot-cloud', surface: 'connector', maxReads: 1, maxBytes: 1048576 };
+  const raw = Buffer.from(JSON.stringify({ structuredContent: { ...plan().tasks, nextCursor: null } }));
+  const path = join(storage.directory, 'original.raw'); await writeFile(path, raw);
+  const readRequest = { schemaVersion: 1, operation: 'read-only-briefing-page', request, cursor: null, requestDigest: digest({ request, cursor: null }), rawEncoding: 'complete-serialized-tool-result-utf8', effectsAuthorized: false };
+  const manifest = { schemaVersion: 1, request, captures: [{ readRequest, path, sha256: digest(raw), byteCount: raw.length, projection: null }] };
+  const file = join(storage.directory, 'request.json');
+  for (const [action, input] of [['request', { request, cursor: null }], ['acquire', manifest], ['acquire', { malformed: true }]]) {
+    await writeFile(file, JSON.stringify(input));
+    const before = await readdir(storage.directory);
+    const called = spawnSync(process.execPath, [resolve('scripts/briefing-cloud-exchange.mjs'), action, file, join(storage.directory, 'retained')], { encoding: 'utf8' });
+    assert.equal(called.stdout, '', 'Retired transport must emit no usable request descriptor or source');
+    assert.notEqual(called.status, 0);
+    assert.deepEqual(await readdir(storage.directory), before);
+    assert.deepEqual(await readFile(path), raw);
+    assert.equal(await readFile(file, 'utf8'), JSON.stringify(input));
+  }
 });

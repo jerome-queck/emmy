@@ -34,3 +34,5 @@ Assume trusted checker code, collision-free hashes, honest acquired process/cont
 Before changing pins, run the old check and retain its result. Read every covered diff from the sync commit, including moved/new callers and the fixed suite. Classify an intentional promise change, verification drift and a product bug separately. Update graph facts from actual code before rerunning; never weaken an invariant to hide a bug.
 
 Run all seven intended real-source mutations and the restored baseline. Read every TLC result with `/statechart`; replay reported paths against actual code. Follow the empirical driver and inspect retained output after teardown. Then commit reviewed source, update full sync commit/digests separately, and rerun with the reviewed-source gate enabled. Leave pins unchanged when blocked. Independent source review remains a separate integration gate.
+
+Held transport retirement renames the briefing acquisition test in the existing fixed suite. Suite identity, order, complete-prefix admission and all reducer guards remain unchanged. The current complete plan has 27 suites; read the actual plan rather than historical prose counts.

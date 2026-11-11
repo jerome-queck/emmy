@@ -152,3 +152,7 @@ Artifact ingestion additionally checks terminal-only non-null reports, original 
 ### Direct root dispatch
 
 Historical `dispatch-recovery` domains and mutants retain their original promises. Explicit fresh direct-root mode additionally uses [the direct dispatch contract](../direct-dispatch/SKILL.md), a code-derived finite graph over actual assessor/parser calls with copied-source mutants. Immutable identity now has one production owner shared by journal validation and advice. Different control principals never become invented native creator threads. This intentional route extension adds no publication writer or native execution claim. Maintain both mappings after dispatch or parser changes.
+
+### Held transport retirement
+
+The uninstalled injected effect adapter and file capture exchange are removed. The CLI and portable compiler, direct acquisition and existing morning journal retain their contracts. Acquisition tests import its actual owner directly; journal driving supplies synthetic reported outcomes without invoking tool adapters. No finite predicate, mutation, canonical publication await or replay rule is retired. The removed executor's synthetic tool-call promises are intentionally withdrawn. Unsupported old executable invocations produce no descriptor or output files.
