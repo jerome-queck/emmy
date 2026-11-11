@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "737adc754321b17b2dcb0121fbcdde0d91c186b3",
+  "sourceCommit": "3c09b4fa98b53139b88c6210a40ac7e20a405c2a",
   "sourceFiles": {
     "scripts/github-auto-merge.mjs": "3c89e3044e08fd70841e481da1943a8efa2dea615a3a98c27cbe7d020e7bce9d",
     "scripts/local-delivery.mjs": "374422dbabfd50c0ea5bc1ba469b6dc2960d5e5d55dde4c1aab56e01434820fc",
     "src/local-assurance.mjs": "6ff678f407e56d2b9b0f338698628dc08b07eda768cb8cb20ad288d0c9cb8764",
-    "src/assurance.mjs": "918e18befd47ee3e3ce81e0491d92c98d0c346645d7b194d30bd9c9be5010139",
+    "src/assurance.mjs": "5861cf2154b957e614745cf863f76ddf07558f363fb281116476df120d4c9f7b",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
     ".github/workflows/check.yml": "cac728413bf79655091a4c3ceaceb5deb1c1d84261336bb85b1c01f3fbc2f06e",
     ".github/workflows/auto-merge.yml": "cdb8968eb1dc1dff2b81b71ef283fd66745fe96678afbc19aced63e0c67efbe7"
@@ -22,7 +22,7 @@
     ".agents/skills/merge-assurance/SKILL.md": "6f14f5b60c3769c11e99ff6efb39d563b5a15daf0ecfcdb7347f146814b39f85",
     "docs/local-delivery.md": "31d2ba4123831a0a4d6a5e9b254077bbdecdc86faa96fdb175f62d8dd9266254"
   },
-  "reviewBasis": "Focused R1/R2 review read all changed ingress, reducer, original intent, provider text readback and actual graph facts. Promise intentionally adds selected PR payload equality and one explicitly scoped confirmed-absence retry. Original unknown and denied history remains. Focused CLI, pure cases, copied-source mutants and restored graph pass. No full v2 aggregate claimed; combined isolated preview receives the next full exact gate and independent review.",
+  "reviewBasis": "Isolated three-way reconciliation of exact delivery-v2 924681b and independently accepted direct b119422 over c5f8b46. Owner read every affected source delta and five overlapping docs/metadata files. Direct and delivery production bytes are retained exactly. Coordination coverage changes only merged prose hashes; delivery coverage additionally binds the twentieth direct-dispatch suite. Old gates refused intended drift. No canonical publication await or mapped property was weakened. New combined source needs its own full gate and independent exact-head verdict; old receipts/verdicts do not attest it.",
   "mapping": [
     {
       "property": "LocalAdmission",
