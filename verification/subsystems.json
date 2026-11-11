@@ -1235,7 +1235,7 @@
         },
         {
           "path": ".agents/skills/local-assurance/SKILL.md",
-          "sha256": "798388549b254794f5a693f2ff61cc45b80ddcb06c5393516e82f9a8bd080e58",
+          "sha256": "29b0b779454fb2080394eb4440d36cad80fb4952eb289e402bea91545c81111c",
           "callers": [
             "public configuration"
           ]
@@ -1566,7 +1566,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "e4a0eccf6c0b15cb346a8c5f5d1ee931e9948224ce2932e88ef4cd56f7ccf089",
+          "sha256": "2581e475e80b255cb7b95220149ab472c24cebe04501b4fe1ed229055a58b062",
           "callers": [
             "verification input"
           ]
@@ -1601,7 +1601,7 @@
         },
         {
           "path": "verification/delivery/coverage.json",
-          "sha256": "061a597cd0d625520de9f5d6720714bd3d641116f1e2dda223912719e31b8345",
+          "sha256": "864b7d90d6e4f019d3c6395f74a3d2d7e6423c062f96f77245f802d8a64dbe9c",
           "callers": [
             "verification input"
           ]
@@ -1769,7 +1769,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "17f861b4c6b7000d840dbd8611a02cef26f83dfec12dd8c9d586962ee1ff3e35",
+          "sha256": "fdcf2c1148c8b0f10a7339037579867562d37c1396698ee3a0e6bca24667bd31",
           "callers": [
             "verification input"
           ]
