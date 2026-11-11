@@ -73,3 +73,7 @@ Run `node --test test/foundation-release.test.mjs test/morning-observation.test.
 `automation --file` is the generic plan/report/exact-read boundary for all automation kinds. Run `node --test test/automation-procedure.test.mjs`; `automation-foundation` in the token-review focus drives a synthetic non-briefing configuration through fresh CLI processes. It retains exact procedure/configuration, deterministic plan, existing canonical report bytes, exact read and semantic/byte hash refusal. No native task is created or procedure executed. The pure planner has a separate bounded `automation-contract` domain.
 
 Generic ingestion controls reject rehashed invalid timing/telemetry and nonterminal report objects through exact CLI reads, publication and predecessor validation. Source revisions require strings. Valid historical null reports remain readable. The bounded automation domain pairs these refusals with actual-source mutations.
+
+## Approved skill files
+
+The separate `npm run skills:refresh -- <private-bindings.json>` command copies only allowlisted, reviewed source bytes and retains separate MIT notices. `npm run skills:check` validates the committed selection offline. Read [the inventory contract](../../../../docs/skill-inventory.md). Missing, changed or incomplete sources keep the last complete snapshot selected and record failed private attempt evidence. Run the synthetic API fixtures and fresh runtime consumer described by the driver skill. No schedule or runtime registration is created.

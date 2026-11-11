@@ -1,5 +1,7 @@
 # Emmy
 
+The [approved skill inventory](docs/skill-inventory.md) retains a small MIT-licensed pstack and Matt Pocock selection with exact provenance and notices. Run `npm run skills:check` for offline validation. Local refresh and cloud registration remain separate.
+
 The [generic automation foundation](docs/automation-foundation.md) builds staged creation plans from versioned procedures and exact configuration files, prepares the existing canonical outcome format, and reads fixed artifacts without history scans. Native products own saving and operation.
 
 Use the [common operating procedure](docs/operating-procedure.md) for the staged source release, exact consumer bindings, fixed report reads, and briefing-only pilot hold. The shared compiler and acquisition modules build directly from one Git commit. Existing installations remain separately accepted consumers.

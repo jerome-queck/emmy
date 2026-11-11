@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-11-04",
+  "exclusions": [
+    {
+      "source": "OpenAI Documents",
+      "reason": "Installed licence prohibits retained external copies and redistribution."
+    },
+    {
+      "source": "Other installed, personal and cloud skills",
+      "reason": "Outside explicit reviewed closure; unknown, incompatible or unnecessary rights and dependencies."
+    }
+  ],
+  "sources": [
+    {
+      "id": "pstack",
+      "origin": "https://github.com/michael-denyer/pstack-claude",
+      "package": "pstack",
+      "version": "0.9.128",
+      "revision": null,
+      "metadata": ".codex-plugin/plugin.json",
+      "license": "MIT",
+      "rightsEvidence": "Installed plugin MIT declaration and skills-only LICENSE/NOTICE; principles covered by pstack-derived work. Upstream main corroborates only, revision unknown.",
+      "capabilities": [
+        "Readable guidance only; no native registration or tools supplied."
+      ],
+      "notices": [
+        "skills/poteto-mode/references/licenses/LICENSE",
+        "skills/poteto-mode/references/licenses/LICENSE-cursor-team-kit",
+        "skills/poteto-mode/references/licenses/LICENSE-thermos",
+        "skills/poteto-mode/references/licenses/NOTICE.md"
+      ],
+      "skills": [
+        {
+          "path": "skills/principle-laziness-protocol/SKILL.md",
+          "dependencies": []
+        },
+        {
+          "path": "skills/principle-model-the-domain/SKILL.md",
+          "dependencies": []
+        },
+        {
+          "path": "skills/principle-prove-it-works/SKILL.md",
+          "dependencies": []
+        }
+      ],
+      "files": [
+        {
+          "path": "skills/poteto-mode/references/licenses/LICENSE",
+          "sha256": "5b1faca8cef6b7433b49c812c5e9e04bb1eb73b67171d67729983e0b46b9bb78"
+        },
+        {
+          "path": "skills/poteto-mode/references/licenses/LICENSE-cursor-team-kit",
+          "sha256": "702f5f331b56aff0e33d8c7826df5202559f894145eb70355c6477b55b5bb8a0"
+        },
+        {
+          "path": "skills/poteto-mode/references/licenses/LICENSE-thermos",
+          "sha256": "702f5f331b56aff0e33d8c7826df5202559f894145eb70355c6477b55b5bb8a0"
+        },
+        {
+          "path": "skills/poteto-mode/references/licenses/NOTICE.md",
+          "sha256": "232a21a3bf88991185e6837270cba41cd83646c3998f91942c823fecc4440b4d"
+        },
+        {
+          "path": "skills/principle-laziness-protocol/SKILL.md",
+          "sha256": "4c1514611a4d85f58a8d31403d6541aacbd1254bd981667adf6111b08295c539"
+        },
+        {
+          "path": "skills/principle-model-the-domain/SKILL.md",
+          "sha256": "3d14c29b3aca902ed7bf11716df971d4561f8e9624d70e2a9650feb918a22619"
+        },
+        {
+          "path": "skills/principle-prove-it-works/SKILL.md",
+          "sha256": "d5ad4e2fe1fe0fe5fd7f96ef117ed435a55a536bb1f2ce353c105c31239c0635"
+        }
+      ]
+    },
+    {
+      "id": "mattpocock",
+      "origin": "https://github.com/mattpocock/skills",
+      "package": "mattpocock-skills",
+      "version": "1.3.2",
+      "revision": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "revisionEvidence": ".codex-marketplace-install.json",
+      "metadata": ".claude-plugin/plugin.json",
+      "license": "MIT",
+      "rightsEvidence": "Installed root MIT LICENSE matches pinned upstream revision; selected Markdown has no overriding terms.",
+      "capabilities": [
+        "Readable design guidance; optional design exploration needs agent tools supplied separately."
+      ],
+      "notices": [
+        "LICENSE"
+      ],
+      "skills": [
+        {
+          "path": "skills/engineering/codebase-design/SKILL.md",
+          "dependencies": [
+            "skills/engineering/codebase-design/DEEPENING.md",
+            "skills/engineering/codebase-design/DESIGN-IT-TWICE.md",
+            "skills/engineering/codebase-design/agents/openai.yaml"
+          ]
+        }
+      ],
+      "files": [
+        {
+          "path": "LICENSE",
+          "sha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5"
+        },
+        {
+          "path": "skills/engineering/codebase-design/DEEPENING.md",
+          "sha256": "f3dd099ce99289bd213914d8ee3e2429b78309c3957ca4583f7659551b1d53c1"
+        },
+        {
+          "path": "skills/engineering/codebase-design/DESIGN-IT-TWICE.md",
+          "sha256": "c222ab5a82e0405672eb9062d62496139a08828e45d07fc5f18e4952c10fac1a"
+        },
+        {
+          "path": "skills/engineering/codebase-design/SKILL.md",
+          "sha256": "2c20617f87ec8af6a434859f381b2f061a69b530444e74eb39e78bb016a6d1e2"
+        },
+        {
+          "path": "skills/engineering/codebase-design/agents/openai.yaml",
+          "sha256": "edebc9e4fcfe102114012575eaa9600b9b5fd08c311664f389c36e7bc717740f"
+        }
+      ]
+    }
+  ]
+}

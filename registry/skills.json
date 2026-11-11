@@ -1,0 +1,294 @@
+{
+  "schemaVersion": 1,
+  "policySha256": "59f5fc5a451a4cdcc27db15af8055c120a66df6b154177ed3492bd31339698e0",
+  "sources": [
+    {
+      "id": "pstack",
+      "origin": "https://github.com/michael-denyer/pstack-claude",
+      "package": "pstack",
+      "version": "0.9.128",
+      "revision": null,
+      "metadata": ".codex-plugin/plugin.json",
+      "license": "MIT",
+      "rightsEvidence": "Installed plugin MIT declaration and skills-only LICENSE/NOTICE; principles covered by pstack-derived work. Upstream main corroborates only, revision unknown.",
+      "capabilities": [
+        "Readable guidance only; no native registration or tools supplied."
+      ],
+      "notices": [
+        "skills/poteto-mode/references/licenses/LICENSE",
+        "skills/poteto-mode/references/licenses/LICENSE-cursor-team-kit",
+        "skills/poteto-mode/references/licenses/LICENSE-thermos",
+        "skills/poteto-mode/references/licenses/NOTICE.md"
+      ],
+      "skills": [
+        {
+          "path": "skills/principle-laziness-protocol/SKILL.md",
+          "dependencies": []
+        },
+        {
+          "path": "skills/principle-model-the-domain/SKILL.md",
+          "dependencies": []
+        },
+        {
+          "path": "skills/principle-prove-it-works/SKILL.md",
+          "dependencies": []
+        }
+      ],
+      "files": [
+        {
+          "path": "skills/poteto-mode/references/licenses/LICENSE",
+          "sha256": "5b1faca8cef6b7433b49c812c5e9e04bb1eb73b67171d67729983e0b46b9bb78"
+        },
+        {
+          "path": "skills/poteto-mode/references/licenses/LICENSE-cursor-team-kit",
+          "sha256": "702f5f331b56aff0e33d8c7826df5202559f894145eb70355c6477b55b5bb8a0"
+        },
+        {
+          "path": "skills/poteto-mode/references/licenses/LICENSE-thermos",
+          "sha256": "702f5f331b56aff0e33d8c7826df5202559f894145eb70355c6477b55b5bb8a0"
+        },
+        {
+          "path": "skills/poteto-mode/references/licenses/NOTICE.md",
+          "sha256": "232a21a3bf88991185e6837270cba41cd83646c3998f91942c823fecc4440b4d"
+        },
+        {
+          "path": "skills/principle-laziness-protocol/SKILL.md",
+          "sha256": "4c1514611a4d85f58a8d31403d6541aacbd1254bd981667adf6111b08295c539"
+        },
+        {
+          "path": "skills/principle-model-the-domain/SKILL.md",
+          "sha256": "3d14c29b3aca902ed7bf11716df971d4561f8e9624d70e2a9650feb918a22619"
+        },
+        {
+          "path": "skills/principle-prove-it-works/SKILL.md",
+          "sha256": "d5ad4e2fe1fe0fe5fd7f96ef117ed435a55a536bb1f2ce353c105c31239c0635"
+        }
+      ],
+      "discovered": [
+        "skills/architect/SKILL.md",
+        "skills/arena/SKILL.md",
+        "skills/automate-me/SKILL.md",
+        "skills/babysit/SKILL.md",
+        "skills/benchmark-checklist/SKILL.md",
+        "skills/blast-radius/SKILL.md",
+        "skills/bro/SKILL.md",
+        "skills/correct/SKILL.md",
+        "skills/create-formal-verification-skill/SKILL.md",
+        "skills/create-verification-skill/SKILL.md",
+        "skills/deslop/SKILL.md",
+        "skills/figure-it-out/SKILL.md",
+        "skills/fix-ci/SKILL.md",
+        "skills/fix-merge-conflicts/SKILL.md",
+        "skills/get-pr-comments/SKILL.md",
+        "skills/how/SKILL.md",
+        "skills/in-your-own-words/SKILL.md",
+        "skills/interrogate/SKILL.md",
+        "skills/ketchup/SKILL.md",
+        "skills/ketchup-video/SKILL.md",
+        "skills/maintain-formal-verification-skill/SKILL.md",
+        "skills/maintain-verification-skill/SKILL.md",
+        "skills/make-pr-easy-to-review/SKILL.md",
+        "skills/no-comments/SKILL.md",
+        "skills/poteto-help/SKILL.md",
+        "skills/poteto-mode/SKILL.md",
+        "skills/principle-attack-the-premise/SKILL.md",
+        "skills/principle-boundary-discipline/SKILL.md",
+        "skills/principle-build-the-lever/SKILL.md",
+        "skills/principle-encode-lessons-in-structure/SKILL.md",
+        "skills/principle-exhaust-the-design-space/SKILL.md",
+        "skills/principle-experience-first/SKILL.md",
+        "skills/principle-explain-the-number/SKILL.md",
+        "skills/principle-fix-root-causes/SKILL.md",
+        "skills/principle-foundational-thinking/SKILL.md",
+        "skills/principle-guard-the-context-window/SKILL.md",
+        "skills/principle-laziness-protocol/SKILL.md",
+        "skills/principle-make-operations-idempotent/SKILL.md",
+        "skills/principle-migrate-callers-then-delete-legacy-apis/SKILL.md",
+        "skills/principle-minimize-reader-load/SKILL.md",
+        "skills/principle-model-the-domain/SKILL.md",
+        "skills/principle-never-block-on-the-human/SKILL.md",
+        "skills/principle-outcome-oriented-execution/SKILL.md",
+        "skills/principle-prove-it-works/SKILL.md",
+        "skills/principle-redesign-from-first-principles/SKILL.md",
+        "skills/principle-separate-before-serializing-shared-state/SKILL.md",
+        "skills/principle-sequence-verifiable-units/SKILL.md",
+        "skills/principle-subtract-before-you-add/SKILL.md",
+        "skills/principle-test-behavior-not-implementation/SKILL.md",
+        "skills/principle-type-system-discipline/SKILL.md",
+        "skills/recall/SKILL.md",
+        "skills/reflect/SKILL.md",
+        "skills/setup-pstack/SKILL.md",
+        "skills/sharpen/SKILL.md",
+        "skills/show-me-your-work/SKILL.md",
+        "skills/statechart/SKILL.md",
+        "skills/swarm/SKILL.md",
+        "skills/tdd/SKILL.md",
+        "skills/teach/SKILL.md",
+        "skills/technical-writing/SKILL.md",
+        "skills/thermo-nuclear-code-quality-review/SKILL.md",
+        "skills/thermo-nuclear-review/SKILL.md",
+        "skills/thermos/SKILL.md",
+        "skills/typescript-best-practices/SKILL.md",
+        "skills/unslop/SKILL.md",
+        "skills/what-did-i-get-done/SKILL.md",
+        "skills/why/SKILL.md"
+      ],
+      "registration": "unverified"
+    },
+    {
+      "id": "mattpocock",
+      "origin": "https://github.com/mattpocock/skills",
+      "package": "mattpocock-skills",
+      "version": "1.3.2",
+      "revision": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d",
+      "revisionEvidence": ".codex-marketplace-install.json",
+      "metadata": ".claude-plugin/plugin.json",
+      "license": "MIT",
+      "rightsEvidence": "Installed root MIT LICENSE matches pinned upstream revision; selected Markdown has no overriding terms.",
+      "capabilities": [
+        "Readable design guidance; optional design exploration needs agent tools supplied separately."
+      ],
+      "notices": [
+        "LICENSE"
+      ],
+      "skills": [
+        {
+          "path": "skills/engineering/codebase-design/SKILL.md",
+          "dependencies": [
+            "skills/engineering/codebase-design/DEEPENING.md",
+            "skills/engineering/codebase-design/DESIGN-IT-TWICE.md",
+            "skills/engineering/codebase-design/agents/openai.yaml"
+          ]
+        }
+      ],
+      "files": [
+        {
+          "path": "LICENSE",
+          "sha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5"
+        },
+        {
+          "path": "skills/engineering/codebase-design/DEEPENING.md",
+          "sha256": "f3dd099ce99289bd213914d8ee3e2429b78309c3957ca4583f7659551b1d53c1"
+        },
+        {
+          "path": "skills/engineering/codebase-design/DESIGN-IT-TWICE.md",
+          "sha256": "c222ab5a82e0405672eb9062d62496139a08828e45d07fc5f18e4952c10fac1a"
+        },
+        {
+          "path": "skills/engineering/codebase-design/SKILL.md",
+          "sha256": "2c20617f87ec8af6a434859f381b2f061a69b530444e74eb39e78bb016a6d1e2"
+        },
+        {
+          "path": "skills/engineering/codebase-design/agents/openai.yaml",
+          "sha256": "edebc9e4fcfe102114012575eaa9600b9b5fd08c311664f389c36e7bc717740f"
+        }
+      ],
+      "discovered": [
+        "skills/engineering/ask-matt/SKILL.md",
+        "skills/engineering/code-review/SKILL.md",
+        "skills/engineering/codebase-design/SKILL.md",
+        "skills/engineering/diagnosing-bugs/SKILL.md",
+        "skills/engineering/domain-modeling/SKILL.md",
+        "skills/engineering/grill-with-docs/SKILL.md",
+        "skills/engineering/implement/SKILL.md",
+        "skills/engineering/implement-spec/SKILL.md",
+        "skills/engineering/improve-codebase-architecture/SKILL.md",
+        "skills/engineering/pr/SKILL.md",
+        "skills/engineering/prototype/SKILL.md",
+        "skills/engineering/research/SKILL.md",
+        "skills/engineering/retro/SKILL.md",
+        "skills/engineering/setup-matt-pocock-skills/SKILL.md",
+        "skills/engineering/tdd/SKILL.md",
+        "skills/engineering/to-spec/SKILL.md",
+        "skills/engineering/to-tickets/SKILL.md",
+        "skills/engineering/triage/SKILL.md",
+        "skills/engineering/wayfinder/SKILL.md",
+        "skills/engineering/wizard/SKILL.md",
+        "skills/in-progress/chief-of-staff/SKILL.md",
+        "skills/in-progress/claude-handoff/SKILL.md",
+        "skills/in-progress/loop-me/SKILL.md",
+        "skills/in-progress/setup-ts-deep-modules/SKILL.md",
+        "skills/in-progress/software-factory/SKILL.md",
+        "skills/in-progress/writing-beats/SKILL.md",
+        "skills/in-progress/writing-fragments/SKILL.md",
+        "skills/in-progress/writing-shape/SKILL.md",
+        "skills/misc/git-guardrails-claude-code/SKILL.md",
+        "skills/misc/migrate-to-shoehorn/SKILL.md",
+        "skills/misc/scaffold-exercises/SKILL.md",
+        "skills/misc/setup-pre-commit/SKILL.md",
+        "skills/productivity/grill-me/SKILL.md",
+        "skills/productivity/grilling/SKILL.md",
+        "skills/productivity/handoff/SKILL.md",
+        "skills/productivity/teach/SKILL.md",
+        "skills/productivity/to-questionnaire/SKILL.md",
+        "skills/productivity/wait-what/SKILL.md",
+        "skills/productivity/writing-for-agents/SKILL.md"
+      ],
+      "registration": "unverified"
+    }
+  ],
+  "files": [
+    {
+      "path": "pstack/skills/poteto-mode/references/licenses/LICENSE",
+      "sha256": "5b1faca8cef6b7433b49c812c5e9e04bb1eb73b67171d67729983e0b46b9bb78",
+      "bytes": 1101
+    },
+    {
+      "path": "pstack/skills/poteto-mode/references/licenses/LICENSE-cursor-team-kit",
+      "sha256": "702f5f331b56aff0e33d8c7826df5202559f894145eb70355c6477b55b5bb8a0",
+      "bytes": 1063
+    },
+    {
+      "path": "pstack/skills/poteto-mode/references/licenses/LICENSE-thermos",
+      "sha256": "702f5f331b56aff0e33d8c7826df5202559f894145eb70355c6477b55b5bb8a0",
+      "bytes": 1063
+    },
+    {
+      "path": "pstack/skills/poteto-mode/references/licenses/NOTICE.md",
+      "sha256": "232a21a3bf88991185e6837270cba41cd83646c3998f91942c823fecc4440b4d",
+      "bytes": 1991
+    },
+    {
+      "path": "pstack/skills/principle-laziness-protocol/SKILL.md",
+      "sha256": "4c1514611a4d85f58a8d31403d6541aacbd1254bd981667adf6111b08295c539",
+      "bytes": 543
+    },
+    {
+      "path": "pstack/skills/principle-model-the-domain/SKILL.md",
+      "sha256": "3d14c29b3aca902ed7bf11716df971d4561f8e9624d70e2a9650feb918a22619",
+      "bytes": 1849
+    },
+    {
+      "path": "pstack/skills/principle-prove-it-works/SKILL.md",
+      "sha256": "d5ad4e2fe1fe0fe5fd7f96ef117ed435a55a536bb1f2ce353c105c31239c0635",
+      "bytes": 2435
+    },
+    {
+      "path": "mattpocock/LICENSE",
+      "sha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5",
+      "bytes": 1068
+    },
+    {
+      "path": "mattpocock/skills/engineering/codebase-design/DEEPENING.md",
+      "sha256": "f3dd099ce99289bd213914d8ee3e2429b78309c3957ca4583f7659551b1d53c1",
+      "bytes": 2553
+    },
+    {
+      "path": "mattpocock/skills/engineering/codebase-design/DESIGN-IT-TWICE.md",
+      "sha256": "c222ab5a82e0405672eb9062d62496139a08828e45d07fc5f18e4952c10fac1a",
+      "bytes": 2699
+    },
+    {
+      "path": "mattpocock/skills/engineering/codebase-design/SKILL.md",
+      "sha256": "2c20617f87ec8af6a434859f381b2f061a69b530444e74eb39e78bb016a6d1e2",
+      "bytes": 6446
+    },
+    {
+      "path": "mattpocock/skills/engineering/codebase-design/agents/openai.yaml",
+      "sha256": "edebc9e4fcfe102114012575eaa9600b9b5fd08c311664f389c36e7bc717740f",
+      "bytes": 102
+    }
+  ],
+  "snapshot": "2aabf38f82f84a06e2e4f22fbe5454d8566b8877104933d4df885901585fa543",
+  "observedAt": "2026-11-04T13:04:37.766Z"
+}
