@@ -2295,7 +2295,7 @@
         },
         {
           "path": "verification/restoration-suspension/check.mjs",
-          "sha256": "12fdd75aef2abf148efc2f10e6d9d97a246054f1edef266efc7c994d7ee0d4ba",
+          "sha256": "64f6d76e185f65095b265d6fc326008f31c63bc0545fdc7856fe41fa0689671b",
           "callers": [
             "verification input"
           ]
@@ -2316,7 +2316,7 @@
         },
         {
           "path": "verification/restoration-suspension/coverage.json",
-          "sha256": "8c9cbf57d7c054e22aa019e4686f53527190185f0a9ec89dcfbec0d69070aff5",
+          "sha256": "e798d0fdbc1382eb723ce988badb77998d44583262429dc81b6cd89b16d761c6",
           "callers": [
             "verification input"
           ]

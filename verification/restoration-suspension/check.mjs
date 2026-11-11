@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync, execFileSync } from 'node:child_process';
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { randomUUID, createHash } from 'node:crypto';
@@ -37,7 +37,8 @@ try {
     for (const [path, expected] of Object.entries(coverage.verificationFiles)) assert.equal(sha(await readFile(join(root, path))), expected, `Review verification change in ${path}`);
   }
   const run = async (name, modules, expected = null) => {
-    const path = join(directory, name); const tmp = join(path, 'tmp'); await mkdir(tmp, { recursive: true });
+    const path = join(directory, name); await mkdir(path, { recursive: true });
+    const probeTmp = await mkdtemp('/tmp/emmy-restore-probe-'); const tmp = await mkdtemp('/tmp/emmy-restore-tlc-');
     const graph = history(modules); await writeFile(join(path, 'graph.json'), JSON.stringify(graph));
     await writeFile(join(path, 'Restoration.tla'), graphSpec(graph)); await writeFile(join(path, 'Restoration.cfg'), config);
     const labels = graph.nodes.map(n => !n.result ? 'Evidence changed, reconciliation pending' : n.result.restored.suspended ? n.state.expired ? 'Evidence expired' : n.state.revocations[n.state.epoch] === 1 ? 'Evidence unavailable' : 'Restoration suspended' : 'Restoration ready');
@@ -50,8 +51,8 @@ try {
       assert.ok(graph.nodes.some(n => n.result?.restored.suspended && n.state.expired));
     }
     const env = { ...process.env }; delete env.JAVA_TOOL_OPTIONS; delete env._JAVA_OPTIONS; delete env.JDK_JAVA_OPTIONS;
-    const probe = spawnSync(java, [`-Djava.io.tmpdir=${tmp}`, '-XshowSettings:properties', '-version'], { encoding: 'utf8', env });
-    assert.equal(probe.status, 0); assert.ok(probe.stderr.includes(`java.io.tmpdir = ${tmp}`), 'Actual Java tmpdir');
+    const probe = spawnSync(java, [`-Djava.io.tmpdir=${probeTmp}`, '-XshowSettings:properties', '-version'], { encoding: 'utf8', env });
+    assert.equal(probe.status, 0); assert.ok(probe.stderr.includes(`java.io.tmpdir = ${probeTmp}`), 'Actual Java tmpdir');
     const result = spawnSync(java, [`-Djava.io.tmpdir=${tmp}`, '-XX:+UseParallelGC', '-Xmx1g', '-cp', jar, 'tlc2.TLC', '-workers', '1', '-config', 'Restoration.cfg', 'Restoration.tla'], { cwd: path, encoding: 'utf8', timeout: 60000, maxBuffer: 16 * 1024 * 1024, env });
     const output = `${result.stdout ?? ''}${result.stderr ?? ''}`; await writeFile(join(path, 'tlc.out'), output);
     assert.equal(result.signal, null); assert.equal(result.error, undefined);
@@ -68,7 +69,7 @@ try {
       const last = graph.nodes[trace.at(-1).node]; assert.ok(last.result, 'Counterexample ends at actual reconciliation');
       await writeFile(join(path, 'replay.json'), JSON.stringify({ invariant: expected, steps: replay }, null, 2));
     } else { assert.equal(result.status, 0, output); assert.match(output, /Model checking completed\. No error has been found\./); }
-    report.runs.push({ name, expected, nodes: graph.nodes.length, edges: graph.edges.length, status: expected ? 'counterexample-replayed' : 'passed' });
+    report.runs.push({ name, expected, probeTmp, tmp, nodes: graph.nodes.length, edges: graph.edges.length, status: expected ? 'counterexample-replayed' : 'passed' });
   };
   const production = await moduleSet(join(root, 'src')); await run('baseline', production);
   for (const [name, file, find, replacement, expected] of mutations) {
