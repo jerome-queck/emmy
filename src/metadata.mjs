@@ -70,15 +70,6 @@ export const verification = {
 
 // Reviewed association of subsystem evidence; file inventory remains in verification/subsystems.json.
 export const subsystemEvidence = {
-  "restoration-suspension": {
-    "drivers": ["scripts/verify-behavior.mjs"],
-    "skills": [".agents/skills/restoration-suspension/SKILL.md"],
-    "replay": ["verification/restoration-suspension/check.mjs", "verification/restoration-suspension/replay-statechart.mjs"],
-    "coverageRecords": ["verification/coverage.json", "verification/restoration-suspension/coverage.json"],
-    "model": "reachable-history",
-    "skillStatus": "maintained",
-    "graph": { "kind": "reachable-history", "path": "verification/restoration-suspension/graph.mjs", "record": "verification/restoration-suspension/coverage.json", "checker": "verification/restoration-suspension/check.mjs", "exports": ["history", "graphSpec"] }
-  },
   "responsibility-closure": {
     "drivers": ["scripts/verify-behavior.mjs"],
     "skills": [".agents/skills/responsibility-closure/SKILL.md"],
@@ -93,6 +84,15 @@ export const subsystemEvidence = {
       "checker": "verification/responsibility-closure/check.mjs",
       "exports": ["closureGraph"]
     }
+  },
+  "restoration-suspension": {
+    "drivers": ["scripts/verify-behavior.mjs"],
+    "skills": [".agents/skills/restoration-suspension/SKILL.md"],
+    "replay": ["verification/restoration-suspension/check.mjs", "verification/restoration-suspension/replay-statechart.mjs"],
+    "coverageRecords": ["verification/coverage.json", "verification/restoration-suspension/coverage.json"],
+    "model": "reachable-history",
+    "skillStatus": "maintained",
+    "graph": { "kind": "reachable-history", "path": "verification/restoration-suspension/graph.mjs", "record": "verification/restoration-suspension/coverage.json", "checker": "verification/restoration-suspension/check.mjs", "exports": ["history", "graphSpec"] }
   },
   "responsibility": {
     "drivers": [
