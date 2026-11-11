@@ -31,7 +31,7 @@
     "verification/restoration-suspension/graph.mjs": "ea28a2bd312a88ea79a98207df7788e78c52cf5c8831acb115c0b43fd1f4e93a",
     "verification/restoration-suspension/check.mjs": "fe893291e7797271f5c3303a9ed0796cf93b0526f5921da7320c5316e57a8494",
     "verification/restoration-suspension/replay-statechart.mjs": "6f7cfd87745215043dff8af7cf1bce0f5321077045eb6f19b86fe9ab7b09b5fd",
-    ".agents/skills/restoration-suspension/SKILL.md": "70245c17ff528b7b41b715b8be7ec24cd2df1c5050e31f020d9ffce5648fd142"
+    ".agents/skills/restoration-suspension/SKILL.md": "1bcd8e82031af083839a6dfada7ee20b396d8c3150816db84613cc08028b2959"
   },
   "mapping": {
     "EpochEvidence": "restoredState epoch and category guards",

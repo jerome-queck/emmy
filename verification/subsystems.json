@@ -2309,14 +2309,14 @@
         },
         {
           "path": ".agents/skills/restoration-suspension/SKILL.md",
-          "sha256": "70245c17ff528b7b41b715b8be7ec24cd2df1c5050e31f020d9ffce5648fd142",
+          "sha256": "1bcd8e82031af083839a6dfada7ee20b396d8c3150816db84613cc08028b2959",
           "callers": [
             "public configuration"
           ]
         },
         {
           "path": "verification/restoration-suspension/coverage.json",
-          "sha256": "8505b6be68731994fd5ba7ee9b7436ea5898635d5d4646f36323cf77db4608aa",
+          "sha256": "7d16cc7ceafa515bc45df9d0fcfc5e3b700113b19dcf1109a3951db089e7ee9c",
           "callers": [
             "verification input"
           ]
