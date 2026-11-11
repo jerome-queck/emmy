@@ -1,6 +1,6 @@
 # Fleet health and sign-in recovery
 
-Run `node scripts/verify-behavior.mjs --focus fleet` and `node --test test/fleet.test.mjs test/fleet-history.test.mjs test/fleet-semantics.test.mjs test/morning.test.mjs`. Read [the contract](../../../../docs/fleet-health.md) and [sign-in skill](../../sign-in/SKILL.md) first. The focused driver uses a separate synthetic private home, actual CLI processes and byte-retained receipts. It performs no native read, sign-in, send, or schedule change.
+Run `node scripts/verify-behavior.mjs --focus fleet` and `node --test test/fleet.test.mjs test/fleet-semantics.test.mjs test/morning.test.mjs`. Read [the contract](../../../../docs/fleet-health.md) and [sign-in skill](../../sign-in/SKILL.md) first. The focused driver uses a separate synthetic private home, actual CLI processes and byte-retained receipts. It performs no native read, sign-in, send, or schedule change.
 
 Drive source age separately from acquisition age. Expired login, denied action, unavailable tool, timeout, pressure, monitoring failure, workflow failure, suspended, unknown, pending and recovered remain distinct. A disabled or missed expected run is visible. Completed execution needs outcome evidence; required delivery needs its own reference. Failed monitor coverage makes dependent health unknown. Do not call partial coverage healthy.
 
@@ -59,7 +59,3 @@ The flat Calendar search adapter retains source request plus separately pinned o
 Flat Calendar raw `next_page_token` must be explicit null or nonempty text for cursor equality. An omitted token preserves only a null sidecar cursor with both source completeness flags false and an explicit pagination-unknown gap; complete assertions or invented continuation refuse. Explicit null is the local terminal contract, not authenticated provider completeness.
 
 The common foundation uses direct `content.mjs` and `strict-json.mjs` helpers. The shared `briefing-core.mjs` serves local CLI and portable consumers. Run the new release and morning-observation suites plus the fleet focus. Separate collector-mode CLI evidence retains null provider clocks, original bounds, packet identity and a partial same-journal seal without effects. Same acquisition receipt cannot lose its observation. Exact-source release materialization remains staged.
-
-The [fleet health history skill](../../fleet-health/SKILL.md) checks a bounded actual reducer graph for retained episode, recovery and source-admission properties. Its synthetic declarations do not verify an account or a provider.
-
-The [morning send skill](../../morning-send/SKILL.md) checks a bounded actual policy-v3 initial-send graph, exact declared readback and scoped no-effect reconciliation. It does not verify provider delivery or source truth.

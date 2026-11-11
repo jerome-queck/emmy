@@ -1,3 +1,0 @@
-export const title = 'Local suite admission and source-bound acceptance';
-export const state = vars => `State ${vars.node}`;
-export const step = action => ({ StartNext: 'start the next required check', WrongSuite: 'request a different check', WrongResult: 'receive another check result', StartChangedContext: 'source changes before a check', FinishChangedContext: 'source changes during a check', SuitePass: 'check exits successfully', SuiteFail: 'check fails', SuiteSignal: 'check is interrupted', SpawnError: 'check cannot start', OutputChanges: 'retained output fails verification', Inspect: 'recheck unchanged source', SourceChanges: 'source or environment changes' })[action];

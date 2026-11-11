@@ -1,13 +1,5 @@
 # Upkeep and recovery
 
-The standalone `scripts/github-auto-merge.mjs --local <request>` route consumes exact retained assurance and separately accepted review for scoped publication, PR opening, attestation and guarded merge. `test/github-auto-merge.test.mjs` imports the local delivery tests and fresh CLI/provider-fake drive. The existing merge formal suite also runs the [local lifecycle contract](../../merge-assurance/SKILL.md). This route is outside metadata-defined agent commands. Source support does not activate protection or publish code.
-
-## Local check assurance
-
-Run `npm run check` for the fixed complete production plan. It retains original output and exact receipts under ignored `.local/verification/local-assurance/`. `assurance --file <request>` reads `{receiptFile, receiptDigest}` and returns `current-local-reported` only after replay and fresh source/base/environment observation. Failed, incomplete, reordered, changed or corrupted evidence cannot pass. Source symlinks and external dependency links refuse; ignored files are outside the source inventory. See [the contract](../../../../docs/local-assurance.md).
-
-The `local-assurance` empirical scenario uses labelled copied source with two synthetic commands and actual package/agent entry points. It proves orchestration/refusal behavior. Full aggregate execution separately proves the complete production plan. The [area formal skill](../../local-assurance/SKILL.md) covers the bounded reducer graph and actual-source mutants. These checks authenticate neither authorship nor independent review, native access, installation or future execution.
-
 ## User route
 
 Run `maintain --check` at session start. After public metadata changes, run `maintain --write`, inspect derived files, and run the aggregate check. Metadata owns commands, feature map, scenario names, and property IDs. Maintenance preserves research dates and formal sync records.
@@ -23,8 +15,6 @@ A restored home has a new epoch. Fresh exact target, authority, task, and schedu
 The archive also excludes disposable guidance snapshots and briefing artifacts under `<home>/briefing/`. Preserve any wanted briefing evidence separately. The briefing cache has no mutable latest pointer; only complete verified snapshots can support fallback, with their original successful main-check time and schema-1 receipt. Immutable run receipts bind the refresh trace and draft assessment as well as the exact body. Successful recovery preserves its failed attempt and retry decision privately.
 
 Every executable criterion reevaluates that epoch's retained observations after acquisition reads and immediately before launch. Authority expiring during an earlier check suspends the next command. The driver retains a three-second expiry counterexample and a current-authority positive control.
-
-The [restoration-suspension contract](../../restoration-suspension/SKILL.md) explores bounded epoch, record-arrival, supersession, expiry and reconciliation histories. `restored-current-context` remains the separate empirical CLI boundary.
 
 ## Source and drive
 
