@@ -757,7 +757,7 @@
       "files": [
         {
           "path": "src/assurance.mjs",
-          "sha256": "7d60165fb34b8e89f9d47eff058db4e03ac041d14bec2ef7ae73e21486bbfe61",
+          "sha256": "e0e681f8071f8892f31ccccbf03011ec3af91e62539e94f264ba36a50cd1b729",
           "callers": [
             "src/local-assurance.mjs",
             "verification/local-assurance/check.mjs"
@@ -1064,7 +1064,7 @@
         },
         {
           "path": "src/metadata.mjs",
-          "sha256": "a296dc8454bd20d6e74aee6ae9105e87e1280f6160885bd0a46e536ded15cb68",
+          "sha256": "8b6c9c528a7eedec1c70ead15e72f154e952f28567937e751d07bc2604b91066",
           "callers": [
             "src/briefing.mjs",
             "src/maintenance.mjs",
@@ -1229,7 +1229,7 @@
         },
         {
           "path": ".agents/skills/local-assurance/SKILL.md",
-          "sha256": "68fa7dcccd5153bf4cb765a37dffde7232853ebd9953e4a6f6d57b1f7c15b2f8",
+          "sha256": "abbcba2fdea95d257405ebdcaaa5c8acf3a87dc35a544d10f2a38aafa3fa9e76",
           "callers": [
             "public configuration"
           ]
@@ -1292,7 +1292,7 @@
         },
         {
           "path": ".agents/skills/verify/features/fleet.md",
-          "sha256": "ca773c50b0ec58d5cd7ca0fd1eddecfeaf9dbc21315110e8235545ab0f38edf8",
+          "sha256": "12da999b8014148a5ce5181b86d16cf9d74947871d834a378bec601daa2f6644",
           "callers": [
             "public configuration"
           ]
@@ -1560,7 +1560,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "e54cfc0435a75ee48c7a967a2685969780271b51bbfc7063a0e489be7cbcf4e5",
+          "sha256": "c6719cb2faf880f098a98c18dba70205792de8d10674f5f10c8f9f782fc2700d",
           "callers": [
             "verification input"
           ]
@@ -1595,7 +1595,7 @@
         },
         {
           "path": "verification/delivery/coverage.json",
-          "sha256": "7327574fa65185e1143a9eb268561376856734820434c1d63d693998f4a2d25f",
+          "sha256": "1b42875c7bf9d77ccfc481f892f02113b24150fb41d5b65b34b84f3ff6495bbc",
           "callers": [
             "verification input"
           ]
@@ -1644,7 +1644,7 @@
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "da696ea7f31227b4bbed1c878f5917bf9a302e7cc7471c6820af033f08a46798",
+          "sha256": "8ac5bc51cf0107da25408e93c501ec9b0516bd5952619249b24445688f9800e5",
           "callers": [
             "verification input"
           ]
@@ -1763,7 +1763,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "2b9535eb1cc2a345b8f98008ea1463cefc982be370cc38c68bd027c0fb4fe260",
+          "sha256": "7f2e4bd7b6248216411018f37efd98edf4eb4aeeac2f302fafa1e6cb142a5c36",
           "callers": [
             "verification input"
           ]
@@ -1917,7 +1917,7 @@
         },
         {
           "path": "verification/publication/coverage.json",
-          "sha256": "0fd81b81a8ba4f014ae320f5a78fbfeadffceb1c21d7d110e5532465bf72c26f",
+          "sha256": "97debec7a2e8e8886e5d8717cd8bbdaeb2883fe0cbf7985d037911a2c73cb6e4",
           "callers": [
             "verification input"
           ]
@@ -2295,7 +2295,7 @@
         },
         {
           "path": "verification/restoration-suspension/check.mjs",
-          "sha256": "64f6d76e185f65095b265d6fc326008f31c63bc0545fdc7856fe41fa0689671b",
+          "sha256": "1548fa9b62419d13986e60d48e5564b4f6b7841e261a1b4884e3b48815ae1f46",
           "callers": [
             "verification input"
           ]
@@ -2316,7 +2316,7 @@
         },
         {
           "path": "verification/restoration-suspension/coverage.json",
-          "sha256": "e798d0fdbc1382eb723ce988badb77998d44583262429dc81b6cd89b16d761c6",
+          "sha256": "27c373ceffdd632a53b94ecbd74f612c3e205eace83d6eda00596d2d1ecbcbae",
           "callers": [
             "verification input"
           ]
@@ -2366,7 +2366,7 @@
         },
         {
           "path": "verification/cooperative-cloud/coverage.json",
-          "sha256": "2e9ed8f2197ea451b108858f4587592b3985a8d1d5194b7f7c5614583d94c984",
+          "sha256": "7b1364306c3848450070069ecd020ab8032ee5175167d2d0a0952fb683880f45",
           "callers": [
             "verification input"
           ]
@@ -2480,7 +2480,7 @@
         },
         {
           "path": "verification/fleet-health/coverage.json",
-          "sha256": "b606dfc9bdf226ea74f1cb8d03992950e6d63d48fddb46344df6b3355f5fe3c7",
+          "sha256": "60418d5cda4ace760f2019253cadaeb50e1b47be8f881ef0602a2a689b0bbee7",
           "callers": [
             "verification input"
           ]
@@ -2516,6 +2516,61 @@
       ],
       "scenarios": [
         "fleet-health"
+      ]
+    },
+    {
+      "id": "morning-send-history",
+      "stateOwner": "fleetTransition and morningTransition initial send",
+      "classification": "bounded actual-source reachable reducer histories",
+      "bounds": "One sealed policy-v3 run, four synchronous transitions, fixed destination and bounded clocks.",
+      "gap": "Source truth, asynchronous publication, provider effects, arbitrary histories and actual delivery.",
+      "files": [
+        {
+          "path": "verification/morning-send/graph.mjs",
+          "sha256": "f77b1d5be740ad211fc890fd350908b9007342a68df702e5c8446b90ba77dbcb",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/morning-send/check.mjs",
+          "sha256": "79f5918e4f4bd4ed29c8a927d1f2d1fd5e2d3d0eaa7a058b9961c041aada0788",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": "verification/morning-send/coverage.json",
+          "sha256": "2da99d46d41cb68bbd497f6117b5857702370ac64e23045f2ba2020814b8f49c",
+          "callers": [
+            "verification input"
+          ]
+        },
+        {
+          "path": ".agents/skills/morning-send/SKILL.md",
+          "sha256": "5c25f4a4ded2d0e8585eb2e3abf1877eef00dd21a1cfe704f297dc9ff1b05b1b",
+          "callers": [
+            "public configuration"
+          ]
+        }
+      ],
+      "ownerRefs": [
+        {
+          "path": "src/fleet-state.mjs",
+          "symbol": "fleetTransition"
+        },
+        {
+          "path": "src/morning.mjs",
+          "symbol": "morningTransition"
+        }
+      ],
+      "properties": [
+        "IntentSafe",
+        "DeliveryExact",
+        "ResolutionSafe"
+      ],
+      "scenarios": [
+        "morning-run"
       ]
     }
   ]
