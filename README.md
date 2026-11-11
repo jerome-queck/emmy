@@ -1,5 +1,7 @@
 # Emmy
 
+[Local verified delivery](docs/local-delivery.md) adds an explicit route for scoped agent publication and merge with no hosted job. Historical hosted checks remain available. Source support does not activate settings or grant effects.
+
 The [architecture roadmap](docs/architecture-evolution.md) records the bounded shared-policy slice and unfinished exact-ID gateway and module convergence. [Local assurance](docs/local-assurance.md) binds `npm run check` to source, base and environment observations with retained output and fresh receipt assessment.
 
 The [generic automation foundation](docs/automation-foundation.md) builds staged creation plans from versioned procedures and exact configuration files, prepares the existing canonical outcome format, and reads fixed artifacts without history scans. Native products own saving and operation.

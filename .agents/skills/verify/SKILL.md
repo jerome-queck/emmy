@@ -5,6 +5,8 @@ description: Drive Emmy's real CLI after changes to responsibility context, reco
 
 # Verify Emmy
 
+The standalone [local delivery route](../../../docs/local-delivery.md) shares the existing merge owner. Run `node --test test/github-auto-merge.test.mjs` to drive its actual CLI with exact synthetic check receipts and provider fakes. Controls cover source/head/base/dependency drift, tampered evidence, same-author review, expiry, denial, lost-result rediscovery and no duplicate effects. Original artifacts remain under `.local/verification/delivery-cli/`. Follow [merge assurance](../merge-assurance/SKILL.md) for its separate finite/TLC contract. Full `npm run check` includes these tests through the existing merge suite. Native review provenance and live authorization remain external acceptance.
+
 ## Launch and health
 
 Use Node 24 or later. Run `npm ci --ignore-scripts` to install locked verification dependencies. Run `npm run agent -- help --json`. It returns `ok: true` with the metadata-defined commands. Run `npm run agent -- doctor` and `maintain --check`. Doctor checks local runtime, catalog, bindings, store references/evidence, historical records, generated drift, and restored suspension. It does not probe native tools.

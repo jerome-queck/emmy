@@ -64,7 +64,7 @@ Reopen the ready thread through the supported native service. Verify saved membe
 
 Run pstack's behavioral and formal maintenance workflows. Read source, drive the real feature and review the code-to-property mapping; generated references do not perform these reviews. Keep the finite checks of production functions and the TLA+/TLC publication model as complementary verification. A bounded model needs explicit assumptions, source-step mapping and counterexamples from deliberately broken variants.
 
-`npm run check` enforces executable checks and generated-document consistency. Protected merge requires exact-head CI plus an independent reviewer that did not write the change. The owner account attests that review; it cannot turn self-review into independent review. No checker can prove that an agent read or followed every prose instruction. Review evidence must explain material decisions and remaining limits.
+`npm run check` enforces executable checks and generated-document consistency. Protected merge requires exact-head verification plus an independent reviewer that did not write the change. Historical mode uses hosted CI. The explicit [local mode](local-delivery.md) binds retained output, current source and base, accepted practical review and scoped authority without a hosted job. The owner account attests review; it cannot turn self-review into independent review. No checker can prove that an agent read every prose instruction. Review evidence must explain material decisions and limits.
 
 ## Delivery is more than a merge
 

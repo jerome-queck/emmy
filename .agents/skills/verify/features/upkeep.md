@@ -1,5 +1,7 @@
 # Upkeep and recovery
 
+The standalone `scripts/github-auto-merge.mjs --local <request>` route consumes exact retained assurance and separately accepted review for scoped publication, PR opening, attestation and guarded merge. `test/github-auto-merge.test.mjs` imports the local delivery tests and fresh CLI/provider-fake drive. The existing merge formal suite also runs the [local lifecycle contract](../../merge-assurance/SKILL.md). This route is outside metadata-defined agent commands. Source support does not activate protection or publish code.
+
 ## Local check assurance
 
 Run `npm run check` for the fixed complete production plan. It retains original output and exact receipts under ignored `.local/verification/local-assurance/`. `assurance --file <request>` reads `{receiptFile, receiptDigest}` and returns `current-local-reported` only after replay and fresh source/base/environment observation. Failed, incomplete, reordered, changed or corrupted evidence cannot pass. Source symlinks and external dependency links refuse; ignored files are outside the source inventory. See [the contract](../../../../docs/local-assurance.md).
