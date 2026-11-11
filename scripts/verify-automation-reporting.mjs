@@ -6,6 +6,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { driveAutomationReporting } from '../verification/automation-reporting/drive.mjs';
+import { driveExpectationProjection, expectationMutants } from '../verification/automation-reporting/expectations-drive.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const evidenceDir = join(root, '.local/automation-reporting-model', `run-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 8)}`);
@@ -55,7 +56,7 @@ async function jarFile(tool) {
 async function tlc(java, jar, config, stage) {
   const directory = join(evidenceDir, `${stage}-${config}`);
   await mkdir(directory, { recursive: true });
-  const args = ['-XX:+UseParallelGC', '-Xmx1g', '-cp', jar, 'tlc2.TLC', '-workers', '1', '-fp', '0', '-metadir', join(directory, 'states'), '-config', join(root, 'verification/automation-reporting', `${config}.cfg`), join(root, 'verification/automation-reporting', ['transitions', 'terminal-mutant', 'receipt-mutant', 'missing-mutant'].includes(config) ? 'RunTransitions.tla' : 'AutomationReporting.tla')];
+  const args = ['-XX:+UseParallelGC', '-Xmx1g', '-cp', jar, 'tlc2.TLC', '-workers', '1', '-fp', '0', '-metadir', join(directory, 'states'), '-config', join(root, 'verification/automation-reporting', `${config}.cfg`), join(root, 'verification/automation-reporting', config === 'expectations' || config.startsWith('expectation-') ? 'ExpectationProjection.tla' : ['transitions', 'terminal-mutant', 'receipt-mutant', 'missing-mutant'].includes(config) ? 'RunTransitions.tla' : 'AutomationReporting.tla')];
   const start = Date.now();
   const child = spawn(java.binary, args, { cwd: directory });
   let stdout = '';
@@ -111,12 +112,14 @@ try {
   for (const [path, expected] of Object.entries(coverage.verificationFiles)) {
     assert.equal(sha256(await readFile(join(root, path))), expected, `${path} changed. Review the model, bridge and skill before refreshing verification digests.`);
   }
+  assert.equal(coverage.pendingReview, undefined, 'Pending source/mapping review must be resolved before the strict verification gate can pass');
+  assert.equal(coverage.pendingSourceClosure, undefined, 'Pending source closure must be committed, independently reviewed and pinned before verification');
   report.coverage = coverage;
   const java = javaBinary();
   const jar = await jarFile(coverage.tool);
   report.tool = { ...coverage.tool, jar, java };
   report.baseline = [];
-  for (const config of ['baseline', 'transitions']) report.baseline.push(passed(await tlc(java, jar, config, 'baseline')));
+  for (const config of ['baseline', 'transitions', 'expectations']) report.baseline.push(passed(await tlc(java, jar, config, 'baseline')));
   report.modelMutants = [];
   for (const [config, invariant, action] of [
     ['partial-mutant', 'PublishedComplete', 'Start'],
@@ -126,6 +129,7 @@ try {
     ['terminal-mutant', 'TerminalMonotonic', 'ReviseRun'],
     ['receipt-mutant', 'VerifiedReceiptMonotonic', 'ReviseReceipt'],
     ['missing-mutant', 'MissingNeverSuccess', 'ReadMissing'],
+    ...expectationMutants.map(([name, invariant]) => [`expectation-${name}-mutant`, invariant, 'ReadProjection']),
   ]) {
     const run = await tlc(java, jar, config, 'mutant');
     assert.equal(run.signal, null);
@@ -136,8 +140,9 @@ try {
     report.modelMutants.push({ config, invariant, action, status: 'intended-counterexample', trace: run.log });
   }
   report.filesystem = await driveAutomationReporting(root, join(evidenceDir, 'filesystem'));
+  report.expectations = await driveExpectationProjection(root, join(evidenceDir, 'expectations'));
   report.restored = [];
-  for (const config of ['baseline', 'transitions']) report.restored.push(passed(await tlc(java, jar, config, 'restored')));
+  for (const config of ['baseline', 'transitions', 'expectations']) report.restored.push(passed(await tlc(java, jar, config, 'restored')));
   assert.deepEqual(report.restored, report.baseline, 'The unchanged model must reproduce the original complete state graph after mutants');
   for (const [path, expected] of Object.entries({ ...coverage.sourceFiles, ...coverage.verificationFiles })) assert.equal(sha256(await readFile(join(root, path))), expected, `${path} changed during verification; retain this refusal and rerun after source review.`);
   report.status = 'passed';
@@ -147,5 +152,5 @@ try {
   process.exitCode = 1;
 } finally {
   await writeFile(join(evidenceDir, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
-  process.stdout.write(`${JSON.stringify({ status: report.status, kind: report.kind, sourceReviewGate: report.sourceReviewGate, baseline: report.baseline, modelMutants: report.modelMutants?.length, filesystemMutants: report.filesystem?.mutants.length, evidence: join(evidenceDir, 'report.json'), error: report.error?.message })}\n`);
+  process.stdout.write(`${JSON.stringify({ status: report.status, kind: report.kind, sourceReviewGate: report.sourceReviewGate, baseline: report.baseline, modelMutants: report.modelMutants?.length, filesystemMutants: report.filesystem?.mutants.length, expectationMutants: report.expectations?.mutants.length, evidence: join(evidenceDir, 'report.json'), error: report.error?.message })}\n`);
 }

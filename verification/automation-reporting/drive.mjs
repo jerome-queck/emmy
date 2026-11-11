@@ -16,9 +16,9 @@ export async function driveAutomationReporting(root, evidence) {
     if (mutation === 'partial') candidate = replace(candidate, 'const temporary = join(namespace, `.pending-${randomUUID()}`);', 'const temporary = join(namespace, `${hash}.json`);');
     if (mutation === 'accept') candidate = replace(candidate, 'const usable = record => complete && record.valid && !record.conflict;', 'const usable = record => true;');
     if (mutation === 'stale') candidate = replace(candidate, 'const stale = sourceTimes.some(time => Date.parse(evaluatedAt) - Date.parse(time) > maxAgeSeconds * 1000);', 'const stale = false;');
-    if (mutation === 'terminal') candidate = replace(candidate, 'return executionStable && receiptStable && previous', 'return receiptStable && previous');
-    if (mutation === 'receipt') candidate = replace(candidate, 'return executionStable && receiptStable && previous', 'return executionStable && previous');
-    if (mutation === 'missing') candidate = replace(candidate, "execution: 'not-inferred'", "execution: 'completed'");
+    if (mutation === 'terminal') candidate = replace(candidate, 'return executionStable && receiptStable && controlStable && previous', 'return receiptStable && controlStable && previous');
+    if (mutation === 'receipt') candidate = replace(candidate, 'return executionStable && receiptStable && controlStable && previous', 'return executionStable && controlStable && previous');
+    if (mutation === 'missing') candidate = replace(candidate, "state, runIds: observed.map(run => run.id), execution: 'not-inferred'", "state, runIds: observed.map(run => run.id), execution: 'completed'");
     if (mutation === 'authority') candidate = replace(candidate, "assurance: 'reported', publication: 'pending'", "assurance: 'authenticated', publication: 'pending'");
     const checkpointSource = `const handle = await open(temporary, 'wx', 0o600);
   if (process.env.EMMY_REPORT_MODEL_MARKER) {
@@ -30,7 +30,7 @@ export async function driveAutomationReporting(root, evidence) {
   }`;
     candidate = replace(candidate, "const handle = await open(temporary, 'wx', 0o600);", checkpointSource);
     const path = join(directory, 'automation-reporting.mjs'); await writeFile(path, candidate);
-    for (const dependency of ['bounded-json.mjs', 'improvement-report.mjs', 'reporting-privacy.mjs', 'automation-reporting-outcome.mjs']) await writeFile(join(directory, dependency), await readFile(join(root, 'src', dependency)));
+    for (const dependency of ['bounded-json.mjs', 'improvement-report.mjs', 'reporting-privacy.mjs', 'automation-reporting-outcome.mjs', 'automation-reporting-expectations.mjs']) await writeFile(join(directory, dependency), await readFile(join(root, 'src', dependency)));
     const api = await import(pathToFileURL(path));
     const home = join(directory, 'home'); await mkdir(home);
     return { directory, path, api, home };
