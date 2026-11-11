@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "policySha256": "e322db51838caa462fad337e7b9055825d6f0fe1284999ef9c6b2bc502c83b10",
+  "policySha256": "e3e08fdc9fae84d31b1fc9a57521bfbd0a58ccf89070f4ed9d0913e92a4a9286",
   "sources": [
     {
       "id": "pstack",
       "origin": "https://github.com/michael-denyer/pstack-claude",
       "package": "pstack",
-      "version": "0.9.129",
+      "version": "0.9.130",
       "revision": null,
       "metadata": ".codex-plugin/plugin.json",
       "license": "MIT",
@@ -289,6 +289,6 @@
       "bytes": 102
     }
   ],
-  "snapshot": "424f2ca70f744b97bf2b78677e33207e90c8ecf33c53874e2ffd82c3eb85993c",
-  "observedAt": "2026-11-04T15:43:05.584Z"
+  "snapshot": "1886f66355de16267bfd12b21b32ae0f20e86edd281537d80404b7b2846afb67",
+  "observedAt": "2026-11-05T19:38:22.165Z"
 }

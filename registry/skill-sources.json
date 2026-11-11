@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-11-04",
+  "reviewedAt": "2026-11-06",
   "exclusions": [
     {
       "source": "OpenAI Documents",
@@ -16,7 +16,7 @@
       "id": "pstack",
       "origin": "https://github.com/michael-denyer/pstack-claude",
       "package": "pstack",
-      "version": "0.9.129",
+      "version": "0.9.130",
       "revision": null,
       "metadata": ".codex-plugin/plugin.json",
       "license": "MIT",

@@ -109,10 +109,12 @@ async function exactCloud(cloud, capture, now) {
   return bytes;
 }
 
-export async function checkPrivateSelection(config, captures, attempt, now = new Date()) {
-  await mkdir(attempt, { mode: 0o700 });
+async function noSelectionWriter(config) {
   try { await lstat(join(config.home, 'writer.lock')); throw new Error('Pending selection writer requires exact rediscovery'); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
+}
+
+async function acceptedRelease(config, captures, now) {
   const selector = await exactCloud({ ...config.selector, parentId: config.parentId, owner: config.owner }, captures.selector, now);
   const history = await exactCloud({ ...config.history, parentId: config.parentId, owner: config.owner }, captures.history, now);
   need(selector.equals(history), 'Selected immutable history differs');
@@ -121,10 +123,38 @@ export async function checkPrivateSelection(config, captures, attempt, now = new
   await exactCloud({ ...config.accepted, parentId: config.parentId, owner: config.owner }, captures.candidate, now);
   const release = await readFoundation(captures.candidate.rawPath, config.accepted.sha256);
   need(release.revision === config.accepted.revision, 'Selected source differs');
+  return release;
+}
+
+export async function checkPrivateSelection(config, captures, attempt, now = new Date()) {
+  await mkdir(attempt, { mode: 0o700 });
+  await noSelectionWriter(config);
+  const release = await acceptedRelease(config, captures, now);
   const { before, reads } = await inventory(release, config.bindings, config.accepted.snapshot, join(attempt, 'runtime'));
   const result = { status: 'complete', operation: 'unchanged', binding: config, sourceObservedAt: before.observedAt, reads, remoteWrite: false, consumer: 'local materialization from exact cloud selector and capsule readbacks', registration: 'unverified' };
   await writeFile(join(attempt, 'selection-check.json'), json({ captures, result }), { flag: 'wx', mode: 0o600 });
   return result;
+}
+
+export async function preparePrivateRun(config, captures, staged, attempt, now = new Date()) {
+  await noSelectionWriter(config);
+  need(canonical(JSON.parse(await readFile(join(config.home, 'current.json')))) === canonical(config), 'Current accepted binding differs');
+  if (staged === null) return checkPrivateSelection(config, captures, attempt, now);
+  need(staged?.schemaVersion === 1 && staged.expectedBinding && staged.candidate?.bindings && typeof staged.candidate.approvalRef === 'string' && staged.candidate.approvalRef.length > 0, 'Explicit reviewed migration required');
+  const candidate = staged.candidate;
+  if (canonical(config) !== canonical(staged.expectedBinding)) {
+    const prior = staged.expectedBinding;
+    need(config.home === prior.home && config.parentId === prior.parentId && config.owner === prior.owner && canonical(config.bindings) === canonical(candidate.bindings) && config.accepted.revision === candidate.revision && config.accepted.sha256 === candidate.sha256 && config.accepted.bytes === candidate.bytes && config.accepted.snapshot === candidate.snapshot, 'Staged migration predecessor differs');
+    return checkPrivateSelection(config, captures, attempt, now);
+  }
+  await acceptedRelease(config, captures, now);
+  const accepted = config.accepted;
+  const predecessor = { schemaVersion: 1, revision: accepted.revision, snapshot: accepted.snapshot, capsulePath: captures.candidate.rawPath, bindings: config.bindings, cloud: { fileId: accepted.fileId, parentId: config.parentId, owner: config.owner, sha256: accepted.sha256, bytes: accepted.bytes }, consumer: { fileId: accepted.fileId, sha256: accepted.sha256, revision: accepted.revision, snapshot: accepted.snapshot } };
+  await mkdir(attempt, { mode: 0o700 });
+  const candidateAttempt = join(attempt, 'candidate');
+  await writeFile(join(attempt, 'run-plan.json'), json({ route: 'reviewed-candidate-first', stagedSha256: digest(staged), expectedBinding: config, candidateAttempt, remoteWrite: false, selectionChanged: false }), { flag: 'wx', mode: 0o600 });
+  const prepared = await preparePrivateCandidate(predecessor, captures.candidate, candidate, candidateAttempt, now);
+  return { ...prepared, route: 'reviewed-candidate-first', candidateAttempt, remoteWrite: false, selectionChanged: false };
 }
 
 export async function preparePrivateSelection(config, captures, candidateAttempt, attempt, now = new Date()) {
@@ -215,7 +245,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     const args = process.argv.slice(2);
     let result;
-    if (args[0] === 'check-selection' && args.length === 4) {
+    if (args[0] === 'prepare-run' && args.length === 5) {
+      result = await preparePrivateRun(JSON.parse(await readFile(args[1], 'utf8')), JSON.parse(await readFile(args[2], 'utf8')), args[3] === '-' ? null : JSON.parse(await readFile(args[3], 'utf8')), args[4]);
+    } else if (args[0] === 'check-selection' && args.length === 4) {
       result = await checkPrivateSelection(JSON.parse(await readFile(args[1], 'utf8')), JSON.parse(await readFile(args[2], 'utf8')), args[3]);
     } else if (args[0] === 'prepare-selection' && args.length === 5) {
       result = await preparePrivateSelection(JSON.parse(await readFile(args[1], 'utf8')), JSON.parse(await readFile(args[2], 'utf8')), args[3], args[4]);

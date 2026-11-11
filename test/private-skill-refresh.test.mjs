@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm, unlink, cp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
 import { refreshInventory } from '../scripts/skill-inventory.mjs';
-import { refreshPrivateSkills, preparePrivateCandidate, verifyPrivateCandidate, preparePrivateSelection, preparePrivateSelectorUpdate, completePrivateSelection, checkPrivateSelection } from '../scripts/private-skill-refresh.mjs';
+import { refreshPrivateSkills, preparePrivateCandidate, verifyPrivateCandidate, preparePrivateSelection, preparePrivateSelectorUpdate, completePrivateSelection, checkPrivateSelection, preparePrivateRun } from '../scripts/private-skill-refresh.mjs';
 import { buildFoundation } from '../src/foundation-release.mjs';
 import { canonical, digest } from '../src/content.mjs';
 
@@ -192,6 +192,65 @@ test('explicitly reviewed replacement source version selects its new pinned snap
   assert.notEqual(result.binding.bindings.fixture, f.config.bindings.fixture);
   assert.equal((await checkPrivateSelection(result.binding, f.finalCaptures, join(f.root, 'version2-check'), f.now)).status, 'complete');
   assert.deepEqual(await readFile(f.rawPath), f.raw);
+});
+
+async function stagedFixture(t) {
+  const f = await fixture(t), candidate = await f.candidate('2');
+  const accepted = { ...f.config.consumer, bytes: f.config.cloud.bytes };
+  const selection = { schemaVersion: 1, kind: 'emmy-private-skill-selection', generation: 1, selected: accepted };
+  const bytes = `${JSON.stringify(selection)}\n`, path = join(f.root, 'selector.json'); await writeFile(path, bytes);
+  const config = { home: join(f.root, 'home'), parentId: f.config.cloud.parentId, owner: f.config.cloud.owner, bindings: f.config.bindings, accepted, selector: { fileId: 'selector', sha256: digest(bytes), bytes: Buffer.byteLength(bytes), generation: 1 }, history: { fileId: 'history', sha256: digest(bytes), bytes: Buffer.byteLength(bytes) } };
+  await mkdir(config.home); await writeFile(join(config.home, 'current.json'), JSON.stringify(config));
+  const captured = id => ({ ...structuredClone(f.capture), rawPath: path, file: { ...structuredClone(f.capture.file), id, size: String(Buffer.byteLength(bytes)) } });
+  const captures = { selector: captured('selector'), history: captured('history'), candidate: f.capture };
+  const staged = { schemaVersion: 1, expectedBinding: config, candidate };
+  return { ...f, config, captures, staged };
+}
+
+test('scheduled prepare-run CLI reaches reviewed candidate before missing accepted source; absent plan stays held', async t => {
+  const f = await stagedFixture(t);
+  for (const capture of Object.values(f.captures)) capture.observedAt = new Date().toISOString();
+  await assert.rejects(readFile(join(f.source, 'plugin.json')), /ENOENT/);
+  const configPath = join(f.config.home, 'current.json'), capturePath = join(f.root, 'captures.json'), stagedPath = join(f.root, 'staged.json');
+  await writeFile(capturePath, JSON.stringify(f.captures)); await writeFile(stagedPath, JSON.stringify(f.staged));
+  const cli = new URL('../scripts/private-skill-refresh.mjs', import.meta.url).pathname;
+  const held = spawnSync(process.execPath, [cli, 'prepare-run', configPath, capturePath, '-', join(f.root, 'without-plan')], { encoding: 'utf8' });
+  assert.equal(held.status, 2); assert.match(held.stderr, /ENOENT/);
+  const current = await readFile(configPath), raw = await readFile(f.rawPath);
+  const ready = spawnSync(process.execPath, [cli, 'prepare-run', configPath, capturePath, stagedPath, join(f.root, 'with-plan')], { encoding: 'utf8' });
+  assert.equal(ready.status, 0, ready.stdout + ready.stderr);
+  const result = JSON.parse(ready.stdout);
+  assert.equal(result.route, 'reviewed-candidate-first'); assert.equal(result.status, 'awaiting-upload');
+  assert.equal(result.remoteWrite, false); assert.equal(result.selectionChanged, false);
+  assert.equal(result.candidate.bindings.fixture, f.staged.candidate.bindings.fixture);
+  assert.deepEqual(await readFile(configPath), current); assert.deepEqual(await readFile(f.rawPath), raw);
+  await assert.rejects(readFile(join(f.source, 'plugin.json')), /ENOENT/);
+});
+
+for (const [name, change, pattern] of [
+  ['predecessor generation differs', f => { f.staged.expectedBinding = structuredClone(f.config); f.staged.expectedBinding.selector.generation++; }, /predecessor/],
+  ['unreviewed plan', f => { delete f.staged.candidate.approvalRef; }, /reviewed migration/],
+  ['stale predecessor capture', f => { f.captures.selector.observedAt = '2026-11-03T00:00:00Z'; }, /Fresh/],
+  ['wrong predecessor bytes', f => { f.captures.selector.rawPath = f.rawPath; }, /raw hash/],
+  ['uncertain writer', f => mkdir(join(f.config.home, 'writer.lock')), /Pending selection writer/],
+  ['wrong reviewed replacement binding', f => { f.staged.candidate.bindings = { fixture: f.source }; }, /ENOENT/],
+]) test(`prepare-run ${name} cannot emit a usable upload or advance selection`, async t => {
+  const f = await stagedFixture(t), before = await readFile(join(f.config.home, 'current.json'));
+  await change(f);
+  const attempt = join(f.root, 'held-run');
+  await assert.rejects(preparePrivateRun(f.config, f.captures, f.staged, attempt, f.now), pattern);
+  await assert.rejects(readFile(join(attempt, 'candidate/upload-request.json')), /ENOENT/);
+  assert.deepEqual(await readFile(join(f.config.home, 'current.json')), before);
+  assert.deepEqual(await readFile(f.rawPath), f.raw);
+});
+
+test('prepare-run converges through unchanged validation after exact staged candidate was selected', async t => {
+  const f = await selectorFixture(t, '2');
+  const candidate = JSON.parse(await readFile(join(f.candidateAttempt, 'candidate.json')));
+  const selected = await completePrivateSelection(f.attempt, f.finalCaptures, f.now);
+  const result = await preparePrivateRun(selected.binding, f.finalCaptures, { schemaVersion: 1, expectedBinding: f.config, candidate }, join(f.root, 'consumed-stage'), f.now);
+  assert.equal(result.operation, 'unchanged'); assert.equal(result.remoteWrite, false);
+  assert.equal(result.binding.accepted.fileId, selected.binding.accepted.fileId);
 });
 
 for (const [name, change, pattern] of [
