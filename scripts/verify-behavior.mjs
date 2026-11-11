@@ -79,7 +79,7 @@ try {
   }
   if (!report.focus || report.focus === 'calendar') await driveCalendar({ home, run, scenario, report });
   if (!report.focus || report.focus === 'calendar') await driveCalendarRegister({ home, run, scenario, report });
-  if (!report.focus || report.focus === 'fleet') await driveMorning({ home, bindings, target, run, scenario, report });
+  if (!report.focus || report.focus === 'fleet') await driveMorning({ root, home, bindings, target, run, scenario, report });
   if (!report.focus || report.focus === 'fleet') await driveFleet({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir, children });
   if (!['briefing', 'dispatch', 'calendar', 'fleet', 'token-review', 'assurance'].includes(report.focus)) {
   const artifact = join(home, 'artifact.txt'); const original = 'Expected fixture bytes\n'; await writeFile(artifact, original);

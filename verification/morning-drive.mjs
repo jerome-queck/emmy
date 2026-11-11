@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { gunzipSync } from 'node:zlib';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { canonical, digest, publishRecord, readStore } from '../src/records.mjs';
 import { fleetInitial, fleetTransition, fleetState } from '../src/fleet-state.mjs';
 
-export async function driveMorning({ home, bindings, run, scenario, report }) {
+export async function driveMorning({ root: temporaryRoot, home, bindings, run, scenario, report }) {
   const selected = join(home, 'morning-drive'); await mkdir(selected, { recursive: true });
   await writeFile(join(selected, 'bindings.json'), JSON.stringify(bindings));
   const packed = JSON.parse(await readFile(new URL('../test/fixtures/morning-v3-history.json', import.meta.url)));
@@ -37,11 +37,12 @@ export async function driveMorning({ home, bindings, run, scenario, report }) {
     assert.match((await run(['fleet', '--file', path], 2, selected)).error, /historical replay-only/);
   }
   assert.deepEqual(await manifest(selected), originalBytes); assert.equal((await readStore(selected)).records.length, before.length);
-  const archive = join(selected, 'archive'); await run(['backup', '--to', archive], 0, selected);
+  const archive = join(temporaryRoot, 'bin', 'morning-archive'); await run(['backup', '--to', archive], 0, selected);
   const restored = join(selected, 'restored'); await run(['restore', '--from', archive, '--into', restored], 0, selected);
   await run(['doctor'], 3, restored);
   const recovered = await run(['fleet', '--file', statusPath], 3, restored);
   assert.equal(recovered.status, 'suspended'); assert.deepEqual(recovered.state.morningRuns, state.morningRuns); assert.deepEqual(await manifest(restored), originalBytes);
+  await cp(archive, join(selected, 'retained-archive'), { recursive: true });
   await writeFile(join(selected, 'original-byte-manifest.json'), canonical(originalBytes));
   report.morningHistory = { records: before.length, fixtureDigest: packed.sha256, headHash: status.headHash, bodyDigest: state.morningRuns.at(-1).sealed.bodyDigest, refusedSteps: actions.map(action => action.command.step), restored: true, nativeEffects: 0 };
   scenario('morning-run', 'Frozen synthetic migrated v3 canonical history replays exact bytes, identities and delivered outcomes; current morning actions refuse before publication. Fresh CLI status, backup and suspended restore preserve original records. Historical reducer source properties remain separate; no live producer or provider acceptance.');

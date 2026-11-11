@@ -135,13 +135,13 @@ Ceiling regressions additionally cover maximum admission plus one, safe integer 
 
 ### Held briefing version three
 
-The additive morning domain covers explicit inactive-predecessor migration, pinned private policy, ChatGPT destination, deterministic compiler equality, original inventory/clock binding, duplicate-copy extraction, code/link privacy, completed-Task projections, pending checks, and prior-facts fallback. Version-one and version-two replay retain their prior semantics. Read `verification/morning-properties.mjs` for the executed count and `verification/briefing-workflow-properties.mjs` for its declared twenty-five-case policy domain and twelve paired source mutations. Generated references do not advance source review.
+The historical morning domain covers explicit inactive-predecessor migration, pinned private policy, ChatGPT destination, deterministic compiler equality, original inventory/clock binding, duplicate-copy extraction, code/link privacy, completed-Task projections, pending checks, and prior-facts fallback. Version-one and version-two replay retain their prior semantics. Read `verification/morning-properties.mjs` for the executed count and `verification/briefing-workflow-properties.mjs` for its declared twenty-five-case policy domain and twelve paired source mutations. Generated references do not advance source review.
 
-Canonical publication steps and graph edges remain unchanged. Policy, reporting and acquisition functions retain declared interpretations, not provider truth. Behavioral controls cover raw-byte retention, declared exact delivery readbacks, source admission and journal-transition sequencing. The retired tool-effect adapter and its edit-availability branch have no current behavioral coverage. A finite pass does not authorize migration acceptance or a live pilot.
+Canonical publication steps and graph edges remain unchanged. Policy, reporting and acquisition functions retain declared interpretations, not provider truth. The current fleet CLI controls cover frozen migrated-history replay, current-write refusal and copied recovery. Direct historical reducer properties cover declared readbacks and transition sequencing; pure acquisition controls retain raw bytes. The retired tool-effect adapter and its edit-availability branch have no current behavioral coverage. A finite pass does not authorize migration acceptance or a live pilot.
 
 ### Calendar observation retention
 
-Seven additional `morning-contract` cases and six paired mutations bind original Calendar observations through v3 source capture and seal. Nullable provider clocks remain separate from actual acquisition receipts. Exact receipt reuse cannot strip or alter observations, even after replacement. The bounded cases cover sealing, collector equality, role/version, freshness, same-receipt immutability, and packet equality. Actual collection and CLI parsing need the behavioral driver. Provider truth and heterogeneous observation modes remain outside this claim.
+Six retained `morning-contract` cases and five paired mutations bind original Calendar observations through historical v3 source capture and seal. Nullable provider clocks remain separate from actual acquisition receipts. Exact receipt reuse cannot strip or alter observations, even after replacement. The bounded cases cover sealing, collector equality, role/version, freshness, same-receipt immutability, and same-receipt observation equality. The collector-only packet case and source mutation retire with that producer. Pure acquisition and prepare parsing retain separate CLI controls. Provider truth and heterogeneous observation modes remain outside this claim.
 
 ### Generic automation plans
 
@@ -155,7 +155,7 @@ Historical `dispatch-recovery` domains and mutants retain their original promise
 
 ### Held transport retirement
 
-The uninstalled injected effect adapter and file capture exchange are removed. The CLI and portable compiler, direct acquisition and existing morning journal retain their contracts. Acquisition tests import its actual owner directly; journal driving supplies synthetic reported outcomes without invoking tool adapters. No finite predicate, mutation, canonical publication await or replay rule is retired. The removed executor's synthetic tool-call promises are intentionally withdrawn. Unsupported old executable invocations produce no descriptor or output files.
+The uninstalled injected effect adapter and file capture exchange remain removed. Pure compiler/acquisition controls and historical journal replay remain. Current journal driving now reads frozen history and refuses new morning writes. The subsequent producer retirement below intentionally removes collector-exclusive predicates and mutants. Canonical publication awaits and all useful historical replay rules remain unchanged.
 
 ## Morning producer retirement
 

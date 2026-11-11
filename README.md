@@ -6,7 +6,7 @@ The [architecture roadmap](docs/architecture-evolution.md) records the bounded s
 
 The [generic automation foundation](docs/automation-foundation.md) builds staged creation plans from versioned procedures and exact configuration files, prepares the existing canonical outcome format, and reads fixed artifacts without history scans. Native products own saving and operation.
 
-Use the [common operating procedure](docs/operating-procedure.md) for the staged source release, exact consumer bindings, fixed report reads, and briefing-only pilot hold. The shared compiler and acquisition modules build directly from one Git commit. Existing installations remain separately accepted consumers.
+Use the [common operating procedure](docs/operating-procedure.md) for the staged source release, exact consumer bindings, fixed report reads, and historical journal recovery. The shared compiler and acquisition modules build directly from one Git commit. Existing installations remain separately accepted consumers.
 
 The [shared daily briefing compiler](docs/deterministic-briefing.md) uses one pure local/portable policy entry. The former v1 artifact-slot compiler is retired from new source; retained artifacts and installations stay unchanged. The [v3 journal contract](docs/briefing-migration.md) retains historical policy and exact intent/outcome recovery; current morning writes refuse. The uninstalled cloud effect adapter and file exchange are retired; supported native reads and output remain agent-owned. No installed release or automation changes.
 
