@@ -1,6 +1,4 @@
-import { validateCollection } from './morning-collection.mjs';
-import { morningEvidence, deliveryReadback as deliveryReadbackScope } from './morning.mjs';
-import { validateDuplicateCaptures } from './briefing-policy.mjs';
+import { deliveryReadback as deliveryReadbackScope } from './morning.mjs';
 import { link, mkdir, rm, writeFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -33,14 +31,14 @@ export async function fleetPendingTurns(home, records) {
   for (const name of names.filter(name => name.endsWith('.json')).sort()) {
     const turn = await boundedJson(join(home, 'fleet-turns', name), 4194304);
     const expected = recordPayload(turn.payload, Object.fromEntries(Object.entries(turn.files).map(([key, value]) => [key, Buffer.from(value, 'base64')])));
-    if (!records.some(record => record.hash === expected.hash)) pending.push({ path: join(home, 'fleet-turns', name), requestDigest: turn.payload.requestDigest, nextAction: 'Repeat the exact retained input to finish this pure journal publication. Do not repeat a parent tool read.' });
+    if (!records.some(record => record.hash === expected.hash)) pending.push({ path: join(home, 'fleet-turns', name), requestDigest: turn.payload.requestDigest, nextAction: turn.payload.action.operation === 'morning' ? 'Preserve this intent. Complete its pure publication using the exact retained historical installation on a copy, then verify and import the recovered record. Do not repeat native effects.' : 'Repeat the exact retained input to finish this pure journal publication. Do not repeat a parent tool read.' });
   }
   return pending;
 }
 export async function fleet(home, { file }) {
   const input = await boundedJson(file, 1048576);
   shape(input, ['schemaVersion', 'responsibilityId', 'expectedHead', 'action', 'evidence'], 'fleet envelope');
-  if (input.action?.operation === 'morning' && input.action.command?.step === 'open') insist([2, 3].includes(input.action.command.policyVersion) && input.action.command.delivery && input.action.command.cleanupMode === 'batched-v1', 'New morning runs require current pinned policy and exact delivery target');
+  insist(input.action?.operation !== 'morning', 'Morning actions are historical replay-only; use fleet status');
   if (input.action?.operation === 'group-send-intent') insist(input.action.delivery, 'New grouped sends require an exact authorized delivery target');
   insist(input.schemaVersion === 1 && typeof input.responsibilityId === 'string', 'Invalid fleet envelope'); actionInput(input.action, 2);
   if (input.action.operation === 'configure') insist(input.action.semanticsVersion === 2, 'New fleet roots require semanticsVersion two');
@@ -51,10 +49,6 @@ export async function fleet(home, { file }) {
   if (projected.status === 'ready' && projected.state.semanticsVersion !== 2) insist(input.action.operation === 'upgrade' || input.action.operation === 'resume' && projected.state.epochHash !== (current.epoch?.hash ?? null), 'Historical fleet semantics are replay-only; explicitly upgrade the exact predecessor before current writes');
   insist(projected.status === 'unconfigured' && input.action.operation === 'configure' || projected.status === 'ready', 'Fleet is unconfigured or has conflicting heads');
   if (projected.root) insist(effectKey(current.definition) === projected.root.effectKey, 'Fleet stable responsibility effect changed');
-  if (input.action.operation === 'morning' && !['open', 'status'].includes(input.action.command.step)) {
-    const run = projected.state?.morningRuns?.find(run => run.id === input.action.command.runId);
-    insist([2, 3].includes(run?.policyVersion) && (!projected.state?.morningMigration || run.policyVersion === 3), 'Historical morning policy is replay-only; no new native effects');
-  }
   const history = projected.state?.archived ? fleetHistory(records, projected.head) : null;
   const evidence = input.evidence ?? []; insist(Array.isArray(evidence) && evidence.length <= 64, 'Invalid fleet evidence bound');
   const files = {}; let totalBytes = 0;
@@ -62,80 +56,30 @@ export async function fleet(home, { file }) {
     shape(ref, ['path', 'sha256', 'sourceRef'], 'fleet evidence'); insist(isAbsolute(ref.path ?? '') && hash(ref.sha256) && typeof ref.sourceRef === 'string', 'Invalid fleet evidence reference');
     const bytes = await boundedFile(ref.path); insist(digest(bytes) === ref.sha256, 'Fleet receipt bytes differ'); totalBytes += bytes.length; insist(totalBytes <= 1048576, 'Fleet total evidence exceeds bound'); files[`evidence-${index}.bin`] = bytes;
   }
-  const morning = input.action.operation === 'morning' ? morningEvidence(input.action.command) : { receipts: [], refs: [] };
-  const receipts = [...morning.receipts, ...(input.action.captures ?? []).map(capture => capture.receipt), ...(input.action.receipt ? [input.action.receipt] : [])];
+  const receipts = [...(input.action.captures ?? []).map(capture => capture.receipt), ...(input.action.receipt ? [input.action.receipt] : [])];
   for (const receipt of receipts) insist(evidence.some(ref => ref.sourceRef === receipt.sourceRef && ref.sha256 === receipt.sha256), 'Every receipt requires exact retained bytes and source attribution');
   for (const capture of input.action.captures ?? []) if (capture.actualDigest) insist(evidence.some(ref => ref.sha256 === capture.actualDigest), 'Actual source digest requires retained matching artifact bytes');
   if (input.action.delivery) insist(evidence.some(ref => ref.sourceRef === input.action.delivery.ownerRef), 'Delivery target requires retained owner authority bytes');
-  for (const sourceRef of morning.refs) insist(evidence.some(ref => ref.sourceRef === sourceRef), 'Missing attributable morning owner/readback source');
   for (const key of ['sourceRef', 'readbackRef']) if (input.action[key]) insist(evidence.some(ref => ref.sourceRef === input.action[key]), `Missing attributable ${key} evidence`);
   if (['send-intent', 'group-send-intent'].includes(input.action.operation)) insist(evidence.some(ref => ref.sha256 === input.action.bodyDigest), 'Send intent requires the exact message body bytes');
-  const deliveryReadback = input.action.operation === 'group-send-ack' ? input.action : input.action.operation === 'morning' && ['send-ack', 'edit-ack', 'edit-resolve'].includes(input.action.command.step) ? { ...input.action.command, sendRef: input.action.command.sendRef ?? input.action.command.editRef } : null;
+  const deliveryReadback = input.action.operation === 'group-send-ack' ? input.action : null;
   if (deliveryReadback) {
     const index = evidence.findIndex(ref => ref.sourceRef === deliveryReadback.readbackRef); let readback;
     try { readback = JSON.parse(files[`evidence-${index}.bin`].toString('utf8')); } catch { throw new Error('Delivery readback requires retained normalized JSON with nativeId, sendRef and exact body'); }
-    const run = input.action.operation === 'morning' ? projected.state?.morningRuns?.find(row => row.id === input.action.command.runId) : null;
     const group = input.action.operation === 'group-send-ack' ? projected.state?.deliveryGroups?.find(row => row.sendRef === input.action.sendRef) : null;
-    const pending = group ? { scope: group.delivery?.scope, at: group.at } : ['edit-ack', 'edit-resolve'].includes(deliveryReadback.step) ? run?.summary?.delivery : run?.delivery;
+    const pending = { scope: group?.delivery?.scope, at: group?.at };
     deliveryReadbackScope(deliveryReadback, pending, at);
     insist(canonical(readback.scope) === canonical(deliveryReadback.scope) && readback.acquiredAt === deliveryReadback.acquiredAt, 'Retained readback destination or acquisition time differs');
-    insist(readback.nativeId === deliveryReadback.nativeId && readback.sendRef === deliveryReadback.sendRef && typeof readback.body === 'string' && digest(readback.body) === (deliveryReadback.step === 'edit-resolve' ? deliveryReadback.priorBodyDigest : deliveryReadback.bodyDigest), 'Retained delivery readback differs from exact native ID, send or body');
+    insist(readback.nativeId === deliveryReadback.nativeId && readback.sendRef === deliveryReadback.sendRef && typeof readback.body === 'string' && digest(readback.body) === deliveryReadback.bodyDigest, 'Retained delivery readback differs from exact native ID, send or body');
   }
-  const noEffect = input.action.operation === 'group-send-resolve' ? input.action : input.action.operation === 'morning' && input.action.command.step === 'send-resolve' ? input.action.command : null;
+  const noEffect = input.action.operation === 'group-send-resolve' ? input.action : null;
   if (noEffect) {
     const group = input.action.operation === 'group-send-resolve' ? projected.state?.deliveryGroups?.find(row => row.sendRef === noEffect.sendRef) : null;
-    const pending = group ? { scope: group.delivery?.scope, at: group.at } : projected.state?.morningRuns?.find(row => row.id === input.action.command.runId)?.delivery;
+    const pending = { scope: group?.delivery?.scope, at: group?.at };
     deliveryReadbackScope(noEffect, pending, at);
     const index = evidence.findIndex(ref => ref.sourceRef === noEffect.sourceRef); let readback;
     try { readback = JSON.parse(files[`evidence-${index}.bin`].toString('utf8')); } catch { throw new Error('No-effect resolution requires actual retained scoped discovery JSON'); }
     insist(readback.sendRef === noEffect.sendRef && readback.bodyDigest === noEffect.bodyDigest && readback.outcome === 'known-unexecuted' && readback.acquiredAt === noEffect.acquiredAt && canonical(readback.scope) === canonical(noEffect.scope) && readback.coverage?.complete === true && Array.isArray(readback.coverage.gaps) && readback.coverage.gaps.length === 0, 'No-effect readback must bind exact send/body, current destination and complete discovery');
-  }
-  if (input.action.operation === 'morning') {
-    const command = input.action.command;
-    if (command.step === 'open' && command.policyVersion === 3) {
-      const migrationIndex = evidence.findIndex(ref => ref.sourceRef === command.migration.sourceRef);
-      let migration; try { migration = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(files[`evidence-${migrationIndex}.bin`])); } catch { throw new Error('Briefing migration requires exact retained acceptance JSON'); }
-      insist(canonical(migration) === canonical(command.migration), 'Retained migration acceptance differs from requested policy and inactive predecessor');
-      insist(Object.values(files).some(raw => { try { return canonical(strictJson(new TextDecoder('utf-8', { fatal: true }).decode(raw))) === canonical(command.policy); } catch { return false; } }), 'Version three requires retained exact private policy JSON');
-    }
-    if (command.step === 'source' && command.acquisition) {
-      const index = evidence.findIndex(ref => ref.sourceRef === command.acquisition.collectionRef && ref.sha256 === command.receipt.sha256);
-      let packet; try { packet = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(files[`evidence-${index}.bin`])); } catch { throw new Error('Source intake requires retained collection packet bytes'); }
-      validateCollection(packet, command, projected.state.morningRuns.find(run => run.id === command.runId), new Map(evidence.map((ref, index) => [ref.sha256, files[`evidence-${index}.bin`]])));
-    }
-    if (command.step === 'review') for (const item of command.items) {
-      insist(evidence.some(ref => ref.sha256 === item.context.threadDigest), 'Inspected thread context requires exact retained artifact bytes');
-      if (item.policyEvidence?.duplicate) {
-        const duplicate = item.policyEvidence.duplicate;
-        const duplicateIndex = evidence.findIndex(ref => ref.sourceRef === duplicate.sourceRef);
-        let proof; try { proof = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(files[`evidence-${duplicateIndex}.bin`])); } catch { throw new Error('Duplicate copy evidence requires retained exact bytes and identities'); }
-        insist(canonical(proof) === canonical({ nativeId: item.before.nativeId, recordPurpose: item.policyEvidence.recordPurpose, duplicate }), 'Retained duplicate proof differs from reviewed exact identities, purpose or bytes');
-        const currentIndex = evidence.findIndex(ref => ref.sha256 === duplicate.currentCaptureSha256);
-        const copyIndex = evidence.findIndex(ref => ref.sha256 === duplicate.copyCaptureSha256);
-        insist(currentIndex >= 0 && copyIndex >= 0, 'Duplicate requires both retained original provider captures');
-        validateDuplicateCaptures(item, files[`evidence-${currentIndex}.bin`], files[`evidence-${copyIndex}.bin`]);
-      }
-    }
-    if (['send-intent', 'edit-intent'].includes(command.step)) insist(evidence.some(ref => ref.sha256 === command.bodyDigest), 'Morning send intent requires exact retained body bytes');
-    if (command.step === 'seal' && command.deterministic?.input.learning) for (const entry of command.deterministic.input.learning.entries) for (const observation of entry.observations) {
-      const index = evidence.findIndex(ref => ref.sourceRef === observation.sourceRef && ref.sha256 === observation.sourceDigest);
-      let event; try { event = strictJson(new TextDecoder('utf-8', { fatal: true }).decode(files[`evidence-${index}.bin`])); } catch { throw new Error('Learning observation requires exact retained actor event JSON'); }
-      const { sourceRef, sourceDigest, ...normalized } = observation;
-      insist(canonical(event) === canonical(normalized), 'Learning observation differs from retained actor, identity, scope or action');
-    }
-    if (command.step === 'seal') for (const acceptance of [command.briefing, command.calendar, ...(command.deterministic ? [command.deterministic] : [])]) {
-      const index = evidence.findIndex(ref => ref.sha256 === acceptance.receipt.sha256 && ref.sourceRef === acceptance.receipt.sourceRef);
-      let raw; try { raw = JSON.parse(files[`evidence-${index}.bin`].toString('utf8')); } catch { throw new Error('Morning assessment receipt must retain its actual JSON result bytes'); }
-      insist(canonical(raw.data ?? raw) === canonical(acceptance.result), 'Morning assessment result differs from retained receipt bytes');
-      const inputIndex = evidence.findIndex(ref => ref.sha256 === acceptance.inputReceipt.sha256 && ref.sourceRef === acceptance.inputReceipt.sourceRef);
-      let assessedInput; try { assessedInput = JSON.parse(files[`evidence-${inputIndex}.bin`].toString('utf8')); } catch { throw new Error('Assessment requires original retained input JSON'); }
-      insist(canonical(assessedInput) === canonical(acceptance.input), 'Assessment input differs from retained bytes');
-      if (acceptance.assessmentReceipt) {
-        const receiptIndex = evidence.findIndex(ref => ref.sha256 === acceptance.assessmentReceipt.sha256 && ref.sourceRef === acceptance.assessmentReceipt.sourceRef);
-        let generated; try { generated = JSON.parse(files[`evidence-${receiptIndex}.bin`].toString('utf8')); } catch { throw new Error('Briefing requires actual retained generated receipt JSON'); }
-        insist(canonical(generated) === canonical(acceptance.assessment), 'Generated briefing receipt differs from retained bytes');
-      }
-    }
   }
   if (['result', 'resolve'].includes(input.action.operation)) {
     const action = input.action; const job = projected.state?.jobs.find(job => job.key === action.jobKey) ?? history?.jobs.get(action.jobKey);

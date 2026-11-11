@@ -6,12 +6,10 @@ export const operatingContract = Object.freeze({
   runtime: 'scripts/agent.mjs',
   pureEntry: 'src/briefing-core.mjs',
   acquisitionEntry: 'src/briefing-acquisition.mjs',
-  effectOwner: 'src/morning.mjs',
   procedureEntry: 'src/automation-procedure.mjs',
   plannerEntry: 'src/automation-plan.mjs',
   reportOwner: 'src/automation-producer.mjs',
   reportRead: 'automation read exact canonical artifact; no whole-root discovery',
-  pilot: 'daily-briefing-only-parent-observed-then-hold',
   effectsAuthorized: false
 });
 
