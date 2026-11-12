@@ -666,7 +666,7 @@ try {
       try { await lstat(source); }
       catch (error) { if (error.code === 'ENOENT' && !requiredEvidence.has(name)) continue; throw error; }
       const excluded = name === 'calendar' ? join(source, 'fifo') : undefined;
-      await cp(source, destination, { recursive: true, filter: path => path !== excluded });
+      await cp(source, destination, { recursive: true, verbatimSymlinks: true, filter: path => path !== excluded });
       const files = await verifyTree(source, destination, excluded);
       report.retainedEvidence.push({ source, destination, files });
       if (field) report[field] = destination;

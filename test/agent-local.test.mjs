@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cp, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, mkdir, readFile, readdir, readlink, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -212,7 +212,8 @@ fs.cp = async (...args) => {
   const [from, to] = args;
   if(String(to).includes('/.local/verification/behavior-') && basename(to) === 'records') {
     evidence = to.slice(0, -'/records'.length); await log({operation: 'records-copy', root, evidence});
-    await io.cp(from, join(at, 'original-records'), {recursive: true});
+    if(mode === 'relative-link') {const names=await io.readdir(from);await io.symlink(names[0]+'/record.json',join(from,'relative-link'));await log({control:'relative-link',root,evidence});}
+    await io.cp(from, join(at, 'original-records'), {recursive: true,verbatimSymlinks:true});
     if(['records-eio','records-enoent','scenario-and-copy'].includes(mode)) return fail('records-copy', mode === 'records-enoent' ? 'ENOENT' : 'EIO');
     await io.cp(...args);
     if(mode === 'corrupt') {fired = true; const names = await io.readdir(to); await io.writeFile(join(to,names[0],'record.json'),'{}'); await log({fault: true, mode, operation: 'corrupt-record',root,evidence});}
@@ -248,7 +249,7 @@ syncBuiltinESMExports();
     }
     return result;
   };
-  for (const mode of ['success', 'records-eio', 'records-enoent', 'corrupt', 'readback', 'scenario-and-copy', 'write-once', 'write-always', 'write-final', 'cleanup-partial', 'cleanup-kill', 'optional-absent']) {
+  for (const mode of ['success', 'records-eio', 'records-enoent', 'corrupt', 'readback', 'scenario-and-copy', 'write-once', 'write-always', 'write-final', 'cleanup-partial', 'cleanup-kill', 'optional-absent', 'relative-link']) {
     const at = join(directory, mode); await mkdir(join(at, 'scratch'), { recursive: true });
     const recipe = join(at, 'fault.mjs'); await writeFile(recipe, preload);
     const env = { ...process.env, TMPDIR: join(at, 'scratch'), TMP: join(at, 'scratch'), TEMP: join(at, 'scratch'), EMMY_RETENTION_FAULT: mode, EMMY_RETENTION_EVIDENCE: at };
@@ -260,8 +261,8 @@ syncBuiltinESMExports();
     await writeFile(join(at, 'result.json'), JSON.stringify(record, null, 2));
     assert.equal(result.error, undefined, result.stderr); assert.ok(location, 'Actual copy boundary fired');
     assert.ok(location.root.startsWith(location.evidence+'/emmy-behavior-'), 'Recovery source stays inside normal uploaded run evidence');
-    const normal = ['success', 'optional-absent'].includes(mode);
-    assert.equal(operations.some(value => value.fault), !['success'].includes(mode), mode);
+    const normal = ['success', 'optional-absent', 'relative-link'].includes(mode);
+    assert.equal(operations.some(value => value.fault), !['success', 'relative-link'].includes(mode), mode);
     if (mode === 'cleanup-kill') {
       assert.equal(result.signal, 'SIGKILL');
       const report = JSON.parse(await readFile(join(location.evidence, 'report.json'), 'utf8'));
@@ -271,6 +272,7 @@ syncBuiltinESMExports();
     }
     assert.equal(result.status, normal ? 0 : 1, result.stdout + result.stderr);
     const summary = JSON.parse(result.stdout.trim());
+    if (mode === 'relative-link') assert.equal(await readlink(join(location.evidence, 'records/relative-link')), await readlink(join(at, 'original-records/relative-link')));
     assert.equal(summary.status, normal ? 'passed' : 'failed'); assert.equal(summary.source, location.root); assert.equal(summary.evidence, join(location.evidence, 'report.json'));
     if (mode === 'write-always' || mode === 'write-final') assert.equal(summary.reportSaved, false);
     else {
