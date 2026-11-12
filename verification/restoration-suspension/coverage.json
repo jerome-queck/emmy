@@ -25,7 +25,7 @@
   },
   "verificationFiles": {
     "verification/restoration-suspension/graph.mjs": "ea28a2bd312a88ea79a98207df7788e78c52cf5c8831acb115c0b43fd1f4e93a",
-    "verification/restoration-suspension/check.mjs": "1bda8b402bdcbf7b12933321f2b61608789ed779d35af64bbd9312ef772a0f35",
+    "verification/restoration-suspension/check.mjs": "b8851e326b53a26705c8a37133e12f4bbe1ec3be7140669e300183fc169bbda5",
     "verification/restoration-suspension/replay-statechart.mjs": "6f7cfd87745215043dff8af7cf1bce0f5321077045eb6f19b86fe9ab7b09b5fd",
     ".agents/skills/restoration-suspension/SKILL.md": "1bcd8e82031af083839a6dfada7ee20b396d8c3150816db84613cc08028b2959"
   },
