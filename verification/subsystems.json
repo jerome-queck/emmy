@@ -971,7 +971,7 @@
         },
         {
           "path": "scripts/verify-behavior.mjs",
-          "sha256": "c5b376a7678f2e9356d3e984e6c1c2306bbc84a484f4820c1a12ca4ed8e2d51e",
+          "sha256": "80b76422e9325df2541e9ee68b7b0a853397a559382f32164b8beeed8d1677bc",
           "callers": [
             "executable ingress"
           ]
@@ -1132,7 +1132,7 @@
         },
         {
           "path": ".agents/skills/verify/SKILL.md",
-          "sha256": "6b87bf66c1a4ac2358afde6a54002439693690883a6a37a4445ab07b03285f78",
+          "sha256": "d6036ef5602674af27b062d66be7e1fbcf806ba1902b8ef73152c23109a4725f",
           "callers": [
             "public configuration"
           ]
@@ -1393,7 +1393,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "8da5d406898c5bd9e7c64907f0518f673c8bfcc70c0b611b295eb7a04526986d",
+          "sha256": "1c381f13435a643eae27a7ab300e085fb2f0364b9731a310e713c953e0b7f8f9",
           "callers": [
             "verification input"
           ]
@@ -1778,7 +1778,7 @@
         },
         {
           "path": "test/agent-local.test.mjs",
-          "sha256": "86e0d0e4e253f7da92c7022aff2191540c4b129312ff096a81b51e197491140b",
+          "sha256": "50b1891ef236667c308610cc625a9fbcfeb29b3992ae4a8c6196f1821b38ce0d",
           "callers": [
             "verification input"
           ]
