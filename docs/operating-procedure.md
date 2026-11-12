@@ -1,6 +1,6 @@
 # Run an accepted Emmy procedure
 
-The staged foundation uses one source release for the local runner, guidance, report helpers, and portable briefing core. `src/operating-contract.mjs` identifies version 2. Its check occurrence rules describe expected reports; they do not schedule or activate work. Existing private policy and native products retain their authority. Daily briefing is the first pilot, followed by a parent observation hold.
+The staged foundation uses one source release for the local runner, guidance, report helpers, and portable briefing core. `src/operating-contract.mjs` identifies version 2. Its check occurrence rules describe expected reports; they do not schedule or activate work. Existing private policy and native products retain their authority. This contract exposes staged pure preparation and report expectations only. It defines no current briefing pilot or effect owner.
 
 ## Select the exact source
 
