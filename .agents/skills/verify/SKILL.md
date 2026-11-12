@@ -121,3 +121,9 @@ Run `node --test test/runtime-boundary.test.mjs` for unsupported-command refusal
 ## Retired briefing transport
 
 The standalone `scripts/briefing-cloud-exchange.mjs` is removed. Old invocations fail as unsupported executables, without reading inputs or writing output. `node --test test/briefing-acquisition.test.mjs` includes valid request/acquire retirement controls and an unchanged private-directory comparison. Acquisition and normalization remain direct portable helpers. The fleet focus reads those declared uncertainties and same-ID outcomes from its frozen historical journal and verifies status/backup/suspended restore; it does not newly execute their transitions. Direct historical reducer tests cover transition semantics. No native tools run. Existing canonical publication and reducer proofs retain their original scope.
+
+## Finite fleet history checks
+
+Run `node verification/fleet-health/check.mjs` and `node verification/morning-send/check.mjs` for bounded production-reducer histories, independent domain rules, intended source mutations and exact broken/restored replay. These two commands use Node only. Their charts project retained graphs directly; do not run the TLC statechart command on them or treat the charts as additional proof. Full `graph.json` retains all explored states, edges and refusals. The fleet baseline chart shows one failure/recovery/recurrence history; the morning baseline shows all accepted histories. Mutant charts show intended violating paths.
+
+Run `node --test test/finite-fleet-checks.test.mjs` for the actual checker CLI refusal and evidence boundaries. Keep these checks separate from the fleet focus's real CLI journal/refusal/backup/restore controls. The historical morning reducer does not admit new current morning actions. Publication and the other TLA models still require Java/TLC.

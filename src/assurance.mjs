@@ -18,7 +18,7 @@ export const assurancePlan = Object.freeze([
   { id: 'planning-policy-tests', args: ['--test', 'test/planning-policy.test.mjs'] },
   { id: 'planning-policy-formal', args: ['verification/planning-policy/check.mjs'] },
   { id: 'direct-dispatch-formal', args: ['verification/direct-dispatch/check.mjs'] },
-  { id: 'local-assurance-tests', args: ['--test', 'test/local-assurance.test.mjs'] },
+  { id: 'local-assurance-tests', args: ['--test', 'test/local-assurance.test.mjs', 'test/finite-fleet-checks.test.mjs'] },
   { id: 'local-assurance-formal', args: ['verification/local-assurance/check.mjs'] },
   { id: 'responsibility-closure-formal', args: ['verification/responsibility-closure/check.mjs'] },
   { id: 'restoration-suspension-formal', args: ['verification/restoration-suspension/check.mjs'] },
