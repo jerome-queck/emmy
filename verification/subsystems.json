@@ -117,7 +117,7 @@
       "files": [
         {
           "path": "src/dispatch.mjs",
-          "sha256": "b2dc454058ee8f7630ad188c6b3469de93728b377b57629c73abde337f72af29",
+          "sha256": "46f5e7a27a778db533fa8d4dcde27e6579d160c42a2d285d1cab25b19f200d42",
           "callers": [
             "scripts/agent.mjs"
           ]
@@ -1033,7 +1033,7 @@
         },
         {
           "path": "docs/operating-brief.md",
-          "sha256": "1a803ddf028793a0a01041079ec0c4a5e4c8ada01ac02e9957abd209799cbfa2",
+          "sha256": "675ec9afd7e4b1a11f9d32e35b5ed83b68d32906daf8f528a7290ea03dd9eb5a",
           "callers": [
             "src/metadata.mjs"
           ]
@@ -1054,7 +1054,7 @@
         },
         {
           "path": "docs/briefing-guidance.json",
-          "sha256": "3f789757aeaa74db937f17d4667a4d8073708259565eb57a21e7d4dac6b23283",
+          "sha256": "de116827c64cca6f582255d7a25a3187be80829e94857b0d1e663ec45c8050d3",
           "callers": [
             "public configuration"
           ]
@@ -1096,7 +1096,7 @@
         },
         {
           "path": ".agents/skills/direct-dispatch/SKILL.md",
-          "sha256": "9d714cd3283f83642aa2a25fe7517fd0af4e1dc51cc0f3ed9c3dffac70e908e8",
+          "sha256": "7e278c356e8195dbd1dcc35932406f9f8d8807d5a3288782848926052505a93b",
           "callers": [
             "public configuration"
           ]
@@ -1131,7 +1131,7 @@
         },
         {
           "path": ".agents/skills/verify/SKILL.md",
-          "sha256": "584fb43ae6ae3010d294037c2a5cdaf7f514e95a32dc7b207ebb8bf75582ae59",
+          "sha256": "c74760f0b7175224084ddc817608cdc5aa2edd525f86cb456a775e1d99c6e7e5",
           "callers": [
             "public configuration"
           ]
@@ -1166,7 +1166,7 @@
         },
         {
           "path": ".agents/skills/verify/features/routing.md",
-          "sha256": "fd8746c3a9291cff38154631284d090a58acbb525193294676488821817cbf29",
+          "sha256": "3529d84a59578988c96342ab5f9c6fd3e2007689a7b673d857001db882cd9ef5",
           "callers": [
             "public configuration"
           ]
@@ -1392,7 +1392,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "67f475991d5e7233db76631c4cef217d670dadee7eae94c8f6672a3bb7cdf068",
+          "sha256": "a5c11b5c84ba3d3d08af383d6712117cd41f03fe71dd10e7d8527036c77a45b4",
           "callers": [
             "verification input"
           ]
@@ -1469,7 +1469,7 @@
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "c839bb02880ce223465d743150062269c79ae2e32471418ec0f7f9526e12e95a",
+          "sha256": "7a5b427eae587db52e47a673b65bbb3ab1de8edae8c86f58fca43ec922787acf",
           "callers": [
             "verification input"
           ]
