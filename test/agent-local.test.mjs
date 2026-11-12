@@ -195,3 +195,91 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
     await writeFile(manifest, originalManifest); check(0);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+test('behavior CLI retains originals before cleanup and reports finalizer failures', async () => {
+  const source = fileURLToPath(new URL('..', import.meta.url));
+  const directory = await mkdtemp(join(source, '.local/verification/behavior-faults-'));
+  const preload = `
+import fs from 'node:fs/promises';
+import { syncBuiltinESMExports } from 'node:module';
+import { join, basename } from 'node:path';
+const io = {...fs}; const mode = process.env.EMMY_RETENTION_FAULT; const at = process.env.EMMY_RETENTION_EVIDENCE;
+let root, evidence, fired = false, writes = 0;
+const log = value => io.appendFile(join(at, 'operations.jsonl'), JSON.stringify({at: new Date().toISOString(), ...value})+'\\n');
+const fail = async (operation, code = 'EIO') => { fired = true; await log({fault: true, mode, operation, root, evidence}); const error = new Error('Synthetic retention '+mode); error.code = code; throw error; };
+fs.mkdtemp = async (...args) => { const path = await io.mkdtemp(...args); if(basename(path).startsWith('emmy-behavior-')) {root = path; await log({root});} return path; };
+fs.cp = async (...args) => {
+  const [from, to] = args;
+  if(String(to).includes('/.local/verification/behavior-') && basename(to) === 'records') {
+    evidence = to.slice(0, -'/records'.length); await log({operation: 'records-copy', root, evidence});
+    await io.cp(from, join(at, 'original-records'), {recursive: true});
+    if(['records-eio','records-enoent','scenario-and-copy'].includes(mode)) return fail('records-copy', mode === 'records-enoent' ? 'ENOENT' : 'EIO');
+    await io.cp(...args);
+    if(mode === 'corrupt') {fired = true; const names = await io.readdir(to); await io.writeFile(join(to,names[0],'record.json'),'{}'); await log({fault: true, mode, operation: 'corrupt-record',root,evidence});}
+    return;
+  }
+  return io.cp(...args);
+};
+fs.readFile = async (...args) => {if(mode === 'readback' && !fired && evidence && String(args[0]).startsWith(evidence+'/records/') && String(args[0]).endsWith('/record.json')) return fail('retained-read'); return io.readFile(...args);};
+fs.lstat = async (...args) => {if(mode === 'optional-absent' && !fired && args[0] === join(root??'', '.local/briefing')) return fail('optional-stat','ENOENT'); return io.lstat(...args);};
+fs.readdir = async (...args) => {const result = await io.readdir(...args); return mode === 'scenario-and-copy' && args[0] === join(root??'', '.local') ? [...result, 'executor-invoked'] : result;};
+fs.writeFile = async (...args) => {
+  if(String(args[0]).includes('/.local/verification/behavior-') && basename(String(args[0])) === 'report.json') {
+    writes++; await log({operation:'report-write',writes,root,evidence});
+    if(mode === 'write-always' || mode === 'write-once' && !fired || mode === 'write-final' && writes === 2) return fail('report-write');
+  }
+  return io.writeFile(...args);
+};
+fs.rm = async (...args) => {
+  if(args[0] === root && ['cleanup-partial','cleanup-kill'].includes(mode)) {
+    await io.rm(join(root,'.local/records'),{recursive:true,force:true});
+    if(mode === 'cleanup-kill') {await log({fault:true,mode,operation:'SIGKILL-after-partial-cleanup',root,evidence}); process.kill(process.pid,'SIGKILL'); await new Promise(()=>{});}
+    return fail('partial-cleanup');
+  }
+  return io.rm(...args);
+};
+syncBuiltinESMExports();
+`;
+  const files = async path => {
+    const result = {};
+    for (const name of await readdir(path, { recursive: true })) {
+      try { result[name] = digest(await readFile(join(path, name))); }
+      catch (error) { if (error.code !== 'EISDIR') throw error; }
+    }
+    return result;
+  };
+  for (const mode of ['success', 'records-eio', 'records-enoent', 'corrupt', 'readback', 'scenario-and-copy', 'write-once', 'write-always', 'write-final', 'cleanup-partial', 'cleanup-kill', 'optional-absent']) {
+    const at = join(directory, mode); await mkdir(join(at, 'scratch'), { recursive: true });
+    const recipe = join(at, 'fault.mjs'); await writeFile(recipe, preload);
+    const env = { ...process.env, TMPDIR: join(at, 'scratch'), TMP: join(at, 'scratch'), TEMP: join(at, 'scratch'), EMMY_RETENTION_FAULT: mode, EMMY_RETENTION_EVIDENCE: at };
+    const result = spawnSync(process.execPath, ['--import', recipe, join(source, 'scripts/verify-behavior.mjs'), '--focus', 'self-check-repair'], { cwd: source, env, encoding: 'utf8', timeout: 90_000, maxBuffer: 16 * 1024 * 1024 });
+    await writeFile(join(at, 'stdout'), result.stdout ?? ''); await writeFile(join(at, 'stderr'), result.stderr ?? '');
+    const operations = (await readFile(join(at, 'operations.jsonl'), 'utf8')).trim().split('\n').map(line => JSON.parse(line));
+    const location = operations.findLast(value => value.evidence);
+    const record = { mode, code: result.status, signal: result.signal, error: result.error?.message, recipeSha256: digest(preload), root: location?.root, evidence: location?.evidence };
+    await writeFile(join(at, 'result.json'), JSON.stringify(record, null, 2));
+    assert.equal(result.error, undefined, result.stderr); assert.ok(location, 'Actual copy boundary fired');
+    const normal = ['success', 'optional-absent'].includes(mode);
+    assert.equal(operations.some(value => value.fault), !['success'].includes(mode), mode);
+    if (mode === 'cleanup-kill') {
+      assert.equal(result.signal, 'SIGKILL');
+      const report = JSON.parse(await readFile(join(location.evidence, 'report.json'), 'utf8'));
+      assert.equal(report.status, 'running'); assert.equal(report.cleanup.status, 'pending');
+      assert.deepEqual(await files(join(location.evidence, 'records')), await files(join(at, 'original-records')));
+      continue;
+    }
+    assert.equal(result.status, normal ? 0 : 1, result.stdout + result.stderr);
+    const summary = JSON.parse(result.stdout.trim());
+    assert.equal(summary.status, normal ? 'passed' : 'failed'); assert.equal(summary.source, location.root); assert.equal(summary.evidence, join(location.evidence, 'report.json'));
+    if (mode === 'write-always' || mode === 'write-final') assert.equal(summary.reportSaved, false);
+    else {
+      const report = JSON.parse(await readFile(summary.evidence, 'utf8')); assert.equal(report.status, summary.status);
+      if (mode === 'scenario-and-copy') { assert.match(report.error.message, /Expected values/); assert.ok(report.retentionErrors.length); }
+      if (mode === 'cleanup-partial') assert.equal(report.cleanup.status, 'failed');
+    }
+    if (['records-eio', 'records-enoent', 'corrupt', 'readback', 'scenario-and-copy', 'write-once', 'write-always'].includes(mode)) {
+      assert.equal(summary.cleaned, false); assert.equal(summary.cleanup, 'preserved');
+      assert.deepEqual(await files(join(location.root, '.local/records')), await files(join(at, 'original-records')));
+    } else assert.deepEqual(await files(join(location.evidence, 'records')), await files(join(at, 'original-records')));
+  }
+});

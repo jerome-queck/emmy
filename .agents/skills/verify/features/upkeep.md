@@ -8,6 +8,10 @@ Run `npm run check` for the fixed complete production plan. It retains original 
 
 The `local-assurance` empirical scenario uses labelled copied source with two synthetic commands and actual package/agent entry points. It proves orchestration/refusal behavior. Full aggregate execution separately proves the complete production plan. The [area formal skill](../../local-assurance/SKILL.md) covers the bounded reducer graph and actual-source mutants. These checks authenticate neither authorship nor independent review, native access, installation or future execution.
 
+## Behavioral evidence recovery
+
+The driver validates required copies against their source before cleanup. Its `report.json` records retention errors and exact recovery paths. Failed scenarios or retention preserve scratch. Successful runs save a pending-cleanup report before removal and a terminal report afterward. Handled cleanup failure reports an uncleaned outcome; report-write failure emits the paths with `reportSaved` through stdout and exits nonzero. A persistent disk failure or SIGKILL cannot promise a terminal disk report or response. Read [evidence and teardown](../SKILL.md#evidence-and-teardown). The existing `test/agent-local.test.mjs` suite drives these actual CLI failures and retains their synthetic originals.
+
 ## User route
 
 Run `maintain --check` at session start. After public metadata changes, run `maintain --write`, inspect derived files, and run the aggregate check. Metadata owns commands, feature map, scenario names, and property IDs. Maintenance preserves research dates and formal sync records.
