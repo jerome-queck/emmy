@@ -10,7 +10,7 @@ import { history, graphSpec, config, evaluate, fixtures } from './graph.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const directory = join(root, '.local/verification/restoration-suspension', randomUUID());
 const sha = b => createHash('sha256').update(b).digest('hex');
-const sourceCommit = '2cedca8dad9107dc93f9fa6b16b3e69908cff4f1';
+const sourceCommit = '44d5c34f73365c8dcc87b47ff757f50d9e7b81dc';
 const jar = join(root, '.local/tools/tla2tools-1.7.4.jar');
 const java = process.env.EMMY_JAVA_BIN || 'java';
 const names = ['work', 'records', 'responsibilities'];
