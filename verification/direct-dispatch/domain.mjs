@@ -68,6 +68,7 @@ function repeatedAttempt(input, modules, { conflict = true, reverse = false, abs
   if (reverse) input.records.reverse();
 }
 export const cases = [
+  ...['direct-root', 'legacy'].map(mode => ({ name: `preparation-boundary-${mode}`, mode, phase: 'absent', preparationOnly: true, expected: 'preparation-only', rule: 'PreparationHeld' })),
   ...['direct-root', 'legacy'].flatMap(mode => [false, true].flatMap(reverse => [
     { name: `conflicting-attempt-${mode}-${reverse}-ready`, mode, edit: (i, m) => repeatedAttempt(i, m, { reverse }), expected: null, rule: 'ExactAttemptRequest' },
     { name: `conflicting-attempt-${mode}-${reverse}-absence`, mode, edit: (i, m) => repeatedAttempt(i, m, { reverse, absent: true }), expected: null, rule: 'ExactAttemptRequest' },
@@ -75,8 +76,8 @@ export const cases = [
   ])),
   ...[false, true].map(reverse => ({ name: `conflicting-attempt-direct-later-response-${reverse}`, edit: (i, m) => repeatedAttempt(i, m, { reverse, response: 'later' }), expected: null, rule: 'ExactAttemptRequest' })),
   ...[false, true].map(reverse => ({ name: `identical-attempt-creation-between-clocks-${reverse}`, edit: (i, m) => repeatedAttempt(i, m, { reverse, conflict: false, creationBetween: true }), expected: null, rule: 'ProvenanceHeld' })),
-  ...['absent', 'attempted', 'pending', 'uncertain', 'ready'].flatMap(phase => [true, false].flatMap(complete => ['available', 'unavailable', 'denied', 'unknown'].map(availability => ({ name: `direct-product-${phase}-${complete}-${availability}`, phase, edit: i => { i.records.at(-1).coverage = { complete, gaps: complete ? [] : ['missing page'] }; i.records.at(-1).availability = availability; }, expected: complete && availability === 'available' ? phase === 'absent' ? 'create-direct' : phase === 'ready' ? 'read-or-wait' : null : null, rule: complete && availability === 'available' && ['ready', 'absent'].includes(phase) ? 'ViableRoute' : 'HistoryHeld' })))),
-  ...['direct-root', 'legacy'].flatMap(mode => ['absent', 'attempted', 'pending', 'uncertain', 'ready'].map(phase => ({ name: `${mode}-${phase}`, mode, phase, expected: phase === 'absent' ? mode === 'direct-root' ? 'create-direct' : 'create-via-dispatcher' : phase === 'ready' ? 'read-or-wait' : null, rule: phase === 'ready' || phase === 'absent' ? 'ViableRoute' : 'HistoryHeld' }))),
+  ...['absent', 'attempted', 'pending', 'uncertain', 'ready'].flatMap(phase => [true, false].flatMap(complete => ['available', 'unavailable', 'denied', 'unknown'].map(availability => ({ name: `direct-product-${phase}-${complete}-${availability}`, phase, edit: i => { i.records.at(-1).coverage = { complete, gaps: complete ? [] : ['missing page'] }; i.records.at(-1).availability = availability; }, expected: complete && availability === 'available' ? phase === 'absent' ? 'prepare-direct' : phase === 'ready' ? 'read-or-wait' : null : null, rule: complete && availability === 'available' && ['ready', 'absent'].includes(phase) ? 'ViableRoute' : 'HistoryHeld' })))),
+  ...['direct-root', 'legacy'].flatMap(mode => ['absent', 'attempted', 'pending', 'uncertain', 'ready'].map(phase => ({ name: `${mode}-${phase}`, mode, phase, expected: phase === 'absent' ? mode === 'direct-root' ? 'prepare-direct' : 'prepare-via-dispatcher' : phase === 'ready' ? 'read-or-wait' : null, rule: phase === 'ready' || phase === 'absent' ? 'ViableRoute' : 'HistoryHeld' }))),
   ...[
     ['selection', i => { delete i.bindings.projects.fixture.directRoot; }],
     ['selection-binding', i => { i.bindings.projects.fixture.directRoot.selectionRef = 'different-selection'; }],
@@ -157,5 +158,20 @@ export function evaluateCase(modules, test) {
     catch (error) { return { next: 'parser-refused', error: error.message }; }
   }
   const result = modules.dispatch.dispatchDecision(input);
+  if (test.preparationOnly) {
+    const definition = def(input);
+    const same = (a, b) => modules.records.canonical(a) === modules.records.canonical(b);
+    const constraints = result.status === 'advice-ready'
+      && result.definitionHash === definition.hash
+      && same(result.requiredSkill, definition.dispatch.skill)
+      && same(result.destination, definition.target)
+      && result.correlationKey === definition.dispatch.correlationKey
+      && result.effectKey === modules.work.effectKey(definition)
+      && result.attemptKey === modules.records.digest({ objective: definition.id, correlationKey: definition.dispatch.correlationKey, effectKey: modules.work.effectKey(definition), discovery: input.records.at(-1).hash })
+      && same(result.requestedSettings, definition.dispatch.requestedSettings ?? { model: 'gpt-6.1-sol', effort: 'medium', sourceRef: 'Standing ordinary-session policy' })
+      && same(result.authorityRef, definition.authorityRef);
+    const alternativePrompt = value => value && typeof value === 'object' && (Object.hasOwn(value, 'prompt') || Object.hasOwn(value, 'nativeCreateRequest') || Object.values(value).some(alternativePrompt));
+    return { next: constraints && !alternativePrompt(result) ? 'preparation-only' : 'preparation-boundary-broken', result };
+  }
   return { next: result.status === 'advice-ready' ? result.next : null, result };
 }

@@ -7,7 +7,7 @@ Discovery covers all files in .github, .codex, .agents, procedures, registry, ve
 | Subsystem | State owner | Classification | Remaining gap |
 | --- | --- | --- | --- |
 | responsibility | responsibilities.mjs reconcileState; records.mjs journal and work.mjs review | stateful; finite predicates | Reachable repair and restore lifecycle and dedicated contract missing. |
-| dispatch | dispatch.mjs dispatchDecision; records.mjs immutable lineage | stateful advice; finite assessment | Native authority, execution and complete history remain external. |
+| dispatch | dispatch.mjs dispatchDecision; records.mjs immutable lineage | stateful advice; finite assessment | Fixed preparation and actual native request use, authority, execution and complete history remain external. |
 | fleet | fleet-state.mjs fleetTransition; fleet.mjs retained operations | stateful; finite predicates | Dedicated lifecycle graph and formal contract missing. |
 | morning | morning.mjs historical interpretation; current fleet ingress refuses morning | stateful; finite predicates | Historical replay and copied recovery only. No current producer or provider acceptance. |
 | briefing | briefing-core.mjs and briefing-plan.mjs shared policy preparation; immutable-slot.mjs retained for improvement reports | stateful slots and pure assessment; partial hand-mapped model | Dedicated briefing lifecycle and immutable-slot formal skill missing. |

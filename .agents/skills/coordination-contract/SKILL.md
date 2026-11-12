@@ -156,3 +156,7 @@ The uninstalled injected effect adapter and file capture exchange remain removed
 ## Morning producer retirement
 
 Current fleet morning ingress and its exclusive collection producer are removed. Five collector-only predicates and four collector-only source mutants are intentionally retired with their executable owner. All other historical morning, migration, source-observation, uncertainty and delivery properties remain. Current-write refusal and copied-history recovery are empirical CLI controls, outside the finite theorem. No shared publication or fleet read-ticket promise changes.
+
+## Dispatch preparation separation
+
+Eligible absence now returns `prepare-via-dispatcher` or optional `prepare-direct`; it no longer renders a prompt or complete native request. The existing `dispatch-recovery` domain checks destination constraints instead of a generated request and keeps its 758 predicates and all intended mutants. Authority, immutable route, uncertainty, original request lineage, same-child recovery and restored suspension retain their semantics. The separate direct-dispatch graph adds `PreparationHeld` over exact returned constraints and absence of an alternative prompt/request. Fixed preparation and native creation remain parent-owned; no installed consumer is changed.

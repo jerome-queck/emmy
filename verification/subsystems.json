@@ -112,12 +112,12 @@
       "id": "dispatch",
       "stateOwner": "dispatch.mjs dispatchDecision; records.mjs immutable lineage",
       "classification": "stateful advice; finite assessment",
-      "bounds": "Finite supplied histories, one synchronous assessment per case; no native create.",
-      "gap": "Native authority, execution and complete history remain external.",
+      "bounds": "126 finite supplied histories, one synchronous assessment per case; 20 intended actual-source mutants; no native create.",
+      "gap": "Fixed preparation and actual native request use, authority, execution and complete history remain external.",
       "files": [
         {
           "path": "src/dispatch.mjs",
-          "sha256": "9156804f77c06577d02ebd7f142c627db2474fcb6fa14e826b08cac799a08383",
+          "sha256": "46f5e7a27a778db533fa8d4dcde27e6579d160c42a2d285d1cab25b19f200d42",
           "callers": [
             "scripts/agent.mjs"
           ]
@@ -131,9 +131,12 @@
       ],
       "properties": [
         "AuthorityHeld",
+        "ProvenanceHeld",
         "HistoryHeld",
         "RouteHeld",
-        "ExactAttemptRequest"
+        "ViableRoute",
+        "ExactAttemptRequest",
+        "PreparationHeld"
       ],
       "scenarios": [
         "native-dispatch"
@@ -935,7 +938,7 @@
         },
         {
           "path": "src/metadata.mjs",
-          "sha256": "ab68e74f80e139cb9057ed6cc47a22d4f28b3a7be9a3cbdfce6f5cef928454f5",
+          "sha256": "307b1233838aa03149e645d6d1ae2015b89d027a01207336ce7139f20f67731b",
           "callers": [
             "scripts/agent.mjs",
             "scripts/verify-behavior.mjs",
@@ -1030,7 +1033,7 @@
         },
         {
           "path": "docs/operating-brief.md",
-          "sha256": "51681676b7e5da55363699de39bd3077b81245851d47778177340ad814c0fa09",
+          "sha256": "675ec9afd7e4b1a11f9d32e35b5ed83b68d32906daf8f528a7290ea03dd9eb5a",
           "callers": [
             "src/metadata.mjs"
           ]
@@ -1051,14 +1054,14 @@
         },
         {
           "path": "docs/briefing-guidance.json",
-          "sha256": "10a7b6acd3311756e2a964c4798cbf088de677c891473b3ff83acfc25c88a91a",
+          "sha256": "de116827c64cca6f582255d7a25a3187be80829e94857b0d1e663ec45c8050d3",
           "callers": [
             "public configuration"
           ]
         },
         {
           "path": "docs/verification-index.json",
-          "sha256": "f185935e75d52b4a8939877ed9483c897290bf06a614a8a74f54c3718e4d09b3",
+          "sha256": "fe894b005f12bcebe28c5d12e49806977db2948e43146cff94124cc8c7334d46",
           "callers": [
             "public configuration"
           ]
@@ -1086,14 +1089,14 @@
         },
         {
           "path": ".agents/skills/coordination-contract/SKILL.md",
-          "sha256": "1494774fdd85d49feb51baf1a2f91f2460dee31b683e75dfbf1d0619f90c32ce",
+          "sha256": "bf5387267a251c4a003ba0b5f5f100d8ed74e63c19f3d089edd6a3d88c579bc1",
           "callers": [
             "public configuration"
           ]
         },
         {
           "path": ".agents/skills/direct-dispatch/SKILL.md",
-          "sha256": "4f8c4856c859c7571f9b9e2cc9f7f20dd7c807999e9bed5dadedd4a6f22affc5",
+          "sha256": "7e278c356e8195dbd1dcc35932406f9f8d8807d5a3288782848926052505a93b",
           "callers": [
             "public configuration"
           ]
@@ -1128,7 +1131,7 @@
         },
         {
           "path": ".agents/skills/verify/SKILL.md",
-          "sha256": "e9650695b8b9d396889380474f058d826ca9c035a675f6935566f154c1f00cdc",
+          "sha256": "c74760f0b7175224084ddc817608cdc5aa2edd525f86cb456a775e1d99c6e7e5",
           "callers": [
             "public configuration"
           ]
@@ -1163,7 +1166,7 @@
         },
         {
           "path": ".agents/skills/verify/features/routing.md",
-          "sha256": "cdec9ceccc4415d9c8ec26e2cc003fd7a1c0a7b494fe545a5c3caa970fb33f7f",
+          "sha256": "3529d84a59578988c96342ab5f9c6fd3e2007689a7b673d857001db882cd9ef5",
           "callers": [
             "public configuration"
           ]
@@ -1389,7 +1392,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "559150928abd4c503d7d7a18f5be3d982f426d0f3ecfdc62783b60532b225ff8",
+          "sha256": "a5c11b5c84ba3d3d08af383d6712117cd41f03fe71dd10e7d8527036c77a45b4",
           "callers": [
             "verification input"
           ]
@@ -1452,35 +1455,35 @@
         },
         {
           "path": "verification/direct-dispatch/chart.mmd",
-          "sha256": "6912b39c6f70cb542c30fba4c3e5295c2c57a5e0adb2955900d04cc4c1d03874",
+          "sha256": "0c68e05c43a9b078209dbbb23a2afe8b9c6b0690a4338f5b29ad5a3eede32380",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/direct-dispatch/check.mjs",
-          "sha256": "3d802ed66f07df4be04cfdfb11f46903682a688139c51cb1ff799a2fc65253e9",
+          "sha256": "70e01a1dd08b3764a9b4e8561f24d727eff78590d8b2b54108e2d79334ced5c8",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "5c2f431b578f6593f4404d1e1f3c15525f5ffb9c8a2b4661fe1f6757fcd9f679",
+          "sha256": "7a5b427eae587db52e47a673b65bbb3ab1de8edae8c86f58fca43ec922787acf",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/direct-dispatch/domain.mjs",
-          "sha256": "a6653e0c6152b8a95cdffef8471205b975ab765ec7a3a4d37f4cff610f3fbd78",
+          "sha256": "9674e98fb563cb819908ec145b959b39c1bda063ffa0933799985aa638d3c0ee",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/direct-dispatch/graph.mjs",
-          "sha256": "a23d9f0d232531866ad29ad1f7dad8b06ec5b37393033e30ce7a6cea836e7703",
+          "sha256": "77f599d3976e9896a8a40ed87a621b98d858f8e4786c216f3f42b22a5f20f512",
           "callers": [
             "verification input"
           ]
@@ -1494,14 +1497,14 @@
         },
         {
           "path": "verification/dispatch-drive.mjs",
-          "sha256": "bc43637428fcbfe78acd42bac4bd039e3d8663217c64b13f6a28163b5f99fca5",
+          "sha256": "8d98aceb9a24a771f432b2e47324e5f3c5e66a1a94ecb1ef4ae917b9fa2e3c08",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/dispatch-properties.mjs",
-          "sha256": "373a2c4b6bf50f7f40733d63c38c93b1cf24a1199329e8fe815ad8d66faa5932",
+          "sha256": "1ff721bf802a0157496b4f971e4d00fd04ad98ad26e80cf752a8ba0cead70163",
           "callers": [
             "verification input"
           ]
@@ -1571,7 +1574,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "10a927ecba74e20ba6ade9740fdf8c0b9d0efe8ac1006e2679091dffee01b97f",
+          "sha256": "6e972298ac3798a25b60c2a5335ad62123110b92e2a3016a58067c771d6a8146",
           "callers": [
             "verification input"
           ]
@@ -1648,7 +1651,7 @@
         },
         {
           "path": "verification/mutations.mjs",
-          "sha256": "808c3f12a41f80a93b7eeaa2ca8bd38d994d2c0fec79dea1073a3ed89fc67fa4",
+          "sha256": "b5ccc38543084bf1d859c71296ab29f1ad312cee47a6bd330f5b0901876c1a03",
           "callers": [
             "verification input"
           ]
@@ -1711,7 +1714,7 @@
         },
         {
           "path": "verification/publication/coverage.json",
-          "sha256": "4aa2f2bb28245bbc688daa5eac4cea2e679ac996b1736d38cf5c33acba1b8a49",
+          "sha256": "68ec32d7d61c6e06d7194634654471f46bba7ce324c831edac204f1484fa3942",
           "callers": [
             "verification input"
           ]
@@ -2089,7 +2092,7 @@
         },
         {
           "path": "verification/restoration-suspension/check.mjs",
-          "sha256": "58cee73ec025701a41ff57c564cc7760590b1c9de23986dae17a6529f3c3b495",
+          "sha256": "1bda8b402bdcbf7b12933321f2b61608789ed779d35af64bbd9312ef772a0f35",
           "callers": [
             "verification input"
           ]
@@ -2110,7 +2113,7 @@
         },
         {
           "path": "verification/restoration-suspension/coverage.json",
-          "sha256": "8f15cbedb9e508a26e0a6bfd23d9ad2f375013d1cf4f308fea7ccdf939293693",
+          "sha256": "bb98a5b95883613a2d2950a2432a6fc2c94c69d369614091bbdeb1b592ed30e2",
           "callers": [
             "verification input"
           ]
@@ -2160,7 +2163,7 @@
         },
         {
           "path": "verification/fleet-health/coverage.json",
-          "sha256": "2592e28238070dc5dbd650a134a90871dc2bc0dd41bd644699c6cd8f890ca68c",
+          "sha256": "71fe017de9ecb79d8d703956c33694f46466a8e87af8cc52a0d62f030ae8e469",
           "callers": [
             "verification input"
           ]
@@ -2221,7 +2224,7 @@
         },
         {
           "path": "verification/morning-send/coverage.json",
-          "sha256": "3a5cdafadf7eaf8dcf416bf543802015250347bfeba58753b41f2f5b272237f2",
+          "sha256": "825a4c0655ed37c9940aa6470dfc2eca5362e3ae52a6fc6d8e104674904ae8c2",
           "callers": [
             "verification input"
           ]

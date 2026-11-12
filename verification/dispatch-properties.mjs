@@ -17,13 +17,13 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
   };
   const assertAdvice = (label, input, expected) => {
     const actual = dispatch.dispatchDecision(input);
-    check('dispatch-recovery', { case: label, expected, actual, input }, expected ? actual.status === 'advice-ready' && actual.next === expected : actual.status !== 'advice-ready' && actual.next !== 'create-via-dispatcher' && actual.next !== 'continue-child', 'Only fresh, correlated, exact native evidence permits the requested bounded advice.');
+    check('dispatch-recovery', { case: label, expected, actual, input }, expected ? actual.status === 'advice-ready' && actual.next === expected : actual.status !== 'advice-ready' && actual.next !== 'prepare-via-dispatcher' && actual.next !== 'continue-child', 'Only fresh, correlated, exact native evidence permits the requested bounded advice.');
     const reversed = dispatch.dispatchDecision({ ...input, records: [...input.records].reverse() });
     check('dispatch-recovery', { case: `${label}-permutation` }, records.canonical(actual) === records.canonical(reversed), 'Input record ordering does not change dispatch advice.');
   };
   for (const phase of ['absent', 'attempted', 'pending', 'uncertain', 'ready']) for (const complete of [true, false]) for (const availability of ['available', 'unavailable', 'denied', 'unknown']) for (const age of [0, -1, 86400000, 86400001]) {
     const eligible = complete && availability === 'available' && age >= 0 && age <= 86400000;
-    const expected = eligible && phase === 'absent' ? 'create-via-dispatcher' : eligible && phase === 'ready' ? 'read-or-wait' : null;
+    const expected = eligible && phase === 'absent' ? 'prepare-via-dispatcher' : eligible && phase === 'ready' ? 'read-or-wait' : null;
     assertAdvice(`${phase}-${complete}-${availability}-${age}`, make({ phase, complete, availability, age }), expected);
   }
   const coordinatorPolicy = (input, model = 'gpt-6.1-sol', effort = 'high') => {
@@ -35,7 +35,7 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
   for (const [model, effort] of [['gpt-6.1-sol', 'high'], ['gpt-6.1-sol', 'medium'], ['gpt-6.1-sol', 'low'], ['gpt-6-luna', 'max'], ['gpt-6.1-sol', 'max']]) {
     for (const phase of ['absent', 'ready']) {
       const input = coordinatorPolicy(make({ phase }), model, effort);
-      assertAdvice(`scoped-coordinator-${model}-${effort}-${phase}`, input, phase === 'absent' ? 'create-via-dispatcher' : 'read-or-wait');
+      assertAdvice(`scoped-coordinator-${model}-${effort}-${phase}`, input, phase === 'absent' ? 'prepare-via-dispatcher' : 'read-or-wait');
     }
   }
   for (const [label, edit] of [
@@ -64,7 +64,7 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
   const parent = structuredClone(revised.records[0]); delete parent.dispatch.coordinatorRequestedSettings;
   parent.hash = records.digest('legacy-coordinator-definition');
   revised.records[0].parents = [parent.hash]; revised.records.push(parent);
-  assertAdvice('descendant-policy-is-not-immutable-identity', revised, 'create-via-dispatcher');
+  assertAdvice('descendant-policy-is-not-immutable-identity', revised, 'prepare-via-dispatcher');
   for (const effort of ['high', 'max']) {
     const input = make({ phase: 'absent' }); input.records.at(-1).dispatch.dispatcher.recordedSettings.effort = effort;
     assertAdvice(`default-exact-medium-${effort}`, input, null);
@@ -81,9 +81,9 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
     const settings = { model, effort, sourceRef: 'Synthetic owner says or higher', scopedOverrideRef: 'Synthetic generic or higher', ...(role === 'coordinator' ? { scope: { objectiveId: input.id, role } } : {}) };
     input.records[0].dispatch[field] = settings;
     if (role === 'coordinator') Object.assign(input.records.at(-1).dispatch.dispatcher.recordedSettings, { model, effort });
-    assertAdvice(`${role}-${model}-${effort}-generic`, input, model === 'gpt-6.1-sol' && effort === 'high' ? 'create-via-dispatcher' : null);
+    assertAdvice(`${role}-${model}-${effort}-generic`, input, model === 'gpt-6.1-sol' && effort === 'high' ? 'prepare-via-dispatcher' : null);
     settings.oneTimePermission = { objectiveId: input.id, role, model, effort, sourceRef: 'Synthetic explicit one-time owner permission' };
-    assertAdvice(`${role}-${model}-${effort}-exact-permission`, input, 'create-via-dispatcher');
+    assertAdvice(`${role}-${model}-${effort}-exact-permission`, input, 'prepare-via-dispatcher');
     if (model !== 'gpt-6.1-sol' || effort !== 'high') for (const key of ['objectiveId', 'role', 'model', 'effort', 'sourceRef']) {
       const invalid = structuredClone(input); invalid.records[0].dispatch[field].oneTimePermission[key] = key === 'sourceRef' ? '' : 'foreign';
       assertAdvice(`${role}-${model}-${effort}-permission-${key}`, invalid, null);
@@ -105,7 +105,7 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
       check('dispatch-recovery', { case: `speed-${role}-${tier}-${variant}`, actual: result }, result[role === 'child' ? 'childSpeed' : 'coordinatorSpeed'].serviceTier === (approved ? tier : 'default'), 'Only exact approved task speed changes Standard. Silence continues ordinary work.');
       const reversed = dispatch.dispatchDecision({ ...input, records: [...input.records].reverse() });
       check('dispatch-recovery', { case: `speed-${role}-${tier}-${variant}-permutation` }, records.canonical(result) === records.canonical(reversed), 'Speed selection is independent of record order.');
-      assertAdvice(`speed-${role}-${tier}-${variant}-continues`, input, 'create-via-dispatcher');
+      assertAdvice(`speed-${role}-${tier}-${variant}-continues`, input, 'prepare-via-dispatcher');
     }
     const inherited = make(); inherited.records.at(-1).dispatch[role === 'child' ? 'child' : 'dispatcher'].recordedSettings.serviceTier = tier;
     assertAdvice(`unapproved-inherited-${role}-${tier}`, inherited, null);
@@ -113,7 +113,7 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
     assertAdvice(`unknown-tier-${role}-${tier}`, inherited, null);
   }
   const cross = make({ phase: 'absent' }); const crossAdvice = dispatch.dispatchDecision(cross);
-  check('dispatch-recovery', { case: 'cross-project-request-destination', actual: crossAdvice.nativeCreateRequest }, crossAdvice.nativeCreateRequest?.target.projectId === target.nativeProjectId && crossAdvice.dispatcherProject === 'coordination', 'The child destination is independent of dispatcher project ownership.');
+  check('dispatch-recovery', { case: 'cross-project-request-destination', actual: crossAdvice.destination }, crossAdvice.destination?.nativeProjectId === target.nativeProjectId && crossAdvice.dispatcherProject === 'coordination', 'The child destination is independent of dispatcher project ownership.');
   const crossReverse = dispatch.dispatchDecision({ ...cross, records: [...cross.records].reverse() });
   check('dispatch-recovery', { case: 'cross-project-request-permutation' }, records.canonical(crossAdvice) === records.canonical(crossReverse), 'Input order preserves exact cross-project request.');
   const standaloneEffect = (input, status, prior = null, extra = {}) => {
@@ -128,9 +128,9 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
   partialEffect.records.push(pendingEffect, standaloneEffect(partialEffect, 'absent', pendingEffect, { coverage: { complete: false, gaps: ['Synthetic incomplete native readback'] } }));
   assertAdvice('partial-standalone-resolution-cannot-erase-uncertainty', partialEffect, null);
   const resolvedEffect = make({ phase: 'absent' }); const oldEffect = standaloneEffect(resolvedEffect, 'uncertain');
-  resolvedEffect.records.push(oldEffect, standaloneEffect(resolvedEffect, 'absent', oldEffect)); assertAdvice('complete-standalone-resolution-restores-create', resolvedEffect, 'create-via-dispatcher');
+  resolvedEffect.records.push(oldEffect, standaloneEffect(resolvedEffect, 'absent', oldEffect)); assertAdvice('complete-standalone-resolution-restores-create', resolvedEffect, 'prepare-via-dispatcher');
   const foreignEffect = make({ phase: 'absent' }); foreignEffect.records.push(standaloneEffect(foreignEffect, 'uncertain', null, { effects: [{ key: records.digest('another-effect'), status: 'uncertain' }] }));
-  assertAdvice('another-effect-key-does-not-block', foreignEffect, 'create-via-dispatcher');
+  assertAdvice('another-effect-key-does-not-block', foreignEffect, 'prepare-via-dispatcher');
   const priorRevision = make({ phase: 'absent' }); priorRevision.records.push(standaloneEffect(priorRevision, 'uncertain', null, { subject: { ...target, revision: 'b'.repeat(40) }, observedAt: '2000-01-01T00:00:00Z' }));
   assertAdvice('standalone-uncertainty-survives-revision-and-age', priorRevision, null);
   const change = (label, edit) => { const input = make(); edit(input, input.records.at(-1)); assertAdvice(label, input, null); };
@@ -191,7 +191,7 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
     input.records[1].dispatch.destinationSkill = { hostId: def.target.hostId, ...def.dispatch.skill, observedAt: asOf, sourceRef: 'Synthetic destination-installed skill bytes' };
     return input;
   };
-  assertAdvice('native-remote-route-with-exact-host-grant', remoteInput(), 'create-via-dispatcher');
+  assertAdvice('native-remote-route-with-exact-host-grant', remoteInput(), 'prepare-via-dispatcher');
   for (const [label, edit] of [
     ['missing-destination-skill', input => { delete input.records[1].dispatch.destinationSkill; }],
     ['wrong-destination-skill-host', input => { input.records[1].dispatch.destinationSkill.hostId = 'foreign-host'; }],
@@ -209,13 +209,13 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
     const input = remoteInput(); const valid = input.records.at(-1); const invalid = { ...structuredClone(valid), hash: records.digest(`remote-denied-${order}`), availability: 'denied', observedAt: new Date(Date.parse(asOf) - (order === 'earlier' ? 1000 : 0)).toISOString() };
     input.records.push(invalid); assertAdvice(`remote-unsuperseded-denial-${order}`, input, null);
     input.records.push({ ...structuredClone(valid), hash: records.digest(`remote-resolved-${order}`), supersedes: { hash: invalid.hash, reason: 'Explicit supported source replacement.' } });
-    assertAdvice(`remote-explicit-denial-resolution-${order}`, input, 'create-via-dispatcher');
+    assertAdvice(`remote-explicit-denial-resolution-${order}`, input, 'prepare-via-dispatcher');
   }
   const remoteRestore = remoteInput(); const remoteDef = remoteRestore.records[0]; const epoch = { type: 'epoch', hash: records.digest('remote-epoch'), restoredAt: new Date(Date.parse(asOf) - 1000).toISOString(), priorHashes: [] };
   for (const event of remoteRestore.records.filter(record => record.type === 'observation')) event.homeEpoch = epoch.hash;
   remoteRestore.records.push(epoch);
   for (const category of ['authority', 'schedule']) remoteRestore.records.push({ type: 'observation', hash: records.digest(`remote-${category}`), responsibilityId: remoteDef.id, subject: remoteDef.target, category, observedAt: asOf, origin: 'reported', availability: 'available', coverage: { complete: true, gaps: [] }, homeEpoch: epoch.hash, authority: remoteDef.authorityRef, schedules: [], claims: [], evidenceRefs: [] });
-  assertAdvice('remote-restored-with-fresh-reported-source', remoteRestore, 'create-via-dispatcher');
+  assertAdvice('remote-restored-with-fresh-reported-source', remoteRestore, 'prepare-via-dispatcher');
   remoteRestore.records.find(record => record.category === 'target').homeEpoch = 'wrong-epoch';
   assertAdvice('remote-restore-cannot-borrow-pre-epoch-source', remoteRestore, null);
   const continued = make(); continued.contextNeeded = true; assertAdvice('same-objective-context-needed', continued, 'continue-child');
@@ -224,7 +224,7 @@ export function verifyDispatchPolicy({ dispatch, records, work }, check) {
   for (const resolution of [undefined, 'confirmed-no-effect']) {
     const input = make({ phase: 'uncertain' }); const uncertain = input.records.at(-1); const absence = make({ phase: 'absent' }).records.at(-1);
     absence.supersedes = { hash: uncertain.hash, reason: 'Explicit targeted native no-effect rediscovery.' }; absence.dispatch.resolution = resolution; absence.dispatch.attemptKey = uncertain.dispatch.attemptKey; absence.hash = records.digest({ resolution: resolution ?? null });
-    input.records.push(absence); assertAdvice(`lost-response-absence-${resolution ?? 'unconfirmed'}`, input, resolution ? 'create-via-dispatcher' : null);
+    input.records.push(absence); assertAdvice(`lost-response-absence-${resolution ?? 'unconfirmed'}`, input, resolution ? 'prepare-via-dispatcher' : null);
   }
   const advanced = make({ phase: 'pending' }); const old = advanced.records[0];
   advanced.records.push({ ...old, hash: records.digest('advanced-definition'), parents: [old.hash], target: { ...old.target, revision: 'b'.repeat(40) } });
