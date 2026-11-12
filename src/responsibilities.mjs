@@ -133,7 +133,7 @@ export async function inspectLocal(definition, { bindings, catalog, machine, asO
   return result;
 }
 
-export function reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews = [], relatedDefinitions = [], relatedReviews = [], fleetRecords = [], fleetViewVersion = 2, epoch = null, bindings, catalog, machine, asOf }) {
+export function reconcileState(definition, { definitions, observations, repairs, reviews, featureReviews = [], relatedDefinitions = [], relatedReviews = [], fleetRecords = [], fleetViewVersion = 3, epoch = null, bindings, catalog, machine, asOf }) {
   definitions = ordered(definitions); observations = ordered(observations); repairs = ordered(repairs); reviews = ordered(reviews);
   const active = definition.lifecycle.status === 'active';
   const diagnostics = ordered(observations).map(observation => ({ ...observationStatus(observation, definition.target, asOf, definition.freshness.maxAgeMs), category: observation.category }));
@@ -241,7 +241,7 @@ export function reconcileState(definition, { definitions, observations, repairs,
       proposals.push({ type, effectKey: key, definitionHash: definition.hash, target: subjectKey(definition.target), reason: repeated ? repeated.id : open.map(finding => finding.code).join(', '), ...(completed ? { nativeRediscoveryRequired: true, nextStep: 'Read the actual native effect before continuing known work or deciding on another execution.' } : {}), execution: 'proposal-only' });
     }
   }
-  return { schemaVersion: 1, type: 'review', responsibilityId: definition.id, definitionHash: definition.hash, ruleVersion, ...(fleetRecords.length && fleetViewVersion === 2 ? { fleetViewVersion: 2 } : {}), asOf, goal: definition.goal, context: definition.context, fleet: fleetSummary([...definitions, ...observations, ...fleetRecords, ...(epoch ? [epoch] : [])], definition.id, asOf, { semanticsVersion: fleetViewVersion }), target: definition.target, route, authority, restore, heads: heads.map(head => head.hash), observations: diagnostics, criterionResults, findings: retainedFindings.sort((left, right) => left.id.localeCompare(right.id)), repairs: repairResults.sort((left, right) => left.repairHash.localeCompare(right.repairHash)), corrections, proposals, incomingTransfers: incomingTransfers.sort((left, right) => left.findingId.localeCompare(right.findingId)), featureReviews: ordered(featureReviews).map(review => ({ ...review, assurance: 'reported' })), trigger, retirement, lifecycle: definition.lifecycle, reviewAt: definition.reviewAt, limits: ['Proposals are not native execution, permissions, delivery, or authenticated review.', 'Local evidence proves the inspected bytes or bounded command result, not native state.', 'No local process can detect total dormancy without an external wakeup.'] };
+  return { schemaVersion: 1, type: 'review', responsibilityId: definition.id, definitionHash: definition.hash, ruleVersion, ...(fleetRecords.length && fleetViewVersion >= 2 ? { fleetViewVersion } : {}), asOf, goal: definition.goal, context: definition.context, fleet: fleetSummary([...definitions, ...observations, ...fleetRecords, ...(epoch ? [epoch] : [])], definition.id, asOf, { semanticsVersion: fleetViewVersion >= 2 ? 2 : 1, historicalMorningAdvice: fleetViewVersion < 3 }), target: definition.target, route, authority, restore, heads: heads.map(head => head.hash), observations: diagnostics, criterionResults, findings: retainedFindings.sort((left, right) => left.id.localeCompare(right.id)), repairs: repairResults.sort((left, right) => left.repairHash.localeCompare(right.repairHash)), corrections, proposals, incomingTransfers: incomingTransfers.sort((left, right) => left.findingId.localeCompare(right.findingId)), featureReviews: ordered(featureReviews).map(review => ({ ...review, assurance: 'reported' })), trigger, retirement, lifecycle: definition.lifecycle, reviewAt: definition.reviewAt, limits: ['Proposals are not native execution, permissions, delivery, or authenticated review.', 'Local evidence proves the inspected bytes or bounded command result, not native state.', 'No local process can detect total dormancy without an external wakeup.'] };
 }
 
 export async function adoptResponsibility(home, input) {
@@ -302,7 +302,7 @@ export async function inspectHome(home) {
 }
 
 export function replayReview(review, records) {
-  fail(review.fleetViewVersion === undefined || review.fleetViewVersion === 2, 'Unsupported retained fleet view version');
+  fail(review.fleetViewVersion === undefined || [2, 3].includes(review.fleetViewVersion), 'Unsupported retained fleet view version');
   const byHash = new Map(records.map(record => [record.hash, record]));
   const selected = review.inputHashes.map(hash => { fail(byHash.has(hash), `Missing replay input ${hash}`); return byHash.get(hash); });
   const definition = byHash.get(review.definitionHash);
