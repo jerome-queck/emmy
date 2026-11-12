@@ -198,6 +198,7 @@ test('maintain CLI rejects missing, stale and unsupported subsystem coverage', a
 
 test('behavior CLI retains originals before cleanup and reports finalizer failures', async () => {
   const source = fileURLToPath(new URL('..', import.meta.url));
+  await mkdir(join(source, '.local/verification'), { recursive: true });
   const directory = await mkdtemp(join(source, '.local/verification/behavior-faults-'));
   const preload = `
 import fs from 'node:fs/promises';
