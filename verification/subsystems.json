@@ -1393,7 +1393,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "1c381f13435a643eae27a7ab300e085fb2f0364b9731a310e713c953e0b7f8f9",
+          "sha256": "c1f74f965f4a6bfc5497e03b6ccf250dfb72ee58be41a5e7a5a559f80ef63350",
           "callers": [
             "verification input"
           ]
@@ -1778,7 +1778,7 @@
         },
         {
           "path": "test/agent-local.test.mjs",
-          "sha256": "50b1891ef236667c308610cc625a9fbcfeb29b3992ae4a8c6196f1821b38ce0d",
+          "sha256": "994cd8065282811ff15b54be6e105ba7b072768d937b6ed377f33193a1d78ae3",
           "callers": [
             "verification input"
           ]
