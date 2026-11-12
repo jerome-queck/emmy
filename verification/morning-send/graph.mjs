@@ -63,8 +63,39 @@ export function graph(api) {
   }
   return {states,edges,rejected,limits};
 }
-export function spec(g) {
-  const s=g.states.map(()=>[]); for(const e of g.edges)s[e.from].push(e.to+1);
-  return `---- MODULE MorningSend ----\nEXTENDS Naturals, Sequences\nVARIABLE node\nSuccessors == <<${s.map((x,i)=>`{${(x.length?x:[i+1]).join(',')}}`).join(',')}>>\nInit == node = 1\nStep == node' \\in Successors[node]\nNext == Step\n${names.map(n=>`${n} == node \\notin {${g.states.flatMap((x,i)=>x.rules[n]?[]:[i+1]).join(',')}}`).join('\n')}\n====\n`;
+export function inspectGraph(g, expected) {
+  const outgoing = g.states.map(() => []);
+  for (const edge of g.edges) {
+    assert.ok(Number.isInteger(edge.from) && outgoing[edge.from] && Number.isInteger(edge.to) && outgoing[edge.to], 'Invalid graph edge');
+    assert.deepEqual(g.states[edge.to].path, [...g.states[edge.from].path, edge.choice], 'Edge disagrees with retained history');
+    outgoing[edge.from].push(edge.to);
+  }
+  const paths = new Map([[0, [0]]]); const queue = [0];
+  for (let i = 0; i < queue.length; i++) for (const to of outgoing[queue[i]]) {
+    if (!paths.has(to)) { paths.set(to, [...paths.get(queue[i]), to]); queue.push(to); }
+  }
+  assert.equal(paths.size, g.states.length, 'Graph contains unreachable states');
+  if (!expected) {
+    assert.ok(g.states.every(s => Object.values(s.rules).every(Boolean)), 'Original graph violates a rule');
+    return null;
+  }
+  assert.ok(names.includes(expected), 'Unknown intended rule');
+  const broken = queue.find(i => g.states[i].rules[expected] === false);
+  assert.notEqual(broken, undefined, `Mutation survived ${expected}`);
+  return paths.get(broken);
 }
-export const cfg=`INIT Init\nNEXT Next\n${names.map(n=>`INVARIANT ${n}`).join('\n')}\n`;
+
+export function chart(g, trace) {
+  const nodes = trace ?? g.states.map((_, i) => i);
+  const lines = ['stateDiagram-v2', '  [*] --> n0'];
+  for (const i of nodes) {
+    const run = g.states[i].state.morningRuns[0];
+    const failed = Object.entries(g.states[i].rules).filter(([, ok]) => !ok).map(([name]) => name);
+    const label = run.delivery ? `${run.delivery.status} ${run.delivery.sendRef}` : run.deliveryHistory?.length ? 'resolved prior attempt' : 'sealed';
+    lines.push(`  n${i}: ${label}${failed.length ? ' / breaks ' + failed.join(', ') : ''}`);
+    if (failed.length) lines.push(`  class n${i} breaks`);
+  }
+  for (const e of g.edges) if (nodes.includes(e.from) && nodes.includes(e.to)) lines.push(`  n${e.from} --> n${e.to}: ${e.choice}`);
+  lines.push('  classDef breaks fill:#ffecee,stroke:#e72e3b');
+  return { text: lines.join('\n') + '\n', nodes, omittedStates: g.states.length - nodes.length, scope: 'All accepted baseline histories, or the intended counterexample. Full graph.json also retains refusals.' };
+}

@@ -633,7 +633,7 @@
       "files": [
         {
           "path": "src/assurance.mjs",
-          "sha256": "db72b22d16c683ff248d9d76155cd7a05f6385bdc7ccf94cd3feff5795e300ac",
+          "sha256": "9faff95a444d40b6513b9bc77ed68fa65ee3df591dfce8a368ce20ff0c962d85",
           "callers": [
             "src/local-assurance.mjs",
             "verification/local-assurance/check.mjs"
@@ -868,7 +868,8 @@
             "verification/local-assurance/graph.mjs",
             "verification/planning-policy/check.mjs",
             "verification/planning-policy/fixtures.mjs",
-            "verification/restoration-suspension/graph.mjs"
+            "verification/restoration-suspension/graph.mjs",
+            "test/finite-fleet-checks.test.mjs"
           ]
         },
         {
@@ -938,7 +939,7 @@
         },
         {
           "path": "src/metadata.mjs",
-          "sha256": "307b1233838aa03149e645d6d1ae2015b89d027a01207336ce7139f20f67731b",
+          "sha256": "d867d5b43d0e9601442f1031294e70980ce2afc84f74d0fc4d057e606e17a6ca",
           "callers": [
             "scripts/agent.mjs",
             "scripts/verify-behavior.mjs",
@@ -1131,7 +1132,7 @@
         },
         {
           "path": ".agents/skills/verify/SKILL.md",
-          "sha256": "c74760f0b7175224084ddc817608cdc5aa2edd525f86cb456a775e1d99c6e7e5",
+          "sha256": "f641d706459d95333e44a370ccc515e1dc55c6e5ece4e025b973151863d13d12",
           "callers": [
             "public configuration"
           ]
@@ -1152,7 +1153,7 @@
         },
         {
           "path": ".agents/skills/verify/features/fleet.md",
-          "sha256": "cc6b835e8203c815a3b96007721b9ec0ea75bb7a4fe5767630362432e296307e",
+          "sha256": "58ffe16f6d660752c64e9950f8636fdd91b8c4e6b9b23753a7875b16a271add6",
           "callers": [
             "public configuration"
           ]
@@ -1392,7 +1393,7 @@
         },
         {
           "path": "verification/coverage.json",
-          "sha256": "a5c11b5c84ba3d3d08af383d6712117cd41f03fe71dd10e7d8527036c77a45b4",
+          "sha256": "d695d7f271c2fae263c60f1aceefaebed8961403afccef14321af1fe51c075cd",
           "callers": [
             "verification input"
           ]
@@ -1420,7 +1421,7 @@
         },
         {
           "path": "verification/delivery/coverage.json",
-          "sha256": "6bdf154f8dd5296e66d644d7f7620dc86af54923660d950151375e36420758a2",
+          "sha256": "22e4e6021beed2bbe5d33eba4d008d19451c40501f025a2bcef0319d87e58900",
           "callers": [
             "verification input"
           ]
@@ -1469,7 +1470,7 @@
         },
         {
           "path": "verification/direct-dispatch/coverage.json",
-          "sha256": "7a5b427eae587db52e47a673b65bbb3ab1de8edae8c86f58fca43ec922787acf",
+          "sha256": "4d7ba2569bc76e32923673879d726d8f1e585801619b2eaf890cb19c7935fa3c",
           "callers": [
             "verification input"
           ]
@@ -1574,7 +1575,7 @@
         },
         {
           "path": "verification/local-assurance/coverage.json",
-          "sha256": "6e972298ac3798a25b60c2a5335ad62123110b92e2a3016a58067c771d6a8146",
+          "sha256": "5f65f16847f229edd4bcb037cb9cb85a0648318ba52216b8ca1e40487f7a68cf",
           "callers": [
             "verification input"
           ]
@@ -1714,7 +1715,7 @@
         },
         {
           "path": "verification/publication/coverage.json",
-          "sha256": "68ec32d7d61c6e06d7194634654471f46bba7ce324c831edac204f1484fa3942",
+          "sha256": "de79d51075267958dddd752b110bc805b68e82d33c5579edce9f51e11079e433",
           "callers": [
             "verification input"
           ]
@@ -2019,6 +2020,13 @@
           "callers": [
             "verification input"
           ]
+        },
+        {
+          "path": "test/finite-fleet-checks.test.mjs",
+          "sha256": "2a44e3f242490ed9c995645f2493617342b1abd63afc78c51da488a45f542c54",
+          "callers": [
+            "verification input"
+          ]
         }
       ]
     },
@@ -2092,7 +2100,7 @@
         },
         {
           "path": "verification/restoration-suspension/check.mjs",
-          "sha256": "1bda8b402bdcbf7b12933321f2b61608789ed779d35af64bbd9312ef772a0f35",
+          "sha256": "b8851e326b53a26705c8a37133e12f4bbe1ec3be7140669e300183fc169bbda5",
           "callers": [
             "verification input"
           ]
@@ -2113,7 +2121,7 @@
         },
         {
           "path": "verification/restoration-suspension/coverage.json",
-          "sha256": "bb98a5b95883613a2d2950a2432a6fc2c94c69d369614091bbdeb1b592ed30e2",
+          "sha256": "0ee098cf8b92bdd1e7d3520091983a8e91ce5fa22a1e49842a5c2198fc56a3f0",
           "callers": [
             "verification input"
           ]
@@ -2143,34 +2151,34 @@
     {
       "id": "fleet-health-history",
       "stateOwner": "fleet-state.mjs fleetInitial, fleetTransition and captureCondition",
-      "classification": "bounded actual-source reachable reducer histories",
+      "classification": "bounded Node-only actual-source reducer histories",
       "bounds": "Five synchronous transitions from staged menus; two entities; bounded symbolic clocks and alerts.",
       "gap": "Unmodeled input histories, provider truth, sign-in, journal publication and delivery.",
       "files": [
         {
           "path": "verification/fleet-health/graph.mjs",
-          "sha256": "a1e7ced6ce9f7c91c0d470192ea6444b008500f891ffe6b49c85d3c3977101c8",
+          "sha256": "93d202c44a072f193a26b10cbcbd7f2ac203b90f442317705bd46cf48aac8b98",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/fleet-health/check.mjs",
-          "sha256": "418b95ed00cffdcc2c89a8b0de92c06365a5b28cf1583f618382581998be4ce5",
+          "sha256": "860b7d29feb22c96dbfd3c61ee09d26698877f0d5700e8352e4b5111dfc33f70",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/fleet-health/coverage.json",
-          "sha256": "71fe017de9ecb79d8d703956c33694f46466a8e87af8cc52a0d62f030ae8e469",
+          "sha256": "cb8d790ec69a7e02c66c261a1ad1632d20ff821fef1c04ef7a1fcc8516436268",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": ".agents/skills/fleet-health/SKILL.md",
-          "sha256": "124b0354e7be6113a91afc5f3910d9444e2e991c36d193ca71622c26ad095cf9",
+          "sha256": "445a58000eaf63d530e58ebf9fc11e4455e5725bcef48b3e1ebe0e121850fb83",
           "callers": [
             "public configuration"
           ]
@@ -2204,34 +2212,34 @@
     {
       "id": "morning-send-history",
       "stateOwner": "fleetTransition and morningTransition initial send",
-      "classification": "bounded actual-source reachable reducer histories",
+      "classification": "bounded Node-only actual-source reducer histories",
       "bounds": "One sealed policy-v3 run, four synchronous transitions, fixed destination and bounded clocks.",
       "gap": "Source truth, asynchronous publication, provider effects, arbitrary histories and actual delivery.",
       "files": [
         {
           "path": "verification/morning-send/graph.mjs",
-          "sha256": "f77b1d5be740ad211fc890fd350908b9007342a68df702e5c8446b90ba77dbcb",
+          "sha256": "12d0f17eb0a0d244d64dac8941603a4adccb9789f71b90f9244c2bebf965dfcc",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/morning-send/check.mjs",
-          "sha256": "9c7e60404008f32eb0ce9c3945382ad0ecfe6ab606fb0bdb9d7a246e2297a8e1",
+          "sha256": "e4d7c1ab0a5ecd24cfffe809082ab492482e646e7447a8cb2a7a9aad788abe87",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": "verification/morning-send/coverage.json",
-          "sha256": "825a4c0655ed37c9940aa6470dfc2eca5362e3ae52a6fc6d8e104674904ae8c2",
+          "sha256": "d0879abae039f3679d37a35b6042f89e00473f874b0e14306c5b5f778f59ecfe",
           "callers": [
             "verification input"
           ]
         },
         {
           "path": ".agents/skills/morning-send/SKILL.md",
-          "sha256": "e18c5be6ddc93e625809cadcb791f88b9e7ac0853415dd004acac991c468329a",
+          "sha256": "2caccd122549e2eba648b1bf60c1ee85ebeb5c6cf78600b60490efb63d10ab85",
           "callers": [
             "public configuration"
           ]
