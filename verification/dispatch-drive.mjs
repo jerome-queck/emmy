@@ -54,12 +54,19 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
     return (await readStore(privateHome)).records.find(record => record.type === 'observation' && record.observer === value.observer);
   };
   let current = await retain(await observation(adopted, 'absent'));
-  const create = await advise(); assert.equal(create.next, 'create-via-dispatcher');
-  assert.deepEqual(create.nativeCreateRequest.target, { type: 'project', projectId: target.nativeProjectId, environment: { type: 'local' } });
-  assert.equal(create.dispatcherProject, initialTarget.projectId); assert.notEqual(create.nativeCreateRequest.target.projectId, dispatcher.nativeProjectId);
-  assert.equal(create.nativeCreateRequest.model, 'gpt-6.1-sol'); assert.equal(create.nativeCreateRequest.thinking, 'high');
-  assert.ok(create.nativeCreateRequest.prompt.startsWith(`[$pstack:poteto-mode](${skillPath})\n\n`));
-  assert.deepEqual(Object.keys(create.nativeCreateRequest).sort(), ['model', 'prompt', 'target', 'thinking', 'title']);
+  const create = await advise(); assert.equal(create.next, 'prepare-via-dispatcher');
+  assert.deepEqual(create.destination, target);
+  assert.equal(create.dispatcherProject, initialTarget.projectId); assert.notEqual(create.destination.nativeProjectId, dispatcher.nativeProjectId);
+  assert.deepEqual(create.requiredSkill, definition.dispatch.skill); assert.equal(create.definitionHash, adopted.hash);
+  assert.equal(create.requestedSettings.model, 'gpt-6.1-sol'); assert.equal(create.requestedSettings.effort, 'high');
+  const noRequest = advice => {
+    assert.equal(Object.hasOwn(advice, 'nativeCreateRequest'), false);
+    assert.equal(Object.hasOwn(advice, 'prompt'), false);
+  };
+  noRequest(create);
+  const syntheticRequest = advice => ({ target: { type: 'project', projectId: advice.destination.nativeProjectId, environment: { type: 'local' } }, model: advice.requestedSettings.model, thinking: advice.requestedSettings.effort, prompt: `Synthetic external preparation for ${advice.id}. Correlation ${advice.correlationKey}. Effect ${advice.effectKey}. Attempt ${advice.attemptKey}.` });
+  const originalRequest = syntheticRequest(create);
+  const originalRequestPath = await file(originalRequest, 'original-external-request.json');
   assert.equal(create.providerExecution, 'unverified'); assert.equal(create.effectiveChildAccess, 'unverified');
   const scoped = structuredClone(definition);
   scoped.id = 'coordinator-override'; scoped.dispatch.correlationKey = 'synthetic-coordinator-override';
@@ -69,10 +76,10 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   mediumReadback.recordedSettings.effort = 'medium';
   await retain(await observation(scopedAdopted, 'absent', null, { dispatcher: mediumReadback }));
   const scopedAdvice = await advise(0, [], privateHome, scoped.id);
-  assert.equal(scopedAdvice.next, 'create-via-dispatcher');
+  assert.equal(scopedAdvice.next, 'prepare-via-dispatcher');
   assert.equal(scopedAdvice.coordinatorRequestedSettings.effort, 'medium');
   assert.deepEqual(scopedAdvice.recordedDispatcherSettings, mediumReadback.recordedSettings);
-  assert.equal(scopedAdvice.nativeCreateRequest.thinking, 'high');
+  assert.equal(scopedAdvice.requestedSettings.effort, 'high');
   for (const [label, change] of [
     ['missing-scope', value => { delete value.dispatch.coordinatorRequestedSettings.scope; }],
     ['wrong-objective', value => { value.dispatch.coordinatorRequestedSettings.scope.objectiveId = 'foreign'; }],
@@ -93,7 +100,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   const lowReadback = structuredClone(mediumReadback); lowReadback.recordedSettings.effort = 'low';
   const scopedCurrent = (await readStore(privateHome)).records.find(record => record.type === 'observation' && record.responsibilityId === scoped.id && record.category === 'tasks');
   await retain(await observation(lowAdopted, 'absent', scopedCurrent, { dispatcher: lowReadback }));
-  assert.equal((await advise(0, [], privateHome, scoped.id)).next, 'create-via-dispatcher');
+  assert.equal((await advise(0, [], privateHome, scoped.id)).next, 'prepare-via-dispatcher');
   const noSource = structuredClone(low); noSource.parents = [lowAdopted.hash]; noSource.dispatch.coordinatorRequestedSettings.effort = 'medium'; delete noSource.dispatch.coordinatorRequestedSettings.scopedOverrideRef;
   assert.match((await cli(['responsibility', '--file', await file(noSource)], 2)).error, /explicit scoped override/);
   for (const role of ['child', 'coordinator']) for (const variant of ['generic', 'wrong-objective', 'wrong-role', 'wrong-model', 'wrong-effort', 'exact']) {
@@ -110,8 +117,8 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
     await retain(await observation(saved, 'absent', null, { dispatcher: coordinator }));
     const result = await advise(variant === 'exact' ? 0 : 3, [], privateHome, saved.id);
     if (variant === 'exact') {
-      assert.equal(result.next, 'create-via-dispatcher');
-      if (role === 'child') assert.deepEqual(JSON.parse(result.nativeCreateRequest.prompt.match(/One-time permission declaration (.+?)\. This is declared/)[1]), settings.oneTimePermission);
+      assert.equal(result.next, 'prepare-via-dispatcher');
+      if (role === 'child') assert.deepEqual(result.requestedSettings.oneTimePermission, settings.oneTimePermission);
     }
     else assert.ok(result.reasons.includes(`${role}-one-time-model-permission-needed`));
   }
@@ -129,8 +136,8 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
     const state = await retain(await observation(saved, 'absent', null, { dispatcher: coordinator }));
     const result = await advise(0, [], privateHome, saved.id);
     assert.equal(result[role === 'child' ? 'childSpeed' : 'coordinatorSpeed'].serviceTier, variant === 'approved' ? tier : 'default');
-    assert.equal(result.next, 'create-via-dispatcher');
-    assert.deepEqual(Object.keys(result.nativeCreateRequest).sort(), ['model', 'prompt', 'target', 'thinking', 'title']);
+    assert.equal(result.next, 'prepare-via-dispatcher');
+    noRequest(result);
     if (role === 'coordinator' && variant === 'unanswered') {
       const inherited = readback(dispatcher.threadId); inherited.recordedSettings.serviceTier = tier;
       await retain(await observation(saved, 'absent', state, { dispatcher: inherited }));
@@ -156,7 +163,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   assert.ok((await cli(['dispatch', '--id', adopted.id, '--as-of', now()], 3)).reasons.includes('destination-project-discovery-needed'));
   const cleanSource = await readFile(join(destinationPath, 'source.txt')); await writeFile(join(destinationPath, 'source.txt'), 'Changed actual destination bytes');
   assert.ok((await advise(3)).reasons.includes('current-repository-unverified')); await writeFile(join(destinationPath, 'source.txt'), cleanSource);
-  assert.equal((await advise()).next, 'create-via-dispatcher');
+  assert.equal((await advise()).next, 'prepare-via-dispatcher');
   const standalone = async (status, prior = null, extra = {}) => {
     const { tasks, dispatch, ...base } = await observation(adopted, 'absent');
     return { ...base, category: 'effect', effects: [{ key: effectKey(adopted), status }], ...(prior ? { supersedes: { hash: prior.hash, reason: 'Targeted standalone native effect rediscovery.' } } : {}), ...extra };
@@ -168,12 +175,12 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
     retainedEffect = await retain(await standalone('absent', retainedEffect, { coverage: { complete: false, gaps: ['Synthetic incomplete native effect discovery'] } }));
     assert.ok((await advise(3)).reasons.includes('native-effect-rediscovery-needed'));
     retainedEffect = await retain(await standalone('absent', retainedEffect));
-    assert.equal((await advise()).next, 'create-via-dispatcher');
+    assert.equal((await advise()).next, 'prepare-via-dispatcher');
   }
   const beforeRead = canonical((await readStore(privateHome)).records); const bindingBytes = await readFile(bindingsPath);
   assert.equal((await advise()).next, create.next); assert.equal((await advise()).effectKey, create.effectKey);
   assert.equal(canonical((await readStore(privateHome)).records), beforeRead); assert.deepEqual(await readFile(bindingsPath), bindingBytes);
-  current = await retain(await observation(adopted, 'attempted', current, { attemptKey: create.attemptKey, requestDigest: digest(create.nativeCreateRequest) }));
+  current = await retain(await observation(adopted, 'attempted', current, { attemptKey: create.attemptKey, requestDigest: digest(originalRequest) }));
   assert.equal((await advise(3)).next, 'rediscover');
   const attemptHash = current.hash;
   const pending = await observation(adopted, 'pending', current, { clientThreadId: 'synthetic-pending-client' });
@@ -189,7 +196,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   current = await retain(await observation(adopted, 'absent', current));
   assert.ok((await advise(3)).reasons.includes('prior-launch-no-effect-readback-needed'));
   current = await retain(await observation(adopted, 'absent', current, { resolution: 'confirmed-no-effect' }));
-  const retry = await advise(); assert.equal(retry.next, 'create-via-dispatcher'); assert.notEqual(retry.attemptKey, create.attemptKey);
+  const retry = await advise(); assert.equal(retry.next, 'prepare-via-dispatcher'); assert.notEqual(retry.attemptKey, create.attemptKey);
   current = await retain(await observation(adopted, 'attempted', current));
   const child = readback('synthetic-ready-child', { correlationKey: adopted.dispatch.correlationKey });
   current = await retain(await observation(adopted, 'ready', current, { child, afterCursor: 'synthetic-wait-cursor' }));
@@ -262,7 +269,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   assert.ok((await advise(3, ['--context-needed'])).reasons.includes('child-bound-to-another-objective'));
   const second = structuredClone(definition); second.id = 'another-objective'; second.dispatch.correlationKey = 'synthetic-objective-two'; delete second.dispatch.requestedSettings;
   const secondAdopted = await adopt(second); let secondState = await retain(await observation(secondAdopted, 'absent'));
-  const secondAdvice = await advise(0, [], privateHome, second.id); assert.equal(secondAdvice.next, 'create-via-dispatcher'); assert.equal(secondAdvice.nativeCreateRequest.thinking, 'medium');
+  const secondAdvice = await advise(0, [], privateHome, second.id); assert.equal(secondAdvice.next, 'prepare-via-dispatcher'); assert.equal(secondAdvice.requestedSettings.effort, 'medium');
   secondState = await retain(await observation(secondAdopted, 'attempted', secondState));
   await retain(await observation(secondAdopted, 'ready', secondState, { child: readback(child.threadId, { correlationKey: second.dispatch.correlationKey }) }));
   assert.ok((await advise(3, [], privateHome, second.id)).reasons.includes('child-bound-to-another-objective'));
@@ -278,7 +285,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   const remoteEvidence = await file({ synthetic: 'Attributable native remote repository source, no remote command' });
   await retain({ type: 'observation', responsibilityId: remoteJob.id, subject: remoteTarget, category: 'target', observedAt: now(), observer: 'Synthetic retained remote source', availability: 'available', coverage: { complete: true, gaps: [] }, claims: [], evidenceRefs: [{ path: remoteEvidence, sha256: digest(await readFile(remoteEvidence)) }] });
   const remoteAdvice = await advise(0, [], privateHome, remoteJob.id);
-  assert.equal(remoteAdvice.nativeCreateRequest.target.projectId, remoteTarget.nativeProjectId); assert.equal(remoteAdvice.nativeRoute.coordinatorHostId, initialTarget.hostId); assert.equal(remoteAdvice.nativeRoute.destinationHostId, remoteTarget.hostId); assert.equal(remoteAdvice.repositoryAssurance, 'reported-remote');
+  assert.equal(remoteAdvice.destination.nativeProjectId, remoteTarget.nativeProjectId); assert.equal(remoteAdvice.nativeRoute.coordinatorHostId, initialTarget.hostId); assert.equal(remoteAdvice.nativeRoute.destinationHostId, remoteTarget.hostId); assert.equal(remoteAdvice.repositoryAssurance, 'reported-remote');
   assert.equal((await resolve('name:Synthetic remote')).source.state, 'remote-uninspected');
   const remoteArchive = join(home, 'remote-dispatch-backup'); const remoteRestored = join(home, 'remote-dispatch-restored');
   await cli(['backup', '--to', remoteArchive]); const remoteEpoch = (await cli(['restore', '--from', remoteArchive, '--into', remoteRestored])).epoch;
@@ -294,7 +301,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   const wrappedRemote = (await readStore(remoteRestored)).records.find(record => record.observer === freshRemoteState.observer);
   const freshRemoteSkill = await observation(remoteJob, 'absent', wrappedRemote, { destinationSkill: { ...oldRemoteState.dispatch.destinationSkill, observedAt: now() } }); freshRemoteSkill.homeEpoch = remoteEpoch;
   await cli(['reconcile', '--id', remoteJob.id, '--import', await file({ schemaVersion: 1, records: [freshRemoteSkill] }), '--as-of', now()], 3, remoteRestored);
-  assert.equal((await advise(0, [], remoteRestored, remoteJob.id)).nativeCreateRequest.target.projectId, remoteTarget.nativeProjectId);
+  assert.equal((await advise(0, [], remoteRestored, remoteJob.id)).destination.nativeProjectId, remoteTarget.nativeProjectId);
   delete selectedBindings.projects[remoteKey].dispatcher.remoteAuthorityRef; await writeFile(bindingsPath, JSON.stringify(selectedBindings));
   assert.ok((await advise(3, [], privateHome, remoteJob.id)).reasons.includes('remote-host-authority-needed'));
   const nonGitPath = join(home, 'non-git-project'); await mkdir(nonGitPath);
@@ -320,13 +327,13 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   const directAdvice = expected => advise(expected, [], privateHome, directJob.id);
   let directState = await retain(await directObservation('absent'));
   const directCreate = await directAdvice(0);
-  assert.equal(directCreate.next, 'create-direct'); assert.equal(directCreate.dispatcher, undefined);
+  assert.equal(directCreate.next, 'prepare-direct'); assert.equal(directCreate.dispatcher, undefined);
   assert.equal(directCreate.effectiveChildAccess, 'unverified'); assert.deepEqual(directCreate.requestedChildPolicy, directRoot.childPolicy);
-  assert.deepEqual([...directCreate.nativeCreateRequest.prompt.matchAll(/^# (.+)$/gm)].map(match => match[1]), ['Goal', 'Verification', 'Subgoals', 'Boundaries', 'Output', 'Delegation']);
-  assert.deepEqual(Object.keys(directCreate.nativeCreateRequest).sort(), ['model', 'prompt', 'target', 'thinking', 'title']);
+  noRequest(directCreate);
+  assert.deepEqual(directCreate.requiredSkill, directJob.dispatch.skill); assert.equal(directCreate.definitionHash, directJob.hash);
   const directRecovery = await cli(['dispatch', '--project', target.projectId, '--as-of', now()]);
   assert.deepEqual(directRecovery.directRoot, directRoot); assert.equal(directRecovery.dispatcher, undefined);
-  directState = await retain(await directObservation('attempted', directState, { attemptKey: directCreate.attemptKey, requestDigest: digest(directCreate.nativeCreateRequest) }));
+  directState = await retain(await directObservation('attempted', directState, { attemptKey: directCreate.attemptKey, requestDigest: digest(syntheticRequest(directCreate)) }));
   assert.equal((await directAdvice(3)).next, 'rediscover');
   directState = await retain(await directObservation('pending', directState, { clientThreadId: 'synthetic-direct-pending' }));
   assert.equal((await directAdvice(3)).clientThreadId, 'synthetic-direct-pending');
@@ -334,8 +341,8 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
   directState = await retain(await directObservation('absent', directState));
   assert.ok((await directAdvice(3)).reasons.includes('prior-launch-no-effect-readback-needed'));
   directState = await retain(await directObservation('absent', directState, { resolution: 'confirmed-no-effect' }));
-  const directRetry = await directAdvice(0); assert.equal(directRetry.next, 'create-direct');
-  const directAttempt = await retain(await directObservation('attempted', directState, { attemptKey: directRetry.attemptKey, requestDigest: digest(directRetry.nativeCreateRequest) }));
+  const directRetry = await directAdvice(0); assert.equal(directRetry.next, 'prepare-direct');
+  const directAttempt = await retain(await directObservation('attempted', directState, { attemptKey: directRetry.attemptKey, requestDigest: digest(syntheticRequest(directRetry)) }));
   const directChild = { ...readback('synthetic-direct-child', { correlationKey: directJob.dispatch.correlationKey }), creatorThreadId: 'synthetic-native-tool-caller' };
   Object.assign(directChild.recordedSettings, directRoot.childPolicy);
   const creation = { principal: directRoot.principal, attemptKey: directAttempt.dispatch.attemptKey, requestDigest: directAttempt.dispatch.requestDigest, childThreadId: directChild.threadId, observedAt: now(), sourceRef: 'Synthetic original native invocation plus returned child', nativeCallerThreadId: directChild.creatorThreadId };
@@ -408,6 +415,7 @@ export async function driveDispatch({ root, home, run, scenario, report, binding
     const publicBytes = await readFile(join(root, path), 'utf8');
     for (const secret of [dispatcher.threadId, dispatcher.selectionRef, definition.dispatch.correlationKey, child.threadId]) assert.equal(publicBytes.includes(secret), false, `Private dispatch state absent from ${path}`);
   }
-  report.dispatch = { privateHome, retainedAttemptHash: attemptHash, readyThreadId: child.threadId, directReadyThreadId: directChild.threadId, directAttemptHash: directAttempt.hash, bindingDigest: digest(await readFile(bindingsPath)), archiveManifestHash: archived.manifest.hash, restoredEpoch: restored.epoch, sourceAssurance: 'synthetic reported native evidence', providerExecution: 'unverified', effectiveChildAccess: 'unverified' };
-  scenario('native-dispatch', 'Fresh-process private bootstrap recovery, exact supported request and skill, read-only decisions, attempted/pending/uncertain/no-effect/ready controls, duplicate imports, native membership/settings/policy refusal, standing scope, same-objective continuation, distinct objective reuse refusal and suspended archive restore. No native executor ran.');
+  assert.equal(digest(JSON.parse(await readFile(originalRequestPath, 'utf8'))), digest(originalRequest));
+  report.dispatch = { originalRequestPath, requestAssurance: 'synthetic external preparation only; no fixed installation or native invocation', privateHome, retainedAttemptHash: attemptHash, readyThreadId: child.threadId, directReadyThreadId: directChild.threadId, directAttemptHash: directAttempt.hash, bindingDigest: digest(await readFile(bindingsPath)), archiveManifestHash: archived.manifest.hash, restoredEpoch: restored.epoch, sourceAssurance: 'synthetic reported native evidence', providerExecution: 'unverified', effectiveChildAccess: 'unverified' };
+  scenario('native-dispatch', 'Fresh-process private bootstrap recovery, preparation-only constraints and exact skill, separately supplied request digest, read-only decisions, attempted/pending/uncertain/no-effect/ready controls, duplicate imports, native membership/settings/policy refusal, standing scope, same-objective continuation, distinct objective reuse refusal and suspended archive restore. No native executor ran.');
 }

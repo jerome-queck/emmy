@@ -13,6 +13,9 @@ const directory = join(root, '.local/verification/direct-dispatch', randomUUID()
 await mkdir(directory, { recursive: true });
 const report = { status: 'running', sourceReviewGate: !process.argv.includes('--development'), cases: cases.length, runs: [] };
 const mutations = [
+  ['alternative-request', 'src/dispatch.mjs', [["definitionHash: definition.hash, requiredSkill: spec.skill, attemptKey,", "definitionHash: definition.hash, requiredSkill: spec.skill, nativeCreateRequest: { prompt: definition.goal }, attemptKey,"]], 'PreparationHeld'],
+  ['wrong-preparation-definition', 'src/dispatch.mjs', [["definitionHash: definition.hash, requiredSkill", "definitionHash: 'foreign', requiredSkill"]], 'PreparationHeld'],
+  ['wrong-preparation-skill', 'src/dispatch.mjs', [["requiredSkill: spec.skill, attemptKey", "requiredSkill: { ...spec.skill, path: '/foreign/SKILL.md' }, attemptKey"]], 'PreparationHeld'],
   ['root-selection', 'src/dispatch.mjs', [["!selectedRoot || canonical(selectedRoot) !== canonical(root)", 'false']], 'AuthorityHeld'],
   ['root-authority', 'src/dispatch.mjs', [["!directScope(root, target, asOf) || !directScope(selectedRoot, target, asOf)", 'false']], 'AuthorityHeld'],
   ['root-identity', 'src/dispatch.mjs', [["canonical(readback.principal) !== canonical(root.principal) || readback.hostId !== root.hostId", 'false']], 'AuthorityHeld'],
@@ -24,7 +27,7 @@ const mutations = [
   ['lost-response', 'src/dispatch.mjs', [["!['attempted', 'pending', 'uncertain'].includes(state.phase) && unsettled.size", 'false']], 'HistoryHeld'],
   ['root-immutable', 'src/records.mjs', [["root: value.root, skill: value.skill", 'skill: value.skill']], 'RouteHeld'],
   ['mixed-route', 'src/records.mjs', [["value.dispatcher === undefined", 'true']], 'RouteHeld'],
-  ['force-legacy-hop', 'src/dispatch.mjs', [["direct ? 'create-direct' : 'create-via-dispatcher'", "'create-via-dispatcher'"]], 'ViableRoute'],
+  ['force-legacy-hop', 'src/dispatch.mjs', [["direct ? 'prepare-direct' : 'prepare-via-dispatcher'", "'prepare-via-dispatcher'"]], 'ViableRoute'],
   ['restored-root', 'src/dispatch.mjs', [["restoredCutoff && Date.parse(readback.observedAt) < Date.parse(restoredCutoff)", 'false'], ["restoredCutoff && Date.parse(settings.observedAt) < Date.parse(restoredCutoff)", 'false']], 'AuthorityHeld'],
   ['restored-creation', 'src/dispatch.mjs', [["epoch && Date.parse(creation.observedAt) < Date.parse(epoch.restoredAt)", 'false']], 'ProvenanceHeld'],
   ['conflicting-original-requests', 'src/dispatch.mjs', [["if (conflictingAttemptKeys.length)", 'if (false)']], 'ExactAttemptRequest'],
@@ -54,7 +57,7 @@ try {
     await writeFile(join(path, 'graph.json'), `${canonical(graph)}\n`);
     await writeFile(join(path, 'DirectDispatch.tla'), dispatchSpec(graph));
     await writeFile(join(path, 'DirectDispatch.cfg'), dispatchConfig);
-    const labels = graph.states.map(row => row.phase === 'awaiting' ? 'Awaiting scoped evidence' : row.phase === 'supplied' ? 'Scoped evidence supplied' : row.disagrees ? `Contract breaks ${row.rule}` : row.assessed.next === 'create-direct' ? 'Explicit direct route may create once' : row.assessed.next === 'create-via-dispatcher' ? 'Selected router may create once' : row.assessed.next === null ? 'Hold and inspect same objective' : row.assessed.next === 'parser-refused' || row.assessed.next === 'identity-changed' ? 'Mixed or changed route refused' : 'Inspect or continue same child');
+    const labels = graph.states.map(row => row.phase === 'awaiting' ? 'Awaiting scoped evidence' : row.phase === 'supplied' ? 'Scoped evidence supplied' : row.disagrees ? `Contract breaks ${row.rule}` : row.assessed.next === 'preparation-only' ? 'Preparation constraints preserved' : row.assessed.next === 'prepare-direct' ? 'Explicit direct route needs preparation' : row.assessed.next === 'prepare-via-dispatcher' ? 'Selected router needs preparation' : row.assessed.next === null ? 'Hold and inspect same objective' : row.assessed.next === 'parser-refused' || row.assessed.next === 'identity-changed' ? 'Mixed or changed route refused' : 'Inspect or continue same child');
     await writeFile(join(path, 'view.mjs'), `const labels = ${JSON.stringify(labels)};\nexport const title = 'Selected router and optional direct dispatch';\nexport const state = v => labels[v.node - 1];\nimport { step as labelStep } from ${JSON.stringify(pathToFileURL(join(root, 'verification/direct-dispatch/view.mjs')).href)};\nexport const step = (action, from, to) => labelStep(action, labels[to.node - 1]);\n`);
     const child = spawnSync(java, ['-XX:+UseParallelGC', '-Xmx1g', '-cp', jar, 'tlc2.TLC', '-workers', '1', '-fp', '0', '-config', 'DirectDispatch.cfg', 'DirectDispatch.tla'], { cwd: path, encoding: 'utf8', timeout: 60000, maxBuffer: 16 * 1024 * 1024 });
     const output = `${child.stdout ?? ''}${child.stderr ?? ''}`; await writeFile(join(path, 'tlc.out'), output);

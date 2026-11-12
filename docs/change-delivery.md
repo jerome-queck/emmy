@@ -18,6 +18,8 @@ Operational coordination continues through the existing authorized selected nati
 
 Standard/non-fast is the default for coding sessions, coordinators and helpers. Fast or Ultrafast requires explicit owner approval for that exact task, role and tier. An unanswered request is not approval; continue Standard without waiting. Never inherit an accelerated tier from a parent, saved session or broader preference. Model/effort permission does not grant speed permission. Use supported native/config controls only, verify recorded settings separately, and report an unavailable tier control or readback.
 
+Public-source `dispatch` now ends eligible absence at `prepare-direct` or `prepare-via-dispatcher`. It returns exact definition, skill and launch constraints without compiling a prompt or native create request. Follow [fixed native task preparation](native-dispatch.md#prepare-a-native-task-from-saved-project-guidance), preserve those constraints in the original task record, copy the fixed assessor's validated prompt unchanged and retain the final request digest before native creation. Existing selected installations remain unchanged; this source capability establishes no adoption.
+
 ## Create through the native host service
 
 Discover the current tool catalog and saved projects on the designated Mac. The objective's eligible direct root or historical dispatcher performs creation. Preserve its immutable route and recover uncertain attempts before calling again. Use `mcp__codex_app__list_projects`, then `mcp__codex_app__create_thread` with the returned native project ID and a local environment:
