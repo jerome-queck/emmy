@@ -10,7 +10,7 @@ The `local-assurance` empirical scenario uses labelled copied source with two sy
 
 ## Behavioral evidence recovery
 
-The driver validates required copies against their source before cleanup. Its `report.json` records retention errors and exact recovery paths. Failed scenarios or retention preserve scratch. Successful runs save a pending-cleanup report before removal and a terminal report afterward. Handled cleanup failure reports an uncleaned outcome; report-write failure emits the paths with `reportSaved` through stdout and exits nonzero. A persistent disk failure or SIGKILL cannot promise a terminal disk report or response. Read [evidence and teardown](../SKILL.md#evidence-and-teardown). The existing `test/agent-local.test.mjs` suite drives these actual CLI failures and retains their synthetic originals.
+The driver validates required copies against their source before cleanup. Its `report.json` records retention errors and exact recovery paths. Failed scenarios or retention preserve scratch inside the same run evidence directory, within the existing hosted upload path. Upload success and remote artifact retention remain external observations. Successful runs save a pending-cleanup report before removal and a terminal report afterward. Handled cleanup failure reports an uncleaned outcome; report-write failure emits the paths with `reportSaved` through stdout and exits nonzero. A persistent disk failure or SIGKILL cannot promise a terminal disk report or response. Read [evidence and teardown](../SKILL.md#evidence-and-teardown). The existing `test/agent-local.test.mjs` suite drives these actual CLI failures and retains their synthetic originals.
 
 ## User route
 

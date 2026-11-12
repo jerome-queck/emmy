@@ -259,6 +259,7 @@ syncBuiltinESMExports();
     const record = { mode, code: result.status, signal: result.signal, error: result.error?.message, recipeSha256: digest(preload), root: location?.root, evidence: location?.evidence };
     await writeFile(join(at, 'result.json'), JSON.stringify(record, null, 2));
     assert.equal(result.error, undefined, result.stderr); assert.ok(location, 'Actual copy boundary fired');
+    assert.ok(location.root.startsWith(location.evidence+'/emmy-behavior-'), 'Recovery source stays inside normal uploaded run evidence');
     const normal = ['success', 'optional-absent'].includes(mode);
     assert.equal(operations.some(value => value.fault), !['success'].includes(mode), mode);
     if (mode === 'cleanup-kill') {

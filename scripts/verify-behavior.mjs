@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { cp, lstat, mkdir, mkdtemp, readFile, readdir, readlink, rename, rm, writeFile } from 'node:fs/promises';
-import { hostname, tmpdir } from 'node:os';
+import { hostname } from 'node:os';
 import { basename, join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
@@ -24,7 +24,7 @@ import { driveAssurance } from '../verification/local-assurance/drive.mjs';
 const sourceRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const evidenceDir = join(sourceRoot, '.local/verification', `behavior-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 8)}`);
 await mkdir(evidenceDir, { recursive: true });
-const root = await mkdtemp(join(tmpdir(), 'emmy-behavior-'));
+const root = await mkdtemp(join(evidenceDir, 'emmy-behavior-'));
 const home = join(root, '.local');
 const report = { runtime: process.version, evidenceDir, temporaryRoot: root, commands: [], scenarios: [], status: 'running', focus: process.argv.includes('--focus') ? process.argv[process.argv.indexOf('--focus') + 1] : null };
 const children = new Set();
@@ -721,8 +721,9 @@ try {
   if (ready && savedBeforeCleanup) {
     try {
       await rm(root, { recursive: true, force: true });
-      report.cleaned = !await readdir(tmpdir()).then(names => names.includes(basename(root)));
-      assert.ok(report.cleaned, 'Temporary root still exists after cleanup');
+      try { await lstat(root); throw new Error('Temporary root still exists after cleanup'); }
+      catch (error) { if (error.code !== 'ENOENT') throw error; }
+      report.cleaned = true;
       report.cleanup.status = 'removed'; report.status = 'passed';
     } catch (error) {
       report.status = 'failed'; report.cleanup.status = 'failed'; report.cleanup.error = error.message;
