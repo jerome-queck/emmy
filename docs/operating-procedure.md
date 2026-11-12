@@ -1,6 +1,6 @@
 # Run an accepted Emmy procedure
 
-The staged foundation uses one source release for the local runner, guidance, report helpers, and portable briefing core. `src/operating-contract.mjs` identifies version 2. Its check occurrence rules describe expected reports; they do not schedule or activate work. Existing private policy and native products retain their authority. Daily briefing is the first pilot, followed by a parent observation hold.
+The staged foundation uses one source release for the local runner, guidance, report helpers, and portable briefing core. `src/operating-contract.mjs` identifies version 2. Its check occurrence rules describe expected reports; they do not schedule or activate work. Existing private policy and native products retain their authority. This contract exposes staged pure preparation and report expectations only. It defines no current briefing pilot or effect owner.
 
 ## Select the exact source
 
@@ -32,13 +32,13 @@ Use the generic [automation foundation](automation-foundation.md). Select the re
 3. Acquire only the authorized named sources. Retain original response bytes, source identity, actual acquisition bounds, original provider clocks, pagination, and declared coverage. Missing provider clocks stay null. File ingestion never refreshes source evidence.
 4. Read the known report artifact or exact occurrence slot through the existing report helper. Supply kind, scheduled occurrence, provenance, minimum source end, and age bound. Read the named conflict marker too. Malformed unrelated history cannot gate this read. Namespace filtering after a whole-root scan is not scoped acquisition.
 5. Invoke `daily-briefing` action `prepare` locally, or `executeBriefing` from `src/briefing-core.mjs` in the accepted portable consumer. Both call the same implementation. Preserve the complete JSON result and exact human body. The former v1 `compile/read` artifact lifecycle is retired from new source; retained installations can inspect old artifacts on copies. `briefing` remains advisory guidance acquisition.
-6. Submit accepted source and assessment evidence only to the existing morning journal. Calendar source commands retain `providerObservation` separately from acquisition receipts. Unknown provider clocks produce a partial report. Pending checks remain pending; unavailable sources remain explicit gaps.
+6. Retain source and assessment evidence with the calling task. Unknown provider clocks produce a partial report. Pending checks remain pending; unavailable sources remain explicit gaps. Current morning journal writes refuse.
 
 ## Hold at the effect boundary
 
-Local compilation does not grant migration, sending, cleanup, publication, installation, or scheduled invocation. The parent must independently accept the current policy, exact account and transport bindings, inactive predecessor, durable invocation identity, unresolved-effect discovery, and exact ChatGPT destination. The existing fleet/morning owner retains send and move intents, uncertain outcomes, same-ID readbacks, and same-message edits.
+Local compilation grants no migration, sending, cleanup, publication, installation or scheduled invocation. The old morning migration/admission producer is retired. Historical policy and effect records retain exact replay and copied recovery; no installation acceptance is implied.
 
-After foundation verification, the parent may authorize only the daily briefing pilot. Observe its complete body, source gaps, duplicate behavior, and native readbacks. Then hold. Other automations and all schedules remain unchanged.
+The pure preparation API grants no native execution, installation or recurrence. Current morning producer admission is retired.
 
 ## Recover or roll back
 

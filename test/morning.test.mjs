@@ -176,3 +176,14 @@ test('selected refresh never erases original missing calendar resources or unrev
   for (const id of ['unreviewed-extra-id', 'missing-calendar-id']) { assert.ok(fixture.run.cleanup.globalGaps.some(gap => gap.includes(id))); assert.ok(fixture.run.summary.body.includes(id.replaceAll('-', '\\-'))); }
   assert.deepEqual(fixture.run.cleanup.globalGapProvenance, { bodyDigest: original.bodyDigest, sealedAt: original.at, gaps: original.gaps }); assert.equal(morningView(fixture.state.morningRuns, batch.at)[0].cleanup.globalCoverage, 'degraded');
 });
+
+test('changed unsent context appends review history, preserves owner correction and missing inbox IDs remain held', async () => {
+  const { morningItem } = await import('../verification/morning-fixtures.mjs'); const { compactAssessments } = await import('../verification/morning-compact-fixtures.mjs');
+  const f = morningFixture({ cleanupMode: 'batched-v1' }); const item = morningItem('outlook'); f.command('review', { items: [item] }); f.command('correct', { adapter: 'outlook', nativeId: item.before.nativeId, disposition: 'dismissed', sourceRef: 'owner', reason: 'Handled.' });
+  const at = '2026-10-25T01:00:01.000Z'; const source = f.run.sources[1]; const next = { ...source.capture, jobKey: null, acquisition: { provenance: 'ordinary-authorized', ownerRef: f.run.ownerRef, collectionRef: 'private-capture' }, receipt: { ...source.capture.receipt, observedAt: at, capturedAt: at } };
+  f.command('source', Object.fromEntries(Object.entries(next).filter(([key]) => !['step','runId'].includes(key))), at);
+  f.command('review', { items: [{ ...item, receipt: next.receipt, context: { ...item.context, actionRequired: true } }] }, at);
+  assert.equal(f.run.items[0].classification.action, 'keep'); assert.equal(f.run.items[0].correction.disposition, 'dismissed'); assert.equal(f.run.items[0].reviewHistory.length, 1);
+  f.command('source', { ...Object.fromEntries(Object.entries(next).filter(([key]) => !['step','runId'].includes(key))), messageIds: [] }, at);
+  f.command('seal', compactAssessments(at), at); assert.ok(f.run.sealed.gaps.some(gap => gap.includes('not in current mail inventory'))); assert.match(f.run.sealed.body, /dismissed/);
+});

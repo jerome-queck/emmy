@@ -108,7 +108,7 @@ export async function drivePublication(root, evidenceDir) {
     }
     const sourcePath = join(directory, 'records.mjs');
     await writeFile(sourcePath, candidate);
-    for (const dependency of ['fleet-schema.mjs', 'fleet-state.mjs', 'morning.mjs', 'briefing-policy.mjs', 'briefing-plan.mjs', 'briefing-observation.mjs', 'briefing-reporting.mjs', 'automation-producer.mjs', 'morning-presentation.mjs', 'morning-collection.mjs', 'briefing.mjs', 'metadata.mjs', 'work.mjs', 'guidance-pin.mjs', 'content.mjs', 'strict-json.mjs', 'operating-contract.mjs', 'bounded-json.mjs']) await writeFile(join(directory, dependency), await readFile(join(root, 'src', dependency)));
+    for (const dependency of ['fleet-schema.mjs', 'fleet-state.mjs', 'morning.mjs', 'briefing-policy.mjs', 'briefing-plan.mjs', 'briefing-observation.mjs', 'briefing-reporting.mjs', 'automation-producer.mjs', 'morning-presentation.mjs', 'briefing.mjs', 'metadata.mjs', 'work.mjs', 'guidance-pin.mjs', 'content.mjs', 'strict-json.mjs', 'operating-contract.mjs', 'bounded-json.mjs']) await writeFile(join(directory, dependency), await readFile(join(root, 'src', dependency)));
     const records = await import(pathToFileURL(sourcePath));
     const home = join(directory, 'home');
     const payload = { type: 'probe', schemaVersion: 1, nonce: 'publication-contract', value: 'a' };

@@ -79,7 +79,7 @@ try {
   }
   if (!report.focus || report.focus === 'calendar') await driveCalendar({ home, run, scenario, report });
   if (!report.focus || report.focus === 'calendar') await driveCalendarRegister({ home, run, scenario, report });
-  if (!report.focus || report.focus === 'fleet') await driveMorning({ home, bindings, target, run, scenario, report });
+  if (!report.focus || report.focus === 'fleet') await driveMorning({ root, home, bindings, target, run, scenario, report });
   if (!report.focus || report.focus === 'fleet') await driveFleet({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir, children });
   if (!['briefing', 'dispatch', 'calendar', 'fleet', 'token-review', 'assurance'].includes(report.focus)) {
   const artifact = join(home, 'artifact.txt'); const original = 'Expected fixture bytes\n'; await writeFile(artifact, original);
@@ -642,15 +642,14 @@ try {
     try { assert.equal((await readStore(report.retainedFleet)).records.length, report.fleet.records); report.fleetRetentionVerifiedAfterCleanup = true; }
     catch (error) { report.status = 'failed'; report.fleetRetentionError = error.message; process.exitCode = 1; }
   }
-  if (report.morningV3 && report.retainedMorning) {
+  if (report.morningHistory && report.retainedMorning) {
     try {
-      const selected = join(report.retainedMorning, 'v3'); const retained = await readStore(selected);
-      assert.equal(retained.records.length, report.morningV3.records, 'V3 journal survives temporary-root cleanup');
-      const last = retained.records.filter(record => record.type === 'fleet-step').sort((a, b) => a.seq - b.seq).at(-1);
-      assert.equal(last.state.morningRuns.at(-1).sealed.bodyDigest, report.morningV3.bodyDigest);
-      for (const receipt of report.morningV3.rawReceipts) { const bytes = await readFile(join(selected, receipt.relativePath)); assert.equal(digest(bytes), receipt.sha256); assert.equal(bytes.length, receipt.byteCount); }
-      report.morningV3RetentionVerifiedAfterCleanup = true;
-    } catch (error) { report.status = 'failed'; report.morningV3RetentionError = error.message; process.exitCode = 1; }
+      const retained = await readStore(report.retainedMorning);
+      assert.equal(retained.records.length, report.morningHistory.records);
+      const manifest = JSON.parse(await readFile(join(report.retainedMorning, 'original-byte-manifest.json')));
+      for (const [path, expected] of Object.entries(manifest)) assert.equal(digest(await readFile(join(report.retainedMorning, path))), expected);
+      report.morningHistoryRetentionVerifiedAfterCleanup = true;
+    } catch (error) { report.status = 'failed'; report.morningHistoryRetentionError = error.message; process.exitCode = 1; }
   }
   if (report.dispatch && report.retainedDispatch) {
     try {

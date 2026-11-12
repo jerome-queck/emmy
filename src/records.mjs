@@ -578,7 +578,7 @@ export async function backupHome(home, destination) {
   for (const name of fleetTurns) {
     const turn = await readJson(join(home, 'fleet-turns', name));
     const planned = recordPayload(turn.payload, Object.fromEntries(Object.entries(turn.files).map(([key, bytes]) => [key, Buffer.from(bytes, 'base64')])));
-    requireValue(snapshot.records.some(record => record.hash === planned.hash), 'Backup refuses an unresolved fleet journal turn. Repeat its exact retained input first.');
+    requireValue(snapshot.records.some(record => record.hash === planned.hash), turn.payload.action.operation === 'morning' ? 'Backup refuses an unresolved historical morning publication. Use the exact retained compatible installation on a copy, preserve native uncertainty, then archive the recovered copy.' : 'Backup refuses an unresolved fleet journal turn. Repeat its exact retained input first.');
   }
   const files = await selectedFiles(home);
   const selected = files.map(file => ({ path: file.path, sha256: digest(file.bytes) }));

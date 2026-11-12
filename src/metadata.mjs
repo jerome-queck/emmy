@@ -38,7 +38,7 @@ export const verification = {
     { id: 'upkeep', title: 'Upkeep and recovery', commands: ['maintain', 'backup', 'restore', 'reporting', 'automation', 'daily-briefing', 'assurance'], scenarios: ['archive-recovery', 'cloud-recovery', 'restored-current-context', 'publication-interruption', 'derived-boundaries', 'improvement-report', 'automation-foundation', 'daily-briefing-pilot', 'local-assurance', 'automation-reporting'], properties: ['restore-suspension', 'import-prefix', 'automation-contract'] }
   ],
   properties: [
-    { id: 'morning-contract', source: 'src/morning.mjs', functions: ['classifyMail', 'morningTransition', 'renderMorning', 'morningView', 'deliveryReadback'], statement: 'Versioned conservative mail judgments, fleet-backed fresh Singapore-day source acquisitions, complete reviewed-ID accounting, exact delivered-body gates, unread-preserved reversible outcomes and same-message edits retain scoped provenance without claiming native truth.' },
+    { id: 'morning-contract', source: 'src/morning.mjs', functions: ['classifyMail', 'morningTransition', 'renderMorning', 'morningView', 'deliveryReadback'], statement: 'Historical morning replay preserves versioned mail judgments, original source clocks, exact delivery and uncertain outcomes, unread state and same-message identities. Current ingress refusal and read-only morning presentation are separate empirical CLI controls; pure briefing preparation remains separate.' },
     { id: 'fleet-contract', source: 'src/fleet-state.mjs', functions: ['captureCondition', 'fleetHistory', 'fleetTransition', 'fleetState', 'fleetView'], statement: 'Current scheduled health requires exact occurrence provenance; structured actions coalesce paraphrases, fresh source acquisitions close pending recovery, and explicit upgrades preserve historical states and review views. Parent read, uncertainty, archive ancestry and delivery guards remain bounded.' },
     { id: 'automation-contract', source: 'src/automation-plan.mjs', functions: ['planAutomation'], statement: 'Versioned staged plans bind supplied configuration, scope, source pins, budgets and destinations. Canonical run ingestion rejects invalid timing, telemetry and nonterminal reports without granting effects or native creation.' },
     { id: 'exact-binding', source: 'src/work.mjs', functions: ['routeTarget'], statement: 'Only own project/host bindings with exact target identity establish a local route.' },
@@ -178,12 +178,10 @@ export const subsystemEvidence = {
   },
   "morning": {
     "drivers": [
-      "verification/morning-drive.mjs",
-      "verification/morning-v3-drive.mjs"
+      "verification/morning-drive.mjs"
     ],
     "skills": [
-      ".agents/skills/coordination-contract/SKILL.md",
-      ".agents/skills/morning-collect/SKILL.md"
+      ".agents/skills/coordination-contract/SKILL.md"
     ],
     "replay": [
       "verification/morning-properties.mjs",
@@ -439,7 +437,7 @@ export const subsystemEvidence = {
     "graph": { "kind": "reachable-reducer", "path": "verification/fleet-health/graph.mjs", "record": "verification/fleet-health/coverage.json", "checker": "verification/fleet-health/check.mjs", "exports": ["graph", "spec"] }
   },
   "morning-send-history": {
-    "drivers": ["verification/morning-v3-drive.mjs"],
+    "drivers": ["verification/morning-drive.mjs"],
     "skills": [".agents/skills/morning-send/SKILL.md"],
     "replay": ["verification/morning-send/check.mjs"],
     "coverageRecords": ["verification/coverage.json", "verification/morning-send/coverage.json"],

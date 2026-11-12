@@ -263,7 +263,7 @@ export async function driveFleet({ sourceRoot, root, home, bindings, target, run
   await call({ operation: 'submit', job: fleetJob('interactive', 'interactive') }); assert.equal(last.state.jobs.filter(row => row.status === 'queued').length, 4);
   await assess([currentCapture('monitor', 'resource-pressure')]); await call({ operation: 'claim', ownerRef: 'fixture-parent' }); assert.equal(last.ticket, null); assert.equal(last.outcome, 'resource-pressure');
   const review = await run(['reconcile', '--id', definition.id, '--as-of', now()], 3, selectedHome); const stored = (await readStore(selectedHome)).records; const retainedReview = review.responsibilities[0].record;
-  assert.equal(retainedReview.fleetViewVersion, 2); assert.deepEqual(replayReview(retainedReview, stored).fleet, retainedReview.fleet);
+  assert.equal(retainedReview.fleetViewVersion, 3); assert.deepEqual(replayReview(retainedReview, stored).fleet, retainedReview.fleet);
   assert.equal((await run(['doctor'], 3, selectedHome)).store.fleetNeedsAttention, true);
   const archive = join(root, 'bin', 'fleet-archive'); await run(['backup', '--to', archive], 0, selectedHome);
   const restored = join(home, 'fleet-restored'); await run(['restore', '--from', archive, '--into', restored], 0, selectedHome);

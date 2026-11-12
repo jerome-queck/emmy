@@ -1,6 +1,6 @@
 ---
 name: morning-send
-description: Check the bounded actual policy-v3 initial-send uncertainty reducer when changing morning delivery, its fleet wrapper, or their inputs.
+description: Check the bounded historical policy-v3 initial-send uncertainty reducer when changing morning delivery, its fleet wrapper, or their inputs.
 ---
 
 # Morning initial send
@@ -25,4 +25,6 @@ This checks supplied declarations, not true native execution or delivery, global
 
 Read every covered source and dependency diff from the recorded sync before moving a pin. Reassess each action, oracle and atomic boundary. Keep genuine baseline counterexamples as findings; never weaken a promise to hide one. Run the source mutants, restored baseline and pin refusal, then the aggregate and behavioral drives. Use `pstack:maintain-formal-verification-skill` and independent review. Hash refresh alone is not source review.
 
-The held transport retirement changes the CLI driver to record intents and synthetic outcomes directly. This initial-send graph still exercises the unchanged actual reducer, exact uncertainty and known-unexecuted recovery. It has never proved the removed external tool adapter. Bounds, invariants and the paired source breaks remain unchanged.
+The fleet focus materializes a frozen synthetic v3 canonical journal, verifies exact historical replay and native identities, refuses current morning writes before publication, and drives CLI status, backup and suspended restore. The retained reducer properties test historical migration, uncertainty, delivered-body binding and same-message outcomes directly. No current morning producer or collection-envelope helper remains; no provider runs. Preserve `retainedMorning` after cleanup.
+
+The initial-send graph still calls the unchanged historical reducer. Invariants, staged depth, refusal reasons and eight source mutations remain unchanged; it establishes no current CLI producer or native execution.

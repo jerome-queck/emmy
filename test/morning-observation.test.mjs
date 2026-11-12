@@ -1,12 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { morningFixture, morningItem, morningAssessments, morningAt } from '../verification/morning-fixtures.mjs';
 import { morningV3Open, morningV3Plan } from '../verification/morning-v3-fixtures.mjs';
 import { preparePolicyBriefing } from '../src/briefing-plan.mjs';
-import { collectionBegin, collectionCollect, collectionFinish, validateCollection } from '../src/morning-collection.mjs';
 
 const observation = (basis = 'current-read-start') => ({ observedAt: basis === 'current-read-start' ? null : morningAt, capturedAt: basis === 'current-read-start' ? null : morningAt, collectorObservation: { basis, startedAt: morningAt, endedAt: morningAt } });
 function fixture() {
@@ -52,24 +48,6 @@ test('fresh wrapper cannot refresh old original Calendar clocks or rewind observ
   const rewind = observation(); rewind.collectorObservation.startedAt = '2026-10-25T00:59:59.999Z';
   assert.throws(() => result.command('source', { ...source.capture, providerObservation: rewind }), /fresh source time|cannot rewind/);
 });
-test('collection packet preserves separate original provider observation and actual wrapper clocks', () => {
-  const result = fixture(); const source = result.run.sources.find(source => source.role === 'calendar');
-  const directory = join(mkdtempSync(join(tmpdir(), 'emmy-observation-')), 'capture');
-  const raw = join(directory, 'input.raw');
-  collectionBegin(directory, { runId: result.run.id, sourceId: source.id, scope: source.capture.receipt.scope, ownerRef: result.run.ownerRef, provenance: 'ordinary-authorized', jobKey: null, ticket: null });
-  writeFileSync(raw, '{"synthetic":true}');
-  const later = '2026-10-25T01:00:00.001Z';
-  collectionCollect(directory, { attempt: 1, observedAt: later, capturedAt: later, outcome: 'returned', providerObservation: observation() }, raw);
-  const intake = collectionFinish(directory, { attempts: 1, coverage: { complete: true, gaps: [] }, paginationComplete: true, cached: false, resourceIds: [], messageIds: [], window: source.capture.window });
-  assert.equal(intake.command.receipt.observedAt, later);
-  assert.equal(intake.command.providerObservation.observedAt, null);
-  const retained = JSON.parse(readFileSync(join(directory, 'packet.json')));
-  const bytes = readFileSync(join(directory, '1.raw')); const raws = new Map([[retained.captures[0].sha256, bytes]]);
-  validateCollection(retained, intake.command, result.run, raws);
-  const changed = structuredClone(intake.command); changed.providerObservation.collectorObservation.startedAt = '2026-10-25T00:59:59.999Z';
-  assert.throws(() => validateCollection(retained, changed, result.run, raws), /differs from retained packet/);
-});
-
 test('same Calendar acquisition cannot strip or alter retained provider observation', () => {
   const result = fixture(); observe(result);
   for (const source of result.run.sources.filter(source => ['calendar', 'calendar-inventory'].includes(source.role))) {

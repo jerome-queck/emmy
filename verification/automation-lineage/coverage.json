@@ -1,12 +1,12 @@
 {
-  "sourceCommit": "3ced171735cb3ed7bc9c979060b8d7411902b39c",
+  "sourceCommit": "2cedca8dad9107dc93f9fa6b16b3e69908cff4f1",
   "sourceFiles": {
     "src/automation-producer.mjs": "dd0f7616d9613f085ff7380799ec42b8e28610a245342ab224849dcb7c861a23",
     "src/strict-json.mjs": "2e7434d3b01cc940c895c1985e7cd83a1f38b29087590fc05d540531726ad21d",
     "src/automation-procedure.mjs": "f645480052403dba37dc556a8c5eb517e2e6632d2d1510442b946309fa926f93",
     "src/briefing-reporting.mjs": "36b87a2d43f12278f588df865deceaf5f03f02e347e369a2f98b9e4a1acbaae4",
     "src/automation-plan.mjs": "4a9a94eea37330dfe7521a98448b5e6c63a92dcb7c296517e58a112adeeb9f59",
-    "src/operating-contract.mjs": "ec84bbc86f228413a86491cbea3843e5b3777ff017084885751b02e51226f0b4",
+    "src/operating-contract.mjs": "43bfa32ca724452bd3e9e2c4285e38b6afcfdb2de88f3b254bbdf1f771c2df22",
     "src/content.mjs": "0359857ef2b11a1a332ae42b8335a91312806c2bff4417aabef9363fe3233d61",
     "src/bounded-json.mjs": "722b37d95a5e321f8256f6b557e72d2de0bd466699441c6c6f09107503fba8fc"
   },
@@ -30,5 +30,6 @@
     "OccurrenceTerminal": "Same invocation retains bound occurrence and terminal execution",
     "NullTerminal": "Bound early terminal null cannot receive a later report"
   },
-  "limits": "Synthetic synchronous producer only; no discovery of wholly omitted history, persistence, provider, native effects or publication."
+  "limits": "Synthetic synchronous producer only; no discovery of wholly omitted history, persistence, provider, native effects or publication.",
+  "reviewBasis": " Morning producer retirement: reviewed complete covered-source delta and direct retained consumers. Removed current fleet morning admission/evidence path and exclusive collector; historical schema/reducer/publication semantics remain unchanged. Five collector-only predicates and four source mutants retire intentionally with their owner. CLI frozen-v3 exact replay, current-write refusal and copied backup/restore replace live producer driving; no native acceptance. Source/claim mapping reviewed before digest refresh. Independent LC1 review remains required."
 }
