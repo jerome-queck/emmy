@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { cp, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
-import { hostname, tmpdir } from 'node:os';
+import { cp, lstat, mkdir, mkdtemp, readFile, readdir, readlink, rename, rm, writeFile } from 'node:fs/promises';
+import { hostname } from 'node:os';
 import { basename, join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
@@ -24,10 +24,11 @@ import { driveAssurance } from '../verification/local-assurance/drive.mjs';
 const sourceRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const evidenceDir = join(sourceRoot, '.local/verification', `behavior-${new Date().toISOString().replaceAll(':', '-')}-${randomUUID().slice(0, 8)}`);
 await mkdir(evidenceDir, { recursive: true });
-const root = await mkdtemp(join(tmpdir(), 'emmy-behavior-'));
+const root = await mkdtemp(join(evidenceDir, 'emmy-behavior-'));
 const home = join(root, '.local');
 const report = { runtime: process.version, evidenceDir, temporaryRoot: root, commands: [], scenarios: [], status: 'running', focus: process.argv.includes('--focus') ? process.argv[process.argv.indexOf('--focus') + 1] : null };
 const children = new Set();
+const requiredEvidence = new Set();
 const now = () => new Date().toISOString();
 const fixture = async (name, value) => {
   const path = join(home, 'inbox', name); await mkdir(dirname(path), { recursive: true }); await writeFile(path, JSON.stringify(value)); return path;
@@ -49,7 +50,7 @@ const reconcile = async (id, expected = 0, imports = null, selectedHome = home, 
 try {
   assert.ok(process.argv.length === 2 || process.argv.length === 4 && process.argv[2] === '--focus' && ['self-check-repair', 'briefing', 'dispatch', 'calendar', 'fleet', 'token-review', 'assurance'].includes(process.argv[3]), 'Use no arguments or --focus self-check-repair|briefing|dispatch|calendar|fleet|token-review|assurance');
   for (const path of ['registry', 'docs', '.agents', 'src', 'scripts', 'verification', 'test', 'schemas', 'procedures', '.github', '.codex', 'AGENTS.md', 'package.json', 'package-lock.json']) await cp(join(sourceRoot, path), join(root, path), { recursive: true });
-  await mkdir(join(home, 'records'), { recursive: true }); await mkdir(join(root, 'bin'));
+  await mkdir(join(home, 'records'), { recursive: true }); requiredEvidence.add('records'); await mkdir(join(root, 'bin'));
   for (const name of ['gh', 'codex', 'curl', 'ssh']) await writeFile(join(root, 'bin', name), `#!/bin/sh\necho invoked >> '${join(home, 'executor-invoked')}'\nexit 99\n`, { mode: 0o755 });
   await writeFile(join(root, '.gitignore'), '.local/\nbin/\n');
   const fixtureInventoryPath = join(root, 'verification/subsystems.json'); const fixtureInventory = JSON.parse(await readFile(fixtureInventoryPath, 'utf8'));
@@ -70,17 +71,17 @@ try {
     report.localAssurance = await driveAssurance(sourceRoot, join(evidenceDir, 'local-assurance'));
     scenario('local-assurance', 'Actual package and fresh CLI over a separately labelled synthetic fixed suite; source/base changes, failed/incomplete evidence, output integrity and environment refusal.');
   }
-  if (!['self-check-repair', 'dispatch', 'calendar', 'fleet', 'token-review', 'assurance'].includes(report.focus)) await driveBriefing({ sourceRoot, root, home, run, scenario, report, children });
-  if (!['self-check-repair', 'briefing', 'calendar', 'fleet', 'token-review', 'assurance'].includes(report.focus)) await driveDispatch({ root, home, run, scenario, report, bindings, target });
+  if (!['self-check-repair', 'dispatch', 'calendar', 'fleet', 'token-review', 'assurance'].includes(report.focus)) { requiredEvidence.add('briefing'); await driveBriefing({ sourceRoot, root, home, run, scenario, report, children }); }
+  if (!['self-check-repair', 'briefing', 'calendar', 'fleet', 'token-review', 'assurance'].includes(report.focus)) { requiredEvidence.add('dispatch-home'); await driveDispatch({ root, home, run, scenario, report, bindings, target }); }
   if (!report.focus || report.focus === 'token-review') await driveDailyBriefing({ home, run, scenario, report, evidenceDir });
   if (!report.focus || report.focus === 'token-review') {
     await driveTokenReview({ home, run, scenario, report, evidenceDir });
     await driveImprovementReport({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir });
   }
-  if (!report.focus || report.focus === 'calendar') await driveCalendar({ home, run, scenario, report });
+  if (!report.focus || report.focus === 'calendar') { requiredEvidence.add('calendar'); await driveCalendar({ home, run, scenario, report }); }
   if (!report.focus || report.focus === 'calendar') await driveCalendarRegister({ home, run, scenario, report });
-  if (!report.focus || report.focus === 'fleet') await driveMorning({ root, home, bindings, target, run, scenario, report });
-  if (!report.focus || report.focus === 'fleet') await driveFleet({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir, children });
+  if (!report.focus || report.focus === 'fleet') { requiredEvidence.add('morning-drive'); await driveMorning({ root, home, bindings, target, run, scenario, report }); }
+  if (!report.focus || report.focus === 'fleet') { requiredEvidence.add('fleet-drive'); await driveFleet({ sourceRoot, root, home, bindings, target, run, scenario, report, evidenceDir, children }); }
   if (!['briefing', 'dispatch', 'calendar', 'fleet', 'token-review', 'assurance'].includes(report.focus)) {
   const artifact = join(home, 'artifact.txt'); const original = 'Expected fixture bytes\n'; await writeFile(artifact, original);
   const definition = { id: 'self-check', parents: [], goal: 'Retain the expected local artifact and detect damage.', context: 'Synthetic responsibility survives a fresh process without a prior conversation.', action: 'verify', resource: 'fixture', destination: 'local-evidence', target, authorityRef: { reference: 'Synthetic owner request', action: 'verify', resource: 'fixture', destination: 'local-evidence' }, criteria: [{ id: 'artifact', description: 'Actual bytes match the retained expectation.', evidence: 'local-digest', path: artifact, sha256: digest(original) }], freshness: { maxAgeMs: 86400000, sources: [] }, reviewAt: '2099-01-01T00:00:00Z', feature: { id: 'artifact-watch', method: 'Compare expected local bytes.', intendedEffect: 'Maintain expected artifact bytes.', reviewAt: '2099-01-01T00:00:00Z' }, lifecycle: { status: 'active' } };
@@ -618,7 +619,6 @@ try {
   }
   }
   assert.equal((await readdir(home)).includes('executor-invoked'), false);
-  await cp(join(home, 'records'), join(evidenceDir, 'records'), { recursive: true });
   if (!report.focus) await driveAutomationReporting({ run, scenario, evidenceDir, report });
   if (!report.focus) assert.deepEqual(report.scenarios.map(item => item.name).sort(), verification.features.flatMap(feature => feature.scenarios).sort(), 'Every mapped CLI scenario must execute');
   report.status = 'passed';
@@ -626,21 +626,55 @@ try {
   report.status = 'failed'; report.error = { message: error.message, stack: error.stack }; process.exitCode = 1;
 } finally {
   for (const child of children) child.kill('SIGKILL');
-  try { await cp(join(home, 'records'), join(evidenceDir, 'retained-records'), { recursive: true }); } catch (error) { if (error.code !== 'ENOENT') report.evidenceCopyError = error.message; }
-  try { await cp(join(home, 'dispatch-home'), join(evidenceDir, 'dispatch'), { recursive: true }); report.retainedDispatch = join(evidenceDir, 'dispatch'); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.dispatchCopyError = error.message; process.exitCode = 1; } }
-  for (const name of ['dispatch-backup', 'dispatch-restored', 'remote-dispatch-backup', 'remote-dispatch-restored']) {
-    try { await cp(join(home, name), join(evidenceDir, name), { recursive: true }); report[name] = join(evidenceDir, name); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.dispatchCopyError = error.message; process.exitCode = 1; } }
+  report.cleaned = false;
+  report.retentionErrors = [];
+  report.retainedEvidence = [];
+  const fail = (field, error, source, destination) => {
+    report.status = 'failed'; report[field] = error.message;
+    report.retentionErrors.push({ field, message: error.message, code: error.code ?? null, source, destination });
+  };
+  const verifyTree = async (source, destination, excluded) => {
+    if (source === excluded) return 0;
+    const original = await lstat(source); const retained = await lstat(destination);
+    if (original.isDirectory()) {
+      assert.ok(retained.isDirectory(), `Retained directory missing: ${destination}`);
+      let count = 0;
+      for (const name of await readdir(source)) count += await verifyTree(join(source, name), join(destination, name), excluded);
+      return count;
+    }
+    if (original.isSymbolicLink()) {
+      assert.ok(retained.isSymbolicLink(), `Retained link changed: ${destination}`);
+      assert.equal(await readlink(destination), await readlink(source), `Retained link changed: ${destination}`);
+    } else {
+      assert.ok(original.isFile() && retained.isFile(), `Unsupported retained file: ${source}`);
+      assert.equal(digest(await readFile(destination)), digest(await readFile(source)), `Retained bytes changed: ${destination}`);
+    }
+    return 1;
+  };
+  const folders = [
+    ['records', 'records'], ['dispatch-home', 'dispatch', 'retainedDispatch'],
+    ...['dispatch-backup', 'dispatch-restored', 'remote-dispatch-backup', 'remote-dispatch-restored'].map(name => [name, name, name]),
+    ['briefing', 'briefing', 'retainedBriefing'], ['calendar', 'calendar'],
+    ['morning-drive', 'morning', 'retainedMorning'], ['fleet-drive', 'fleet', 'retainedFleet'],
+    ...['fleet-staleness', 'fleet-restored', 'fleet-timeout'].map(name => [name, name])
+  ];
+  if (report.dispatch) for (const name of ['dispatch-backup', 'dispatch-restored', 'remote-dispatch-backup', 'remote-dispatch-restored']) requiredEvidence.add(name);
+  if (report.fleet) for (const name of ['fleet-staleness', 'fleet-restored', 'fleet-timeout']) requiredEvidence.add(name);
+  for (const [name, retainedName, field] of folders) {
+    const source = join(home, name); const destination = join(evidenceDir, retainedName);
+    try {
+      try { await lstat(source); }
+      catch (error) { if (error.code === 'ENOENT' && !requiredEvidence.has(name)) continue; throw error; }
+      const excluded = name === 'calendar' ? join(source, 'fifo') : undefined;
+      await cp(source, destination, { recursive: true, verbatimSymlinks: true, filter: path => path !== excluded });
+      const files = await verifyTree(source, destination, excluded);
+      report.retainedEvidence.push({ source, destination, files });
+      if (field) report[field] = destination;
+    } catch (error) { fail('evidenceCopyError', error, source, destination); }
   }
-  try { await cp(join(home, 'briefing'), join(evidenceDir, 'briefing'), { recursive: true }); report.retainedBriefing = join(evidenceDir, 'briefing'); } catch (error) { if (error.code !== 'ENOENT') { report.status = 'failed'; report.briefingCopyError = error.message; process.exitCode = 1; } }
-  try { await cp(join(home, 'calendar'), join(evidenceDir, 'calendar'), { recursive: true, filter: path => path !== join(home, 'calendar', 'fifo') }); } catch (error) { if (error.code !== 'ENOENT' || report.calendar) { report.status = 'failed'; report.calendarCopyError = error.message; process.exitCode = 1; } }
-  for (const [source, destination] of [['morning-drive', 'morning'], ['fleet-drive', 'fleet'], ['fleet-staleness', 'fleet-staleness'], ['fleet-restored', 'fleet-restored'], ['fleet-timeout', 'fleet-timeout']]) {
-    try { await cp(join(home, source), join(evidenceDir, destination), { recursive: true }); if (destination === 'morning') report.retainedMorning = join(evidenceDir, destination); if (destination === 'fleet') report.retainedFleet = join(evidenceDir, destination); }
-    catch (error) { if (error.code !== 'ENOENT' || report.fleet) { report.status = 'failed'; report.fleetCopyError = error.message; process.exitCode = 1; } }
-  }
-  await rm(root, { recursive: true, force: true }); report.cleaned = !await readdir(tmpdir()).then(names => names.includes(basename(root)));
   if (report.fleet && report.retainedFleet) {
-    try { assert.equal((await readStore(report.retainedFleet)).records.length, report.fleet.records); report.fleetRetentionVerifiedAfterCleanup = true; }
-    catch (error) { report.status = 'failed'; report.fleetRetentionError = error.message; process.exitCode = 1; }
+    try { assert.equal((await readStore(report.retainedFleet)).records.length, report.fleet.records); report.fleetRetentionVerifiedBeforeCleanup = true; }
+    catch (error) { fail('fleetRetentionError', error); }
   }
   if (report.morningHistory && report.retainedMorning) {
     try {
@@ -648,8 +682,8 @@ try {
       assert.equal(retained.records.length, report.morningHistory.records);
       const manifest = JSON.parse(await readFile(join(report.retainedMorning, 'original-byte-manifest.json')));
       for (const [path, expected] of Object.entries(manifest)) assert.equal(digest(await readFile(join(report.retainedMorning, path))), expected);
-      report.morningHistoryRetentionVerifiedAfterCleanup = true;
-    } catch (error) { report.status = 'failed'; report.morningHistoryRetentionError = error.message; process.exitCode = 1; }
+      report.morningHistoryRetentionVerifiedBeforeCleanup = true;
+    } catch (error) { fail('morningHistoryRetentionError', error); }
   }
   if (report.dispatch && report.retainedDispatch) {
     try {
@@ -657,18 +691,45 @@ try {
       assert.ok((await readStore(report.retainedDispatch)).records.some(record => record.hash === report.dispatch.retainedAttemptHash));
       assert.ok((await readStore(report['dispatch-restored'])).records.some(record => record.hash === report.dispatch.restoredEpoch));
       const manifest = JSON.parse(await readFile(join(report['dispatch-backup'], 'manifest.json'), 'utf8')); assert.equal(manifest.hash, report.dispatch.archiveManifestHash);
-    } catch (error) { report.status = 'failed'; report.dispatchCopyError = error.message; process.exitCode = 1; }
+    } catch (error) { fail('dispatchCopyError', error); }
   }
   if (report.retainedBriefing && report.briefing) {
     try {
       report.retainedCheckedBody = join(report.retainedBriefing, 'runs', basename(report.briefing.checked), 'body.md');
-      assert.equal(digest(await readFile(report.retainedCheckedBody)), report.briefing.bodyDigest, 'Exact emitted body survives temporary-root cleanup');
-    } catch (error) { report.status = 'failed'; report.briefingCopyError = error.message; process.exitCode = 1; }
+      assert.equal(digest(await readFile(report.retainedCheckedBody)), report.briefing.bodyDigest, 'Exact emitted body survives source cleanup');
+    } catch (error) { fail('briefingCopyError', error); }
   }
   if (report.calendar) {
     try { await verifyCalendarRetention(join(evidenceDir, 'calendar'), report.calendar.retainedFiles); report.retainedCalendar = join(evidenceDir, 'calendar'); }
-    catch (error) { report.status = 'failed'; report.calendarRetentionError = error.message; process.exitCode = 1; }
+    catch (error) { fail('calendarRetentionError', error); }
   }
-  await writeFile(join(evidenceDir, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
-  process.stdout.write(`${JSON.stringify({ status: report.status, scenarios: report.scenarios.length, commands: report.commands.length, cleaned: report.cleaned, evidence: join(evidenceDir, 'report.json'), error: report.error?.message })}\n`);
+
+  report.retentionVerifiedBeforeCleanup = report.retentionErrors.length === 0;
+  report.cleanup = { status: 'preserved', source: root, evidence: evidenceDir };
+  const reportPath = join(evidenceDir, 'report.json');
+  const saveReport = async () => {
+    try { await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`); return true; }
+    catch (error) {
+      report.status = 'failed';
+      (report.reportWriteErrors ??= []).push({ message: error.message, code: error.code ?? null });
+      return false;
+    }
+  };
+  const ready = report.status === 'passed' && report.retentionVerifiedBeforeCleanup;
+  if (ready) { report.status = 'running'; report.cleanup.status = 'pending'; }
+  const savedBeforeCleanup = await saveReport();
+  if (ready && savedBeforeCleanup) {
+    try {
+      await rm(root, { recursive: true, force: true });
+      try { await lstat(root); throw new Error('Temporary root still exists after cleanup'); }
+      catch (error) { if (error.code !== 'ENOENT') throw error; }
+      report.cleaned = true;
+      report.cleanup.status = 'removed'; report.status = 'passed';
+    } catch (error) {
+      report.status = 'failed'; report.cleanup.status = 'failed'; report.cleanup.error = error.message;
+    }
+  } else report.cleanup.status = 'preserved';
+  const reportSaved = await saveReport();
+  if (report.status !== 'passed' || !reportSaved) process.exitCode = 1;
+  process.stdout.write(`${JSON.stringify({ status: report.status, scenarios: report.scenarios.length, commands: report.commands.length, cleaned: report.cleaned, evidence: reportPath, source: root, cleanup: report.cleanup.status, reportSaved, error: report.error?.message ?? report.retentionErrors[0]?.message ?? report.cleanup.error ?? report.reportWriteErrors?.[0]?.message })}\n`);
 }
